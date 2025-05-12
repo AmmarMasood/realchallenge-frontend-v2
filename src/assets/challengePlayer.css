@@ -1,0 +1,190 @@
+.challenge-player-container {
+  background-color: #171e27;
+  min-height: 100vh;
+}
+.challenge-player-container-nav {
+  padding: 10px 10px 20px 10px;
+  color: var(--color-orange);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.challenge-player-container-exercies {
+  height: fit-content;
+  /* padding: 10px -100px; */
+  width: 100vw;
+  background-color: var(--color-gray-dark);
+  margin: auto;
+  /* margin-top: 40px; */
+  /* border: 1px solid green; */
+}
+.video-browser-container {
+  margin: 25px 25px 0 25px;
+}
+@media screen and (min-width: 2000px) {
+  .video-browser-container {
+    /* width: 80vw; */
+  }
+}
+
+.challenge-player-container-exercies-upnext {
+  margin-left: 10px;
+  font-size: 18px;
+}
+.challenge-player-container-exercies-round {
+  /* margin-left: 10px; */
+  font-size: 15px;
+  opacity: 0.6;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+.exercise-browser-card {
+  position: relative;
+  width: fit-content;
+  padding: 6px;
+  margin: 0 5px 0 0;
+}
+
+.exercise-browser-card:hover {
+  transition: all 0.3s;
+  /* border: 1px solid red; */
+  background-color: rgba(216, 216, 216, 0.15);
+}
+.react-multi-carousel-item {
+  width: fit-content !important;
+}
+.challenge-player-container-exercies-box {
+  height: 100%;
+  width: 100%;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  cursor: pointer;
+}
+.challenge-player-container-exercies-box-imagebox {
+  overflow: hidden;
+  width: 213px;
+  height: 200px;
+}
+.challenge-player-container-exercies-box--currentRunning {
+  border-bottom: 2px solid var(--color-orange);
+  background-color: rgba(216, 216, 216, 0.15);
+  /* transform: scale(1.04); */
+}
+
+.challenge-player-container-exercies-box-asktrainerbtn {
+  position: absolute;
+  padding: 5px;
+  top: 50px;
+  height: 35px;
+  width: 35px;
+  left: 20px;
+  background-color: #fb7600;
+  cursor: pointer;
+}
+.challenge-player-container-exercies-box-asktrainerbtn:hover {
+  /* transform: scale(1.1); */
+  /* border: 2px solid var(--color-orange-light); */
+  background-color: #fca243;
+}
+.challenge-player-container-exercies-box-details {
+  text-align: left;
+  width: 100%;
+  line-height: 10px;
+}
+.challenge-player-container-exercies-box-details p:first-child {
+  font-size: 17px;
+}
+.challenge-player-container-exercies-box-details p:last-child {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.459);
+}
+.player-download-stuff {
+  padding: 0 20px 20px 20px;
+  /* border: 1px solid red; */
+  display: flex;
+  flex-direction: column;
+  /* align-items: center;
+  justify-content: space-between; */
+  margin: 0 auto;
+}
+.workout-info {
+  padding: 10px;
+}
+.workout-info > p {
+  font-size: 16px;
+}
+.buy-related-products {
+  font-size: 16px;
+}
+.buy-related-products-p {
+  padding: 10px;
+  margin: 10px;
+  border: 1px solid #eee;
+  opacity: 0.8;
+}
+
+/* finish workout player */
+.finish-workout-popup-container {
+  text-align: center;
+  padding: 50px;
+}
+.finish-workout-popup-container--reviewbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.finish-workout-popup-container--reviewbox > div {
+  display: flex;
+  flex-direction: column;
+  margin: 5px;
+  padding: 10px;
+  width: 115px;
+  background-color: white;
+  cursor: pointer;
+  color: var(--color-orange);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.finish-workout-popup-container--reviewbox > div > span {
+  color: inherit;
+  font-weight: inherit;
+}
+.finish-workout-popup-container--reviewbox > div:hover {
+  background-color: var(--color-orange);
+  color: #fff;
+}
+.finish-workout-popup-container--reviewbox > div > span:hover {
+  color: #fff
+}
+
+.challenge-player-container-exercies-heading {
+  font-size: 20px;
+  text-transform: uppercase;
+  font-style: italic;
+  margin-left: 25px;
+  opacity: 0.6;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+.challenge-player-container-exercies-subheading {
+  font-size: 15px;
+  text-transform: capitalize;
+  margin-left: 25px;
+  opacity: 0.6;
+}
+
+@media screen and (max-width: 500px) {
+  .finish-workout-popup-container {
+    padding: 0px;
+  }
+  .finish-workout-popup-container--reviewbox {
+    flex-direction: column;
+    width: 100%;
+  }
+  .finish-workout-popup-container--reviewbox > div{
+    width: 100%;
+  }
+}

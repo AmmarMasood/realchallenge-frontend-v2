@@ -1,0 +1,117 @@
+.wizard-background {
+  background: #2a2f36;
+  min-height: 100vh;
+  width: 100%;
+  text-align: left;
+  background-position: 50% 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+.wizard-container {
+  padding: 30px;
+  color: #ffffff;
+  font-weight: 200;
+  margin-left: auto;
+  width: 450px;
+  margin-top: 50px;
+  margin-bottom: 21px;
+  background-color: var(--color-gray-dark);
+  margin-right: auto;
+  justify-self: center;
+}
+.wizard-gender-selection-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 10px;
+}
+.wizard-gender-selection-container-gender {
+  /* border: 1px solid blue; */
+  background-color: var(--color-gray);
+  text-align: center;
+  cursor: pointer;
+  padding: 20px;
+  backface-visibility: visible;
+  border: 2px solid var(--color-gray);
+}
+.wizard-gender-selection-container-gender:hover {
+  border: 2px solid var(--color-orange);
+}
+.wizard-gender-selection-container-gender > img {
+  height: 100px;
+  width: 150px;
+}
+.wizard-goal-selection-container {
+  /* border: 1px solid green; */
+}
+.wizard-goal-selection-container-goal {
+  /* border: 1px solid yellow; */
+  padding: 20px;
+  margin: 5px;
+  font-size: 1.8rem;
+  background-color: var(--color-gray);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.wizard-goal-selection-container-goal img {
+  margin-right: 15px;
+}
+.wizard-fitness-selection-container-level {
+  /* border: 1px solid yellow; */
+  padding: 10px;
+  margin: 5px;
+  font-size: 1.8rem;
+  background-color: var(--color-gray);
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  text-align: left;
+}
+.finaldetails-field-container {
+  /* border: 1px solid green; */
+}
+.show-detail-field {
+  border: 1px solid var(--color-white);
+  background: var(--color-gray);
+  font-size: 1.7rem;
+  padding: 10px;
+  margin: 10px;
+}
+
+.wizard-btn {
+  width: 35rem;
+  margin: 10px 0;
+  cursor: pointer;
+}
+
+@media screen and (max-width: 550px) {
+  .wizard-background {
+    padding-top: 60px;
+  }
+  /* CSS */
+  .wizard-container {
+    width: 400px;
+  }
+  .wizard-gender-selection-container-gender > img {
+    height: 100px;
+    width: 100px;
+  }
+  .wizard-btn {
+    width: 30rem;
+    margin: 10px 0;
+    cursor: pointer;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  /* CSS */
+  .wizard-container {
+    width: 300px;
+  }
+  .wizard-gender-selection-container-gender > img {
+    height: 60px;
+    width: 60px;
+  }
+}

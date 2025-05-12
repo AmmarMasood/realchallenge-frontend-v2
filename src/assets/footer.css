@@ -1,0 +1,107 @@
+.footer {
+  background-color: #171e27;
+  height: 100%;
+  z-index: 99999;
+  position: relative;
+  /* border: 1px solid red; */
+}
+.footer-row-1 {
+  /* border: 1px solid blue; */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  grid-gap: 1rem;
+  padding: 1rem;
+  /* height: 100px; */
+}
+
+.footer-row-1-links {
+  background-color: #2f353d;
+  padding: 2rem 3rem;
+  font-size: 2rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.footer-row-1-links:hover {
+  background-color: #ff7700;
+  color: #fff;
+}
+.footer-row-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  /* align-items: center; */
+  justify-content: center;
+  grid-gap: 1rem;
+  padding: 2rem 10rem;
+  margin-top: 3rem;
+  grid-gap: 20px;
+  /* border: 1px solid green; */
+}
+.footer-row-2-column {
+  /* border: 1px solid yellow; */
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: self-start;
+}
+.footer-row-2-column-link {
+  border: 1px solid transparent;
+  color: #fff;
+  opacity: 0.8;
+}
+.footer-row-2-column-link:hover {
+  color: #ff7700;
+}
+.footer-row-2-column-heading {
+  color: #fff;
+  font-size: 2rem;
+}
+.footer-row-3 {
+  /* border: 1px solid black; */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 3rem;
+}
+.footer-row-3-image {
+  /* border: 1px solid indigo; */
+  height: 18rem;
+  max-width: 55rem;
+  margin: 1rem;
+  opacity: 0.4;
+}
+.footer-row-3-text {
+  /* border: 1px solid pink; */
+  color: #fff;
+  opacity: 0.4;
+}
+
+@media screen and (max-width: 700px) {
+  .footer-row-1 {
+    /* border: 1px solid blue; */
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr 1fr 1fr;
+    grid-gap: 1rem;
+    padding: 1rem;
+    /* height: 100px; */
+  }
+  .footer-row-3-image {
+    /* border: 1px solid indigo; */
+    height: 15rem;
+    /* max-width: 35rem; */
+    margin: 1rem;
+    opacity: 0.4;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .footer-row-3-image {
+    /* border: 1px solid indigo; */
+    height: 10rem;
+    /* max-width: 25rem; */
+    margin: 1rem;
+    opacity: 0.4;
+  }
+}

@@ -1,0 +1,25 @@
+.helpcenter-container {
+  min-height: 100vh;
+  background: #e1e9f2;
+}
+.helpcenter-top {
+  background: var(--color-gray);
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.helpcenter-top > h1 {
+  font-size: 4.2rem;
+}
+.helpcenter-top-con {
+  width: 80vw;
+  text-align: center;
+  margin-top: 50px;
+}
+.helpcenter-questions-container {
+  padding: 50px;
+}
+.helpcenter-questions-container-card {
+  margin: 5px;
+}

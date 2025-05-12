@@ -1,0 +1,18 @@
+.replace-free-challenge-popup-container {
+  padding: 10px;
+}
+
+.replace-free-challenge-popup-container h3 {
+  font-size: 18px;
+  font-weight: 800;
+}
+.replace-free-challenge-popup-buttons {
+  display: flex;
+  justify-content: flex-end;
+  /* border: 2px solid red; */
+}
+
+.replace-free-challenge-popup-buttons span {
+  cursor: pointer;
+  margin: 0px 10px;
+}

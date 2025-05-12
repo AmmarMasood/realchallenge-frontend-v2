@@ -1,0 +1,677 @@
+.dashboard-container {
+  /* border: 1px solid red; */
+  min-height: 100vh;
+  background-color: var(--color-gray-dark);
+  padding: 50px;
+}
+
+.user-dashboard-bar {
+  /* border: 1px solid green; */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
+  background-color: var(--color-gray);
+  grid-gap: 5px;
+}
+
+.user-dashboard-bar-choose {
+  color: var(--color-white);
+  padding: 10px 50px;
+  font-size: 1.6rem;
+  text-align: center;
+  opacity: 0.8;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.user-dashboard-bar-choose:hover {
+  color: var(--color-orange);
+}
+.user-dashboard-bar-choosen {
+  color: var(--color-orange) !important;
+  padding: 10px 50px;
+  font-size: 1.6rem;
+  text-align: center;
+  opacity: 0.8;
+  cursor: pointer;
+  transition: all 0.4s;
+  border-bottom: 2px solid var(--color-orange);
+}
+.user-dashboard-content {
+  /* border: 1px solid white; */
+}
+
+/* feed styles */
+.dashboard-feed-container {
+  /* border: 1px solid white; */
+  padding-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(40rem, 1fr));
+  grid-gap: 20px;
+  justify-content: center;
+}
+.dashboard-feed-container-card {
+  /* border: 1px solid brown; */
+  background-color: #1d2631;
+  width: 40rem;
+  padding: 10px;
+  position: relative;
+}
+.dashboard-feed-container-card-row1 {
+  /* border: 1px solid green; */
+  display: flex;
+  align-items: center;
+}
+.dashboard-feed-container-card-row1-col2 {
+  display: flex;
+  flex-direction: column;
+  padding-left: 10px;
+}
+.dashboard-feed-container-card-row2 {
+  /* border: 1px solid red; */
+  height: 250px;
+  text-align: right;
+}
+.dashboard-feed-container-card-row2-tag {
+  font-size: 1.3rem;
+  margin: 5px;
+  text-transform: uppercase;
+  display: inline-block;
+  padding: 5px;
+  background-color: rgba(0, 0, 0, 0.4);
+  border: none;
+  min-width: 50px;
+  text-align: center;
+}
+.dashboard-feed-container-card-row3 {
+  /* border: 1px solid white; */
+}
+.dashboard-feed-container-card-row3-heading {
+  font-size: 2rem;
+  /* border: 1px solid black; */
+  padding: 5px 0;
+  height: 50px;
+}
+.dashboard-feed-container-card-row3-text {
+  /* border: 1px solid yellow; */
+  opacity: 0.8;
+  height: 50px;
+  font-size: 1.4rem;
+  overflow: hidden;
+}
+.dashboard-feed-container-card-row4 {
+  /* border: 1px solid green; */
+  padding: 10px 0;
+}
+.dashboard-feed-container-card-row4-click {
+  background-color: var(--color-gray-dark);
+  padding: 8px;
+  font-size: 1.6rem;
+  color: var(--color-white);
+  margin: 5px;
+  cursor: pointer;
+}
+/* dashboard challenges */
+.dashboard-challenges-row1 {
+  /* border: 1px solid red; */
+  display: flex;
+  flex-wrap: wrap;
+  /* height: 600px; */
+}
+.dashboard-challenges-mychallenge {
+  /* border: 1px solid yellow; */
+  background-color: #1d2631;
+  padding: 20px;
+  margin: 10px;
+  width: 500px;
+  flex-grow: 1;
+}
+.dashboard-challenges-mychallenge-heading {
+  padding: 5px;
+  font-size: 2rem;
+}
+.dashboard-challenges-mychallenge-body {
+  padding: 10px;
+  margin: 10px;
+  display: grid;
+  grid-gap: 10px;
+}
+.dashboard-challenges-mychallenge-body-box {
+  min-height: 200px;
+  display: flex;
+  /* align-items: flex-end; */
+  justify-content: space-between;
+  /* padding: 5px; */
+  border: 3px solid #ffae42;
+  width: 99%;
+}
+.dashboard-challenges-mychallenge-body-box-insidebox {
+  background-color: rgba(23, 30, 39, 0.46);
+  clip-path: polygon(50% 0%, 95% 80%, 81% 100%, 0 100%, 0 0);
+  padding: 10px 10px 10px 20px;
+  width: 70%;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.dashboard-challenges-mychallenge-body-box-insidebox-name {
+  font-size: 1.8rem;
+}
+.dashboard-challenges-mychallenge-body-box-insidebox-about {
+  font-size: 1.6rem;
+  opacity: 1;
+  width: 300px;
+  height: 50px;
+}
+.dashboard-challenges-mychallenge-body-box-insidebox-info {
+  /* border: 1px solid red; */
+  display: flex;
+  align-self: flex-end;
+}
+.dashboard-challenges-mychallenge-body-box-insidebox-completed {
+  /* background-color: var(--color-orange); */
+  color: var(--color-white);
+  padding: 5px 20px;
+  font-weight: 600;
+}
+.dashboard-challenges-mychallenge-body-box-insidebox > span {
+  display: inline-block;
+  overflow: hidden;
+}
+.dashboard-challenges-myshape {
+  background-color: #1d2631;
+  padding: 25px;
+  /* border: 1px solid green; */
+  width: 400px;
+  margin: 10px;
+  /* flex-grow: 0.4; */
+  justify-self: center;
+}
+.dashboard-challenges-myshape-container {
+  /* border: 1px solid red; */
+  height: 490px;
+  /* display: grid; */
+  /* grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); */
+}
+.dashboard-challenges-myshape-container > div {
+  height: 100%;
+  text-align: center;
+  /* border: 1px solid green; */
+}
+
+.dashboard-challenges-myshape-container img {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  /* border: 1px solid yellow; */
+}
+
+/* row 2 */
+.dashboard-challenges-row2 {
+  /* border: 1px solid red; */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(50rem, 1fr));
+  /* height: 560px; */
+}
+.dashboard-challenges-row2-mybody {
+  /* border: 1px solid yellow; */
+  background-color: #1d2631;
+  padding: 20px;
+  /* min-width: 50rem; */
+  margin: 10px;
+  height: 550px;
+}
+.dashboard-challenges-row2-mybody img {
+  height: 400px;
+}
+.body-line {
+  position: absolute;
+  display: flex;
+  align-items: center;
+}
+.body-line > div {
+  border-bottom: 2px solid var(--color-orange);
+  margin: 5px;
+}
+.body-line1 {
+  top: 90px;
+  left: 0;
+}
+.body-line1 > div {
+  width: 150px;
+}
+
+.body-line2 {
+  top: 180px;
+  left: 0;
+}
+.body-line2 > div {
+  width: 160px;
+}
+
+.body-line3 {
+  top: 70px;
+  right: 0;
+}
+.body-line3 > div {
+  width: 120px;
+}
+
+.body-line4 {
+  right: 0;
+  top: 150px;
+}
+.body-line4 > div {
+  width: 160px;
+}
+
+.dashboard-challenges-row2-mydevelopment {
+  /* border: 1px solid green; */
+  margin: 10px;
+  padding: 20px;
+  background: #1d2631;
+  height: 550px;
+}
+.dashboard-challenges-row2-mydevelopment-insidebox-1 {
+  background-color: var(--color-gray-light);
+  margin: 5px;
+  display: flex;
+  height: 40%;
+  align-items: center;
+}
+
+.dashboard-challenges-row2-mydevelopment-insidebox-1-text {
+  flex-flow: column-reverse;
+  justify-content: center;
+  display: flex;
+  font-size: 2rem;
+  height: 30%;
+}
+.dashboard-challenges-row2-mydevelopment-insidebox-2 {
+  background-color: var(--color-gray-light);
+  margin: 5px;
+  height: 50%;
+}
+.dashboard-challenges-row3 {
+  background-color: #1d2631;
+  padding: 20px;
+  /* min-width: 50rem; */
+  margin: 10px;
+}
+.dashboard-challenges-row3-inbox {
+  /* border: 1px solid red; */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(35rem, 1fr));
+  grid-gap: 10px;
+}
+.dashboard-challenges-row3-inbox-challenge {
+  /* border: 10px solid var(--color-gray-light); */
+  /* background-color: var(--color-gray-light); */
+  width: 530px;
+  display: flex;
+  justify-content: space-between;
+  margin-right: 10px;
+}
+
+.dashboard-challenges-row3-inbox-challenge-textbox {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  width: 60%;
+  justify-content: center;
+  background-color: rgba(23, 30, 39, 0.46);
+  clip-path: polygon(50% 0%, 95% 80%, 81% 100%, 0 100%, 0 0);
+}
+.dashboard-nutrient-row1 {
+  /* border: 1px solid red; */
+  background-color: #1a222d;
+  padding: 10px;
+}
+.dashboard-nutrient-row1-container {
+  /* border: 1px solid blue; */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(35rem, 1fr));
+  grid-gap: 20px;
+  padding: 10px;
+}
+.dashboard-nutrient-row1-col {
+  /* border: 1px solid green; */
+  padding: 25px 10px;
+  background-color: var(--color-gray-dark);
+}
+.dashboard-nutrient-row1-col-heading {
+  font-size: 2rem;
+  opacity: 0.8;
+}
+.dashboard-nutrient-row1-col-container {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+.dashboard-nutrient-row1-col-container-insideBox {
+  background-color: var(--color-gray-light);
+  padding: 10px 10px;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  font-size: 1.9rem;
+  /* border: 1px solid red; */
+}
+.dashboard-nutrient-row1-col1 {
+  /* border: 1px solid yellow; */
+}
+.dashboard-nutrient-row2 {
+  background-color: #1a222d;
+  padding: 20px;
+  margin-top: 20px;
+}
+.dashboard-nutrient-row2-container {
+  /* border: 1px solid red; */
+}
+
+.dashboard-nutrient-row2-container-days {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 20px;
+}
+.dashboard-nutrient-row2-container-day {
+  font-size: 1.8rem;
+  opacity: 0.8;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.dashboard-nutrient-row2-container-day:hover {
+  color: var(--color-orange) !important;
+}
+
+.dashboard-nutrient-row2-container-card {
+  /* border: 1px solid blue; */
+  background-color: var(--color-gray-light);
+  margin: 10px;
+  padding: 15px;
+  /* min-width: 350px; */
+}
+.dashboard-nutrient-row2-container-card-heading {
+  font-size: 2rem;
+  padding: 5px 0;
+}
+.dashboard-nutrient-row2-container-card-about {
+  opacity: 0.8;
+  overflow: hidden;
+  height: 50px;
+  padding: 5px 0;
+}
+.dashboard-nutrient-row2-container-card-buttons {
+  display: grid;
+  grid-template-columns: 0.6fr 0.2fr 0.2fr 1fr;
+  grid-gap: 10px;
+  padding-top: 10px;
+}
+.dashboard-nutrient-row2-container-card-bob {
+  background-color: rgba(255, 255, 255, 0.866);
+  position: absolute;
+  color: #fff;
+  top: 30px;
+  right: 30px;
+  padding: 5px;
+  font-weight: 400;
+}
+.dashboard-nutrient-row2-container-card-buttons > div {
+  background-color: var(--color-gray-dark);
+  font-size: 12px;
+  padding: 5px;
+  text-align: center;
+}
+.dashboard-nutrient-row2-container-card-buttons > button {
+  background-color: #53d470;
+  cursor: pointer;
+  border: 0px;
+  font-size: 12px;
+}
+.favourite-recipes-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(35rem, 1fr));
+}
+.dashboard-nutrient-row2-container-card-buttons > button:hover {
+  background-color: #53d46fc2;
+}
+.dashboard-nutrient-row3 {
+  /* border: 1px solid green; */
+  margin-top: 20px;
+  background-color: #1a222d;
+  padding: 20px;
+}
+.dashboard-nutrient-row3-container {
+  /* border: 1px solid yellow; */
+  padding-top: 10px;
+}
+.dashboard-nutrient-row3-container-selectedRecipes {
+  /* border: 1px solid red; */
+}
+.dashboard-nutrient-row3-container-selectedRecipes-container {
+  padding: 10px 0;
+  display: flex;
+  flex-wrap: wrap;
+}
+.recipe-block {
+  background: #4d392e;
+  /* opacity: 0.4; */
+  padding: 10px;
+  align-items: center;
+  display: flex;
+  margin: 5px 5px 5px 0;
+}
+
+.dashboard-nutrient-row3-container-ingredientsSummary {
+  /* border: 1px solid blue; */
+}
+.ingredientContainer {
+  font-size: 2rem;
+
+  display: flex;
+  justify-content: space-between;
+  background-color: var(--color-gray-dark);
+  margin: 10px 10px 10px 0;
+  padding: 15px;
+  opacity: 0.8;
+}
+.dashboard-nutrient-row4 {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #1a222d;
+}
+.dashboard-nutrient-row4-container {
+  padding-top: 10px;
+}
+.diet-setup-container {
+  /* border: 1px solid red; */
+  padding: 5px 0;
+}
+.diet-setup-container-inbox {
+  /* border: 1px solid blue; */
+  margin: 5px 0;
+  background: var(--color-gray-dark);
+  padding: 20px 10px;
+  display: flex;
+  font-size: 1.8rem;
+  cursor: pointer;
+  align-items: center;
+}
+.supplement-container {
+  /* border: 1px solid red; */
+  padding: 10px 0;
+}
+.selected-meals-container {
+  border-left: 2px dashed var(--color-orange);
+  margin: 15px 0;
+  padding: 10px;
+  display: flex;
+  flex-wrap: wrap;
+}
+.meals-list-container {
+  /* border: 1px solid green; */
+  padding: 10px;
+  background-color: var(--color-gray-light);
+  margin-bottom: 10px;
+}
+.suggested-meal-container {
+  /* border: 1px solid blue; */
+  padding: 10px;
+  margin: 5px;
+  background-color: var(--color-gray-dark);
+}
+
+.pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+}
+.pagination-container-inside {
+  background-color: #1d2631;
+  padding: 10px;
+}
+.orange-button-pagination {
+  background-color: #4a3c29;
+  padding: 10px 20px;
+  color: #fff;
+  text-decoration: none;
+}
+.green-button-pagination {
+  background-color: var(--color-green);
+  padding: 10px 20px;
+  color: #fff;
+  text-decoration: none;
+}
+.ant-pagination-item-active {
+  background: #283545;
+  border: none;
+}
+.ant-pagination-item-active a {
+  color: #fff;
+}
+@media screen and (min-width: 1400px) {
+  .dashboard-container {
+    width: 140rem;
+    margin: 0 auto;
+  }
+  .user-update-container {
+    width: 140rem;
+    margin: 0 auto;
+  }
+}
+
+@media screen and (min-width: 2500px) {
+  .dashboard-container {
+    width: 150rem;
+    margin: 0 auto;
+  }
+  .user-update-container {
+    width: 200rem;
+    margin: 0 auto;
+  }
+}
+@media screen and (max-width: 1200px) {
+  .user-dashboard-bar {
+    /* border: 1px solid green; */
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    background-color: var(--color-gray);
+    grid-gap: 5px;
+  }
+  .user-dashboard-bar-choose {
+    padding: 5px;
+    font-size: 1.6rem;
+  }
+  .user-dashboard-bar-choosen {
+    padding: 5px;
+    font-size: 1.6rem;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .user-dashboard-bar {
+    /* border: 1px solid green; */
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    background-color: var(--color-gray);
+    grid-gap: 5px;
+  }
+  .user-dashboard-bar-choose {
+    padding: 5px;
+    font-size: 1.6rem;
+  }
+  .user-dashboard-bar-choosen {
+    padding: 5px;
+    font-size: 1.6rem;
+  }
+  .dashboard-nutrient-row2-container-card-heading {
+    font-size: 16px;
+  }
+  .dashboard-nutrient-row2-container-card-about {
+    font-size: 12px;
+    padding: 0;
+  }
+}
+@media screen and (max-width: 500px) {
+  .dashboard-container {
+    padding: 10px;
+  }
+  .body-line1 > div {
+    width: 50px;
+  }
+  .body-line2 > div {
+    width: 50px;
+  }
+  .body-line3 > div {
+    width: 20px;
+  }
+  .body-line4 > div {
+    width: 60px;
+  }
+  /*  */
+  .dashboard-challenges-mychallenge-body {
+    margin: 0;
+    overflow: hidden;
+    padding: 0;
+  }
+  .dashboard-challenges-mychallenge-body-box {
+    justify-content: flex-end;
+  }
+  .dashboard-feed-container-card-row2-tag {
+    display: none;
+  }
+  .dashboard-challenges-mychallenge-body-box-insidebox {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+  }
+  .dashboard-challenges-mychallenge-body-box-insidebox-about {
+    display: none !important;
+  }
+  .dashboard-challenges-mychallenge-body-box-insidebox-info {
+    position: relative;
+    z-index: 12;
+  }
+
+  /*  */
+}
+@media screen and (max-width: 380px) {
+  .dashboard-challenges-row2-mybody {
+    width: 320px;
+  }
+  .dashboard-challenges-row2-mydevelopment {
+    width: 320px;
+  }
+}
+@media screen and (max-width: 350px) {
+  .dashboard-challenges-row2-mybody {
+    width: 285px;
+  }
+  .dashboard-challenges-row2-mydevelopment {
+    width: 285px;
+  }
+}

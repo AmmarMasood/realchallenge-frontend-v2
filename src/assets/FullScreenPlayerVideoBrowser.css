@@ -1,0 +1,9 @@
+.fspvb-container {
+  position: absolute;
+  /* border: 1px solid red; */
+  width: 100%;
+  /* margin-left: 8%; */
+  z-index: 1000;
+  bottom: 150px;
+  opacity: 0.8;
+}

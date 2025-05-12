@@ -1,0 +1,209 @@
+.trainer-profile-container {
+  min-height: 100vh;
+  display: flex;
+  position: relative;
+}
+.trainer-profile-container-column1 {
+  /* background: linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)),
+    url("https://realchallenge.fit/wp-content/uploads/2018/12/matthew-lejune-716127-unsplash-scaled.jpg"); */
+  background-size: cover;
+  background-position: 10% 10%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  width: 40%;
+  height: 100vh;
+  position: fixed;
+  top: 0px;
+  left: 0px;
+}
+.profile-box {
+  margin-bottom: 100px;
+  width: 90%;
+}
+.profile-box-row1 {
+  display: grid;
+  grid-template-columns: 0.3fr 1fr 0.3fr;
+  grid-gap: 10px;
+  align-items: center;
+}
+.profile-box-row1-avatar {
+}
+.profile-box-row1-avatar > img {
+  height: 108px;
+  width: 108px;
+}
+.profile-box-row1-information {
+}
+.profile-box-row1-playericon {
+  cursor: pointer;
+}
+.profile-box-row2 {
+}
+.profile-box-row2-quote {
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  font-size: 1.8rem;
+}
+
+.trainer-profile-container-column2 {
+  /* border: 1px solid yellow; */
+  background: var(--color-gray-dark);
+  /* overflow: scroll; */
+  padding: 100px 50px 50px 50px;
+  margin-left: 40%;
+  width: 60%;
+}
+.trainer-profile-goals {
+  border-bottom: 1px solid #333b44;
+  /* padding: 10px; */
+  /* margin: 5px; */
+  padding-bottom: 10px;
+}
+.trainer-profile-goals-container {
+  display: flex;
+  flex-wrap: wrap;
+}
+.trainer-profile-goal {
+  /* border: 1px solid red; */
+
+  padding: 5px 20px;
+  text-align: center;
+  background-color: #1c2733;
+  color: #fff;
+  margin: 5px;
+  font-weight: 200;
+}
+.trainer-profile-aboutme {
+  padding: 10px 0;
+  border-bottom: 1px solid #333b44;
+}
+.trainer-profile-aboutme-heading {
+}
+.trainer-profile-aboutme-container {
+}
+.trainer-profile-challenges {
+  padding: 10px 0;
+  border-bottom: 1px solid #333b44;
+}
+.trainer-profile-challenges-heading {
+}
+.trainer-profile-challenges-container {
+  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+@media screen and (max-width: 800px) {
+  .trainer-profile-container {
+    /* border: 1px solid red; */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    /* grid-template-columns: 1fr 1fr; */
+    position: relative;
+  }
+  .trainer-profile-container-column1 {
+    /* border: 1px solid blue; */
+    /* border: 1px solid red; */
+    /* background: linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)),
+      url("https://realchallenge.fit/wp-content/uploads/2018/12/matthew-lejune-716127-unsplash-scaled.jpg"); */
+    background-size: cover;
+    background-position: 10% 10%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    width: 100%;
+    height: 100vh;
+    position: relative;
+    /* top: 0px;
+    left: 0px; */
+  }
+  .profile-box {
+    /* border: 1px solid green; */
+    margin-bottom: 100px;
+    width: 90%;
+  }
+  .profile-box-row1 {
+    /* border: 1px solid red; */
+    display: grid;
+    grid-template-columns: 0.3fr 1fr 0.3fr;
+    grid-gap: 10px;
+    align-items: center;
+  }
+  .profile-box-row1-avatar {
+  }
+  .profile-box-row1-avatar > img {
+    height: 108px;
+    width: 108px;
+  }
+  .profile-box-row1-information {
+  }
+  .profile-box-row1-playericon {
+    cursor: pointer;
+  }
+  .profile-box-row2 {
+    /* border: 1px solid green; */
+  }
+  .profile-box-row2-quote {
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    font-size: 1.8rem;
+  }
+
+  .trainer-profile-container-column2 {
+    /* border: 1px solid yellow; */
+    background: var(--color-gray-dark);
+    /* overflow: scroll; */
+    padding: 100px 50px 50px 50px;
+    margin-left: 0;
+    width: 100%;
+  }
+  .trainer-profile-goals {
+    border-bottom: 1px solid #333b44;
+    /* padding: 10px; */
+    /* margin: 5px; */
+    padding-bottom: 10px;
+  }
+  .trainer-profile-goals-container {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .trainer-profile-goal {
+    /* border: 1px solid red; */
+
+    padding: 5px 20px;
+    text-align: center;
+    background-color: #1c2733;
+    color: #fff;
+    margin: 5px;
+    font-weight: 200;
+  }
+  .trainer-profile-aboutme {
+    padding: 10px 0;
+    border-bottom: 1px solid #333b44;
+  }
+  .trainer-profile-aboutme-heading {
+  }
+  .trainer-profile-aboutme-container {
+  }
+  .trainer-profile-challenges {
+    padding: 10px 0;
+    border-bottom: 1px solid #333b44;
+  }
+  .trainer-profile-challenges-heading {
+  }
+  .trainer-profile-challenges-container {
+    display: grid;
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .trainer-profile-container-column2 {
+    padding: 10px;
+  }
+}

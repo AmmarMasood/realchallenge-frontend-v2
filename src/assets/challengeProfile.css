@@ -1,0 +1,213 @@
+.challenge-trainers-container {
+  /* border: 2px solid red; */
+}
+.challenge-trainer-box {
+  background-color: #1c2733;
+  display: flex;
+  /* padding: 10px 20px; */
+  margin: 5px;
+  align-items: center;
+  /* border: 2px solid red; */
+}
+.challenge-trainer-box > img {
+  height: 50px;
+  width: 50px;
+}
+.trainer-profile-goals {
+  /* border: 2px solid red; */
+  margin: 10px 0;
+  text-transform: capitalize;
+}
+
+.challenge-trainer-box-text {
+  padding-left: 10px;
+  font-size: 1.6rem;
+  color: #ffa343 !important;
+  /* border: 2px solid red; */
+}
+.challenge-trainer-box-text:hover {
+  color: var(--color-orange) !important;
+}
+.user-personal-journey {
+  /* border: 2px solid red; */
+  display: flex;
+  flex-direction: column;
+  padding: 10px 20px;
+  margin: 5px;
+  background-color: #1c2733;
+  align-items: center;
+}
+
+.challenge-profile-comment {
+  margin: 5px;
+  background-color: #1c2733;
+  display: flex;
+  padding: 15px;
+  flex-direction: column;
+  width: 100%;
+  font-size: 1.8rem;
+  /* border: 2px solid green; */
+}
+.challenge-profile-comment-username {
+  font-size: 2rem;
+  color: #ffa343;
+  padding-bottom: 10px;
+  border: 2px solid red;
+}
+.challenge-profile-box-2 {
+  /* display: flex; */
+}
+.challenge-profile-box-2-container {
+  background: #2e3945;
+  font-size: 1.8rem;
+  color: var(--color-white);
+  /* padding: 50px; */
+  padding: 5px 10px;
+  margin: 5px;
+  /* border: 2px solid blue; */
+  text-transform: capitalize;
+}
+.challenge-profile-box-1 {
+  /* border-bottom: 2px solid #ffa343; */
+
+  /* border: 2px solid green; */
+  text-align: center;
+}
+
+.challenge-profile-box-1--bottomborder {
+  position: relative;
+  height: 10px;
+  padding-bottom: 6px;
+}
+.challenge-profile-box-1--bottomborder::after {
+  content: "";
+  height: 3px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Permalink - use to edit and share this gradient: https://colorzilla.com/gradient-editor/#ed8034+0,ed8034+33,feb123+33,feb123+66,2184cd+66,2184cd+100 */
+  background: rgb(237, 128, 52); /* Old browsers */
+  background: -moz-linear-gradient(
+    left,
+    rgba(237, 128, 52, 1) 0%,
+    rgba(237, 128, 52, 1) 33%,
+    rgba(254, 177, 35, 1) 33%,
+    rgba(254, 177, 35, 1) 66%,
+    rgba(33, 132, 205, 1) 66%,
+    rgba(33, 132, 205, 1) 100%
+  ); /* FF3.6-15 */
+  background: -webkit-linear-gradient(
+    left,
+    rgba(237, 128, 52, 1) 0%,
+    rgba(237, 128, 52, 1) 50%,
+    rgb(79, 90, 104) 50%
+  ); /* Chrome10-25,Safari5.1-6 */
+  background: linear-gradient(
+    to right,
+    rgba(237, 128, 52, 1) 0%,
+    rgba(237, 128, 52, 1) 50%,
+    rgb(79, 90, 104) 50%
+  ); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ed8034', endColorstr='#2184cd',GradientType=1 ); /* IE6-9 */
+}
+
+.challenge-profile-box-2-rating {
+  display: flex;
+  justify-content: space-between;
+  /* border: 2px solid red; */
+}
+.challenge-profile-box-2-info {
+  display: flex;
+  /* border: 2px solid blue; */
+  /* border: 2px solid red; */
+  /* height: 10px; */
+}
+.challenge-profile-box-2-rating > span {
+  color: #ffa343;
+  cursor: pointer;
+  font-size: 2rem;
+}
+.challenge-profile-box-2-rating > span:hover {
+  color: var(--color-white);
+}
+.reviews-font {
+  color: #ffa343;
+  font-size: 100;
+}
+
+.unlock-challenge-div {
+  /* border: 2px solid yellow; */
+  min-height: 200px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  background-color: #2a2f36;
+  padding: 10px;
+  text-align: center;
+}
+.unlock-challenge-packages {
+  /* border: 2px solid red; */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-gap: 8px;
+  padding: 10px;
+}
+
+.unlock-challenge-pack {
+  /* border: 2px solid green; */
+  background-color: #2a2f36;
+  padding: 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  cursor: pointer;
+}
+
+.comment-container {
+  /* border: 2px solid red; */
+  margin: 10px 0;
+}
+.comment-container-c1 {
+  /* border: 2px solid green; */
+  display: flex;
+  align-items: center;
+}
+.comment-container-c2 {
+  /* border: 2px solid red; */
+  padding-left: 20px;
+}
+.comment-container-c3 {
+  /* border: 2px solid red; */
+  font-size: 12px;
+  padding-left: 35px;
+  color: #82868b;
+}
+
+.workout-card-disabled {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  margin-left: -15px;
+  background: rgba(34, 40, 47, 0.7);
+  z-index: 100;
+}
+
+.workout-bottom-border {
+  position: absolute;
+  border-bottom: 3px solid #ff761a;
+  width: 100%;
+  margin-left: -15px;
+  bottom: 0;
+}
+
+@media screen and (max-width: 800px) {
+  .unlock-challenge-packages {
+    /* border: 2px solid red; */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}

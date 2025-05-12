@@ -1,0 +1,196 @@
+.pricing-background {
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+    url("../images/scott-webb-22537-unsplash-scaled.jpg");
+  background-size: cover;
+}
+.pricing-row-1 {
+  /* border: 1px solid blue; */
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+    url("../images/bruce-mars-554386-unsplash.jpg");
+  background-size: cover;
+  /* min-height: 150vh; */
+  text-align: center;
+  padding-top: 130px;
+  padding-bottom: 150px;
+}
+.pricing-row-1 > h1 {
+  color: #fff;
+  font-size: 5rem;
+  padding: 10px;
+}
+.pricing-row-1 > p {
+  color: #fff;
+  font-size: 2rem;
+  padding: 10px;
+}
+.pricing-row-1-cards-containers {
+  /* border: 1px solid green; */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(35rem, 1fr));
+  justify-items: center;
+  align-content: center;
+  padding: 20px 100px;
+}
+.pricing-row-1-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* align-items: center; */
+  text-align: left;
+  padding-left: 30px;
+  width: 35rem;
+  height: 330px;
+  margin-top: 20px;
+  background: #fff;
+}
+
+.most-popular-card {
+  height: 380px;
+  margin-top: 0;
+  border: 2px solid #ff7700;
+  position: relative;
+}
+.most-popular-tag {
+  display: inline-block;
+  background-color: #ff7700;
+  padding: 5px;
+  color: #fff;
+  position: absolute;
+  top: 0;
+}
+.pricing-row-1-card h1 {
+  font-weight: 600;
+}
+.money-back-guarantee {
+  background-color: #324a63;
+  display: inline-block;
+  color: #fff;
+  padding: 10px;
+  margin-top: 50px;
+  font-size: 16px;
+}
+.pricing-card-price {
+  margin-top: 10px;
+}
+.pricing-card-price h1 {
+}
+.pricing-card-price p {
+}
+.pricing-row-3 {
+  min-height: 50vh;
+  color: #fff;
+  background-color: #171e27;
+  padding: 100px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(35rem, 1fr));
+  grid-gap: 40px;
+  width: 100vw;
+  /* justify-content: center; */
+  /* align-items: center; */
+}
+.pricing-row-3-box {
+  font-size: 1.8rem;
+  font-weight: 200;
+}
+
+.pricing-video-box {
+  background: url("../images/Remko-Testimonial-1.jpg");
+  background-size: cover;
+  width: 350px;
+  position: relative;
+  height: 300px;
+}
+.pricing-video-box-overlay {
+  background-color: #222932;
+  clip-path: polygon(0 25%, 91% 73%, 43% 100%, 0% 100%);
+  position: absolute;
+  opacity: 0.5;
+  height: 100%;
+  width: 100%;
+}
+
+.pricing-faqs {
+  min-height: 60vh;
+  padding: 60px;
+  background-color: #222932;
+}
+.pricing-faqs-heading {
+  color: #fff;
+  font-size: 4rem;
+  /* opacity: 0.8; */
+}
+.pricing-faqs-container {
+  padding: 30px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(45rem, 1fr));
+  grid-gap: 60px;
+}
+.pricing-faqs-box {
+  color: #fff;
+  /* opacity: 0.8; */
+}
+.pricing-faqs-box > h1 {
+  color: #fff;
+  line-height: 35px;
+}
+.pricing-faqs-box > p {
+  font-weight: 200;
+}
+.two-cards {
+  display: flex;
+  flex-wrap: wrap;
+}
+.pricing-row-3-container {
+  background-color: #171e27;
+  display: flex;
+  justify-content: center;
+}
+@media screen and (min-width: 2000px) {
+  .pricing-row-1-cards-containers {
+    width: 80vw;
+    margin-left: 12vw;
+  }
+  .pricing-row-3 {
+    width: 60vw;
+    min-height: fit-content;
+  }
+  .pricing-faqs-container {
+    width: 50vw;
+    margin-left: 25vw;
+  }
+  .pricing-faqs-heading {
+    width: 50vw;
+    margin-left: 26vw;
+  }
+}
+
+@media screen and (max-width: 1500px) {
+  .pricing-row-1-cards-containers {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+@media screen and (max-width: 1300px) {
+  .pricing-row-1-cards-containers {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+@media screen and (max-width: 800px) {
+  .pricing-row-1-cards-containers {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .two-cards {
+    display: flex;
+    flex-wrap: wrap;
+    /* border: 1px solid red; */
+    align-items: space-between;
+    justify-content: center;
+  }
+  .most-popular-card {
+    margin-top: 10px;
+  }
+}

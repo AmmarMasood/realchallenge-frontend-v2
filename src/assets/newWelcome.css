@@ -1,0 +1,110 @@
+.new-welcome-page {
+  background: #2a2f36;
+  min-height: 110vh;
+  text-align: center;
+  color: #ffffff;
+  padding-top: 10px;
+  padding-bottom: 50px;
+}
+
+.choose-plan-page {
+  background-image: linear-gradient(
+      rgba(23, 30, 39, 0.9),
+      rgba(23, 30, 39, 0.9)
+    ),
+    url(../images/juan-pablo-rodriguez-693578-unsplash.jpg);
+}
+.new-welcome-container {
+  height: fit-content;
+  padding-top: 20px;
+  /* border: 1px solid red; */
+  background-color: var(--mirage);
+  margin: 0 auto;
+  max-width: 1000px;
+  margin-top: 50px;
+}
+.new-welcome-cards {
+  padding: 10px;
+  display: grid;
+  align-items: center;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  justify-items: center;
+}
+.new-welcome-card {
+  border: 2px solid #2a2f36;
+  background-color: #2a2f36;
+  margin: 10px;
+  padding: 10px 15px;
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+  min-height: 360px;
+  cursor: pointer;
+}
+.new-welcome-card > h2 {
+  font-size: 28px;
+  line-height: 35px;
+}
+
+.new-welcome-card > ul {
+  list-style: none;
+}
+
+.new-welcome-container > h1 {
+  font-size: 50px;
+  margin: 0;
+  padding: 10px;
+}
+.new-welcome-container > h3 {
+  font-size: 20px;
+  margin: 5px;
+  padding: 0;
+}
+
+.new-welcome-container > p {
+  font-size: 18px;
+  margin: 5px 0 20px 0;
+}
+
+.welcome-button {
+  margin-top: 20px;
+  color: #ffffff;
+}
+
+@media screen and (max-width: 550px) {
+  .new-welcome-container {
+    width: 80%;
+  }
+  .new-welcome-container > h1 {
+    font-size: 40px;
+  }
+  .new-welcome-container > h3 {
+    font-size: 16px;
+    margin: 5px;
+    padding: 0;
+  }
+
+  .new-welcome-container > p {
+    font-size: 16px;
+    margin: 5px 0 50px 0;
+  }
+}
+@media screen and (max-width: 420px) {
+  .new-welcome-container {
+    width: 100%;
+  }
+  .new-welcome-container > h1 {
+    font-size: 30px;
+  }
+  .new-welcome-container > h3 {
+    font-size: 14px;
+    margin: 5px;
+    padding: 0;
+    line-height: 18px;
+  }
+
+  .new-welcome-container > p {
+    font-size: 14px;
+    margin: 5px 0 50px 0;
+  }
+}

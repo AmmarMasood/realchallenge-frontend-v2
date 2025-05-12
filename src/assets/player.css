@@ -1,0 +1,735 @@
+.player-page {
+  min-height: 80vh;
+  background-color: #171e27;
+  padding: 20px 10px;
+  width: 96vw;
+  margin-left: 1vw;
+  margin-bottom: 10px;
+}
+
+.player-wrapper {
+  width: 1000px;
+  height: 100%;
+  margin: 0 auto;
+}
+.helpPopOut-player-wrapper {
+  width: 1000px;
+  height: 100%;
+  margin: 0 auto;
+}
+
+.controls-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* background: rgba(0, 0, 0, 0.6); */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 1;
+  /* border: 1px solid red; */
+}
+.controls-details {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* background: rgba(0, 0, 0, 0.6); */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 1;
+  /* border: 1px solid green; */
+}
+
+.controls-wrapper-top {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 30px;
+  text-shadow: 1px 1px 2px rgba(150, 150, 150, 0.6);
+  align-items: center;
+  /* border: 2px solid green; */
+}
+
+/* .controls-wrapper-top-title {
+  padding: 5px;
+  font-size: 18px;
+  font-weight: 800;
+  display: flex;
+  flex-direction: column;
+  margin-left: 20px;
+} */
+.controls-details-top-title {
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: 800;
+  display: flex;
+  flex-direction: column;
+  margin-left: 30px;
+  text-shadow: 1px 1px 2px rgba(150, 150, 150, 0.6);
+}
+.controls-details-bottom-title {
+  text-align: right;
+  margin-bottom: 50px;
+  font-size: 18px;
+  font-weight: 800;
+  padding-right: 30px;
+  text-shadow: 1px 1px 2px rgba(150, 150, 150, 0.6);
+}
+.controls-wrapper-middle {
+  /* border: 2px solid blue; */
+  margin-top: -30px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  width: 500px;
+  margin: 0 auto;
+  height: 100%;
+  padding: 16px;
+}
+.controls-wrapper-middle-icons {
+  color: #777;
+  font-size: 50px;
+  transform: scale(0.9);
+  cursor: pointer;
+}
+.controls-wrapper-middle-icons:hover {
+  transition: all 0.2s;
+  color: #fff;
+  transform: scale(1);
+}
+.controls-wrapper-bottom {
+  /* border: 2px solid red; */
+  padding: 0 20px 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.controls-wrapper-bottom > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* border: 1px solid red; */
+  width: 200px;
+}
+.controls-wrapper-bottom-icons {
+  height: 50px;
+  cursor: pointer;
+}
+.controls-wrapper-bottom-icons:hover {
+  color: #fff;
+}
+.react-player {
+  width: 100% !important;
+  height: 100% !important;
+}
+.react-player > video {
+  object-fit: cover !important;
+}
+.react-player-stepper-container {
+  display: grid;
+  /* grid-template-columns: repeat(3, 1fr); */
+  height: 5px;
+  /* border: 2px solid red; */
+  padding: 0 30px;
+  margin-bottom: 20px;
+}
+.react-player-stepper {
+  /* border: 2px solid red; */
+  margin: 0 3px;
+}
+/* music player container */
+.music-player-modal-container {
+  z-index: 1000;
+  position: absolute;
+  grid-gap: 10px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(29, 36, 44, 0.9);
+  padding: 20px;
+}
+
+.music-player-slider-container {
+  flex-grow: 0.6;
+}
+.music-player-modal-container > div {
+}
+
+.music-player-modal-container--list {
+  /* padding-top: 10px;
+  padding: 10px; */
+  flex-grow: 0.3;
+  padding-left: 30px;
+  border-left: 1px solid rgba(238, 238, 238, 0.247);
+}
+.music-player-modal-container--list > h3 {
+  color: var(--color-orange);
+  display: inline;
+  margin-left: 5px;
+  font-size: 18px;
+}
+.music-player-modal-container--list-files {
+  padding: 5px 0;
+  margin-top: 10px;
+  border-top: 1px solid rgba(238, 238, 238, 0.247);
+}
+
+.music-player-modal-container--list-files > div {
+  padding: 5px 10px;
+  font-size: 16px;
+  margin: 5px;
+  cursor: pointer;
+}
+
+.song-player {
+  /* background-color: #1c2733; */
+  /* border: 1px solid red; */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.song-player-icon {
+  font-size: 50px;
+  border: 1px solid;
+  border-radius: 50%;
+  padding: 10px;
+  color: #fff;
+  margin: 10px;
+}
+
+.music-player-modal-container--list-files > div:hover {
+  transition: all 0.1s;
+  color: var(--color-orange);
+  transform: scale(1.011);
+}
+.break-layout-for-player {
+  background-color: rgba(29, 36, 44, 0.8);
+  position: absolute;
+  top: 0px;
+  width: 100%;
+  z-index: 10;
+  opacity: 0.9;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.inner-layout-break {
+  margin: 0 30px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  justify-content: space-between;
+}
+
+.middle-player-icons {
+  font-size: 100px;
+  color: #777;
+}
+
+.challenge-player-attachment {
+  background: #202835;
+  border: none;
+  padding: 10px 50px 10px 10px;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
+.player-back-button {
+  cursor: pointer;
+  margin-right: 20px;
+  height: 30px;
+}
+.player-back-text {
+  display: flex;
+  flex-direction: column;
+}
+.player-back-text span:first-of-type {
+  font-size: 25px;
+}
+.inner-layout-break-totalsecs {
+  font-size: 35px;
+  margin-right: 5px;
+}
+.inner-layout-break-sec {
+  font-size: 20px;
+}
+.inner-layout-break-text {
+  font-size: 20px;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+.helpPopOut-progress-bar-container {
+  margin: -24px 45px 0px;
+  width: 90%;
+  padding: 0px 40px 0 30px;
+}
+
+.player-elasped-time-container {
+  padding-right: 10px;
+  padding-top: 10px;
+  font-size: 20px;
+  /* border: 1px solid red; */
+  width: 100px;
+  font-weight: 600;
+}
+
+/* .style={{
+
+}} */
+@media screen and (min-width: 1650px) {
+  .player-page {
+    /* width: 80vw; */
+    /* border: 1px solid blue; */
+    min-height: 60vh;
+  }
+  .player-wrapper {
+    width: 1500px;
+    height: 100%;
+    margin: 0 auto;
+  }
+  .helpPopOut-player-wrapper {
+    width: 1500px;
+    height: 100%;
+    margin: 0 auto;
+  }
+  .challenge-player-container-exercies {
+    width: 1550px;
+  }
+  .player-download-stuff {
+    width: 1550px;
+  }
+}
+@media screen and (max-width: 1650px) {
+  .player-page {
+    /* width: 80vw; */
+    /* border: 1px solid red; */
+    min-height: 40vh;
+  }
+  .player-wrapper {
+    width: 900px;
+    height: auto;
+    margin: 0 auto;
+  }
+  .helpPopOut-player-wrapper {
+    width: 900px;
+    height: auto;
+    margin: 0 auto;
+  }
+
+  .challenge-player-container-exercies {
+    width: 950px;
+  }
+  .player-download-stuff {
+    width: 950px;
+  }
+}
+
+@media screen and (max-width: 1470px) {
+  .player-page {
+    /* width: 80vw; */
+    /* border: 1px solid yellow; */
+    min-height: 40vh;
+  }
+  .player-wrapper {
+    width: 900px;
+    height: 500px;
+    margin: 0 auto;
+  }
+  .helpPopOut-player-wrapper {
+    width: 900px;
+    height: 500px;
+    margin: 0 auto;
+  }
+
+  .challenge-player-container-exercies {
+    width: 950px;
+  }
+  .player-download-stuff {
+    width: 950px;
+  }
+}
+@media screen and (max-width: 1300px) {
+  .player-page {
+    /* width: 80vw; */
+    /* border: 1px solid blue; */
+    height: fit-content;
+  }
+  .player-wrapper {
+    width: 900px;
+    height: 500px;
+    margin: 0 auto;
+  }
+  .helpPopOut-player-wrapper {
+    width: 900px;
+    height: 500px;
+    margin: 0 auto;
+  }
+}
+@media screen and (max-width: 1100px) {
+  .player-page {
+    /* width: 80vw; */
+    /* border: 1px solid red; */
+    min-height: 35vh;
+  }
+  .player-wrapper {
+    width: 900px;
+    height: 500px;
+    margin: 0 auto;
+  }
+  .helpPopOut-player-wrapper {
+    width: 900px;
+    height: 500px;
+    margin: 0 auto;
+  }
+}
+@media screen and (max-width: 950px) {
+  .player-page {
+    /* width: 80vw; */
+    /* border: 1px solid red; */
+    min-height: 30vh;
+  }
+  .player-wrapper {
+    width: 750px;
+    height: 500px;
+    margin: 0 auto;
+  }
+  .helpPopOut-player-wrapper {
+    width: 750px;
+    height: 500px;
+    margin: 0 auto;
+  }
+  .challenge-player-container-exercies {
+    width: 800px;
+  }
+  .player-download-stuff {
+    width: 800px;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .player-page {
+    /* width: 80vw; */
+    /* border: 1px solid red; */
+    /* min-height: 30vh; */
+  }
+  .player-wrapper {
+    width: 100%;
+    height: 100%;
+    margin: 0 auto;
+  }
+  .helpPopOut-player-wrapper {
+    width: 600px;
+    height: 100%;
+    margin: 0 auto;
+  }
+  .helpPopOut-progress-bar-container {
+    margin: -24px 45px 0px;
+    width: 80%;
+    padding: 0px 40px 0 30px;
+  }
+
+  .challenge-player-container-exercies {
+    width: 100%;
+    margin-top: 10px;
+  }
+  .player-download-stuff {
+    width: 100%;
+  }
+  .music-player-modal-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    flex-direction: column-reverse;
+    background-color: rgba(29, 36, 44, 0.9);
+    z-index: 100;
+    padding: 20px;
+    /* border: 1px solid yellow; */
+  }
+  .music-player-slider-container {
+    width: 40%;
+    text-align: center;
+  }
+  .music-player-modal-container > div {
+    width: 50%;
+    margin-top: 80px;
+  }
+
+  .music-player-modal-container--list {
+    padding-left: 0px;
+    /* border: 1px solid red; */
+    border-left: none;
+    flex-grow: 1;
+  }
+  .music-player-modal-container--list > h3 {
+    color: var(--color-orange);
+    display: inline;
+    margin-left: 5px;
+    font-size: 18px;
+    /* border: 1px solid green; */
+  }
+  .music-player-modal-container--list-files {
+    padding: 5px 0;
+    margin-top: 10px;
+    border-top: 1px solid rgba(238, 238, 238, 0.247);
+  }
+
+  .music-player-modal-container--list-files > div {
+    padding: 5px 10px;
+    font-size: 16px;
+    margin: 5px;
+    cursor: pointer;
+  }
+  .break-layout-for-player {
+    /* border: 2px solid red; */
+    background-color: rgba(29, 36, 44, 0.8);
+    position: absolute;
+    top: 0px;
+    width: 100%;
+    z-index: 10;
+    opacity: 0.9;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .inner-layout-break {
+    margin: 0px 30px 20px 30px;
+    color: #fff;
+    /* border: 1px solid red; */
+    height: 50%;
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    justify-content: center;
+    justify-self: flex-end;
+    flex-direction: column;
+  }
+  .inner-layout-break-text {
+    margin-top: 20px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .player-wrapper {
+    width: 100%;
+    height: 818px;
+    margin: 0 auto;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .player-page {
+    /* width: 80vw; */
+    /* border: 1px solid red; */
+    height: 40vh;
+  }
+  .player-wrapper {
+    width: 100%;
+    height: 656px;
+    /* margin: 0 auto; */
+  }
+  .helpPopOut-player-wrapper {
+    width: 400px;
+    height: 100%;
+    margin: 0 auto;
+  }
+  .helpPopOut-progress-bar-container {
+    margin: -24px 45px 0px;
+    width: 80%;
+    padding: 0px 40px 0 30px;
+  }
+  .controls-wrapper-middle {
+    width: 300px;
+    font-size: 20px;
+  }
+  .middle-player-icons {
+    font-size: 50px;
+  }
+  .controls-wrapper-middle-icons {
+    font-size: 25px;
+  }
+  .controls-wrapper-bottom-icons {
+    font-size: 20px;
+  }
+
+  .challenge-player-container-exercies {
+    width: 100%;
+  }
+  .player-download-stuff {
+    width: 100%;
+  }
+}
+@media screen and (max-width: 550px) {
+  .player-page {
+    /* width: 80vw; */
+    /* border: 1px solid red; */
+    height: 40vh;
+  }
+  .player-wrapper {
+    width: 100%;
+    /* height: 100%; */
+    margin: 0 auto;
+  }
+  .controls-wrapper-top {
+    padding: 5px;
+    align-items: flex-start;
+  }
+  .controls-wrapper-middle {
+    width: 100%;
+    font-size: 20px;
+    /* border: 1px solid black; */
+  }
+  .controls-wrapper-bottom {
+    /* border: 1px solid green; */
+  }
+  .controls-wrapper-bottom > div > img {
+    height: 30px;
+  }
+  .controls-wrapper-bottom > span {
+    font-size: 16px !important;
+  }
+  .middle-player-icons {
+    font-size: 50px;
+  }
+  .music-player-slider-container > img {
+    height: 30px;
+    width: 30px;
+    align-self: center;
+  }
+  .controls-wrapper-middle-icons {
+    font-size: 25px;
+  }
+  .controls-wrapper-bottom-icons {
+    font-size: 20px;
+  }
+  .challenge-player-container-exercies {
+    width: 100%;
+  }
+  .player-download-stuff {
+    width: 100%;
+  }
+  .player-back-button {
+    cursor: pointer;
+    margin-right: 10px;
+    margin-left: 10px;
+    height: 16px;
+  }
+  .player-back-text {
+    display: flex;
+    flex-direction: column;
+  }
+  .player-back-text span:first-of-type {
+    font-size: 18px;
+  }
+  .player-top-icons {
+    /* border: 1px solid red; */
+    display: flex;
+    flex-direction: column;
+  }
+  .player-top-icons > img {
+    width: 35px !important;
+    height: 29px !important;
+    margin-top: 10px !important;
+    cursor: pointer;
+  }
+
+  /* music player */
+  .music-player-modal-container {
+    /* border: 1px solid red; */
+  }
+  .music-player-modal-container > div {
+    /* border: 2px solid green; */
+    width: 100%;
+  }
+  .controls-details {
+    /* border: 2px solid green; */
+  }
+  .controls-details-top-title {
+    font-size: 14px;
+  }
+  .controls-details-bottom-title {
+    font-size: 14px;
+  }
+  .inner-layout-break {
+    margin: 0 30px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    justify-content: center;
+    margin-bottom: 40px;
+  }
+  .inner-layout-break-totalsecs {
+    font-size: 20px;
+    margin-right: 5px;
+  }
+  .inner-layout-break-sec {
+    font-size: 16px;
+  }
+
+  .inner-layout-break-text {
+    font-size: 16px;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+  }
+  .video-browser-container {
+    margin: 0;
+  }
+  .challenge-player-container-exercies-heading {
+    font-size: 16px;
+  }
+  .challenge-player-container-exercies-subheading {
+    font-size: 14px;
+  }
+  .challenge-player-container-exercies-box {
+    /* border: 1px solid red; */
+    width: 100%;
+    height: 100%;
+  }
+  .challenge-player-container-exercies-box-imagebox {
+    height: 200px;
+    width: 213px;
+  }
+  .challenge-player-container-exercies-box-details p:first-child {
+    font-size: 14px;
+  }
+  .challenge-player-container-exercies-round {
+    font-size: 13px;
+  }
+  .workout-info > div {
+    display: flex;
+    flex-direction: column;
+  }
+  .workout-info > a {
+    display: flex;
+    flex-direction: column;
+  }
+  .challenge-player-attachment {
+    margin: 5px 0;
+  }
+  .react-player-stepper-container {
+    padding: 0;
+  }
+
+  .controls-wrapper-bottom > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* border: 1px solid red; */
+    width: 130px;
+  }
+}

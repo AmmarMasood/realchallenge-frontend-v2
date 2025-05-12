@@ -1,0 +1,169 @@
+.adminv2-selector-container {
+  background-color: #171e27;
+  width: 550px;
+  margin-top: 10px;
+  padding: 20px;
+}
+
+.adminv2-selector {
+}
+
+.adminv2-selector > h1 {
+  font-size: 35px;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 35px;
+  text-align: center;
+  text-decoration-skip-ink: none;
+  color: #ffffff;
+  padding: 0;
+  margin: 0;
+  margin-bottom: 10px;
+}
+
+.adminv2-selector > p {
+  font-family: var(--font-family-poppins);
+  font-size: 16px;
+  font-weight: 300;
+  line-height: 25.52px;
+  text-align: center;
+  text-decoration-skip-ink: none;
+  color: #c4c4c4;
+  padding: 0;
+  margin: 0;
+  margin-bottom: 30px;
+}
+
+.adminv2-select {
+  background-color: #2a2f37;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 22px;
+  text-align: left;
+  text-decoration-skip-ink: none;
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  margin: 15px 0;
+  cursor: pointer;
+  border: 2px solid #2a2f37;
+}
+.adminv2-select:hover {
+  border: 2px solid #ff950a;
+  box-shadow: 0px 0px 22px 7px #ff950a2b;
+}
+.adminv2-select > img {
+  margin-right: 40px;
+}
+.adminv2-select > p {
+  margin: 0;
+  padding: 0;
+}
+
+.adminv2-selector-interests {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.adminv2-selector-interests-interest {
+  background-color: #2a2f37;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 400;
+  padding: 10px;
+  margin: 10px;
+  margin-right: 10px;
+  margin-left: 0px;
+  border: 2px solid #2a2f37;
+}
+
+.adminv2-selector-interests-interest:hover {
+  border: 2px solid #ff950a;
+  box-shadow: 0px 0px 22px 7px #ff950a2b;
+}
+.adminv2-interest-button {
+  background: #e37c33;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  height: 100%;
+  padding: 10px;
+  margin: 10px;
+  margin-left: 0px;
+}
+
+/* basic information */
+.adminV2-bi-trainer-profile-container-column1 {
+  cursor: pointer;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+.adminV2-bi-profile-box {
+  cursor: pointer;
+  z-index: 1000;
+  cursor: initial;
+}
+
+.adminV2-bi-challenge-profile-box-1 {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.adminV2-bi-challenge-profile-box-1 > img {
+  width: 50px;
+  height: 50px;
+}
+.adminV2-bi-challenge-profile-box-2 .ant-select-selector {
+  background-color: rgba(0, 0, 0, 0.4) !important;
+  border: none !important;
+  color: #fff !important;
+}
+.adminV2-bi-challenge-profile-box-2 .ant-select-arrow {
+  color: #fff !important;
+}
+.adminV2-bi-challenge-profile-box-1 > input {
+  font-size: 4rem;
+}
+
+.adminV2-bi-challenge-profile-box-1 > div:first-of-type {
+  width: 150px;
+  border: 2px dashed #fff;
+  padding: 5px;
+  color: #fff;
+  margin-bottom: 20px;
+}
+.adminV2-bi-trailername {
+  width: 100%;
+  text-align: center;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0;
+  margin: 0;
+}
+.adminV2-bi-input {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 2px dashed #fff; /* 1px dotted white border */
+  outline: none; /* Remove any default browser outline */
+  padding: 5px;
+  margin: 5px;
+  border-radius: 2px;
+  width: 100%;
+  display: block;
+}
+
+.adminV2-bi-input:focus {
+  border: 2px dashed #ff950a; /* Keep the dotted border on focus */
+  outline: none; /* Ensure no outline appears on focus */
+}
+.adminV2-bi-challenge-profile-box-2 {
+}
+.challenge-profile-box-2-info > div > .ant-select-selector {
+  background-color: transparent !important;
+}

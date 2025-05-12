@@ -1,0 +1,130 @@
+.page-header {
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+    url("../images/karl-s-1060222-unsplash.jpg");
+  background-size: cover;
+  height: 90vh;
+  padding: 0 0 50px 5vw;
+  width: 100%;
+  /* position: relative; */
+  display: flex;
+  align-items: flex-end;
+}
+.page-header-textbox {
+  /* border: 1px solid red; */
+
+  padding: 30px;
+}
+.page-header h1 {
+  color: #fff;
+  font-size: 5rem;
+}
+.page-header p {
+  color: #fff;
+  font-size: 2rem;
+}
+.trainers-2-row {
+  background-color: #222932;
+  height: 30rem;
+  padding: 15px 5vw;
+  display: flex;
+  align-items: center;
+}
+.trainers-2-row p {
+  border-left: 2px solid #ff7700;
+  padding: 10px;
+  color: #fff;
+  opacity: 1;
+  font-size: 2rem;
+  max-width: 600px;
+  padding: 10px;
+}
+.trainers-3-row {
+  min-height: 50vh;
+  padding: 50px 5vw;
+  background: #171e27;
+}
+.ant-input:focus {
+  border-color: #ff7700 !important;
+}
+.ant-input:hover {
+  border-color: #ff7700 !important;
+  border-right-width: 1px !important;
+}
+.ant-input-affix-wrapper > input.ant-input {
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused {
+  border-color: #ff7700 !important;
+}
+.ant-input-affix-wrapper:hover,
+.ant-input-affix-wrapper-focused {
+  border-color: #ff7700 !important;
+}
+.trainers-3-row-cards {
+  /* border: 1px solid red; */
+  display: flex;
+  flex-wrap: wrap;
+}
+.trainers-3-row-card {
+  width: 38rem;
+  height: 350px;
+  clip-path: polygon(0 4%, 100% 0, 100% 97%, 0 100%);
+  display: flex;
+  align-items: flex-end;
+  padding: 10px;
+  margin: 20px;
+  position: relative;
+}
+.trainers-3-row-card-overlay {
+  position: absolute;
+  background: #171e27 32%;
+  clip-path: polygon(0 24%, 76% 70%, 35% 100%, 0% 100%);
+  opacity: 0.4;
+  left: 0;
+  bottom: 0;
+  height: 100%;
+  z-index: -1;
+  width: 110%;
+}
+.trainers-3-row-card-textbox {
+  border-left: 3px solid #ff7700;
+  color: #fff;
+  padding-left: 10px;
+  width: 250px;
+  margin: 20px 20px;
+}
+
+.trainers-3-row-card-textbox-name {
+  /* border: 1px solid yellow; */
+  color: #fff;
+  font-size: 2.2rem;
+  width: 80%;
+  padding: 0;
+  margin: 0;
+}
+.trainers-3-row-card-textbox-location {
+  font-size: 1.6rem;
+  text-transform: uppercase;
+  padding: 0;
+  margin: 0;
+}
+
+@media screen and (min-width: 2000px) {
+  .page-header-textbox {
+    /* border: 1px solid red; */
+    width: 60vw;
+    margin-left: 18vw;
+  }
+  .trainers-2-row {
+    width: 60vw;
+    margin-left: 20vw;
+  }
+  .trainers-3-row {
+    width: 60vw;
+    margin-left: 20vw;
+  }
+}

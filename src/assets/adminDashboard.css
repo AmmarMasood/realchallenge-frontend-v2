@@ -1,0 +1,152 @@
+.admin-dashboard-container {
+  /* border: 1px solid red; */
+  background-color: var(--color-offwhite);
+  min-height: 150vh;
+  /* border: 1px solid green; */
+  width: 100%;
+}
+
+.admin-dashboard-navbar {
+  /* border: 1px solid red; */
+  background-color: var(--color-gray-dark);
+  padding: 5px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-gray-dark);
+  box-shadow: 5px 5px 10px;
+
+  /* border: 1px solid red; */
+}
+.admin-dashboard-container-main {
+  min-height: 100vh;
+  width: 100%;
+  padding: 10px;
+}
+
+/* media manager styling starts */
+.show-modal-uploaded-file-list {
+  border: 1px solid red;
+  margin-top: 5px;
+}
+.show-modal-uploaded-file-list-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 10px;
+  color: var(--color-orange);
+}
+.upload-button:hover {
+  color: var(--color-orange);
+  border-color: var(--color-orange);
+}
+/* media manager styling ends */
+
+/* challenge manager styling starts */
+.admin-allchallenges-list-container {
+  padding: 10px;
+  margin: 10px 10px;
+  background-color: rgba(255, 255, 255, 0.796);
+}
+.newchallenge-creator-container {
+  /* border: 1px solid red; */
+  padding: 20px;
+  background-color: #fff;
+  margin-bottom: 10px;
+}
+.newchallenge-creator-container-tab {
+  /* border: 1px solid green; */
+  padding: 10px;
+}
+
+.new-workout-creator-container {
+  padding: 10px;
+}
+.new-workout-creator-container-1 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(35rem, 1fr));
+  padding: 10px;
+  grid-gap: 1rem;
+}
+.new-workout-creator-container-1 div {
+}
+.new-workout-creator-container-2-rendered {
+  padding: 0px 0 50px 0;
+}
+.new-workout-creator-container-2-nonrender {
+  /* padding: 10px; */
+  overflow-y: scroll;
+}
+
+.new-workout-creator-container-2-nonrender
+  > .ant-collapse
+  > .ant-collapse-item
+  > .ant-collapse-content
+  > .ant-collapse-content
+  > .ant-collapse-content-box {
+  background: red !important;
+}
+.new-workout-creator-container-1-btn {
+  background-color: var(--color-orange);
+  border-color: var(--color-orange);
+  color: white;
+  margin-top: 10px;
+}
+.new-workout-creator-container-1-btn:hover {
+  background-color: var(--color-orange-light);
+  border-color: var(--color-orange-light);
+  color: white;
+}
+.display-workout-inside-week-container {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
+  grid-gap: 10px;
+  width: 100%;
+}
+/* challenge manager styling ends */
+
+/* user manager styling starts */
+
+.admin-newuser-container {
+  margin: 20px 10px;
+  padding: 30px 0;
+  background: white;
+}
+.ant-input-affix-wrapper > input.ant-input {
+}
+.ant-select-focused:not(.ant-select-disabled).ant-select:not(
+    .ant-select-customize-input
+  )
+  .ant-select-selector {
+  border-color: var(--color-orange) !important;
+}
+.ant-select-selector:hover {
+  border-color: var(--color-orange) !important;
+}
+
+/* user manager styling ends */
+
+/* recipe manager starts */
+.new-recipe-information-inputs-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  grid-gap: 10px;
+}
+.new-recipe-ingredients-list-container {
+  /* padding: 0px 100px; */
+}
+.new-recipe-ingredients-list-container-header {
+  display: flex;
+  justify-content: space-between;
+}
+.hover-orange:hover {
+  color: var(--color-orange);
+  border-color: var(--color-orange);
+}
+.new-recipe-ingredient-listitem {
+  padding: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
+  grid-gap: 10px;
+  text-align: left;
+}
+/* recipe manager ends */

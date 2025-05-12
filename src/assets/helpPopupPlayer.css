@@ -1,0 +1,25 @@
+.ReactModalPortal {
+  z-index: 3;
+}
+.ReactModal__Overlay--after-open {
+  z-index: 1000000;
+  background-color: rgb(22, 29, 38, 0.9) !important;
+}
+.ReactModal__Content--after-open {
+  inset: auto !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%);
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  padding: 0 !important;
+}
+.ui-video-seek-slider .track .main {
+  height: 5px !important;
+  background-color: rgba(255, 255, 255, 1) !important;
+}
+.ui-video-seek-slider .track .main .connect {
+  background-color: #ff761a !important;
+}

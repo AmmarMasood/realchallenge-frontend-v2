@@ -1,0 +1,122 @@
+.user-update-container {
+  background-color: var(--color-gray-dark);
+  min-height: 100vh;
+  padding: 50px;
+}
+.user-update-container-heading {
+  /* border: 1px solid black; */
+  background-color: var(--color-gray);
+  padding: 15px;
+  font-size: 2rem;
+}
+.user-update-container-box {
+  background-color: #1a222d;
+  /* border: 1px solid red; */
+  margin-top: 20px;
+  padding: 10px;
+}
+.user-update-container-box-row1 {
+  /* border: 1px solid blue; */
+  padding: 10px;
+}
+.user-update-container-box-row1-heading {
+  /* border: 1px solid blue; */
+  font-size: 2rem;
+  opacity: 0.8;
+}
+.user-update-container-box-row1-inside {
+  margin: 10px;
+  /* border: 1px solid blue; */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
+  grid-gap: 10px;
+}
+.user-update-container-box-row1-inside > div {
+  font-size: 1.8rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.user-update-container-box-row2 {
+  /* border: 1px solid yellow; */
+  padding: 10px;
+}
+.user-update-container-box-row2-heading {
+  /* border: 1px solid yellow; */
+  font-size: 2rem;
+  opacity: 0.8;
+}
+.user-update-container-box-row2-inside {
+  /* border: 1px solid yellow; */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
+  grid-gap: 10px;
+  margin: 10px;
+}
+.user-update-container-box-row2-inside > div {
+  font-size: 1.8rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.user-update-container-box-row3 {
+  /* border: 1px solid green; */
+  padding: 10px;
+}
+.user-update-container-box-row3-heading {
+  /* border: 1px solid green; */
+  font-size: 2rem;
+  opacity: 0.8;
+}
+.user-update-container-box-row3-inside {
+  /* border: 1px solid green; */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
+  padding: 10px;
+  grid-gap: 10px;
+  margin: 10px;
+}
+.user-update-container-box-row3-inside > div {
+  font-size: 1.8rem;
+}
+.user-update-container-box-row3-buttons {
+  text-align: right;
+}
+.user-update-container-box-row3-buttons > button {
+  padding: 5px 30px;
+  border: none;
+  margin-right: 5px;
+}
+.user-update-uploadimage {
+  margin-top: 20px;
+
+  padding: 10px;
+}
+.user-update-uploadimage-heading {
+  font-size: 2rem;
+}
+.user-update-uploadimage-container {
+  /* border: 1px solid red; */
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
+  grid-gap: 20px;
+  padding: 30px;
+}
+.user-update-uploadimage-container-box {
+  /* border: 1px solid blue; */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 450px;
+}
+
+.user-image-remove {
+  background-color: var(--color-orange);
+  padding: 5px 10px;
+  cursor: pointer;
+  display: inline-block;
+  margin-left: 10px;
+}

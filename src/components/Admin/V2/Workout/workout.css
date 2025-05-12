@@ -1,0 +1,42 @@
+.v2workout-field {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-family-poppins);
+  color: #fff;
+}
+.v2workout-field-withborder {
+  border: 2px dotted #fff; /* 2px wide, dotted style, white color *
+}
+.v2workout-field::placeholder {
+  color: #fff; /* Set the placeholder text color to white */
+  opacity: 1; /* Ensure full opacity for the placeholder text */
+}
+.v2workout-title {
+  font-size: 40px;
+  font-weight: 600;
+  font-style: italic;
+}
+.v2workout-subtitle {
+  font-size: 16px;
+  font-weight: 300;
+  margin-top: 10px;
+}
+.v2challenge-player-container {
+  width: 1024px;
+  margin-top: 10px;
+}
+.v2workout-studio-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.v2workout-studio-bottom-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 20px;
+}

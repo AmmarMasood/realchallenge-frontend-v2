@@ -1,0 +1,11 @@
+.challenge-review-modal{
+    background-color: #3A3F47;
+    padding: 20px;
+}
+
+.challenge-review-modal-header{
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 10px;
+}

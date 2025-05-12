@@ -1,0 +1,109 @@
+.user-setting-container {
+  background-color: var(--color-gray-dark);
+  min-height: 100vh;
+  padding: 50px;
+}
+.user-setting-container-heading {
+  background-color: var(--color-gray);
+  padding: 20px;
+  color: var(--color-orange-light) !important;
+  font-size: 2rem;
+}
+.user-setting-container-body {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
+  grid-gap: 10px;
+}
+.user-setting-container-body1 {
+  background-color: var(--color-gray);
+  padding: 20px;
+  /* border: 1px solid green; */
+}
+.user-setting-container-body1-box {
+  background-color: var(--color-gray-dark);
+  display: flex;
+  align-items: center;
+  font-size: 1.8rem;
+  padding: 10px;
+  /* border: 1px solid red; */
+  margin: 10px;
+}
+.user-setting-container-body1-box-field {
+  background-color: transparent;
+  color: var(--color-white);
+  border: none;
+  margin-top: 5px;
+  font-size: 1.6rem;
+  opacity: 0.8;
+  font-weight: 500;
+}
+.user-setting-container-body1-box-field:focus {
+  border: none;
+}
+
+.user-setting-body1-button-container {
+  display: flex;
+  padding-top: 10px;
+}
+.user-setting-container-body2 {
+  /* border: 1px solid blue; */
+  background-color: var(--color-gray-dark);
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  grid-gap: 20px;
+}
+
+.user-setting-container-body2-row1 {
+  background-color: var(--color-gray);
+  /* border: 1px solid red; */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
+}
+.user-setting-container-body2-row1-column1 {
+  border-right: 2px solid var(--color-gray-dark);
+}
+.user-setting-container-body2-row1-column1 > div {
+  text-align: center;
+  font-size: 2rem;
+  color: var(--color-orange-light);
+  padding: 10px;
+}
+.user-setting-container-body2-row1-column2 {
+  display: grid;
+
+  grid-template-rows: 1fr 1fr 1fr;
+}
+.user-setting-container-body2-row1-column2 > div {
+  border: 2px solid var(--color-gray-dark);
+  color: #fff;
+  font-size: 1.4rem;
+  opacity: 0.8;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px;
+}
+.user-setting-container-body2-row2 {
+  background-color: var(--color-gray);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  /* border: 1px solid green; */
+}
+.user-setting-container-body2-row2 > div {
+  border: 2px solid var(--color-gray-dark);
+  font-size: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px;
+  opacity: 0.8;
+}
+@media screen and (max-width: 400px) {
+  .user-setting-container {
+    background-color: var(--color-gray-dark);
+    min-height: 100vh;
+    padding: 5px;
+  }
+}

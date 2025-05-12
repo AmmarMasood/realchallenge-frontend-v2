@@ -1,0 +1,237 @@
+.challenge-background {
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+    url("../images/7th-row-background.jpg");
+  background-size: cover;
+  height: 90vh;
+}
+.challenges-2-row {
+  background-color: #222932;
+  padding: 50px;
+  height: 600px;
+}
+
+.challenges-2-row h1 {
+  color: #fff;
+  font-size: 5rem;
+}
+
+.challenges-2-row p {
+  color: #fff;
+  font-size: 2rem;
+  line-height: 25px;
+}
+.challenge-carousel-body {
+  height: 400px;
+  display: flex;
+  align-items: flex-end;
+  border: 2px solid var(--color-orange-light);
+  margin: 5px;
+  position: relative;
+}
+.challenge-carousel-body-overcolor {
+  background-color: var(--color-gray);
+  opacity: 0.7;
+  height: 100%;
+  width: 50%;
+  position: absolute;
+  clip-path: polygon(0% 0%, 49% 0, 100% 65%, 75% 100%, 0% 100%);
+}
+.challenge-carousel-body-abstext {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  display: grid;
+  justify-content: flex-end;
+  align-content: center;
+  padding: 20px;
+}
+.challenge-carousel-body-abstext-paragraph {
+  font-size: 1.6rem;
+  width: 300px;
+  margin: 0;
+}
+.challenge-carousel-body-textbox {
+  padding: 5px;
+  margin: 20px;
+}
+.challenge-carousel-body-textbox-icons {
+  font-size: 2rem;
+}
+.challenges-3-row {
+  padding: 50px;
+}
+.challenge-3-background {
+  background-color: #171e27;
+  padding: 50px;
+}
+.challenge-3-background h1 {
+  color: #fff;
+  font-size: 5rem;
+}
+
+.challenge-3-background p {
+  color: #fff;
+  font-size: 2rem;
+}
+.color-grey {
+  background-color: #222932;
+}
+.color-grey-dark {
+  background-color: #171e27;
+}
+.challenge-row-4 {
+  padding: 80px;
+  min-height: 300px;
+}
+.challenge-row-4 h1 {
+  color: #fff;
+  font-size: 5rem;
+}
+
+.challenge-row-4 p {
+  color: #fff;
+  font-size: 2rem;
+}
+.challenge-row-8 {
+  height: 200px;
+  text-align: center;
+  padding: 40px;
+}
+.challenge-row-8 h1 {
+  color: #fff;
+  font-size: 5rem;
+}
+.background-challenge {
+  background: url("../images/bruce-mars-554386-unsplash.jpg");
+  background-size: cover;
+}
+
+.view-all-button {
+  border: 2px solid var(--color-orange-light);
+  padding: 10px 20px;
+}
+
+.slick-track{
+  z-index: -1 !important;
+}
+
+@media screen and (min-width: 2000px) {
+  .challenges-2-row {
+    width: 60vw;
+    margin-left: 23vw;
+  }
+
+  .challenge-3-background {
+    width: 60vw;
+    margin-left: 23vw;
+  }
+  .challenge-row-4 {
+    width: 60vw;
+    margin-left: 23vw;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .challenges-2-row h1 {
+    color: #fff;
+    font-size: 3.5rem;
+  }
+
+  .challenges-2-row p {
+    color: #fff;
+    font-size: 1.6rem;
+    line-height: 25px;
+  }
+  .challenge-carousel-body {
+    height: 400px;
+    display: flex;
+    align-items: flex-end;
+    border: 2px solid var(--color-orange-light);
+    margin: 5px;
+    position: relative;
+  }
+  .challenge-carousel-body-overcolor {
+    background-color: var(--color-gray);
+    opacity: 0.7;
+    height: 100%;
+    width: 60%;
+    position: absolute;
+    clip-path: polygon(0% 0%, 49% 0, 100% 65%, 75% 100%, 0% 100%);
+  }
+}
+
+@media screen and (max-width: 850px) {
+  .challenges-2-row h1 {
+    color: #fff;
+    font-size: 3.5rem;
+  }
+
+  .challenges-2-row p {
+    color: #fff;
+    font-size: 1.4rem;
+    line-height: 25px;
+  }
+  .challenge-carousel-body {
+    height: 400px;
+    display: flex;
+    align-items: flex-end;
+    border: 2px solid var(--color-orange-light);
+    margin: 5px;
+    position: relative;
+  }
+  .challenge-carousel-body-overcolor {
+    background-color: var(--color-gray);
+    opacity: 0.7;
+    height: 100%;
+    width: 60%;
+    position: absolute;
+    clip-path: polygon(0% 0%, 49% 0, 100% 65%, 75% 100%, 0% 100%);
+  }
+
+  .challenge-carousel-body-abstext-paragraph {
+    font-size: 1.4rem;
+    width: 200px;
+    margin: 0;
+  }
+}
+
+@media screen and (max-width: 650px) {
+  .challenges-2-row h1 {
+    color: #fff;
+    font-size: 2.5rem;
+  }
+
+  .challenges-2-row p {
+    color: #fff;
+    font-size: 1.4rem;
+    line-height: 25px;
+  }
+  .challenge-carousel-body {
+    height: 300px;
+    display: flex;
+    align-items: flex-end;
+    border: 2px solid var(--color-orange-light);
+    margin: 5px;
+    position: relative;
+  }
+  .challenge-carousel-body-overcolor {
+    background-color: var(--color-gray);
+    opacity: 0.7;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    clip-path: none;
+  }
+
+  .challenge-carousel-body-abstext-paragraph {
+    font-size: 1.4rem;
+    width: 90%;
+    margin: 0;
+  }
+  .for-650px-screen-nodisplay {
+    display: none;
+  }
+  .challenges-2-row {
+    height: 100%;
+  }
+}

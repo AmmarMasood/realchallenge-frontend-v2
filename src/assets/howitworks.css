@@ -1,0 +1,12 @@
+.howitworks-background {
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+    url("../images/goal-2.jpg");
+  background-size: cover;
+  background-position: 50% 30%;
+  height: 90vh;
+}
+.howitworks-challenge-background {
+  background: linear-gradient(rgba(23, 30, 39, 0) 50%, #171e27),
+    url("../images/juan-pablo-rodriguez-693578-unsplash.jpg");
+  background-size: cover;
+}
