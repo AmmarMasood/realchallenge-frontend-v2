@@ -602,6 +602,7 @@
     "upload_media": "Upload Media",
     "create_challenge": "Create Challenge",
     "my_exercises": "My Exercises",
-    "my_challenges": "My Challenges"
+    "my_challenges": "My Challenges",
+    "new_exercise": "New Exercise"
   }
 }

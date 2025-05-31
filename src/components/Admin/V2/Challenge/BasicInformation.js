@@ -8,6 +8,7 @@ import {
   DeleteFilled,
   DownOutlined,
   UpOutlined,
+  CopyOutlined,
 } from "@ant-design/icons";
 import { withRouter, Link } from "react-router-dom";
 import {
@@ -423,6 +424,28 @@ function BasicInformation(props) {
         return transformedWeek;
       });
     }
+  };
+
+  const duplicateWeek = (week) => {
+    const duplicateWeek = {
+      id: v4(),
+      weekName: week.weekName,
+      weekSubtitle: week.weekSubtitle,
+      workouts: week.workouts.map((workout) => ({
+        title: workout.title,
+        subtitle: workout.subtitle,
+        renderWorkout: workout.renderWorkout,
+        equipments: [],
+        infoFile: workout.infoFile,
+        exercises: workout.exercises.map((exercise) => ({
+          ...exercise,
+          id: v4(),
+        })),
+        id: v4(),
+      })),
+    };
+
+    setWeeks((prevWeeks) => [...prevWeeks, duplicateWeek]);
   };
   return (
     <div>
@@ -1224,22 +1247,39 @@ function BasicInformation(props) {
                               )}
                             </span>
                           </div>
-                          <DeleteFilled
-                            onClick={() => {
-                              const newWeek = weeks.filter(
-                                (item) => item.id !== w.id
-                              );
-                              setWeeks(newWeek);
-                            }}
+                          <div
                             style={{
-                              color: "#ff7700",
-                              fontSize: "20px",
-                              cursor: "pointer",
                               position: "absolute",
                               right: "20px",
                               top: "10px",
                             }}
-                          />
+                          >
+                            <DeleteFilled
+                              onClick={() => {
+                                const newWeek = weeks.filter(
+                                  (item) => item.id !== w.id
+                                );
+                                setWeeks(newWeek);
+                              }}
+                              style={{
+                                color: "#ff7700",
+                                fontSize: "20px",
+                                cursor: "pointer",
+                              }}
+                            />
+                            <CopyOutlined
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                duplicateWeek(w);
+                              }}
+                              style={{
+                                color: "#fff",
+                                fontSize: "20px",
+                                cursor: "pointer",
+                                marginLeft: "10px",
+                              }}
+                            />
+                          </div>
                         </>
                       }
                       key={i + 1}

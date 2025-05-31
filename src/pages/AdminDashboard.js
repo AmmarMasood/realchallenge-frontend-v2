@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import "../assets/adminDashboard.css";
 import Logo from "../images/logo_orange.png";
 import { Avatar, Popover, Layout, Menu, Modal, Button } from "antd";
@@ -111,6 +111,15 @@ function AdminDashboard(props) {
     }
   };
 
+  useEffect(() => {
+    // get query params
+    const queryParams = new URLSearchParams(props.location.search);
+    const selectedTab = queryParams.get("tab");
+    if (selectedTab && selectedTab === "new-exercise") {
+      setCurrentSelection(5.2);
+    }
+  }, []);
+
   const goToNewDashboard = () => {
     props.history.push("/admin/v2/dashboard");
   };
@@ -157,7 +166,6 @@ function AdminDashboard(props) {
             onCollapse={(collapsed, type) => {
               console.log(collapsed, type);
             }}
-            onConte
           >
             <div className="logo" />
             <Menu

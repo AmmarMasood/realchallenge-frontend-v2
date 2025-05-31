@@ -29,6 +29,7 @@ import { getUsersProfile } from "../../services/users";
 import { LanguageContext } from "../../contexts/LanguageContext";
 import HeartIcon from "../../assets/icons/heart-icon.svg";
 import UploadIcon from "../../assets/icons/upload-icon.svg";
+import DumbBellIcon from "../../assets/icons/dumb-bell-icon.svg";
 import CreateGoalsModal from "../../components/Admin/V2/Trainer/CreateGoalsModal";
 import MediaManager from "../../components/Admin/V2/MediaManager/MediaManager";
 
@@ -74,6 +75,9 @@ function AdminDashboard(props) {
 
   const goToChallengeCreator = () => {
     props.history.push("/admin/v2/challenge-studio");
+  };
+  const goToNewExercise = () => {
+    props.history.push("/admin/dashboard?tab=new-exercise");
   };
   return loading ? (
     <div className="center-inpage">
@@ -241,6 +245,12 @@ function AdminDashboard(props) {
                 <img src={HeartIcon} alt="heart-icon" />
                 <p>
                   <T>adminv2.upload_media</T>
+                </p>
+              </div>
+              <div className="adminv2-select" onClick={goToNewExercise}>
+                <img src={DumbBellIcon} alt="upload-icon" />
+                <p>
+                  <T>adminv2.new_exercise</T>
                 </p>
               </div>
               <div className="adminv2-select" onClick={goToChallengeCreator}>
