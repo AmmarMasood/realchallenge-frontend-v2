@@ -20,6 +20,7 @@ import {
   List,
   Collapse,
   Checkbox,
+  notification,
 } from "antd";
 
 import { userInfoContext } from "../../../../contexts/UserStore";
@@ -277,8 +278,38 @@ function BasicInformation(props) {
     }
   };
 
+
   const handleSaveChallenge = async () => {
     setLoading(true);
+
+      const errors = [];
+  if (!challengeName) errors.push("Challenge Name is required");
+  if (!challengeDescription) errors.push("Description is required");
+  if (!pack) errors.push("Select a pack");
+  if (pack === "CHALLENGE_1" && !customPrice) errors.push("Price is required");
+  if (!thumbnail) errors.push("Thumbnail is required");
+  if (!videoThumbnail) errors.push("Video Thumbnail is required");
+  if (!duration) errors.push("Duration is required");
+  if (!difficulty) errors.push("Difficulty is required");
+  if (!seletedTrainers || seletedTrainers.length === 0) errors.push("At least one Trainer is required");
+  if (!selectedGoals || selectedGoals.length === 0) errors.push("At least one Goal is required");
+ 
+
+  if (errors.length > 0) {
+    notification.error({
+      message: "Please fill all required fields",
+      description: (
+        <ul>
+          {errors.map((err, idx) => (
+            <li key={idx}>{err}</li>
+          ))}
+        </ul>
+      ),
+    });
+    setLoading(false);
+    return;
+  }
+
     try {
       setLoading(true);
       const obj = {
