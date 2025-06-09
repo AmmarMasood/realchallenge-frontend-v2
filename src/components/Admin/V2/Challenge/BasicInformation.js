@@ -61,6 +61,7 @@ import {
   updateChallenge,
   updateWorkoutOnBackend,
 } from "../../../../services/createChallenge/main";
+import { useBrowserEvents } from "../../../../helpers/useBrowserEvents";
 
 const tooltipText = `
 If you don’t choose any plan and hit start now, you can go through the wizard, get your free intake, make a free account and enjoy our free challenges collection and one week meal plan. 
@@ -146,6 +147,37 @@ function BasicInformation(props) {
   const [newBodyFocus, setNewBodyFocus] = useState("");
   const [goalsModal, setGoalsModal] = useState(false);
   const [trainerModal, setTrainerModal] = useState(false);
+  const [errors, setErrors] = useState({});
+  const { reloadWithoutConfirmation } = useBrowserEvents({
+    enableBeforeUnloadConfirm: true,
+    hasUnsavedChanges: true,
+    onBeforeUnload: (e) => {
+      console.log("Page is about to unload");
+      // Perform any cleanup or save operations
+    },
+    onPageHide: (e) => {
+      console.log("Page hidden, persisted:", e.persisted);
+      // Save user data, pause timers, etc.
+    },
+    onPopState: (e) => {
+      console.log("Browser navigation detected");
+      // Handle browser back/forward
+      if (window.confirm("Any unchanged saves will be lost. Continue?")) {
+        // Allow navigation
+      } else {
+        // Optionally push state again to "cancel" navigation
+        window.history.pushState({}, "", window.location.href);
+      }
+    },
+    onVisibilityChange: (visibilityState) => {
+      console.log("Tab visibility changed:", visibilityState);
+      if (visibilityState === "hidden") {
+        // Pause animations, save progress, etc.
+      } else {
+        // Resume activities
+      }
+    },
+  });
 
   const fetchDataV2 = async () => {
     setLoading(true);
@@ -172,7 +204,11 @@ function BasicInformation(props) {
   };
 
   useEffect(() => {
+    console.log("isFirstRender", isFirstRender);
     // Call populateChallengeInfo only when data is loaded
+    if (dataLoaded && props.match.params.challengeId) {
+      setIsUpdate(true);
+    }
     if (dataLoaded && props.match.params.challengeId && !isFirstRender) {
       const fetchChallenge = async () => {
         setLoading(true);
@@ -180,7 +216,7 @@ function BasicInformation(props) {
           props.match.params.challengeId,
           language
         );
-        setIsUpdate(true);
+
         populateChallengeInfo(challenge);
         setLoading(false);
         setIsFirstRender(true);
@@ -196,12 +232,20 @@ function BasicInformation(props) {
   }, [userInfo, language]);
 
   const openForThumbnail = () => {
+    setErrors((prev) => ({
+      ...prev,
+      thumbnail: "",
+    }));
     setMediaManagerVisible(true);
     setMediaManagerType("images");
     setMediaManagerActions([thumbnail, setThumbnail]);
   };
 
   const openForTrailer = () => {
+    setErrors((prev) => ({
+      ...prev,
+      videoThumbnail: "",
+    }));
     setMediaManagerVisible(true);
     setMediaManagerType("videos");
     setMediaManagerActions([videoThumbnail, setVideoThumbnail]);
@@ -224,6 +268,11 @@ function BasicInformation(props) {
   };
 
   const onAddGoals = () => {
+    setErrors((prev) => ({
+      ...prev,
+      selectedGoals: "",
+    }));
+
     setGoalsModal(true);
   };
 
@@ -278,37 +327,63 @@ function BasicInformation(props) {
     }
   };
 
-
   const handleSaveChallenge = async () => {
     setLoading(true);
 
-      const errors = [];
-  if (!challengeName) errors.push("Challenge Name is required");
-  if (!challengeDescription) errors.push("Description is required");
-  if (!pack) errors.push("Select a pack");
-  if (pack === "CHALLENGE_1" && !customPrice) errors.push("Price is required");
-  if (!thumbnail) errors.push("Thumbnail is required");
-  if (!videoThumbnail) errors.push("Video Thumbnail is required");
-  if (!duration) errors.push("Duration is required");
-  if (!difficulty) errors.push("Difficulty is required");
-  if (!seletedTrainers || seletedTrainers.length === 0) errors.push("At least one Trainer is required");
-  if (!selectedGoals || selectedGoals.length === 0) errors.push("At least one Goal is required");
- 
+    const errors = [];
+    const errorToShow = {};
+    if (!challengeName) {
+      errors.push("Challenge Name is required");
+      errorToShow.challengeName = "Challenge Name is required";
+    }
+    if (!challengeDescription) {
+      errors.push("Description is required");
+      errorToShow.challengeDescription = "Description is required";
+    }
+    if (!pack) {
+      errors.push("Select a pack");
+      errorToShow.pack = "Select a pack";
+    }
+    if (pack === "CHALLENGE_1" && !customPrice) {
+      errors.push("Price is required");
+      errorToShow.customPrice = "Price is required";
+    }
 
-  if (errors.length > 0) {
-    notification.error({
-      message: "Please fill all required fields",
-      description: (
-        <ul>
-          {errors.map((err, idx) => (
-            <li key={idx}>{err}</li>
-          ))}
-        </ul>
-      ),
-    });
-    setLoading(false);
-    return;
-  }
+    if (!thumbnail) {
+      errors.push("Thumbnail is required");
+      errorToShow.thumbnail = "Thumbnail is required";
+    }
+    if (!videoThumbnail) {
+      errorToShow.videoThumbnail = "Video Thumbnail is required";
+      errors.push("Video Thumbnail is required");
+    }
+    if (!duration) {
+      errorToShow.duration = "Duration is required";
+      errors.push("Duration is required");
+    }
+    if (!difficulty) errors.push("Difficulty is required");
+    if (!seletedTrainers || seletedTrainers.length === 0)
+      errors.push("At least one Trainer is required");
+    if (!selectedGoals || selectedGoals.length === 0) {
+      errors.push("At least one Goal is required");
+      errorToShow.selectedGoals = "At least one Goal is required";
+    }
+
+    setErrors(errorToShow);
+    if (errors.length > 0) {
+      notification.error({
+        message: "Please fill all required fields",
+        description: (
+          <ul>
+            {errors.map((err, idx) => (
+              <li key={idx}>{err}</li>
+            ))}
+          </ul>
+        ),
+      });
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -353,10 +428,10 @@ function BasicInformation(props) {
         allowReviews: true,
         isPublic: true,
       };
+      console.log("us update", isUpdate);
       if (isUpdate) {
         await updateChallenge(obj, props.match.params.challengeId);
-
-        window.location.reload();
+        reloadWithoutConfirmation();
       } else {
         const res = await createChallenge(obj);
         props.history.push(`/admin/v2/challenge-studio/${res.weeks._id}`);
@@ -478,6 +553,30 @@ function BasicInformation(props) {
 
     setWeeks((prevWeeks) => [...prevWeeks, duplicateWeek]);
   };
+
+  const duplicateWorkout = (weekId, workout) => {
+    const newWorkout = {
+      title: workout.title,
+      subtitle: workout.subtitle,
+      renderWorkout: workout.renderWorkout,
+      equipments: workout.equipments || [],
+      infoFile: workout.infoFile,
+      id: v4(),
+      exercises: workout.exercises.map((exercise) => ({
+        ...exercise,
+        id: v4(),
+      })),
+    };
+
+    setWeeks((prevWeeks) =>
+      prevWeeks.map((week) =>
+        week.id === weekId || week._id === weekId
+          ? { ...week, workouts: [...week.workouts, newWorkout] }
+          : week
+      )
+    );
+  };
+
   return (
     <div>
       {loading && (
@@ -828,584 +927,568 @@ function BasicInformation(props) {
 
       {/* main page starts now */}
       <div
-        className="trainer-profile-container"
-        style={{ background: "#2a2f37" }}
+        style={{
+          background: "#2a2f37",
+        }}
       >
-        <div
-          className="trainer-profile-container-column1 adminV2-bi-trainer-profile-container-column1"
-          onClick={openForThumbnail}
-          style={{
-            background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${process.env.REACT_APP_SERVER}/uploads/${thumbnail?.link})`,
-          }}
-        >
+        <div className="trainer-profile-container">
           <div
-            className="profile-box adminV2-bi-profile-box"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
+            className="trainer-profile-container-column1 adminV2-bi-trainer-profile-container-column1"
+            onClick={openForThumbnail}
+            style={{
+              background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${process.env.REACT_APP_SERVER}/uploads/${thumbnail?.link})`,
+              border: errors.thumbnail && "2px solid red",
+              cursor: "pointer",
             }}
           >
-            <div className="challenge-profile-box-1 adminV2-bi-challenge-profile-box-1">
-              <div onClick={openForTrailer}>
-                <p className="font-paragraph-white adminV2-bi-trailername">
-                  {videoThumbnail ? videoThumbnail.link : "Add Trailer"}
-                </p>
-                <img
-                  src={ChallengeProfileSubtract}
-                  alt=""
-                  onClick={openTailerPlayer}
-                  style={{ cursor: "pointer" }}
-                />
-              </div>
-              <input
-                placeholder="Challenge Name"
-                className="font-heading-white adminV2-bi-input"
-                onChange={(e) => setChallengeName(e.target.value)}
-                value={challengeName}
-              />
-            </div>
-            <div className="challenge-profile-box-2 adminV2-bi-challenge-profile-box-2">
-              <div className="challenge-profile-box-2-info">
-                <Select
-                  defaultValue="high"
-                  style={{ width: "100%" }}
-                  placeholder="Please select"
-                  value={difficulty}
-                  onChange={(e) => setDifficulty(e)}
-                  className="font-paragraph-white adminV2-bi-input"
+            <div
+              className="profile-box adminV2-bi-profile-box"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              <div className="challenge-profile-box-1 adminV2-bi-challenge-profile-box-1">
+                <div
+                  onClick={openForTrailer}
+                  style={{
+                    border: errors.videoThumbnail && "2px solid red",
+                  }}
                 >
-                  <Select.Option value="high">High</Select.Option>
-                  <Select.Option value="medium">Medium</Select.Option>
-                  <Select.Option value="low">Low</Select.Option>
-                </Select>
-
+                  <p className="font-paragraph-white adminV2-bi-trailername">
+                    {videoThumbnail ? videoThumbnail.link : "Add Trailer"}
+                  </p>
+                  <img
+                    src={ChallengeProfileSubtract}
+                    alt=""
+                    onClick={openTailerPlayer}
+                    style={{ cursor: "pointer" }}
+                  />
+                </div>
                 <input
-                  placeholder="Duration in minutes"
-                  className="font-paragraph-white adminV2-bi-input"
-                  onChange={(e) => setDuration(e.target.value)}
-                  value={duration}
-                  type="number"
+                  placeholder="Challenge Name"
+                  style={{
+                    border: errors.challengeName && "2px solid red",
+                  }}
+                  className="font-heading-white adminV2-bi-input"
+                  onChange={(e) => {
+                    if (errors.challengeName) {
+                      setErrors((prev) => ({
+                        ...prev,
+                        challengeName: "",
+                      }));
+                    }
+                    setChallengeName(e.target.value);
+                  }}
+                  value={challengeName}
                 />
               </div>
+              <div className="challenge-profile-box-2 adminV2-bi-challenge-profile-box-2">
+                <div className="challenge-profile-box-2-info">
+                  <Select
+                    defaultValue={difficulty}
+                    style={{ width: "100%" }}
+                    placeholder="Please select"
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e)}
+                    className="font-paragraph-white adminV2-bi-input"
+                  >
+                    <Select.Option value="high">High</Select.Option>
+                    <Select.Option value="medium">Medium</Select.Option>
+                    <Select.Option value="low">Low</Select.Option>
+                  </Select>
 
-              <textarea
-                rows={4}
-                placeholder="Add challenge description"
-                className="font-paragraph-white adminV2-bi-input"
-                onChange={(e) => setChallengeDescription(e.target.value)}
-                value={challengeDescription}
-                style={{ height: "auto", width: "100%", resize: "vertical" }} // Optional: Allow resizing vertically
-              />
+                  <input
+                    placeholder="Duration in minutes"
+                    className="font-paragraph-white adminV2-bi-input"
+                    onChange={(e) => {
+                      if (errors.duration) {
+                        setErrors((prev) => ({
+                          ...prev,
+                          duration: "",
+                        }));
+                      }
+                      setDuration(e.target.value);
+                    }}
+                    value={duration}
+                    type="number"
+                    style={{
+                      border: errors.duration && "2px solid red",
+                    }}
+                  />
+                </div>
+
+                <textarea
+                  rows={4}
+                  placeholder="Add challenge description"
+                  className="font-paragraph-white adminV2-bi-input"
+                  onChange={(e) => {
+                    if (errors.challengeDescription) {
+                      setErrors((prev) => ({
+                        ...prev,
+                        challengeDescription: "",
+                      }));
+                    }
+                    setChallengeDescription(e.target.value);
+                  }}
+                  value={challengeDescription}
+                  style={{
+                    height: "auto",
+                    width: "100%",
+                    resize: "vertical",
+                    border: errors.challengeName && "2px solid red",
+                  }} // Optional: Allow resizing vertically
+                />
+              </div>
             </div>
           </div>
-        </div>
-        <div className="trainer-profile-container-column2">
-          {/* trainers */}
-          <div className="trainer-profile-goals">
-            <div
-              className="trainer-profile-goals-heading font-paragraph-white"
-              style={{ color: "#72777B", textTransform: "uppercase" }}
-            >
-              <T>challenge_profile.trainers</T>
-            </div>
+          <div className="trainer-profile-container-column2">
+            {/* trainers */}
+            <div className="trainer-profile-goals">
+              <div
+                className="trainer-profile-goals-heading font-paragraph-white"
+                style={{ color: "#72777B", textTransform: "uppercase" }}
+              >
+                <T>challenge_profile.trainers</T>
+              </div>
 
-            <div className="challenge-trainers-container">
-              {seletedTrainers.map((trainer) => (
-                <div
-                  className="challenge-trainer-box"
-                  style={{ background: "#283443", position: "relative" }}
-                >
-                  <span
-                    style={{
-                      backgroundImage: `url(${process.env.REACT_APP_SERVER}/uploads/${trainer.avatarLink})`,
-                      backgroundPosition: "center center",
-                      backgroundSize: "cover",
-                      backgroundRepeat: "no-repeat",
-                      height: "50px",
-                      width: "60px",
-                    }}
-                  ></span>
-
-                  <a
-                    href={`/trainer/${slug(trainer.firstName)}/${trainer._id}`}
-                    target="_blank"
-                    rel="noopener noreferrer" // For security reasons
-                    className="challenge-trainer-box-text font-paragraph-white"
+              <div className="challenge-trainers-container">
+                {seletedTrainers.map((trainer) => (
+                  <div
+                    className="challenge-trainer-box"
+                    style={{ background: "#283443", position: "relative" }}
                   >
-                    {trainer.firstName + " " + trainer.lastName}
-                  </a>
-                  {trainer._id !== usereDtails._id && (
+                    <span
+                      style={{
+                        backgroundImage: `url(${process.env.REACT_APP_SERVER}/uploads/${trainer.avatarLink})`,
+                        backgroundPosition: "center center",
+                        backgroundSize: "cover",
+                        backgroundRepeat: "no-repeat",
+                        height: "50px",
+                        width: "60px",
+                      }}
+                    ></span>
+
+                    <a
+                      href={`/trainer/${slug(trainer.firstName)}/${
+                        trainer._id
+                      }`}
+                      target="_blank"
+                      rel="noopener noreferrer" // For security reasons
+                      className="challenge-trainer-box-text font-paragraph-white"
+                    >
+                      {trainer.firstName + " " + trainer.lastName}
+                    </a>
+                    {trainer._id !== usereDtails._id && (
+                      <DeleteFilled
+                        onClick={() => {
+                          const newSelectedFitnessInterest =
+                            seletedTrainers.filter(
+                              (item) => item._id !== trainer._id
+                            );
+                          setSelectedTrainers(newSelectedFitnessInterest);
+                        }}
+                        style={{
+                          color: "#ff7700",
+                          fontSize: "16px",
+                          position: "absolute",
+                          right: "20px",
+                          cursor: "pointer",
+                          zIndex: "9999",
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
+
+                <AddNewButton
+                  style={{ margin: "5px" }}
+                  onClick={onAddTrainer}
+                />
+              </div>
+            </div>
+            {/* fitness interest */}
+            <div className="trainer-profile-goals">
+              <div
+                className="trainer-profile-goals-heading font-paragraph-white"
+                style={{ color: "#72777B", textTransform: "uppercase" }}
+              >
+                FITNESS INTERESTS
+              </div>
+              <div className="trainer-profile-goals-container">
+                {selectedFitnessInterest.map((interest) => (
+                  <div
+                    className="trainer-profile-goal font-paragraph-white"
+                    style={{
+                      marginRight: "1px",
+                      background: "#283443",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                    key={interest._id}
+                  >
+                    <span>{interest.name}</span>
                     <DeleteFilled
                       onClick={() => {
                         const newSelectedFitnessInterest =
-                          seletedTrainers.filter(
-                            (item) => item._id !== trainer._id
+                          selectedFitnessInterest.filter(
+                            (item) => item !== interest
                           );
-                        setSelectedTrainers(newSelectedFitnessInterest);
+                        setSelectedFitnessInterest(newSelectedFitnessInterest);
                       }}
                       style={{
                         color: "#ff7700",
-                        fontSize: "16px",
-                        position: "absolute",
-                        right: "20px",
-                        cursor: "pointer",
-                        zIndex: "9999",
-                      }}
-                    />
-                  )}
-                </div>
-              ))}
-
-              <AddNewButton style={{ margin: "5px" }} onClick={onAddTrainer} />
-            </div>
-          </div>
-          {/* fitness interest */}
-          <div className="trainer-profile-goals">
-            <div
-              className="trainer-profile-goals-heading font-paragraph-white"
-              style={{ color: "#72777B", textTransform: "uppercase" }}
-            >
-              FITNESS INTERESTS
-            </div>
-            <div className="trainer-profile-goals-container">
-              {selectedFitnessInterest.map((interest) => (
-                <div
-                  className="trainer-profile-goal font-paragraph-white"
-                  style={{
-                    marginRight: "1px",
-                    background: "#283443",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                  key={interest._id}
-                >
-                  <span>{interest.name}</span>
-                  <DeleteFilled
-                    onClick={() => {
-                      const newSelectedFitnessInterest =
-                        selectedFitnessInterest.filter(
-                          (item) => item !== interest
-                        );
-                      setSelectedFitnessInterest(newSelectedFitnessInterest);
-                    }}
-                    style={{
-                      color: "#ff7700",
-                      fontSize: "14px",
-                      marginLeft: "5px",
-                      cursor: "pointer",
-                    }}
-                  />
-                </div>
-              ))}
-
-              <AddNewButton
-                onClick={onAddFitnessInterests}
-                type="small"
-                style={{
-                  marginLeft: "10px",
-                  height: "36px",
-                  marginTop: "5px",
-                }}
-              />
-            </div>
-          </div>
-          {/* body focus */}
-          <div className="trainer-profile-goals">
-            <div
-              className="trainer-profile-goals-heading font-paragraph-white"
-              style={{ color: "#72777B", textTransform: "uppercase" }}
-            >
-              BODY FOCUS
-            </div>
-            <div className="trainer-profile-goals-container">
-              {selectedBodyFocus.map((interest) => (
-                <div
-                  className="trainer-profile-goal font-paragraph-white"
-                  style={{
-                    marginRight: "1px",
-                    background: "#283443",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                  key={interest._id}
-                >
-                  <span>{interest.name}</span>
-                  <DeleteFilled
-                    onClick={() => {
-                      const newSelectedFitnessInterest =
-                        selectedBodyFocus.filter(
-                          (item) => item._id !== interest._id
-                        );
-                      setSelectedBodyFocus(newSelectedFitnessInterest);
-                    }}
-                    style={{
-                      color: "#ff7700",
-                      fontSize: "14px",
-                      marginLeft: "5px",
-                      cursor: "pointer",
-                    }}
-                  />
-                </div>
-              ))}
-
-              <AddNewButton
-                onClick={onAddBodyFocus}
-                type="small"
-                style={{
-                  marginLeft: "10px",
-                  height: "36px",
-                  marginTop: "5px",
-                }}
-              />
-            </div>
-          </div>
-          {/* goals */}
-          <div className="trainer-profile-goals">
-            <div
-              className="trainer-profile-goals-heading font-paragraph-white"
-              style={{ color: "#72777B", textTransform: "uppercase" }}
-            >
-              GOALS
-            </div>
-            <div className="trainer-profile-goals-container">
-              {selectedGoals.map((interest) => (
-                <div
-                  className="trainer-profile-goal font-paragraph-white"
-                  style={{
-                    marginRight: "1px",
-                    background: "#283443",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                  key={interest._id}
-                >
-                  <span>{interest.name}</span>
-                  <DeleteFilled
-                    onClick={() => {
-                      const newSelectedFitnessInterest =
-                        selectedBodyFocus.filter(
-                          (item) => item._id !== interest._id
-                        );
-                      setSelectedGoals(newSelectedFitnessInterest);
-                    }}
-                    style={{
-                      color: "#ff7700",
-                      fontSize: "14px",
-                      marginLeft: "5px",
-                      cursor: "pointer",
-                    }}
-                  />
-                </div>
-              ))}
-
-              <AddNewButton
-                onClick={onAddGoals}
-                type="small"
-                style={{
-                  marginLeft: "10px",
-                  height: "36px",
-                  marginTop: "5px",
-                }}
-              />
-            </div>
-          </div>
-          {/* results */}
-          <div className="trainer-profile-goals">
-            <div
-              className="trainer-profile-goals-heading font-paragraph-white"
-              style={{ color: "#72777B", textTransform: "uppercase" }}
-            >
-              RESULTS
-            </div>
-            <div>
-              <textarea
-                rows={3}
-                placeholder="Enter challenge result"
-                className="font-paragraph-white adminV2-bi-input"
-                onChange={(e) => setResult(e.target.value)}
-                value={result}
-                style={{ height: "auto", width: "100%", resize: "vertical" }} // Optional: Allow resizing vertically
-              />
-            </div>
-          </div>
-          {/* info */}
-          <div className="trainer-profile-goals">
-            <div
-              className="trainer-profile-goals-heading font-paragraph-white"
-              style={{ color: "#72777B", textTransform: "uppercase" }}
-            >
-              INFO
-            </div>
-
-            {challengeInfo &&
-              challengeInfo.map((item, index) => {
-                return (
-                  <div
-                    key={index}
-                    className="trainer-profile-goals-container"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "nowrap",
-                    }}
-                  >
-                    <input
-                      style={{
-                        marginTop: "10px",
-                      }}
-                      className="font-paragraph-white adminV2-bi-input"
-                      placeholder="Add info"
-                      onChange={(e) => {
-                        const newChallengeInfo = [...challengeInfo];
-                        newChallengeInfo[index] = e.target.value;
-                        setChallengeInfo(newChallengeInfo);
-                      }}
-                      value={item}
-                    />
-                    <DeleteFilled
-                      onClick={() => {
-                        const newChallengeInfo = [...challengeInfo];
-                        newChallengeInfo.splice(index, 1);
-                        setChallengeInfo(newChallengeInfo);
-                      }}
-                      style={{
-                        color: "#ff7700",
-                        fontSize: "20px",
+                        fontSize: "14px",
+                        marginLeft: "5px",
                         cursor: "pointer",
                       }}
                     />
                   </div>
-                );
-              })}
-            <div>
-              {/* add body focus here */}
-              <AddNewButton
-                onClick={onAddInfo}
-                type="big"
-                style={{
-                  marginTop: "10px",
-                }}
-              />
+                ))}
+
+                <AddNewButton
+                  onClick={onAddFitnessInterests}
+                  type="small"
+                  style={{
+                    marginLeft: "10px",
+                    height: "36px",
+                    marginTop: "5px",
+                  }}
+                />
+              </div>
             </div>
-          </div>
-          {/* personal journey */}
-          <div className="trainer-profile-goals">
-            <div
-              className="trainer-profile-goals-heading font-paragraph-white"
-              style={{ color: "#72777B", textTransform: "uppercase" }}
-            >
-              YOUR PERSONAL JOURNEY
-            </div>
-            <div>
-              <Collapse
-                defaultActiveKey={[]}
-                onChange={(e) => setShowChangePanel(e)}
-                style={{
-                  backgroundColor: "#171e27",
-                  marginTop: "10px",
-                  padding: "10px",
-                }}
+            {/* body focus */}
+            <div className="trainer-profile-goals">
+              <div
+                className="trainer-profile-goals-heading font-paragraph-white"
+                style={{ color: "#72777B", textTransform: "uppercase" }}
               >
-                {weeks &&
-                  weeks.map((w, i) => (
-                    <Collapse.Panel
-                      showArrow={false}
-                      style={{
-                        backgroundColor: "#1b2632",
-                        marginBottom: "5px",
+                BODY FOCUS
+              </div>
+              <div className="trainer-profile-goals-container">
+                {selectedBodyFocus.map((interest) => (
+                  <div
+                    className="trainer-profile-goal font-paragraph-white"
+                    style={{
+                      marginRight: "1px",
+                      background: "#283443",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                    key={interest._id}
+                  >
+                    <span>{interest.name}</span>
+                    <DeleteFilled
+                      onClick={() => {
+                        const newSelectedFitnessInterest =
+                          selectedBodyFocus.filter(
+                            (item) => item._id !== interest._id
+                          );
+                        setSelectedBodyFocus(newSelectedFitnessInterest);
                       }}
-                      header={
-                        <>
-                          <input
-                            style={{
-                              fontSize: "13px",
-                              backgroundColor: "#f37720",
-                              padding: "0px",
-                              width: "120px",
-                              margin: "0 0 12px 5px",
-                            }}
-                            className="adminV2-bi-input font-paragraph-white"
-                            value={w.weekName}
-                            placeholder="Name Group"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                            onChange={(e) => {
-                              const newWeeks = [...weeks];
-                              newWeeks[i].weekName = e.target.value;
-                              setWeeks(newWeeks);
-                            }}
-                          />
+                      style={{
+                        color: "#ff7700",
+                        fontSize: "14px",
+                        marginLeft: "5px",
+                        cursor: "pointer",
+                      }}
+                    />
+                  </div>
+                ))}
 
-                          <div
-                            style={{
-                              fontWeight: "500",
-                              fontSize: "16px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
+                <AddNewButton
+                  onClick={onAddBodyFocus}
+                  type="small"
+                  style={{
+                    marginLeft: "10px",
+                    height: "36px",
+                    marginTop: "5px",
+                  }}
+                />
+              </div>
+            </div>
+            {/* goals */}
+            <div className="trainer-profile-goals">
+              <div
+                className="trainer-profile-goals-heading font-paragraph-white"
+                style={{ color: "#72777B", textTransform: "uppercase" }}
+              >
+                GOALS
+              </div>
+              <div className="trainer-profile-goals-container">
+                {selectedGoals.map((interest) => (
+                  <div
+                    className="trainer-profile-goal font-paragraph-white"
+                    style={{
+                      marginRight: "1px",
+                      background: "#283443",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                    key={interest._id}
+                  >
+                    <span>{interest.name}</span>
+                    <DeleteFilled
+                      onClick={() => {
+                        const newSelectedFitnessInterest =
+                          selectedBodyFocus.filter(
+                            (item) => item._id !== interest._id
+                          );
+                        setSelectedGoals(newSelectedFitnessInterest);
+                      }}
+                      style={{
+                        color: "#ff7700",
+                        fontSize: "14px",
+                        marginLeft: "5px",
+                        cursor: "pointer",
+                      }}
+                    />
+                  </div>
+                ))}
 
-                              textTransform: "uppercase",
-                            }}
-                            className="font-paragraph-white"
-                          >
+                <AddNewButton
+                  onClick={onAddGoals}
+                  type="small"
+                  style={{
+                    marginLeft: "10px",
+                    height: "36px",
+                    marginTop: "5px",
+                    border: errors.selectedGoals && "2px solid red",
+                  }}
+                />
+              </div>
+            </div>
+            {/* results */}
+            <div className="trainer-profile-goals">
+              <div
+                className="trainer-profile-goals-heading font-paragraph-white"
+                style={{ color: "#72777B", textTransform: "uppercase" }}
+              >
+                RESULTS
+              </div>
+              <div>
+                <textarea
+                  rows={3}
+                  placeholder="Enter challenge result"
+                  className="font-paragraph-white adminV2-bi-input"
+                  onChange={(e) => setResult(e.target.value)}
+                  value={result}
+                  style={{ height: "auto", width: "100%", resize: "vertical" }} // Optional: Allow resizing vertically
+                />
+              </div>
+            </div>
+            {/* info */}
+            <div className="trainer-profile-goals">
+              <div
+                className="trainer-profile-goals-heading font-paragraph-white"
+                style={{ color: "#72777B", textTransform: "uppercase" }}
+              >
+                INFO
+              </div>
+
+              {challengeInfo &&
+                challengeInfo.map((item, index) => {
+                  return (
+                    <div
+                      key={index}
+                      className="trainer-profile-goals-container"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexWrap: "nowrap",
+                      }}
+                    >
+                      <input
+                        style={{
+                          marginTop: "10px",
+                        }}
+                        className="font-paragraph-white adminV2-bi-input"
+                        placeholder="Add info"
+                        onChange={(e) => {
+                          const newChallengeInfo = [...challengeInfo];
+                          newChallengeInfo[index] = e.target.value;
+                          setChallengeInfo(newChallengeInfo);
+                        }}
+                        value={item}
+                      />
+                      <DeleteFilled
+                        onClick={() => {
+                          const newChallengeInfo = [...challengeInfo];
+                          newChallengeInfo.splice(index, 1);
+                          setChallengeInfo(newChallengeInfo);
+                        }}
+                        style={{
+                          color: "#ff7700",
+                          fontSize: "20px",
+                          cursor: "pointer",
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              <div>
+                {/* add body focus here */}
+                <AddNewButton
+                  onClick={onAddInfo}
+                  type="big"
+                  style={{
+                    marginTop: "10px",
+                  }}
+                />
+              </div>
+            </div>
+            {/* personal journey */}
+            <div className="trainer-profile-goals">
+              <div
+                className="trainer-profile-goals-heading font-paragraph-white"
+                style={{ color: "#72777B", textTransform: "uppercase" }}
+              >
+                YOUR PERSONAL JOURNEY
+              </div>
+              <div>
+                <Collapse
+                  defaultActiveKey={[]}
+                  onChange={(e) => setShowChangePanel(e)}
+                  style={{
+                    backgroundColor: "#171e27",
+                    marginTop: "10px",
+                    padding: "10px",
+                  }}
+                >
+                  {weeks &&
+                    weeks.map((w, i) => (
+                      <Collapse.Panel
+                        showArrow={false}
+                        style={{
+                          backgroundColor: "#1b2632",
+                          marginBottom: "5px",
+                        }}
+                        header={
+                          <>
                             <input
                               style={{
                                 fontSize: "13px",
-                                maxWidth: "300px",
+                                backgroundColor: "#f37720",
+                                padding: "0px",
+                                width: "120px",
                                 margin: "0 0 12px 5px",
                               }}
                               className="adminV2-bi-input font-paragraph-white"
-                              value={w.weekSubtitle}
-                              placeholder="Add Description"
+                              value={w.weekName}
+                              placeholder="Name Group"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
                               onChange={(e) => {
                                 const newWeeks = [...weeks];
-                                newWeeks[i].weekSubtitle = e.target.value;
+                                newWeeks[i].weekName = e.target.value;
                                 setWeeks(newWeeks);
                               }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                              }}
                             />
-                            <span>
-                              {showChangePanel.includes(`${i + 1}`) ? (
-                                <UpOutlined style={{ color: "#ff7700" }} />
-                              ) : (
-                                <DownOutlined style={{ color: "#ff7700" }} />
-                              )}
-                            </span>
-                          </div>
-                          <div
-                            style={{
-                              position: "absolute",
-                              right: "20px",
-                              top: "10px",
-                            }}
-                          >
-                            <DeleteFilled
-                              onClick={() => {
-                                const newWeek = weeks.filter(
-                                  (item) => item.id !== w.id
-                                );
-                                setWeeks(newWeek);
-                              }}
-                              style={{
-                                color: "#ff7700",
-                                fontSize: "20px",
-                                cursor: "pointer",
-                              }}
-                            />
-                            <CopyOutlined
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                duplicateWeek(w);
-                              }}
-                              style={{
-                                color: "#fff",
-                                fontSize: "20px",
-                                cursor: "pointer",
-                                marginLeft: "10px",
-                              }}
-                            />
-                          </div>
-                        </>
-                      }
-                      key={i + 1}
-                    >
-                      <div className="trainer-profile-goals-container">
-                        {w.workouts &&
-                          w.workouts.map((workout) => (
+
                             <div
-                              className="challenge-profile-comment font-paragraph-white"
-                              key={workout.id}
                               style={{
+                                fontWeight: "500",
+                                fontSize: "16px",
                                 display: "flex",
-                                flexDirection: "column",
+                                alignItems: "center",
                                 justifyContent: "space-between",
-                                alignItems: "flex-start",
-                                backgroundColor: "#2A2F368C",
-                                position: "relative",
+
+                                textTransform: "uppercase",
                               }}
+                              className="font-paragraph-white"
                             >
                               <input
                                 style={{
                                   fontSize: "13px",
-                                  padding: "5px",
-                                  width: "200px",
+                                  maxWidth: "300px",
                                   margin: "0 0 12px 5px",
                                 }}
                                 className="adminV2-bi-input font-paragraph-white"
-                                value={workout.title}
-                                placeholder="Add Workout Title"
+                                value={w.weekSubtitle}
+                                placeholder="Add Description"
                                 onChange={(e) => {
                                   const newWeeks = [...weeks];
-                                  const weekIndex = newWeeks.findIndex(
-                                    (week) => week.id === w.id
-                                  );
-                                  if (weekIndex !== -1) {
-                                    const workoutIndex = newWeeks[
-                                      weekIndex
-                                    ].workouts.findIndex(
-                                      (item) => item.id === workout.id
-                                    );
-                                    if (workoutIndex !== -1) {
-                                      newWeeks[weekIndex].workouts[
-                                        workoutIndex
-                                      ].title = e.target.value;
-                                      setWeeks(newWeeks);
-                                    }
-                                  }
+                                  newWeeks[i].weekSubtitle = e.target.value;
+                                  setWeeks(newWeeks);
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                 }}
                               />
-                              <input
+                              <span>
+                                {showChangePanel.includes(`${i + 1}`) ? (
+                                  <UpOutlined style={{ color: "#ff7700" }} />
+                                ) : (
+                                  <DownOutlined style={{ color: "#ff7700" }} />
+                                )}
+                              </span>
+                            </div>
+                            <div
+                              style={{
+                                position: "absolute",
+                                right: "20px",
+                                top: "10px",
+                              }}
+                            >
+                              <DeleteFilled
+                                onClick={() => {
+                                  const newWeek = weeks.filter(
+                                    (item) => item.id !== w.id
+                                  );
+                                  setWeeks(newWeek);
+                                }}
                                 style={{
-                                  fontSize: "13px",
-                                  padding: "5px",
-                                  width: "250px",
-                                  margin: "0 0 12px 5px",
-                                }}
-                                className="adminV2-bi-input font-paragraph-white"
-                                value={workout.subtitle}
-                                placeholder="Add More Info"
-                                onChange={(e) => {
-                                  const newWeeks = [...weeks];
-                                  const weekIndex = newWeeks.findIndex(
-                                    (week) => week.id === w.id
-                                  );
-                                  if (weekIndex !== -1) {
-                                    const workoutIndex = newWeeks[
-                                      weekIndex
-                                    ].workouts.findIndex(
-                                      (item) => item.id === workout.id
-                                    );
-                                    if (workoutIndex !== -1) {
-                                      newWeeks[weekIndex].workouts[
-                                        workoutIndex
-                                      ].subtitle = e.target.value;
-                                      setWeeks(newWeeks);
-                                    }
-                                  }
+                                  color: "#ff7700",
+                                  fontSize: "20px",
+                                  cursor: "pointer",
                                 }}
                               />
-
+                              <CopyOutlined
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  duplicateWeek(w);
+                                }}
+                                style={{
+                                  color: "#fff",
+                                  fontSize: "20px",
+                                  cursor: "pointer",
+                                  marginLeft: "10px",
+                                }}
+                              />
+                            </div>
+                          </>
+                        }
+                        key={i + 1}
+                      >
+                        <div className="trainer-profile-goals-container">
+                          {w.workouts &&
+                            w.workouts.map((workout) => (
                               <div
+                                className="challenge-profile-comment font-paragraph-white"
+                                key={workout.id}
                                 style={{
                                   display: "flex",
-                                  alignItems: "center",
+                                  flexDirection: "column",
                                   justifyContent: "space-between",
-                                  width: "100%",
+                                  alignItems: "flex-start",
+                                  backgroundColor: "#2A2F368C",
+                                  position: "relative",
                                 }}
                               >
-                                <Checkbox
+                                <input
                                   style={{
-                                    color: "#fff",
                                     fontSize: "13px",
+                                    padding: "5px",
+                                    width: "200px",
                                     margin: "0 0 12px 5px",
                                   }}
-                                  checked={workout.renderWorkout}
+                                  className="adminV2-bi-input font-paragraph-white"
+                                  value={workout.title}
+                                  placeholder="Add Workout Title"
                                   onChange={(e) => {
                                     const newWeeks = [...weeks];
                                     const weekIndex = newWeeks.findIndex(
@@ -1420,258 +1503,365 @@ function BasicInformation(props) {
                                       if (workoutIndex !== -1) {
                                         newWeeks[weekIndex].workouts[
                                           workoutIndex
-                                        ].renderWorkout = e.target.checked;
+                                        ].title = e.target.value;
                                         setWeeks(newWeeks);
                                       }
                                     }
                                   }}
-                                >
-                                  Render Workout
-                                </Checkbox>
+                                />
+                                <input
+                                  style={{
+                                    fontSize: "13px",
+                                    padding: "5px",
+                                    width: "250px",
+                                    margin: "0 0 12px 5px",
+                                  }}
+                                  className="adminV2-bi-input font-paragraph-white"
+                                  value={workout.subtitle}
+                                  placeholder="Add More Info"
+                                  onChange={(e) => {
+                                    const newWeeks = [...weeks];
+                                    const weekIndex = newWeeks.findIndex(
+                                      (week) => week.id === w.id
+                                    );
+                                    if (weekIndex !== -1) {
+                                      const workoutIndex = newWeeks[
+                                        weekIndex
+                                      ].workouts.findIndex(
+                                        (item) => item.id === workout.id
+                                      );
+                                      if (workoutIndex !== -1) {
+                                        newWeeks[weekIndex].workouts[
+                                          workoutIndex
+                                        ].subtitle = e.target.value;
+                                        setWeeks(newWeeks);
+                                      }
+                                    }
+                                  }}
+                                />
 
                                 <div
                                   style={{
-                                    background: "#344150B0",
-                                    padding: "10px",
-                                    cursor: "pointer",
-                                  }}
-                                  onClick={() => {
-                                    setShowVideoCreator(true);
-                                    setSelectedWorkoutForStudioId({
-                                      workoutId: workout.id,
-                                      weekId: w.id,
-                                    });
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    width: "100%",
                                   }}
                                 >
-                                  <img src={WorkoutStudioIcon} alt="" />
-                                </div>
-                              </div>
-                              <DeleteFilled
-                                onClick={() => {
-                                  const newWeeks = [...weeks];
-                                  const weekIndex = newWeeks.findIndex(
-                                    (week) => week._id === w._id
-                                  );
-                                  if (weekIndex !== -1) {
-                                    const workoutIndex = newWeeks[
-                                      weekIndex
-                                    ].workouts.findIndex(
-                                      (item) => item._id === workout._id
-                                    );
-                                    if (workoutIndex !== -1) {
-                                      newWeeks[weekIndex].workouts.splice(
-                                        workoutIndex,
-                                        1
+                                  <Checkbox
+                                    style={{
+                                      color: "#fff",
+                                      fontSize: "13px",
+                                      margin: "0 0 12px 5px",
+                                    }}
+                                    checked={workout.renderWorkout}
+                                    onChange={(e) => {
+                                      const newWeeks = [...weeks];
+                                      const weekIndex = newWeeks.findIndex(
+                                        (week) => week.id === w.id
                                       );
-                                      setWeeks(newWeeks);
-                                    }
-                                  }
-                                }}
-                                style={{
-                                  color: "#ff7700",
-                                  fontSize: "20px",
-                                  cursor: "pointer",
-                                  position: "absolute",
-                                  right: "20px",
-                                  top: "10px",
-                                }}
-                              />
-                            </div>
-                          ))}
-                        <AddNewButton
-                          style={{
-                            margin: "5px",
-                            backgroundColor: "#2A2F368C",
-                            padding: "5px",
-                            width: "100%",
-                          }}
-                          onClick={() => onAddWorkout(w._id || w.id)}
-                          type="big"
-                        />
-                      </div>
-                    </Collapse.Panel>
-                  ))}
-              </Collapse>
+                                      if (weekIndex !== -1) {
+                                        const workoutIndex = newWeeks[
+                                          weekIndex
+                                        ].workouts.findIndex(
+                                          (item) => item.id === workout.id
+                                        );
+                                        if (workoutIndex !== -1) {
+                                          newWeeks[weekIndex].workouts[
+                                            workoutIndex
+                                          ].renderWorkout = e.target.checked;
+                                          setWeeks(newWeeks);
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    Render Workout
+                                  </Checkbox>
 
-              <AddNewButton onClick={onAddWeek} type="big" />
+                                  <div
+                                    style={{
+                                      background: "#344150B0",
+                                      padding: "10px",
+                                      cursor: "pointer",
+                                    }}
+                                    onClick={() => {
+                                      setShowVideoCreator(true);
+                                      setSelectedWorkoutForStudioId({
+                                        workoutId: workout.id,
+                                        weekId: w.id,
+                                      });
+                                    }}
+                                  >
+                                    <img src={WorkoutStudioIcon} alt="" />
+                                  </div>
+                                </div>
+                                <DeleteFilled
+                                  onClick={() => {
+                                    const newWeeks = [...weeks];
+                                    const weekIndex = newWeeks.findIndex(
+                                      (week) => week._id === w._id
+                                    );
+                                    if (weekIndex !== -1) {
+                                      const workoutIndex = newWeeks[
+                                        weekIndex
+                                      ].workouts.findIndex(
+                                        (item) => item._id === workout._id
+                                      );
+                                      if (workoutIndex !== -1) {
+                                        newWeeks[weekIndex].workouts.splice(
+                                          workoutIndex,
+                                          1
+                                        );
+                                        setWeeks(newWeeks);
+                                      }
+                                    }
+                                  }}
+                                  style={{
+                                    color: "#ff7700",
+                                    fontSize: "20px",
+                                    cursor: "pointer",
+                                    position: "absolute",
+                                    right: "20px",
+                                    top: "10px",
+                                  }}
+                                />
+
+                                <CopyOutlined
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    duplicateWorkout(w.id, workout);
+                                  }}
+                                  style={{
+                                    color: "#fff",
+                                    fontSize: "20px",
+                                    cursor: "pointer",
+                                    marginLeft: "10px",
+                                    position: "absolute",
+                                    right: "50px",
+                                    top: "10px",
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          <AddNewButton
+                            style={{
+                              margin: "5px",
+                              backgroundColor: "#2A2F368C",
+                              padding: "5px",
+                              width: "100%",
+                            }}
+                            onClick={() => onAddWorkout(w._id || w.id)}
+                            type="big"
+                          />
+                        </div>
+                      </Collapse.Panel>
+                    ))}
+                </Collapse>
+
+                <AddNewButton onClick={onAddWeek} type="big" />
+              </div>
             </div>
-          </div>
-          {/* subscription */}
-          <>
-            <div
-              className="trainer-profile-goals-heading font-paragraph-white"
-              style={{ color: "#72777B", textTransform: "uppercase" }}
-            >
-              SUBSCRIPTION
-              <Tooltip placement="top" title={tooltipText}>
-                <img src={HelpIcon} alt="" style={{ marginLeft: "5px" }} />
-              </Tooltip>
-            </div>
-            <div className="font-paragraph-white">Choose your prices</div>
-            <div className="unlock-challenge-packages">
+            {/* subscription */}
+            <>
               <div
-                className="unlock-challenge-pack font-paragraph-white"
-                onClick={() => {
-                  if (pack === "CHALLENGE_1") {
-                    setPack("");
-                  } else {
-                    setPack("CHALLENGE_1");
-                  }
-                }}
-                style={{
-                  border:
-                    pack === "CHALLENGE_1"
+                className="trainer-profile-goals-heading font-paragraph-white"
+                style={{ color: "#72777B", textTransform: "uppercase" }}
+              >
+                SUBSCRIPTION
+                <Tooltip placement="top" title={tooltipText}>
+                  <img src={HelpIcon} alt="" style={{ marginLeft: "5px" }} />
+                </Tooltip>
+              </div>
+              <div className="font-paragraph-white">Choose your prices</div>
+              <div className="unlock-challenge-packages">
+                <div
+                  className="unlock-challenge-pack font-paragraph-white"
+                  onClick={() => {
+                    if (pack === "CHALLENGE_1") {
+                      setPack("");
+                    } else {
+                      setPack("CHALLENGE_1");
+                    }
+                    setErrors((prev) => ({
+                      ...prev,
+                      pack: "",
+                    }));
+                  }}
+                  style={{
+                    border: errors.pack
+                      ? "2px solid red"
+                      : pack === "CHALLENGE_1"
                       ? "2px solid #f37720"
                       : "2px solid #2a2f36",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "20px",
-                    fontWeight: "400",
-                    marginBottom: "30px",
                   }}
                 >
-                  One-Time <br /> Challenge
-                </span>
-                <span>
-                  <input
-                    placeholder="€00"
+                  <span
                     style={{
-                      width: "100%",
-                      textAlign: "center",
-                      margin: "0px auto",
-                      height: "40px",
-                      marginTop: "-5px",
                       fontSize: "20px",
+                      fontWeight: "400",
+                      marginBottom: "30px",
                     }}
-                    prefix={"€"}
-                    className="adminV2-bi-input"
-                    type="number"
-                    value={customPrice}
-                    onChange={(e) => setCustomPrice(`${e.target.value}`)}
-                  />
-                </span>
-                <span style={{ margin: "15px 0" }}>No subscription</span>
-                <span style={{ fontSize: "14px", color: "#7e7c79" }}>
-                  Billed Once
-                </span>
-              </div>
-              <div
-                className="unlock-challenge-pack font-paragraph-white"
-                onClick={() => {
-                  if (pack === "CHALLENGE_12") {
-                    setPack("");
-                  } else {
-                    setPack("CHALLENGE_12");
-                  }
-                }}
-                style={{
-                  border:
-                    pack === "CHALLENGE_12"
+                  >
+                    One-Time <br /> Challenge
+                  </span>
+                  <span>
+                    <input
+                      placeholder="€00"
+                      style={{
+                        width: "100%",
+                        textAlign: "center",
+                        margin: "0px auto",
+                        height: "40px",
+                        marginTop: "-5px",
+                        fontSize: "20px",
+                        border: errors.customPrice ? "2px solid red" : "none",
+                      }}
+                      prefix={"€"}
+                      className="adminV2-bi-input"
+                      type="number"
+                      value={customPrice}
+                      onChange={(e) => {
+                        if (errors.customPrice) {
+                          setErrors((prev) => ({
+                            ...prev,
+                            customPrice: "",
+                          }));
+                        }
+                        setCustomPrice(`${e.target.value}`);
+                      }}
+                    />
+                  </span>
+                  <span style={{ margin: "15px 0" }}>No subscription</span>
+                  <span style={{ fontSize: "14px", color: "#7e7c79" }}>
+                    Billed Once
+                  </span>
+                </div>
+                <div
+                  className="unlock-challenge-pack font-paragraph-white"
+                  onClick={() => {
+                    if (pack === "CHALLENGE_12") {
+                      setPack("");
+                    } else {
+                      setPack("CHALLENGE_12");
+                    }
+                    setErrors((prev) => ({
+                      ...prev,
+                      pack: "",
+                    }));
+                  }}
+                  style={{
+                    border: errors.pack
+                      ? "2px solid red"
+                      : pack === "CHALLENGE_12"
                       ? "2px solid #f37720"
                       : "2px solid #2a2f36",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "20px",
-                    fontWeight: "400",
-                    marginBottom: "10px",
                   }}
                 >
-                  Repeat & Save
-                </span>
-                <span
-                  className="font-paragraph-white"
-                  style={{
-                    fontSize: "13px",
-                    backgroundColor: "#f37720",
-                    padding: "5px",
-                    width: "120px",
-                    fontWeight: "600",
-                    alignSelf: "center",
-                    marginBottom: "10px",
+                  <span
+                    style={{
+                      fontSize: "20px",
+                      fontWeight: "400",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    Repeat & Save
+                  </span>
+                  <span
+                    className="font-paragraph-white"
+                    style={{
+                      fontSize: "13px",
+                      backgroundColor: "#f37720",
+                      padding: "5px",
+                      width: "120px",
+                      fontWeight: "600",
+                      alignSelf: "center",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    Save up to 60%
+                  </span>
+                  <span style={{ fontSize: "26px", fontWeight: "600" }}>
+                    €4.5 <span style={{ fontSize: "14px" }}>/Week</span>
+                  </span>
+                  <span style={{ margin: "15px 0" }}>12 months plan</span>
+                  <span style={{ fontSize: "14px", color: "#7e7c79" }}>
+                    Billed Monthly
+                  </span>
+                </div>
+                <div
+                  className="unlock-challenge-pack font-paragraph-white"
+                  onClick={() => {
+                    if (pack === "CHALLENGE_3") {
+                      setPack("");
+                    } else {
+                      setPack("CHALLENGE_3");
+                    }
+                    setErrors((prev) => ({
+                      ...prev,
+                      pack: "",
+                    }));
                   }}
-                >
-                  Save up to 60%
-                </span>
-                <span style={{ fontSize: "26px", fontWeight: "600" }}>
-                  €4.5 <span style={{ fontSize: "14px" }}>/Week</span>
-                </span>
-                <span style={{ margin: "15px 0" }}>12 months plan</span>
-                <span style={{ fontSize: "14px", color: "#7e7c79" }}>
-                  Billed Monthly
-                </span>
-              </div>
-              <div
-                className="unlock-challenge-pack font-paragraph-white"
-                onClick={() => {
-                  if (pack === "CHALLENGE_3") {
-                    setPack("");
-                  } else {
-                    setPack("CHALLENGE_3");
-                  }
-                }}
-                style={{
-                  border:
-                    pack === "CHALLENGE_3"
+                  style={{
+                    border: errors.pack
+                      ? "2px solid red"
+                      : pack === "CHALLENGE_3"
                       ? "2px solid #f37720"
                       : "2px solid #2a2f36",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "20px",
-                    fontWeight: "400",
-                    marginBottom: "10px",
                   }}
                 >
-                  Repeat & Save
-                </span>
-                <span
-                  className="font-paragraph-white"
-                  style={{
-                    fontSize: "13px",
-                    backgroundColor: "#f37720",
-                    padding: "5px",
-                    width: "120px",
-                    fontWeight: "600",
-                    alignSelf: "center",
-                    marginBottom: "10px",
-                  }}
-                >
-                  Save up to 30%
-                </span>
-                <span style={{ fontSize: "26px", fontWeight: "600" }}>
-                  €6 <span style={{ fontSize: "14px" }}>/Week</span>
-                </span>
-                <span style={{ margin: "15px 0" }}>3 months plan</span>
-                <span style={{ fontSize: "14px", color: "#7e7c79" }}>
-                  Billed Monthly
-                </span>
+                  <span
+                    style={{
+                      fontSize: "20px",
+                      fontWeight: "400",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    Repeat & Save
+                  </span>
+                  <span
+                    className="font-paragraph-white"
+                    style={{
+                      fontSize: "13px",
+                      backgroundColor: "#f37720",
+                      padding: "5px",
+                      width: "120px",
+                      fontWeight: "600",
+                      alignSelf: "center",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    Save up to 30%
+                  </span>
+                  <span style={{ fontSize: "26px", fontWeight: "600" }}>
+                    €6 <span style={{ fontSize: "14px" }}>/Week</span>
+                  </span>
+                  <span style={{ margin: "15px 0" }}>3 months plan</span>
+                  <span style={{ fontSize: "14px", color: "#7e7c79" }}>
+                    Billed Monthly
+                  </span>
+                </div>
               </div>
-            </div>
-          </>
-          <button
-            style={{
-              background: "#f37720",
-              color: "white",
-              border: "none",
-              padding: "10px 20px",
-              fontSize: "16px",
-              cursor: "pointer",
-              marginTop: "20px",
-              width: "99%",
-              borderRadius: "5px",
-              margin: "20px 10px",
-            }}
-            onClick={() => {
-              handleSaveChallenge();
-            }}
-          >
-            Save Challenge
-          </button>
+            </>
+            <button
+              style={{
+                background: "#f37720",
+                color: "white",
+                border: "none",
+                padding: "10px 20px",
+                fontSize: "16px",
+                cursor: "pointer",
+                marginTop: "20px",
+                width: "99%",
+                borderRadius: "5px",
+                margin: "20px 10px",
+              }}
+              onClick={() => {
+                handleSaveChallenge();
+              }}
+            >
+              Save Challenge
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -98,7 +98,7 @@
 .adminV2-bi-trainer-profile-container-column1 {
   cursor: pointer;
   background-repeat: no-repeat !important;
-  background-size: contain !important;
+  background-size: cover !important;
   background-position: center center !important;
 }
 .adminV2-bi-profile-box {

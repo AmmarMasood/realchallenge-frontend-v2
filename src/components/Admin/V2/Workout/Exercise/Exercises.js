@@ -9,7 +9,7 @@ import {
 } from "../../../../../contexts/PlayerState";
 import AddExercise from "../../../../../assets/icons/add-exercise.svg";
 import AddNewExercise from "../../../../../assets/icons/add-new-exercise.svg";
-import { DeleteFilled } from "@ant-design/icons";
+import { CopyOutlined, DeleteFilled } from "@ant-design/icons";
 import { v4 } from "uuid";
 import { useChallenge } from "../../../../../contexts/ChallengeCreatorV2";
 import ExerciseModal from "../ExerciseModal/ExerciseModal";
@@ -187,6 +187,23 @@ function Exercises({
     setWorkout({ ...workout, exercises: updatedExercises });
   };
 
+  const duplicateExercise = (exercise) => {
+    const newExercise = {
+      id: v4(),
+      title: exercise.title || "",
+      videoURL: exercise.videoURL || "",
+      voiceOverLink: exercise.voiceOverLink || "",
+      break: exercise.break || 0,
+      exerciseGroupName: exercise.exerciseGroupName || "",
+      exerciseLength: exercise.exerciseLength || 0,
+      exerciseId: exercise.exerciseId || "",
+    };
+    setWorkout((prev) => ({
+      ...prev,
+      exercises: [...prev.exercises, newExercise],
+    }));
+  };
+
   const openExerciseModal = (e) => {
     setShowExerciseModal(true);
     setExerciseIdToUpdate(e.id);
@@ -227,6 +244,7 @@ function Exercises({
       >
         <div className="video-browser-container">
           <Carousel responsive={responsive}>
+            {console.log("workout.exercises", workout.exercises)}
             {workout.exercises &&
               workout.exercises.map((e, i) => {
                 return i === 0 ? (
@@ -323,6 +341,25 @@ function Exercises({
                           zIndex: "10000000",
                         }}
                         onClick={(event) => removeExercise(event, e)}
+                      />
+                    )}
+                    {workout.renderWorkout && (
+                      <CopyOutlined
+                        onClick={(evet) => {
+                          evet.stopPropagation();
+                          evet.preventDefault();
+                          duplicateExercise(e);
+                        }}
+                        style={{
+                          color: "#fff",
+                          fontSize: "20px",
+                          cursor: "pointer",
+                          marginLeft: "10px",
+                          position: "absolute",
+                          top: "8px",
+                          right: "35px",
+                          zIndex: "10000000",
+                        }}
                       />
                     )}
                     {workout.renderWorkout && (

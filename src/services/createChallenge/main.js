@@ -58,7 +58,7 @@ export function updateChallenge(challenge, id) {
 
 export function updateExercise(e, id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/exercise/${id}/update`, e)
+    .put(`${process.env.REACT_APP_SERVER}/api/exercise/${id}`, e)
     .then((res) => {
       openNotificationWithIcon("success", "Successfully updated", "");
       return res.data;

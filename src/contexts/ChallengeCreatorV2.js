@@ -134,6 +134,7 @@ export function ChallengeProvider({ children }) {
                 title: exs?.title,
                 videoURL: exs?.videoURL,
                 voiceOverLink: exs?.voiceOverLink,
+                exerciseId: exercise.exerciseId,
                 id: v4(),
               };
             } else {
@@ -152,6 +153,8 @@ export function ChallengeProvider({ children }) {
         };
       }),
     }));
+    console.log("customWeeks 1", challengeData.weeks);
+    console.log("customWeeks", customWeeks);
     // Set weeks
     setWeeks(challengeData.weeks ? customWeeks : []);
 
