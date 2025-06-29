@@ -7,24 +7,21 @@ function VideoCreator({ workoutInfo, handleOnBackToBasicInformation }) {
   const { reloadWithoutConfirmation } = useBrowserEvents({
     enableBeforeUnloadConfirm: true,
     hasUnsavedChanges: true,
+    enableBackForwardWarning: true,
+    backForwardMessage:
+      "You have unsaved changes. Are you sure you want to leave?",
+    confirmMessage: "Any unsaved work will be lost. Continue?",
+    onPopState: (e) => {
+      console.log("Navigation detected", e);
+    },
     onBeforeUnload: (e) => {
       console.log("Page is about to unload");
-      // Perform any cleanup or save operations
     },
     onPageHide: (e) => {
       console.log("Page hidden, persisted:", e.persisted);
-      // Save user data, pause timers, etc.
     },
-    onPopState: (e) => {
-      console.log("Browser navigation detected");
-      // Handle browser back/forward
-      if (window.confirm("Any unchanged saves will be lost. Continue?")) {
-        // Allow navigation
-      } else {
-        // Optionally push state again to "cancel" navigation
-        window.history.pushState({}, "", window.location.href);
-      }
-    },
+    // REMOVE onPopState if you want simple behavior
+    // The hook now handles back navigation internally
     onVisibilityChange: (visibilityState) => {
       console.log("Tab visibility changed:", visibilityState);
       if (visibilityState === "hidden") {

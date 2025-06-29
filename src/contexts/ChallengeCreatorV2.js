@@ -48,6 +48,7 @@ export function ChallengeProvider({ children }) {
   );
   const [allExercises, setAllExercises] = useState([]);
   const [isFirstRender, setIsFirstRender] = useState(false);
+  const [musics, setMusics] = useState([]);
 
   const populateChallengeInfo = (challengeData) => {
     if (!challengeData) return;
@@ -164,6 +165,17 @@ export function ChallengeProvider({ children }) {
         ? challengeData.informationList.map((t) => t.info)
         : []
     );
+    // set musics
+    setMusics(
+      challengeData.music
+        ? challengeData.music.map((m) => ({
+            ...m,
+            id: v4(),
+            name: m.name,
+            link: m.url,
+          }))
+        : []
+    );
   };
 
   return (
@@ -217,6 +229,8 @@ export function ChallengeProvider({ children }) {
         setAllGoals,
         weeks,
         setWeeks,
+        musics,
+        setMusics,
         selectedWorkoutForStudioId,
         setSelectedWorkoutForStudioId,
         populateChallengeInfo,

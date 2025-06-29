@@ -8,7 +8,6 @@ import {
   DeleteFilled,
   DownOutlined,
   UpOutlined,
-  CopyOutlined,
 } from "@ant-design/icons";
 import { withRouter, Link } from "react-router-dom";
 import {
@@ -62,10 +61,22 @@ import {
   updateWorkoutOnBackend,
 } from "../../../../services/createChallenge/main";
 import { useBrowserEvents } from "../../../../helpers/useBrowserEvents";
+import DragAndDropIcon from "../../../../assets/icons/drag-drop.svg";
+import CopyIcon from "../../../../assets/icons/copy-icon.svg";
+import DeleteIcon from "../../../../assets/icons/delete_icon.svg";
+import DeleteWhite from "../../../../assets/icons/delete-icon-white.svg";
+import CopyIconWhite from "../../../../assets/icons/copy-icon-white.svg";
+import DragAndDropIconWhite from "../../../../assets/icons/drag-drop-icon-white.svg";
 
 const tooltipText = `
 If you don’t choose any plan and hit start now, you can go through the wizard, get your free intake, make a free account and enjoy our free challenges collection and one week meal plan. 
 `;
+const iconStyle = {
+  cursor: "pointer",
+  height: "20px",
+  width: "20px",
+};
+
 function BasicInformation(props) {
   const { language, updateLanguage } = useContext(LanguageContext);
   const [userInfo, setUserInfo] = useContext(userInfoContext);
@@ -119,6 +130,8 @@ function BasicInformation(props) {
     setAllGoals,
     weeks,
     setWeeks,
+    musics,
+    setMusics,
     selectedWorkoutForStudioId,
     setSelectedWorkoutForStudioId,
     allExercises,
@@ -151,24 +164,21 @@ function BasicInformation(props) {
   const { reloadWithoutConfirmation } = useBrowserEvents({
     enableBeforeUnloadConfirm: true,
     hasUnsavedChanges: true,
+    enableBackForwardWarning: true,
+    backForwardMessage:
+      "You have unsaved changes. Are you sure you want to leave?",
+    confirmMessage: "Any unsaved work will be lost. Continue?",
+    onPopState: (e) => {
+      console.log("Navigation detected", e);
+    },
     onBeforeUnload: (e) => {
       console.log("Page is about to unload");
-      // Perform any cleanup or save operations
     },
     onPageHide: (e) => {
       console.log("Page hidden, persisted:", e.persisted);
-      // Save user data, pause timers, etc.
     },
-    onPopState: (e) => {
-      console.log("Browser navigation detected");
-      // Handle browser back/forward
-      if (window.confirm("Any unchanged saves will be lost. Continue?")) {
-        // Allow navigation
-      } else {
-        // Optionally push state again to "cancel" navigation
-        window.history.pushState({}, "", window.location.href);
-      }
-    },
+    // REMOVE onPopState if you want simple behavior
+    // The hook now handles back navigation internally
     onVisibilityChange: (visibilityState) => {
       console.log("Tab visibility changed:", visibilityState);
       if (visibilityState === "hidden") {
@@ -178,7 +188,6 @@ function BasicInformation(props) {
       }
     },
   });
-
   const fetchDataV2 = async () => {
     setLoading(true);
     // if user is trainer we need to get his info
@@ -336,10 +345,10 @@ function BasicInformation(props) {
       errors.push("Challenge Name is required");
       errorToShow.challengeName = "Challenge Name is required";
     }
-    if (!challengeDescription) {
-      errors.push("Description is required");
-      errorToShow.challengeDescription = "Description is required";
-    }
+    // if (!challengeDescription) {
+    //   errors.push("Description is required");
+    //   errorToShow.challengeDescription = "Description is required";
+    // }
     if (!pack) {
       errors.push("Select a pack");
       errorToShow.pack = "Select a pack";
@@ -349,25 +358,25 @@ function BasicInformation(props) {
       errorToShow.customPrice = "Price is required";
     }
 
-    if (!thumbnail) {
-      errors.push("Thumbnail is required");
-      errorToShow.thumbnail = "Thumbnail is required";
-    }
-    if (!videoThumbnail) {
-      errorToShow.videoThumbnail = "Video Thumbnail is required";
-      errors.push("Video Thumbnail is required");
-    }
-    if (!duration) {
-      errorToShow.duration = "Duration is required";
-      errors.push("Duration is required");
-    }
-    if (!difficulty) errors.push("Difficulty is required");
+    // if (!thumbnail) {
+    //   errors.push("Thumbnail is required");
+    //   errorToShow.thumbnail = "Thumbnail is required";
+    // }
+    // if (!videoThumbnail) {
+    //   errorToShow.videoThumbnail = "Video Thumbnail is required";
+    //   errors.push("Video Thumbnail is required");
+    // }
+    // if (!duration) {
+    //   errorToShow.duration = "Duration is required";
+    //   errors.push("Duration is required");
+    // }
+    // if (!difficulty) errors.push("Difficulty is required");
     if (!seletedTrainers || seletedTrainers.length === 0)
       errors.push("At least one Trainer is required");
-    if (!selectedGoals || selectedGoals.length === 0) {
-      errors.push("At least one Goal is required");
-      errorToShow.selectedGoals = "At least one Goal is required";
-    }
+    // if (!selectedGoals || selectedGoals.length === 0) {
+    //   errors.push("At least one Goal is required");
+    //   errorToShow.selectedGoals = "At least one Goal is required";
+    // }
 
     setErrors(errorToShow);
     if (errors.length > 0) {
@@ -415,7 +424,10 @@ function BasicInformation(props) {
             ? videoThumbnail.link
             : videoThumbnail,
         weeks: await handleWeeksForUpdate(weeks, isUpdate),
-        music: [],
+        music: musics.map((m) => ({
+          name: m.name,
+          url: m.link,
+        })),
         additionalProducts: [],
         results: result,
         informationList: challengeInfo
@@ -1036,7 +1048,7 @@ function BasicInformation(props) {
                     height: "auto",
                     width: "100%",
                     resize: "vertical",
-                    border: errors.challengeName && "2px solid red",
+                    border: errors.challengeDescription && "2px solid red",
                   }} // Optional: Allow resizing vertically
                 />
               </div>
@@ -1080,7 +1092,9 @@ function BasicInformation(props) {
                       {trainer.firstName + " " + trainer.lastName}
                     </a>
                     {trainer._id !== usereDtails._id && (
-                      <DeleteFilled
+                      <img
+                        src={DeleteWhite}
+                        alt="delete"
                         onClick={() => {
                           const newSelectedFitnessInterest =
                             seletedTrainers.filter(
@@ -1434,28 +1448,35 @@ function BasicInformation(props) {
                                 top: "10px",
                               }}
                             >
-                              <DeleteFilled
+                              <img
+                                src={DeleteIcon}
+                                alt="delete-icon"
                                 onClick={() => {
                                   const newWeek = weeks.filter(
                                     (item) => item.id !== w.id
                                   );
                                   setWeeks(newWeek);
                                 }}
-                                style={{
-                                  color: "#ff7700",
-                                  fontSize: "20px",
-                                  cursor: "pointer",
-                                }}
+                                style={iconStyle}
                               />
-                              <CopyOutlined
+
+                              <img
+                                src={CopyIcon}
+                                alt=""
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   duplicateWeek(w);
                                 }}
                                 style={{
-                                  color: "#fff",
-                                  fontSize: "20px",
-                                  cursor: "pointer",
+                                  ...iconStyle,
+                                  marginLeft: "10px",
+                                }}
+                              />
+                              <img
+                                src={DragAndDropIcon}
+                                alt=""
+                                style={{
+                                  ...iconStyle,
                                   marginLeft: "10px",
                                 }}
                               />
@@ -1595,52 +1616,59 @@ function BasicInformation(props) {
                                     <img src={WorkoutStudioIcon} alt="" />
                                   </div>
                                 </div>
-                                <DeleteFilled
-                                  onClick={() => {
-                                    const newWeeks = [...weeks];
-                                    const weekIndex = newWeeks.findIndex(
-                                      (week) => week._id === w._id
-                                    );
-                                    if (weekIndex !== -1) {
-                                      const workoutIndex = newWeeks[
-                                        weekIndex
-                                      ].workouts.findIndex(
-                                        (item) => item._id === workout._id
-                                      );
-                                      if (workoutIndex !== -1) {
-                                        newWeeks[weekIndex].workouts.splice(
-                                          workoutIndex,
-                                          1
-                                        );
-                                        setWeeks(newWeeks);
-                                      }
-                                    }
-                                  }}
+                                <div
                                   style={{
-                                    color: "#ff7700",
-                                    fontSize: "20px",
-                                    cursor: "pointer",
                                     position: "absolute",
                                     right: "20px",
                                     top: "10px",
+                                    display: "flex",
+                                    gap: "14px",
                                   }}
-                                />
-
-                                <CopyOutlined
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    duplicateWorkout(w.id, workout);
-                                  }}
-                                  style={{
-                                    color: "#fff",
-                                    fontSize: "20px",
-                                    cursor: "pointer",
-                                    marginLeft: "10px",
-                                    position: "absolute",
-                                    right: "50px",
-                                    top: "10px",
-                                  }}
-                                />
+                                >
+                                  <img
+                                    src={DeleteWhite}
+                                    alt="delete"
+                                    onClick={() => {
+                                      const newWeeks = [...weeks];
+                                      const weekIndex = newWeeks.findIndex(
+                                        (week) => week._id === w._id
+                                      );
+                                      if (weekIndex !== -1) {
+                                        const workoutIndex = newWeeks[
+                                          weekIndex
+                                        ].workouts.findIndex(
+                                          (item) => item._id === workout._id
+                                        );
+                                        if (workoutIndex !== -1) {
+                                          newWeeks[weekIndex].workouts.splice(
+                                            workoutIndex,
+                                            1
+                                          );
+                                          setWeeks(newWeeks);
+                                        }
+                                      }
+                                    }}
+                                    style={iconStyle}
+                                  />
+                                  <img
+                                    src={CopyIconWhite}
+                                    alt="drag-drop"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      duplicateWorkout(w.id, workout);
+                                    }}
+                                    style={iconStyle}
+                                  />
+                                  <img
+                                    src={DragAndDropIconWhite}
+                                    alt="drag-drop"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // duplicateWorkout(w.id, workout);
+                                    }}
+                                    style={iconStyle}
+                                  />
+                                </div>
                               </div>
                             ))}
                           <AddNewButton

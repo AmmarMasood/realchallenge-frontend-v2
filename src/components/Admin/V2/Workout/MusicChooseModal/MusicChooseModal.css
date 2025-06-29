@@ -1,0 +1,120 @@
+.music-selector__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.music-selector__icon {
+  font-size: 24px;
+  color: var(--color-orange-light);
+}
+
+.music-selector__title {
+  color: var(--color-orange-light);
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.music-selector__subtitle {
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 160%;
+  letter-spacing: 0%;
+  color: #c4c4c4;
+}
+
+.music-selector__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.music-selector__item {
+  background: #222935;
+  padding: 16px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.music-selector__item > p {
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 100%;
+  letter-spacing: 0%;
+  padding: 0;
+  margin: 0;
+  color: #ffffff;
+}
+
+.music-selector__item > span {
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 100%;
+  letter-spacing: 0%;
+  vertical-align: middle;
+  color: #465060;
+}
+
+.music-selector__item--selected {
+  border: 1px solid var(--color-orange-light);
+}
+
+.music-selector__next-btn {
+  background: #e37c33;
+  border: none;
+  padding: 14px 32px;
+  color: #ffffff;
+  font-size: 18px;
+  cursor: pointer;
+  width: fit-content;
+  transition: all 0.2s ease;
+}
+
+.music-selector__next-btn:hover:not(:disabled) {
+  background: #c46835;
+  transform: translateY(-1px);
+}
+
+.music-selector__next-btn:disabled {
+  background: #666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.music-selector__next-btn:active {
+  transform: translateY(0);
+}
+
+.music-selector__inputbox {
+  display: flex;
+  flex-direction: column;
+}
+
+.music-selector__inputbox input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px dashed #fff;
+  color: #fff;
+  font-size: 14px;
+  background: transparent;
+  outline: none;
+  width: 360px;
+}
+
+.music-selector__inputbox span {
+  font-weight: 500;
+  font-size: 12px;
+  vertical-align: middle;
+  color: #465060;
+  margin-top: 5px;
+}

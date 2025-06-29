@@ -26,10 +26,18 @@ import {
   exerciseWorkoutTimeTrackContext,
   playerStateContext,
 } from "../../../../contexts/PlayerState";
+import MusicIcon from "../../../../assets/icons/music-icon-white.svg";
+import MusicChooseModal from "./MusicChooseModal/MusicChooseModal";
 
 function Workout() {
-  const { weeks, selectedWorkoutForStudioId, setWeeks, setShowVideoCreator } =
-    useChallenge();
+  const {
+    weeks,
+    selectedWorkoutForStudioId,
+    setWeeks,
+    setShowVideoCreator,
+    musics,
+    setMusics,
+  } = useChallenge();
   const { language } = useContext(LanguageContext);
   const [mediaManagerVisible, setMediaManagerVisible] = React.useState(false);
   const [mediaManagerType, setMediaManagerType] = React.useState("images");
@@ -57,6 +65,8 @@ function Workout() {
   const [exerciseWorkoutTimeTrack, setExerciseWorkoutTimeTrack] = useContext(
     exerciseWorkoutTimeTrackContext
   );
+  const [musicChooseModalVisible, setMusicChooseModalVisible] =
+    React.useState(false);
 
   const getWorkoutInfo = () => {
     const workout = weeks.find((week) =>
@@ -251,6 +261,10 @@ function Workout() {
     }
   };
 
+  const openMusicAdder = () => {
+    setMusicChooseModalVisible(true);
+  };
+
   return (
     <div
       className="challenge-player-container"
@@ -265,6 +279,12 @@ function Workout() {
           <LoadingOutlined style={{ fontSize: "50px", color: "#ff7700" }} />
         </div>
       )}
+      <MusicChooseModal
+        open={musicChooseModalVisible}
+        setOpen={setMusicChooseModalVisible}
+        musics={musics}
+        setMusics={setMusics}
+      />
       <div
         style={{
           position: "absolute",
@@ -356,18 +376,21 @@ function Workout() {
           <img src={WorkoutStudio} alt="workout-studio" />
         </div>
 
-        <div>
+        <div style={{ position: "relative", marginTop: "20px" }}>
+          <button className="music-icon-button" onClick={openMusicAdder}>
+            <span>Add background music</span>
+            <img src={MusicIcon} alt="music-icon" />
+          </button>
           <Player
             moveToNextExercise={moveToNextExercise}
             moveToPrevExercise={moveToPrevExercise}
-            // musics={workout.musics}
+            musics={musics}
             nextExerciseTitle={
               workoutInfo.exercises &&
               workoutInfo.exercises[selectedExercise.index + 1]
                 ? workoutInfo.exercises[selectedExercise.index + 1].title
                 : ""
             }
-            musics={[]}
             exercise={selectedExercise.exercise}
             // challengePageAddress={`/challenge/${challengeName}/${challengeId}`}
             key={selectedExercise.exercise?.id}

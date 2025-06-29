@@ -183,6 +183,7 @@ function RenderedVideoPlayer({
         currentExercise={currentExercise}
         moveToNextExercise={moveToNextExercise}
         moveToPrevExercise={moveToPrevExercise}
+        inCreation={inCreation}
       />
 
       {shouldShowTimer && !inCreation && (

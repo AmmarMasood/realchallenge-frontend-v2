@@ -10,9 +10,10 @@ import UpdateExercise from "./UpdateExercise";
 import { getAllTrainers } from "../../../services/trainers";
 import { userInfoContext } from "../../../contexts/UserStore";
 import { T } from "../../Translate";
+import { withRouter } from "react-router-dom";
 // import UpdateExercises from "./UpdateExercises";
 
-function AllExercises() {
+function AllExercises(props) {
   const [filterAllExercises, setFilterAllExercises] = useState([]);
   const [allExercises, setAllExercises] = useState([]);
   const [selectedExercisesForUpdate, setSelectedExercisesForUpdate] = useState(
@@ -47,9 +48,21 @@ function AllExercises() {
 
   const fetchExercises = async () => {
     const c = await getAllUserExercises("");
-    console.log("===================>", c);
     setAllExercises(c.exercises);
     setFilterAllExercises(c.exercises);
+
+    const queryParams = new URLSearchParams(props.location.search);
+    const selectedExercise = queryParams.get("exerciseId");
+
+    if (selectedExercise) {
+      const exerciseToUpdate = c.exercises.find(
+        (exercise) => exercise._id === selectedExercise
+      );
+      if (exerciseToUpdate) {
+        setSelectedExercisesForUpdate(exerciseToUpdate);
+        setOpenModal(true);
+      }
+    }
   };
 
   const openExercisesUpdater = (record) => {
@@ -187,4 +200,4 @@ function AllExercises() {
   );
 }
 
-export default AllExercises;
+export default withRouter(AllExercises);

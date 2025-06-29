@@ -104,43 +104,70 @@ function MusicPlayer({ visible, setMusicPlayerVisible, musicList }) {
       <div className="music-player-modal-container--list">
         <img src={MusicListIcon} alt="music-list-icon" />{" "}
         <h3 className="font-paragraph-white">Choose your mood</h3>
-        {/* todo do later */}
-        {/* <Scrollbars style={{ minHeight: "100px" }}>
-          <div className="music-player-modal-container--list-files">
-            <div key={1234} onClick={() => handleOnMusicSelect("stop")}>
+        <div className="music-player-modal-container--list-files">
+          <div key={1234} onClick={() => handleOnMusicSelect("stop")}>
+            <span
+              style={{
+                color:
+                  currentPlaying._id !== 12345 ? "#fff" : "var(--color-orange)",
+                transform:
+                  currentPlaying._id !== 12345 ? "scale(1)" : "scale(1.02)",
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer",
+                gap: "10px",
+              }}
+              className="font-paragraph-white"
+            >
+              <CustomerServiceOutlined />
               <span
                 style={{
-                  color:
-                    currentPlaying._id !== 12345
-                      ? "#fff"
-                      : "var(--color-orange)",
-                  transform:
-                    currentPlaying._id !== 12345 ? "scale(1)" : "scale(1.02)",
+                  maxWidth: "300px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  display: "inline-block",
+                  verticalAlign: "bottom",
                 }}
-                className="font-paragraph-white"
               >
-                <CustomerServiceOutlined /> No Music
+                No Music
               </span>
-            </div>
-            {musicList.map((m) => (
-              <div key={m._id} onClick={() => handleOnMusicSelect(m)}>
+            </span>
+          </div>
+          {musicList.map((m) => (
+            <div key={m._id} onClick={() => handleOnMusicSelect(m)}>
+              <span
+                className="font-paragraph-white"
+                style={{
+                  color:
+                    currentPlaying._id === m._id
+                      ? "var(--color-orange)"
+                      : "#fff",
+                  transform:
+                    currentPlaying._id === m._id ? "scale(1.02)" : "scale(1)",
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                  gap: "10px",
+                }}
+              >
+                <CustomerServiceOutlined />
                 <span
-                  className="font-paragraph-white"
                   style={{
-                    color:
-                      currentPlaying._id === m._id
-                        ? "var(--color-orange)"
-                        : "#fff",
-                    transform:
-                      currentPlaying._id === m._id ? "scale(1.02)" : "scale(1)",
+                    maxWidth: "300px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    display: "inline-block",
+                    verticalAlign: "bottom",
                   }}
                 >
-                  <CustomerServiceOutlined /> {m.name}
+                  {m.name}
                 </span>
-              </div>
-            ))}
-          </div>
-        </Scrollbars> */}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
     // </Modal>

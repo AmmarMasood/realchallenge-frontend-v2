@@ -95,7 +95,7 @@
   flex-wrap: wrap;
 }
 
-@media screen and (max-width: 800px) {
+@media screen and (max-width: 900px) {
   .trainer-profile-container {
     /* border: 1px solid red; */
     min-height: 100vh;

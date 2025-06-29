@@ -12,7 +12,7 @@ import AddNewExercise from "../../../../../assets/icons/add-new-exercise.svg";
 import { CopyOutlined, DeleteFilled } from "@ant-design/icons";
 import { v4 } from "uuid";
 import { useChallenge } from "../../../../../contexts/ChallengeCreatorV2";
-import ExerciseModal from "../ExerciseModal/ExerciseModal";
+import ExerciseChooseModal from "../ExerciseChooseModal/ExerciseChooseModal";
 
 const responsive = {
   superLargeDesktop: {
@@ -209,7 +209,7 @@ function Exercises({
     setExerciseIdToUpdate(e.id);
   };
 
-  const onSelectExercise = (exercise) => {
+  const onSelectExercise = (exercise, duration, exerciseBreak) => {
     const updatedExercises = workout.exercises.map((ex) => {
       if (ex.id === exerciseIdToUpdate) {
         return {
@@ -218,6 +218,8 @@ function Exercises({
           videoURL: exercise.videoURL,
           voiceOverLink: exercise.voiceOverLink,
           exerciseId: exercise._id,
+          exerciseLength: parseInt(duration) || ex.exerciseLength,
+          break: parseInt(exerciseBreak) || ex.break,
         };
       }
       return ex;
@@ -228,10 +230,10 @@ function Exercises({
   };
   return (
     <>
-      <ExerciseModal
-        exerciseModal={showExerciseModal}
-        setExerciseModal={setShowExerciseModal}
-        allExercises={allExercises}
+      <ExerciseChooseModal
+        open={showExerciseModal}
+        setOpen={setShowExerciseModal}
+        exercises={allExercises}
         seletedTrainers={seletedTrainers}
         onExerciseSelect={onSelectExercise}
       />

@@ -118,6 +118,9 @@ function AdminDashboard(props) {
     if (selectedTab && selectedTab === "new-exercise") {
       setCurrentSelection(5.2);
     }
+    if (selectedTab && selectedTab === "update-exercise") {
+      setCurrentSelection(5.1);
+    }
   }, []);
 
   const goToNewDashboard = () => {

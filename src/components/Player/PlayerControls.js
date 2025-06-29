@@ -71,6 +71,7 @@ function PlayerControls(
     moveToNextExercise,
     moveToPrevExercise,
     challengePageAddress,
+    inCreation,
   },
   ref
 ) {
@@ -272,23 +273,25 @@ function PlayerControls(
                     style={playerIconStyle}
                   />
                 )}
-                <img
+                {/* <img
                   src={SmPlayerChromeIcon}
                   alt="player-chrome-icon"
                   style={playerIconStyle}
-                />
+                /> */}
                 <img
                   src={SmPlayerMusicIcon}
                   onClick={() => setMusicPlayerVisible(!musicPlayerVisible)}
                   alt="player-music-icon"
                   style={playerIconStyle}
                 />
-                <img
-                  src={SmPlayerFullscreenIcon}
-                  alt="player-fullscreen-icon"
-                  style={playerIconStyle}
-                  onClick={toggleFullscreen}
-                />
+                {!inCreation && (
+                  <img
+                    src={SmPlayerFullscreenIcon}
+                    alt="player-fullscreen-icon"
+                    style={playerIconStyle}
+                    onClick={toggleFullscreen}
+                  />
+                )}
               </>
             )}
           </div>

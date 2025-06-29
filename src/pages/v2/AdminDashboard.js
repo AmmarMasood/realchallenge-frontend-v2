@@ -4,7 +4,7 @@ import "../../assets/adminDashboardV2.css";
 import "../../assets/home.css";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { LoadingOutlined } from "@ant-design/icons";
+import { EditFilled, LoadingOutlined } from "@ant-design/icons";
 import { Link, withRouter } from "react-router-dom";
 // import ModalVideo from "react-modal-video";
 // import "react-modal-video/scss/modal-video.scss";
@@ -32,6 +32,11 @@ import UploadIcon from "../../assets/icons/upload-icon.svg";
 import DumbBellIcon from "../../assets/icons/dumb-bell-icon.svg";
 import CreateGoalsModal from "../../components/Admin/V2/Trainer/CreateGoalsModal";
 import MediaManager from "../../components/Admin/V2/MediaManager/MediaManager";
+import {
+  getAllChallenges,
+  getAllUserChallenges,
+  getAllUserExercises,
+} from "../../services/createChallenge/main";
 
 function AdminDashboard(props) {
   const { language } = useContext(LanguageContext);
@@ -43,15 +48,30 @@ function AdminDashboard(props) {
   const [goals, setGoals] = useState([]);
   const [showTrainerGoalModal, setShowTrainerGoalModal] = useState(false);
   const [openMediaManager, setOpenMediaManager] = useState(false);
+  const [challenges, setAllChallenges] = useState([]);
+  const [exercises, setAllExercises] = useState([]);
 
   async function fetchTrainerGoals() {
     const { goals } = await getAllTrainerGoals(language);
     setGoals(goals);
   }
+
+  const fetchChallenges = async () => {
+    const { challenges } = await getAllChallenges(language);
+    setAllChallenges(challenges);
+  };
+
+  const fetchExercises = async () => {
+    const { exercises } = await getAllUserExercises(language);
+    setAllExercises(exercises);
+  };
   async function fetchData(id) {
     setLoading(true);
     const { user } = await getUsersProfile();
     await fetchTrainerGoals();
+    await fetchChallenges();
+    await fetchExercises();
+    await fetchExercises();
     setTrainer(user);
     setLoading(false);
   }
@@ -78,6 +98,13 @@ function AdminDashboard(props) {
   };
   const goToNewExercise = () => {
     props.history.push("/admin/dashboard?tab=new-exercise");
+  };
+  const goToEditExercise = (exerciseId) => {
+    window.open(
+      `/admin/dashboard?tab=update-exercise&exerciseId=${exerciseId}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
   return loading ? (
     <div className="center-inpage">
@@ -295,6 +322,69 @@ function AdminDashboard(props) {
                 <T>adminv2.my_exercises</T>
               </h1>
             </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                marginBottom: "32px",
+                maxHeight: "200px",
+                overflowY: "auto",
+              }}
+            >
+              {exercises.map((exercise, index) => (
+                <div
+                  key={index}
+                  style={{
+                    background: "#222935",
+                    padding: "16px",
+                    textAlign: "left",
+
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <p
+                      style={{
+                        fontWeight: 500,
+                        fontSize: "15px",
+                        lineHeight: "100%",
+                        letterSpacing: "0%",
+                        padding: 0,
+                        margin: 0,
+                        color: "#ffffff",
+                      }}
+                    >
+                      {exercise.title || "Unnamed Exercise"}
+                    </p>
+                    <span
+                      style={{
+                        fontWeight: 500,
+                        fontSize: "12px",
+                        lineHeight: "100%",
+                        letterSpacing: "0%",
+                        verticalAlign: "middle",
+                        color: "#465060",
+                      }}
+                    >
+                      Exercise ID: {exercise._id}
+                    </span>
+                  </div>
+
+                  <EditFilled
+                    style={{
+                      cursor: "pointer",
+                      color: "white",
+                      fontSize: "18px",
+                    }}
+                    onClick={() => goToEditExercise(exercise._id)}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="adminv2-selector-container">
@@ -306,6 +396,74 @@ function AdminDashboard(props) {
               >
                 <T>adminv2.my_challenges</T>
               </h1>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                marginBottom: "32px",
+                maxHeight: "200px",
+                overflowY: "auto",
+              }}
+            >
+              {challenges.map((exercise, index) => (
+                <div
+                  key={index}
+                  style={{
+                    background: "#222935",
+                    padding: "16px",
+                    textAlign: "left",
+
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <p
+                      style={{
+                        fontWeight: 500,
+                        fontSize: "15px",
+                        lineHeight: "100%",
+                        letterSpacing: "0%",
+                        padding: 0,
+                        margin: 0,
+                        color: "#ffffff",
+                      }}
+                    >
+                      {exercise.challengeName || "Unnamed Challenge"}
+                    </p>
+                    <span
+                      style={{
+                        fontWeight: 500,
+                        fontSize: "12px",
+                        lineHeight: "100%",
+                        letterSpacing: "0%",
+                        verticalAlign: "middle",
+                        color: "#465060",
+                      }}
+                    >
+                      Challenge ID: {exercise._id}
+                    </span>
+                  </div>
+
+                  <a
+                    href={`/admin/v2/challenge-studio/${exercise._id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <EditFilled
+                      style={{
+                        cursor: "pointer",
+                        color: "white",
+                        fontSize: "18px",
+                      }}
+                    />
+                  </a>
+                </div>
+              ))}
             </div>
           </div>
         </div>
