@@ -978,7 +978,7 @@ function BasicInformation(props) {
             className="trainer-profile-container-column1 adminV2-bi-trainer-profile-container-column1"
             onClick={openForThumbnail}
             style={{
-              background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${process.env.REACT_APP_MEDIA_BASE_URL}${thumbnail?.link})`,
+              background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${thumbnail?.link})`,
               border: errors.thumbnail && "2px solid red",
               cursor: "pointer",
             }}
@@ -1102,7 +1102,7 @@ function BasicInformation(props) {
                   >
                     <span
                       style={{
-                        backgroundImage: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${trainer.avatarLink})`,
+                        backgroundImage: `url(${trainer.avatarLink})`,
                         backgroundPosition: "center center",
                         backgroundSize: "cover",
                         backgroundRepeat: "no-repeat",

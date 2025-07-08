@@ -287,7 +287,7 @@ function UpdateBlog({ blogInfo, show, setShow, onUpdateComplete }) {
               >
                 <img
                   alt=""
-                  src={`${process.env.REACT_APP_MEDIA_BASE_URL}${featuredImage.link}`}
+                  src={`${featuredImage.link}`}
                   height="200px"
                   width="250px"
                 />
@@ -310,7 +310,7 @@ function UpdateBlog({ blogInfo, show, setShow, onUpdateComplete }) {
               >
                 <img
                   alt=""
-                  src={`${process.env.REACT_APP_MEDIA_BASE_URL}${featuredImage}`}
+                  src={`${featuredImage}`}
                   height="200px"
                   width="250px"
                 />
@@ -360,7 +360,7 @@ function UpdateBlog({ blogInfo, show, setShow, onUpdateComplete }) {
             ) : (
               videoLink && (
                 <div className="font-paragraph-black">
-                  {`${process.env.REACT_APP_MEDIA_BASE_URL}${videoLink}`}{" "}
+                  {`${videoLink}`}{" "}
                   <CloseSquareOutlined
                     style={{ cursor: "pointer" }}
                     onClick={() => setVideLink("")}

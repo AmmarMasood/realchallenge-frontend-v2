@@ -138,7 +138,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                       <div
                         className="dashboard-challenges-mychallenge-body-box"
                         style={{
-                          background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${d.thumbnailLink})`,
+                          background: `url(${d.thumbnailLink})`,
                           backgroundSize: "cover",
                           backgroundPosition: "50% 50%",
                           position: "relative",
@@ -225,10 +225,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                     className="font-paragraph-white"
                     style={{ backgroundColor: "#2F3E50", height: "100%" }}
                   >
-                    <img
-                      src={`${process.env.REACT_APP_MEDIA_BASE_URL}${pics[0]}`}
-                      alt="users-before"
-                    />
+                    <img src={`${pics[0]}`} alt="users-before" />
                   </div>
                 }
                 itemTwo={
@@ -236,10 +233,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                     className="font-paragraph-white"
                     style={{ backgroundColor: "#3C618F", height: "100%" }}
                   >
-                    <img
-                      src={`${process.env.REACT_APP_MEDIA_BASE_URL}${pics[1]}`}
-                      alt="users-after"
-                    />
+                    <img src={`${pics[1]}`} alt="users-after" />
                   </div>
                 }
               />
@@ -400,7 +394,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                   <div
                     className="dashboard-challenges-row3-inbox-challenge"
                     style={{
-                      background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${challenge.thumbnailLink})`,
+                      background: `url(${challenge.thumbnailLink})`,
                       backgroundSize: "cover",
                       backgroundPosition: "50% 50%",
                       position: "relative",

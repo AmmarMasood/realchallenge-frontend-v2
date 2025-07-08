@@ -751,7 +751,7 @@ function NewRecipe({ setCurrentSelection }) {
                 >
                   <img
                     alt=""
-                    src={`${process.env.REACT_APP_MEDIA_BASE_URL}${featuredImage.link}`}
+                    src={`${featuredImage.link}`}
                     height="auto"
                     width={"80%"}
                   />

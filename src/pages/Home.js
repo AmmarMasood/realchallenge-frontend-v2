@@ -507,7 +507,7 @@ function Home(props) {
                     <div
                       className="home-row-8-blog-container-box home-8-box-1"
                       style={{
-                        background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${blog.featuredImage})`,
+                        background: `url(${blog.featuredImage})`,
                         backgroundPosition: "center",
                         backgroundSize: "cover",
                       }}

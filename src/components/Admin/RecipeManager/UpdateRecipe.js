@@ -786,7 +786,7 @@ function UpdateRecipe(props) {
                   >
                     {console.log(
                       "test",
-                      `${process.env.REACT_APP_MEDIA_BASE_URL}${
+                      `${
                         typeof featuredImage === "object"
                           ? featuredImage.link
                           : featuredImage
@@ -794,7 +794,7 @@ function UpdateRecipe(props) {
                     )}
                     <img
                       alt=""
-                      src={`${process.env.REACT_APP_MEDIA_BASE_URL}${
+                      src={`${
                         typeof featuredImage === "object"
                           ? featuredImage.link
                           : featuredImage
@@ -814,7 +814,7 @@ function UpdateRecipe(props) {
                 <div style={{ display: "flex" }}>
                   {console.log(
                     "test",
-                    `${process.env.REACT_APP_MEDIA_BASE_URL}${
+                    `${
                       typeof featuredImage === "object"
                         ? featuredImage.link
                         : featuredImage
@@ -828,11 +828,7 @@ function UpdateRecipe(props) {
                       marginTop: "10px",
                     }}
                   >
-                    <img
-                      alt=""
-                      src={`${process.env.REACT_APP_MEDIA_BASE_URL}${featuredImage}`}
-                      height="100px"
-                    />
+                    <img alt="" src={`${featuredImage}`} height="100px" />
                     <span>
                       <CloseSquareOutlined
                         style={{ cursor: "pointer" }}

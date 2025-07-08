@@ -96,10 +96,7 @@ function MusicChooseModal({ open, setOpen, musics, setMusics }) {
                 value={music.name}
                 onChange={(e) => handleMusicNameChange(e, music.id)}
               />
-              <span>
-                Music Link:{" "}
-                {`${process.env.REACT_APP_MEDIA_BASE_URL}${music.link}`}
-              </span>
+              <span>Music Link: {`${music.link}`}</span>
             </div>
             <img
               src={DeleteIcon}

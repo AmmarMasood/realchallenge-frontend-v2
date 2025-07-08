@@ -51,11 +51,7 @@ function NewPlayer({ exercise, musics, moveToNextExercise }) {
         }}
       >
         <source
-          src={
-            exercise.videoURL
-              ? `${process.env.REACT_APP_MEDIA_BASE_URL}${exercise.videoURL}`
-              : ""
-          }
+          src={exercise.videoURL ? `${exercise.videoURL}` : ""}
           type="video/mp4"
           onPlay={() => console.log("asd")}
         />

@@ -321,7 +321,7 @@ function Exercises({
                       <VideoThumbnail
                         videoUrl={
                           firstExercise.videoURL
-                            ? `${process.env.REACT_APP_MEDIA_BASE_URL}${firstExercise.videoURL}`
+                            ? `${firstExercise.videoURL}`
                             : ""
                         }
                         width={250}
@@ -458,11 +458,7 @@ function Exercises({
                           >
                             {e.videoURL ? (
                               <VideoThumbnail
-                                videoUrl={
-                                  e.videoURL
-                                    ? `${process.env.REACT_APP_MEDIA_BASE_URL}${e.videoURL}`
-                                    : ""
-                                }
+                                videoUrl={e.videoURL ? `${e.videoURL}` : ""}
                                 width={250}
                                 height={200}
                                 cors={true}

@@ -188,7 +188,7 @@ function Challenges() {
                   }`}
                 >
                   <ChallengeCard
-                    picture={`${process.env.REACT_APP_MEDIA_BASE_URL}${
+                    picture={`${
                       challenge.thumbnailLink
                         ? challenge.thumbnailLink.replaceAll(" ", "%20")
                         : ""

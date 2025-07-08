@@ -396,11 +396,7 @@ function ChallengePlayer(props) {
                 <T>player.today_woTkout_attachment</T>
               </p>
 
-              <a
-                href={`${process.env.REACT_APP_MEDIA_BASE_URL}${workout.infoFile}`}
-                target="_blank"
-                download
-              >
+              <a href={`${workout.infoFile}`} target="_blank" download>
                 <button className="challenge-player-attachment font-paragraph-white">
                   <img src={FileIcon} alt="" style={{ marginRight: "10px" }} />
                   {workout.infoTitle ? workout.infoTitle : "Attachment"}

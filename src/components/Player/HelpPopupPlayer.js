@@ -119,7 +119,7 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
         <ReactPlayer
           width="100%"
           height="100%"
-          url={`${process.env.REACT_APP_MEDIA_BASE_URL}${exercise.videoURL}`}
+          url={`${exercise.videoURL}`}
           loop={true}
           controls={false}
           muted={true}
@@ -129,7 +129,7 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
         {exercise.voiceOverLink && (
           <ReactPlayer
             ref={playerRef}
-            url={`${process.env.REACT_APP_MEDIA_BASE_URL}${exercise.voiceOverLink}`}
+            url={`${exercise.voiceOverLink}`}
             playing={playing}
             controls={true}
             style={{ display: "none" }}

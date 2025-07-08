@@ -152,11 +152,7 @@ function RenderedVideoPlayer({
         muted={playerState.muted}
         loop={true}
         volume={playerState.volume}
-        url={
-          exercise?.videoURL
-            ? `${process.env.REACT_APP_MEDIA_BASE_URL}${exercise.videoURL}`
-            : ""
-        }
+        url={exercise?.videoURL ? `${exercise.videoURL}` : ""}
         progress={playerState.progress}
         onProgress={handleProgress}
         width="100%"

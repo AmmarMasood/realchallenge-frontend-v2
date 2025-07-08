@@ -66,10 +66,7 @@ function ChallengeProfileWeb(props) {
             style={{ border: "3px solid yellow" }}
           >
             <div className="overlap-group" style={{ border: "3px solid blue" }}>
-              <img
-                className="cover-photo"
-                src={`${process.env.REACT_APP_MEDIA_BASE_URL}${thumbnailLink}`}
-              />
+              <img className="cover-photo" src={`${thumbnailLink}`} />
               <img className="cover-feather" src={ChalleengeProfileFether} />
 
               <img className="subtract" src={ChallengeProfileSubtract} />
@@ -209,10 +206,7 @@ function ChallengeProfileWeb(props) {
             {trainers &&
               trainers.map((t) => (
                 <div className="overlap-group6" key={t._id}>
-                  <img
-                    className="rectangle-1859"
-                    src={`${process.env.REACT_APP_MEDIA_BASE_URL}${t.avatarLink}`}
-                  />
+                  <img className="rectangle-1859" src={`${t.avatarLink}`} />
                   <div className="name poppins-normal-crusta-17px">
                     {t.username}
                   </div>
@@ -326,7 +320,7 @@ function ChallengeProfileWeb(props) {
                     >
                       <img
                         style={{ height: "16px" }}
-                        src={`${process.env.REACT_APP_MEDIA_BASE_URL}${m.icon}`}
+                        src={`${m.icon}`}
                         alt=""
                       />
                       <span
@@ -346,7 +340,7 @@ function ChallengeProfileWeb(props) {
                     >
                       <img
                         style={{ height: "16px" }}
-                        src={`${process.env.REACT_APP_MEDIA_BASE_URL}${m.icon}`}
+                        src={`${m.icon}`}
                         alt=""
                       />
                       <span

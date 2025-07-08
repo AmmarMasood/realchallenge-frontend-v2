@@ -279,7 +279,7 @@ const useCustomFileMap = () => {
           id: id,
           link: imageFiles.images[i].filelink,
           parent: "images-e598a85f843c",
-          thumbnailUrl: `${process.env.REACT_APP_MEDIA_BASE_URL}${imageFiles.images[i].filelink}`,
+          thumbnailUrl: `${imageFiles.images[i].filelink}`,
         },
       };
     });
@@ -303,7 +303,7 @@ const useCustomFileMap = () => {
           id: id,
           link: iconFiles.files[i].filelink,
           parent: "icons-e598a85f84gb",
-          thumbnailUrl: `${process.env.REACT_APP_MEDIA_BASE_URL}${iconFiles.files[i].filelink}`,
+          thumbnailUrl: `${iconFiles.files[i].filelink}`,
         },
       };
     });
@@ -315,7 +315,7 @@ const useCustomFileMap = () => {
           id: id,
           link: foodFiles.files[i].filelink,
           parent: "foods-e598a85f843b",
-          thumbnailUrl: `${process.env.REACT_APP_MEDIA_BASE_URL}${foodFiles.files[i].filelink}`,
+          thumbnailUrl: `${foodFiles.files[i].filelink}`,
         },
       };
     });
@@ -327,7 +327,7 @@ const useCustomFileMap = () => {
           id: id,
           link: tempFiles.files[i].filelink,
           parent: "temps-e598a85f843b",
-          thumbnailUrl: `${process.env.REACT_APP_MEDIA_BASE_URL}${tempFiles.files[i].filelink}`,
+          thumbnailUrl: `${tempFiles.files[i].filelink}`,
         },
       };
     });
@@ -339,7 +339,7 @@ const useCustomFileMap = () => {
           id: id,
           link: rc1Files.files[i].filelink,
           parent: "rc1-e598a85f84gb",
-          thumbnailUrl: `${process.env.REACT_APP_MEDIA_BASE_URL}${rc1Files.files[i].filelink}`,
+          thumbnailUrl: `${rc1Files.files[i].filelink}`,
         },
       };
     });
@@ -351,7 +351,7 @@ const useCustomFileMap = () => {
           id: id,
           link: rc2Files.files[i].filelink,
           parent: "rc2-e598a85f84gb",
-          thumbnailUrl: `${process.env.REACT_APP_MEDIA_BASE_URL}${rc2Files.files[i].filelink}`,
+          thumbnailUrl: `${rc2Files.files[i].filelink}`,
         },
       };
     });
@@ -363,7 +363,7 @@ const useCustomFileMap = () => {
           id: id,
           link: rc3Files.files[i].filelink,
           parent: "rc3-e598a85f84gb",
-          thumbnailUrl: `${process.env.REACT_APP_MEDIA_BASE_URL}${rc3Files.files[i].filelink}`,
+          thumbnailUrl: `${rc3Files.files[i].filelink}`,
         },
       };
     });
@@ -374,7 +374,7 @@ const useCustomFileMap = () => {
           id: id,
           link: rc4Files.files[i].filelink,
           parent: "rc4-e598a85f84gb",
-          thumbnailUrl: `${process.env.REACT_APP_MEDIA_BASE_URL}${rc4Files.files[i].filelink}`,
+          thumbnailUrl: `${rc4Files.files[i].filelink}`,
         },
       };
     });
@@ -385,7 +385,7 @@ const useCustomFileMap = () => {
           id: id,
           link: rc5Files.files[i].filelink,
           parent: "rc5-e598a85f84gb",
-          thumbnailUrl: `${process.env.REACT_APP_MEDIA_BASE_URL}${rc5Files.files[i].filelink}`,
+          thumbnailUrl: `${rc5Files.files[i].filelink}`,
         },
       };
     });
@@ -396,7 +396,7 @@ const useCustomFileMap = () => {
           id: id,
           link: rc6Files.files[i].filelink,
           parent: "rc6-e598a85f84gb",
-          thumbnailUrl: `${process.env.REACT_APP_MEDIA_BASE_URL}${rc6Files.files[i].filelink}`,
+          thumbnailUrl: `${rc6Files.files[i].filelink}`,
         },
       };
     });
@@ -407,7 +407,7 @@ const useCustomFileMap = () => {
           id: id,
           link: rc7Files.files[i].filelink,
           parent: "rc7-e598a85f84gb",
-          thumbnailUrl: `${process.env.REACT_APP_MEDIA_BASE_URL}${rc7Files.files[i].filelink}`,
+          thumbnailUrl: `${rc7Files.files[i].filelink}`,
         },
       };
     });
@@ -418,7 +418,7 @@ const useCustomFileMap = () => {
           id: id,
           link: rc8Files.files[i].filelink,
           parent: "rc8-e598a85f84gb",
-          thumbnailUrl: `${process.env.REACT_APP_MEDIA_BASE_URL}${rc8Files.files[i].filelink}`,
+          thumbnailUrl: `${rc8Files.files[i].filelink}`,
         },
       };
     });
@@ -429,7 +429,7 @@ const useCustomFileMap = () => {
           id: id,
           link: rc9Files.files[i].filelink,
           parent: "rc9-e598a85f84gb",
-          thumbnailUrl: `${process.env.REACT_APP_MEDIA_BASE_URL}${rc9Files.files[i].filelink}`,
+          thumbnailUrl: `${rc9Files.files[i].filelink}`,
         },
       };
     });
@@ -440,7 +440,7 @@ const useCustomFileMap = () => {
           id: id,
           link: rc10Files.files[i].filelink,
           parent: "rc10-e598a85f84gb",
-          thumbnailUrl: `${process.env.REACT_APP_MEDIA_BASE_URL}${rc10Files.files[i].filelink}`,
+          thumbnailUrl: `${rc10Files.files[i].filelink}`,
         },
       };
     });

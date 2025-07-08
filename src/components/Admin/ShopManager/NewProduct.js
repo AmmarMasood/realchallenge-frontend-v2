@@ -277,11 +277,7 @@ function NewProduct() {
                     marginTop: "10px",
                   }}
                 >
-                  <img
-                    alt=""
-                    src={`${process.env.REACT_APP_MEDIA_BASE_URL}${img.link}`}
-                    height="100px"
-                  />
+                  <img alt="" src={`${img.link}`} height="100px" />
                   <span>
                     {img.name}{" "}
                     <CloseSquareOutlined

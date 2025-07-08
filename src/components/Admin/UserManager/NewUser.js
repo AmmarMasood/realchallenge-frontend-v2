@@ -482,7 +482,7 @@ function NewUser({ setCurrentSelection, home }) {
                         maxWidth: "500px",
                         margin: "20px",
                       }}
-                      src={`${process.env.REACT_APP_MEDIA_BASE_URL}${avatar.link}`}
+                      src={`${avatar.link}`}
                       // height="120px"
                       // width="150px"
                       height="auto"
@@ -513,7 +513,7 @@ function NewUser({ setCurrentSelection, home }) {
                 {hero && (
                   <div style={{ margin: "10px" }}>
                     <img
-                      src={`${process.env.REACT_APP_MEDIA_BASE_URL}${hero.link}`}
+                      src={`${hero.link}`}
                       alt=""
                       height="50%"
                       width={"80%"}

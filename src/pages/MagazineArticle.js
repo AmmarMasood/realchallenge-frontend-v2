@@ -117,15 +117,11 @@ function MagazineArticle(props) {
         <meta name="author" content="Realchallenge" />
       </Helmet>
       <Navbar />
-      {console.log(
-        `${process.env.REACT_APP_MEDIA_BASE_URL}${
-          blogInfo ? blogInfo.featuredImage : ""
-        }`
-      )}
+      {console.log(`${blogInfo ? blogInfo.featuredImage : ""}`)}
       <div
         className="magazine-article-head"
         style={{
-          background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${
+          background: `url(${
             blogInfo ? blogInfo.featuredImage : ""
           }) no-repeat center center / cover`,
           backgroundSize: "cover",
@@ -137,7 +133,7 @@ function MagazineArticle(props) {
         autoplay
         isOpen={open}
         controlsList="nodownload"
-        url={`${process.env.REACT_APP_MEDIA_BASE_URL}${blogInfo?.videoLink}`}
+        url={`${blogInfo?.videoLink}`}
         onClose={() => setOpen(false)}
       /> */}
       <div className="article-container">
@@ -147,7 +143,7 @@ function MagazineArticle(props) {
               shape="square"
               size="large"
               icon={<UserOutlined />}
-              src={`${process.env.REACT_APP_MEDIA_BASE_URL}${
+              src={`${
                 blogInfo && blogInfo.user ? blogInfo.user.avatarLink : ""
               }`}
             />{" "}
@@ -193,7 +189,7 @@ function MagazineArticle(props) {
               </TwitterShareButton>
               <PinterestShareButton
                 url={window.location.href}
-                media={`${process.env.REACT_APP_MEDIA_BASE_URL}${blogInfo.featuredImage}`}
+                media={`${blogInfo.featuredImage}`}
                 description="Hi. Please checkout this amazing article I found at realchallenge.fit"
               >
                 <PinterestIcon

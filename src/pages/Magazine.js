@@ -42,7 +42,7 @@ function Magazine() {
             <div
               className="home-row-8-blog-container-box home-8-box-1"
               style={{
-                background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${
+                background: `url(${
                   allBlogs[0] ? allBlogs[0].featuredImage : ""
                 }) no-repeat center center / cover`,
                 width: "100%",
@@ -121,7 +121,7 @@ function Magazine() {
               <div
                 className="home-row-8-blog-container-box home-8-box-1"
                 style={{
-                  background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${
+                  background: `url(${
                     allBlogs[1] ? allBlogs[1].featuredImage : ""
                   }) no-repeat center center / cover`,
                   width: "100%",
@@ -160,7 +160,7 @@ function Magazine() {
               <div
                 className="home-row-8-blog-container-box home-8-box-2"
                 style={{
-                  background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${
+                  background: `url(${
                     allBlogs[2] ? allBlogs[2].featuredImage : ""
                   }) no-repeat center center / cover`,
                   width: "100%",

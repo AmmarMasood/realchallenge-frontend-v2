@@ -147,7 +147,7 @@ function AdminDashboard(props) {
         autoplay
         isOpen={open}
         controlsList="nodownload"
-        videoId={`${process.env.REACT_APP_MEDIA_BASE_URL}${trainer.videoTrailerLink}`}
+        videoId={`${trainer.videoTrailerLink}`}
         onClose={() => setOpen(false)}
       /> */}
       <CreateGoalsModal
@@ -179,7 +179,7 @@ function AdminDashboard(props) {
             <div className="profile-box-row1">
               <div className="profile-box-row1-avatar">
                 <img
-                  src={`${process.env.REACT_APP_MEDIA_BASE_URL}${
+                  src={`${
                     trainer.avatarLink
                       ? trainer.avatarLink.replaceAll(" ", "%20")
                       : ""

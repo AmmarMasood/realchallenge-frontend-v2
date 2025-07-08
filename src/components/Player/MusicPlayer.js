@@ -81,7 +81,7 @@ function MusicPlayer({ visible, setMusicPlayerVisible, musicList }) {
       <ReactPlayer
         width="100%"
         height="100px"
-        url={`${process.env.REACT_APP_MEDIA_BASE_URL}${currentPlaying.url}`}
+        url={`${currentPlaying.url}`}
         style={{ outline: "none", border: "none", display: "none" }}
         playing={localStorage.getItem("music-playing")}
         controls={false}

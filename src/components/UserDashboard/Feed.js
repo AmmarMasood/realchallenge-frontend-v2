@@ -140,7 +140,7 @@ function Feed({ userInfo }) {
                 <div
                   className="dashboard-feed-container-card-row2"
                   style={{
-                    background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${
+                    background: `url(${
                       d.image ? d.image.replaceAll(" ", "%20") : ""
                     })`,
                     backgroundSize: "cover",

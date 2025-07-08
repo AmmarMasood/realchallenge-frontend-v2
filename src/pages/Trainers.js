@@ -173,11 +173,7 @@ function Trainers() {
             {filterTrainers.map((trainer) => (
               <Link to={`/trainer/${slug(trainer.username)}/${trainer._id}`}>
                 <ChallengeCard
-                  picture={
-                    trainer.avatarLink
-                      ? `${process.env.REACT_APP_MEDIA_BASE_URL}${trainer.avatarLink}`
-                      : ""
-                  }
+                  picture={trainer.avatarLink ? `${trainer.avatarLink}` : ""}
                   // rating={5}
                   name={trainer.username}
                   // location={trainer.location}
