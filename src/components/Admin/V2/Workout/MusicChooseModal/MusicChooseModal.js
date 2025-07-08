@@ -98,7 +98,7 @@ function MusicChooseModal({ open, setOpen, musics, setMusics }) {
               />
               <span>
                 Music Link:{" "}
-                {`${process.env.REACT_APP_SERVER}/uploads/${music.link}`}
+                {`${process.env.REACT_APP_MEDIA_BASE_URL}${music.link}`}
               </span>
             </div>
             <img

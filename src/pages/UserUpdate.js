@@ -561,7 +561,7 @@ function UserUpdate() {
                     typeof beforePic === "object"
                       ? URL.createObjectURL(beforePic)
                       : typeof beforePic === "string" && beforePic.length > 0
-                      ? `${process.env.REACT_APP_SERVER}/uploads/${beforePic}`
+                      ? `${process.env.REACT_APP_MEDIA_BASE_URL}${beforePic}`
                       : HumanVector
                   }
                   style={{
@@ -618,7 +618,7 @@ function UserUpdate() {
                     typeof afterPic === "object"
                       ? URL.createObjectURL(afterPic)
                       : typeof afterPic === "string" && afterPic.length > 0
-                      ? `${process.env.REACT_APP_SERVER}/uploads/${afterPic}`
+                      ? `${process.env.REACT_APP_MEDIA_BASE_URL}${afterPic}`
                       : HumanVector
                   }
                   style={{

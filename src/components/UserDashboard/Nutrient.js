@@ -382,7 +382,7 @@ function Nutrient({
                   <div
                     style={{
                       height: "150px",
-                      background: `url(${process.env.REACT_APP_SERVER}/uploads/${meal.image})`,
+                      background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${meal.image})`,
                       backgroundSize: "cover",
                     }}
                   ></div>
@@ -428,7 +428,7 @@ function Nutrient({
                     <div
                       style={{
                         height: "150px",
-                        background: `url(${process.env.REACT_APP_SERVER}/uploads/${meal.image})`,
+                        background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${meal.image})`,
                         backgroundSize: "cover",
                       }}
                     ></div>
@@ -1024,7 +1024,7 @@ function Nutrient({
                 <Link to={`/recipe/${slug(meal.name)}/${meal._id}`}>
                   <div
                     style={{
-                      background: `url(${process.env.REACT_APP_SERVER}/uploads/${meal.image})`,
+                      background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${meal.image})`,
                       backgroundSize: "cover",
                       height: "200px",
                     }}

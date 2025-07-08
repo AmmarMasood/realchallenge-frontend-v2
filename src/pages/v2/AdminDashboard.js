@@ -37,6 +37,7 @@ import {
   getAllUserChallenges,
   getAllUserExercises,
 } from "../../services/createChallenge/main";
+import ModalForEditList from "../../components/Admin/V2/Common/ModalForEditList";
 
 function AdminDashboard(props) {
   const { language } = useContext(LanguageContext);
@@ -50,6 +51,10 @@ function AdminDashboard(props) {
   const [openMediaManager, setOpenMediaManager] = useState(false);
   const [challenges, setAllChallenges] = useState([]);
   const [exercises, setAllExercises] = useState([]);
+  const [openExerciseEditListModal, setOpenExerciseEditListModal] =
+    useState(false);
+  const [openChallengeEditListModal, setOpenChallengeEditListModal] =
+    useState(false);
 
   async function fetchTrainerGoals() {
     const { goals } = await getAllTrainerGoals(language);
@@ -106,6 +111,14 @@ function AdminDashboard(props) {
       "noopener,noreferrer"
     );
   };
+
+  const goToEditChallenge = (challengeId) => {
+    window.open(
+      `/admin/v2/challenge-studio/${challengeId}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
   return loading ? (
     <div className="center-inpage">
       <LoadingOutlined style={{ fontSize: "50px", color: "#ff7700" }} />
@@ -134,7 +147,7 @@ function AdminDashboard(props) {
         autoplay
         isOpen={open}
         controlsList="nodownload"
-        videoId={`${process.env.REACT_APP_SERVER}/uploads/${trainer.videoTrailerLink}`}
+        videoId={`${process.env.REACT_APP_MEDIA_BASE_URL}${trainer.videoTrailerLink}`}
         onClose={() => setOpen(false)}
       /> */}
       <CreateGoalsModal
@@ -166,7 +179,7 @@ function AdminDashboard(props) {
             <div className="profile-box-row1">
               <div className="profile-box-row1-avatar">
                 <img
-                  src={`${process.env.REACT_APP_SERVER}/uploads/${
+                  src={`${process.env.REACT_APP_MEDIA_BASE_URL}${
                     trainer.avatarLink
                       ? trainer.avatarLink.replaceAll(" ", "%20")
                       : ""
@@ -313,7 +326,11 @@ function AdminDashboard(props) {
           </div>
 
           <div className="adminv2-selector-container">
-            <div className="adminv2-selector">
+            <div
+              className="adminv2-selector"
+              style={{ cursor: "pointer" }}
+              onClick={() => setOpenExerciseEditListModal(true)}
+            >
               <h1
                 style={{
                   fontSize: "22px",
@@ -322,73 +339,22 @@ function AdminDashboard(props) {
                 <T>adminv2.my_exercises</T>
               </h1>
             </div>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-                marginBottom: "32px",
-                maxHeight: "200px",
-                overflowY: "auto",
-              }}
-            >
-              {exercises.map((exercise, index) => (
-                <div
-                  key={index}
-                  style={{
-                    background: "#222935",
-                    padding: "16px",
-                    textAlign: "left",
-
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <div>
-                    <p
-                      style={{
-                        fontWeight: 500,
-                        fontSize: "15px",
-                        lineHeight: "100%",
-                        letterSpacing: "0%",
-                        padding: 0,
-                        margin: 0,
-                        color: "#ffffff",
-                      }}
-                    >
-                      {exercise.title || "Unnamed Exercise"}
-                    </p>
-                    <span
-                      style={{
-                        fontWeight: 500,
-                        fontSize: "12px",
-                        lineHeight: "100%",
-                        letterSpacing: "0%",
-                        verticalAlign: "middle",
-                        color: "#465060",
-                      }}
-                    >
-                      Exercise ID: {exercise._id}
-                    </span>
-                  </div>
-
-                  <EditFilled
-                    style={{
-                      cursor: "pointer",
-                      color: "white",
-                      fontSize: "18px",
-                    }}
-                    onClick={() => goToEditExercise(exercise._id)}
-                  />
-                </div>
-              ))}
-            </div>
+            <ModalForEditList
+              data={exercises}
+              open={openExerciseEditListModal}
+              setOpen={setOpenExerciseEditListModal}
+              onClickEdit={goToEditExercise}
+              title="My Exercises"
+              subtext="Exercise ID"
+            />
           </div>
 
           <div className="adminv2-selector-container">
-            <div className="adminv2-selector">
+            <div
+              className="adminv2-selector"
+              style={{ cursor: "pointer" }}
+              onClick={() => setOpenChallengeEditListModal(true)}
+            >
               <h1
                 style={{
                   fontSize: "22px",
@@ -397,74 +363,14 @@ function AdminDashboard(props) {
                 <T>adminv2.my_challenges</T>
               </h1>
             </div>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-                marginBottom: "32px",
-                maxHeight: "200px",
-                overflowY: "auto",
-              }}
-            >
-              {challenges.map((exercise, index) => (
-                <div
-                  key={index}
-                  style={{
-                    background: "#222935",
-                    padding: "16px",
-                    textAlign: "left",
-
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <div>
-                    <p
-                      style={{
-                        fontWeight: 500,
-                        fontSize: "15px",
-                        lineHeight: "100%",
-                        letterSpacing: "0%",
-                        padding: 0,
-                        margin: 0,
-                        color: "#ffffff",
-                      }}
-                    >
-                      {exercise.challengeName || "Unnamed Challenge"}
-                    </p>
-                    <span
-                      style={{
-                        fontWeight: 500,
-                        fontSize: "12px",
-                        lineHeight: "100%",
-                        letterSpacing: "0%",
-                        verticalAlign: "middle",
-                        color: "#465060",
-                      }}
-                    >
-                      Challenge ID: {exercise._id}
-                    </span>
-                  </div>
-
-                  <a
-                    href={`/admin/v2/challenge-studio/${exercise._id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <EditFilled
-                      style={{
-                        cursor: "pointer",
-                        color: "white",
-                        fontSize: "18px",
-                      }}
-                    />
-                  </a>
-                </div>
-              ))}
-            </div>
+            <ModalForEditList
+              data={challenges}
+              open={openChallengeEditListModal}
+              setOpen={setOpenChallengeEditListModal}
+              onClickEdit={goToEditChallenge}
+              title="My Challenges"
+              subtext="Challenge ID"
+            />
           </div>
         </div>
       </div>

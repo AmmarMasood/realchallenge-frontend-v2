@@ -389,7 +389,7 @@ function UpdateUser({
                         avatar.link ===
                         "https://thumbs.dreamstime.com/b/default-avatar-photo-placeholder-profile-icon-eps-file-easy-to-edit-default-avatar-photo-placeholder-profile-icon-124557887.jpg"
                           ? avatar.link
-                          : `${process.env.REACT_APP_SERVER}/uploads/${avatar.link}`
+                          : `${process.env.REACT_APP_MEDIA_BASE_URL}${avatar.link}`
                       }
                       height="120px"
                       width="150px"
@@ -419,7 +419,7 @@ function UpdateUser({
                 {hero && (
                   <div style={{ margin: "10px" }}>
                     <img
-                      src={`${process.env.REACT_APP_SERVER}/uploads/${hero.link}`}
+                      src={`${process.env.REACT_APP_MEDIA_BASE_URL}${hero.link}`}
                       alt=""
                       height="150px"
                       width="200px"

@@ -69,7 +69,7 @@ function PopupPlayer({ open, setOpen, onCancel, video }) {
         <ReactPlayer
           width="100%"
           height="100%"
-          url={`${process.env.REACT_APP_SERVER}/uploads/${video}`}
+          url={`${process.env.REACT_APP_MEDIA_BASE_URL}${video}`}
           loop={true}
           controls={true}
           muted={false}

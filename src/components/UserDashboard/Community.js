@@ -150,7 +150,7 @@ function Community({ userInfo }) {
                 <div
                   className="dashboard-feed-container-card-row2"
                   style={{
-                    background: `url(${process.env.REACT_APP_SERVER}/uploads/${
+                    background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${
                       d.image ? d.image.replaceAll(" ", "%20") : ""
                     })`,
                     backgroundSize: "cover",

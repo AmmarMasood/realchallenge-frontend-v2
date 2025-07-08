@@ -175,7 +175,7 @@ function Trainers() {
                 <ChallengeCard
                   picture={
                     trainer.avatarLink
-                      ? `${process.env.REACT_APP_SERVER}/uploads/${trainer.avatarLink}`
+                      ? `${process.env.REACT_APP_MEDIA_BASE_URL}${trainer.avatarLink}`
                       : ""
                   }
                   // rating={5}

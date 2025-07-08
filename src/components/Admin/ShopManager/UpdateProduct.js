@@ -232,7 +232,7 @@ function UpdateProduct(props) {
                 >
                   <img
                     alt=""
-                    src={`${process.env.REACT_APP_SERVER}/uploads/${
+                    src={`${process.env.REACT_APP_MEDIA_BASE_URL}${
                       typeof img === "object" ? img.link : img
                     }`}
                     height="100px"

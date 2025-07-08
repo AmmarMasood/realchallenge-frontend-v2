@@ -72,7 +72,7 @@ function NonRenderedVideoPlayer({
         volume={playerState.volume}
         url={
           exercise?.videoURL
-            ? `${process.env.REACT_APP_SERVER}/uploads/${exercise.videoURL}`
+            ? `${process.env.REACT_APP_MEDIA_BASE_URL}${exercise.videoURL}`
             : ""
         }
         progress={playerState.progress}

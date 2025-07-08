@@ -397,7 +397,7 @@ function ChallengePlayer(props) {
               </p>
 
               <a
-                href={`${process.env.REACT_APP_SERVER}/uploads/${workout.infoFile}`}
+                href={`${process.env.REACT_APP_MEDIA_BASE_URL}${workout.infoFile}`}
                 target="_blank"
                 download
               >

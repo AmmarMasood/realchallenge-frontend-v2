@@ -786,7 +786,7 @@ function UpdateRecipe(props) {
                   >
                     {console.log(
                       "test",
-                      `${process.env.REACT_APP_SERVER}/uploads/${
+                      `${process.env.REACT_APP_MEDIA_BASE_URL}${
                         typeof featuredImage === "object"
                           ? featuredImage.link
                           : featuredImage
@@ -794,7 +794,7 @@ function UpdateRecipe(props) {
                     )}
                     <img
                       alt=""
-                      src={`${process.env.REACT_APP_SERVER}/uploads/${
+                      src={`${process.env.REACT_APP_MEDIA_BASE_URL}${
                         typeof featuredImage === "object"
                           ? featuredImage.link
                           : featuredImage
@@ -814,7 +814,7 @@ function UpdateRecipe(props) {
                 <div style={{ display: "flex" }}>
                   {console.log(
                     "test",
-                    `${process.env.REACT_APP_SERVER}/uploads/${
+                    `${process.env.REACT_APP_MEDIA_BASE_URL}${
                       typeof featuredImage === "object"
                         ? featuredImage.link
                         : featuredImage
@@ -830,7 +830,7 @@ function UpdateRecipe(props) {
                   >
                     <img
                       alt=""
-                      src={`${process.env.REACT_APP_SERVER}/uploads/${featuredImage}`}
+                      src={`${process.env.REACT_APP_MEDIA_BASE_URL}${featuredImage}`}
                       height="100px"
                     />
                     <span>

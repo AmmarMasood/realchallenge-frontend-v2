@@ -96,7 +96,7 @@ function TrainerProfile(props) {
         autoplay
         isOpen={open}
         controlsList="nodownload"
-        videoId={`${process.env.REACT_APP_SERVER}/uploads/${trainer.videoTrailerLink}`}
+        videoId={`${process.env.REACT_APP_MEDIA_BASE_URL}${trainer.videoTrailerLink}`}
         onClose={() => setOpen(false)}
       /> */}
       <div className="trainer-profile-container">
@@ -116,7 +116,7 @@ function TrainerProfile(props) {
           }}
         >
           {console.log(
-            `${process.env.REACT_APP_SERVER}/uploads/${
+            `${process.env.REACT_APP_MEDIA_BASE_URL}${
               trainer.heroBanner
                 ? trainer.heroBanner.replaceAll(" ", "%20")
                 : ""
@@ -126,7 +126,7 @@ function TrainerProfile(props) {
             <div className="profile-box-row1">
               <div className="profile-box-row1-avatar">
                 <img
-                  src={`${process.env.REACT_APP_SERVER}/uploads/${
+                  src={`${process.env.REACT_APP_MEDIA_BASE_URL}${
                     trainer.avatarLink
                       ? trainer.avatarLink.replaceAll(" ", "%20")
                       : ""
@@ -262,7 +262,7 @@ function TrainerProfile(props) {
                   key={challenge._id}
                 >
                   <ChallengeCard
-                    picture={`${process.env.REACT_APP_SERVER}/uploads/${
+                    picture={`${process.env.REACT_APP_MEDIA_BASE_URL}${
                       challenge.thumbnailLink
                         ? challenge.thumbnailLink.replaceAll(" ", "%20")
                         : ""

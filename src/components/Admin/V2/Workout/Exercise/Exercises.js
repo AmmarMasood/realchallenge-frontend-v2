@@ -13,6 +13,13 @@ import { CopyOutlined, DeleteFilled } from "@ant-design/icons";
 import { v4 } from "uuid";
 import { useChallenge } from "../../../../../contexts/ChallengeCreatorV2";
 import ExerciseChooseModal from "../ExerciseChooseModal/ExerciseChooseModal";
+import {
+  DraggableArea,
+  DraggableHandle,
+  DraggableItem,
+  ItemTypeExercise,
+} from "../../../../../helpers/DndWrapper";
+import DragAndDropIcon from "../../../../../assets/icons/drag-drop-icon-white.svg";
 
 const responsive = {
   superLargeDesktop: {
@@ -228,6 +235,27 @@ function Exercises({
     setShowExerciseModal(false);
     setExerciseIdToUpdate(null);
   };
+
+  const handleExerciseOrder = (newOrder) => {
+    //  remove undefined ids
+    const filteredOrder = newOrder.filter((id) => id !== undefined);
+    const newOrderedKeys = filteredOrder.map((exercise) => exercise.key);
+    const updatedExercises = newOrderedKeys.map((id) => {
+      return workout.exercises.find((exercise) => exercise.id === id);
+    });
+
+    // update the order of all exercises other than the first
+    const firstExercise = workout.exercises[0];
+
+    const updatedOrderedExercises = [firstExercise, ...updatedExercises];
+    setWorkout((prev) => ({
+      ...prev,
+      exercises: updatedOrderedExercises,
+    }));
+  };
+  const firstExercise = workout.exercises && workout.exercises[0];
+  const remainingExercises = workout.exercises && workout.exercises.slice(1);
+
   return (
     <>
       <ExerciseChooseModal
@@ -245,30 +273,29 @@ function Exercises({
         }}
       >
         <div className="video-browser-container">
-          <Carousel responsive={responsive}>
-            {console.log("workout.exercises", workout.exercises)}
-            {workout.exercises &&
-              workout.exercises.map((e, i) => {
-                return i === 0 ? (
-                  <div
-                    key={e.id || i}
-                    aria-label={`Exercise ${i + 1}`}
-                    className={`${
-                      currentExercise.index === i
-                        ? "exercise-browser-card challenge-player-container-exercies-box--currentRunning"
-                        : "exercise-browser-card"
-                    }`}
-                  >
-                    <div>
-                      <h4 className="challenge-player-container-exercies-round font-paragraph-white">
-                        {e.exerciseGroupName ? (
-                          e.exerciseGroupName
-                        ) : (
-                          <span style={{ opacity: 0 }}>-</span>
-                        )}
-                      </h4>
-                    </div>
-                    {/* {workout.renderWorkout && e.videoURL && (
+          <div
+            style={{ display: "flex", overflowX: "auto", overflowY: "hidden" }}
+          >
+            {firstExercise && (
+              <div
+                key={0}
+                aria-label={`Exercise 0`}
+                className={`${
+                  currentExercise.index === 0
+                    ? "exercise-browser-card challenge-player-container-exercies-box--currentRunning"
+                    : "exercise-browser-card"
+                }`}
+              >
+                <div>
+                  <h4 className="challenge-player-container-exercies-round font-paragraph-white">
+                    {firstExercise.exerciseGroupName ? (
+                      firstExercise.exerciseGroupName
+                    ) : (
+                      <span style={{ opacity: 0 }}>-</span>
+                    )}
+                  </h4>
+                </div>
+                {/* {workout.renderWorkout && e.videoURL && (
                       <img
                         src={SquarePlay}
                         onClick={() =>
@@ -279,109 +306,134 @@ function Exercises({
                         style={{ padding: "8px" }}
                       />
                     )} */}
-                    <div
-                      className="challenge-player-container-exercies-box"
-                      key={e.id}
-                      onClick={() => handleChangeExercise(i)}
-                    >
-                      <div
-                        className="challenge-player-container-exercies-box-imagebox"
-                        onClick={(event) =>
-                          handleUpdateRenderedExercise(event, e)
-                        }
-                      >
-                        {e.videoURL ? (
-                          <VideoThumbnail
-                            videoUrl={
-                              e.videoURL
-                                ? `${process.env.REACT_APP_SERVER}/uploads/${e.videoURL}`
-                                : ""
-                            }
-                            width={250}
-                            height={200}
-                            cors={true}
-                          />
-                        ) : (
-                          <img src={AddExercise} alt="add-exercise" />
-                        )}
-                      </div>
-                      <div className="challenge-player-container-exercies-box-details font-paragraph-white">
-                        <p style={{ lineHeight: "10px" }}>{e.title}</p>
-
-                        {workout.renderWorkout && (
-                          <input
-                            onClick={(e) => e.stopPropagation()}
-                            className="v2workout-field v2workout-field-withborder v2workout-subtitle"
-                            onChange={(t) => handleExerciseDuration(t, e.id)}
-                            placeholder="Exercise Duration in Sec"
-                            value={e.exerciseLength}
-                            style={{
-                              marginTop: "-10px",
-                              paddingLeft: "5px",
-                              width: "fit-content",
-                            }}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
+                <div
+                  className="challenge-player-container-exercies-box"
+                  key={firstExercise.id}
+                  onClick={() => handleChangeExercise(0)}
+                >
                   <div
-                    className={`${
-                      currentExercise.index === i
-                        ? "exercise-browser-card challenge-player-container-exercies-box--currentRunning"
-                        : "exercise-browser-card"
-                    }`}
+                    className="challenge-player-container-exercies-box-imagebox"
+                    onClick={(event) =>
+                      handleUpdateRenderedExercise(event, firstExercise)
+                    }
                   >
+                    {firstExercise.videoURL ? (
+                      <VideoThumbnail
+                        videoUrl={
+                          firstExercise.videoURL
+                            ? `${process.env.REACT_APP_MEDIA_BASE_URL}${firstExercise.videoURL}`
+                            : ""
+                        }
+                        width={250}
+                        height={200}
+                        cors={true}
+                      />
+                    ) : (
+                      <img src={AddExercise} alt="add-exercise" />
+                    )}
+                  </div>
+                  <div className="challenge-player-container-exercies-box-details font-paragraph-white">
+                    <p style={{ lineHeight: "10px" }}>{firstExercise.title}</p>
+
                     {workout.renderWorkout && (
-                      <DeleteFilled
+                      <input
+                        onClick={(e) => e.stopPropagation()}
+                        className="v2workout-field v2workout-field-withborder v2workout-subtitle"
+                        onChange={(t) =>
+                          handleExerciseDuration(t, firstExercise.id)
+                        }
+                        placeholder="Exercise Duration in Sec"
+                        value={firstExercise.exerciseLength}
                         style={{
-                          color: "#fff",
-                          fontSize: "22px",
-                          position: "absolute",
-                          right: "10px",
-                          zIndex: "10000000",
+                          marginTop: "-10px",
+                          paddingLeft: "5px",
+                          width: "fit-content",
                         }}
-                        onClick={(event) => removeExercise(event, e)}
                       />
                     )}
-                    {workout.renderWorkout && (
-                      <CopyOutlined
-                        onClick={(evet) => {
-                          evet.stopPropagation();
-                          evet.preventDefault();
-                          duplicateExercise(e);
-                        }}
-                        style={{
-                          color: "#fff",
-                          fontSize: "20px",
-                          cursor: "pointer",
-                          marginLeft: "10px",
-                          position: "absolute",
-                          top: "8px",
-                          right: "35px",
-                          zIndex: "10000000",
-                        }}
-                      />
-                    )}
-                    {workout.renderWorkout && (
-                      <div>
-                        <h4 className="challenge-player-container-exercies-round font-paragraph-white">
-                          <input
-                            className="v2workout-field v2workout-field-withborder v2workout-subtitle"
-                            onChange={(t) => handleExerciseGroupName(t, e.id)}
-                            value={e.exerciseGroupName}
-                            onClick={(e) => e.stopPropagation()}
-                            placeholder="Group 1/3"
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DraggableArea
+              onChange={(newOrder) => handleExerciseOrder(newOrder)}
+              direction="horizontal"
+              itemType={ItemTypeExercise}
+            >
+              {remainingExercises &&
+                remainingExercises.map((e, i) => {
+                  i += 1; // Adjust index to match the original exercise index
+                  return (
+                    <DraggableItem key={e.id} id={e.id}>
+                      <div
+                        className={`${
+                          currentExercise.index === i
+                            ? "exercise-browser-card challenge-player-container-exercies-box--currentRunning"
+                            : "exercise-browser-card"
+                        }`}
+                        key={e.id}
+                      >
+                        {workout.renderWorkout && (
+                          <DeleteFilled
                             style={{
-                              paddingLeft: "5px",
-                              width: "160px",
+                              color: "#fff",
+                              fontSize: "22px",
+                              position: "absolute",
+                              right: "10px",
+                              zIndex: "10000000",
+                            }}
+                            onClick={(event) => removeExercise(event, e)}
+                          />
+                        )}
+                        {workout.renderWorkout && (
+                          <DraggableHandle>
+                            <img
+                              src={DragAndDropIcon}
+                              alt="drag"
+                              style={{ transform: "rotate(90deg)" }}
+                            />
+                          </DraggableHandle>
+                        )}
+                        {workout.renderWorkout && (
+                          <CopyOutlined
+                            onClick={(evet) => {
+                              evet.stopPropagation();
+                              evet.preventDefault();
+                              duplicateExercise(e);
+                            }}
+                            style={{
+                              color: "#fff",
+                              fontSize: "20px",
+                              cursor: "pointer",
+                              marginLeft: "10px",
+                              position: "absolute",
+                              top: "8px",
+                              right: "35px",
+                              zIndex: "10000000",
                             }}
                           />
-                        </h4>
-                      </div>
-                    )}
-                    {/* {workout.renderWorkout && !fullscreen && (
+                        )}
+                        {workout.renderWorkout && (
+                          <div>
+                            <h4 className="challenge-player-container-exercies-round font-paragraph-white">
+                              <input
+                                className="v2workout-field v2workout-field-withborder v2workout-subtitle"
+                                onChange={(t) =>
+                                  handleExerciseGroupName(t, e.id)
+                                }
+                                value={e.exerciseGroupName}
+                                onClick={(e) => e.stopPropagation()}
+                                placeholder="Group 1/3"
+                                style={{
+                                  paddingLeft: "5px",
+                                  width: "160px",
+                                }}
+                              />
+                            </h4>
+                          </div>
+                        )}
+                        {/* {workout.renderWorkout && !fullscreen && (
                     <img
                       src={SquarePT}
                       alt=""
@@ -389,105 +441,114 @@ function Exercises({
                       onClick={() => handleOpenExerciseForHelp(e)}
                     />
                   )} */}
-                    <div
-                      className="challenge-player-container-exercies-box"
-                      key={e.id}
-                      onClick={() => handleChangeExercise(i)}
-                    >
-                      <div
-                        className="challenge-player-container-exercies-box-imagebox"
-                        onClick={(event) => {
-                          if (workout.renderWorkout) {
-                            openExerciseModal(e);
-                          } else {
-                            handleUpdateRenderedExercise(event, e);
-                          }
-                        }}
-                      >
-                        {e.videoURL ? (
-                          <VideoThumbnail
-                            videoUrl={
-                              e.videoURL
-                                ? `${process.env.REACT_APP_SERVER}/uploads/${e.videoURL}`
-                                : ""
-                            }
-                            width={250}
-                            height={200}
-                            cors={true}
-                          />
-                        ) : (
-                          <img src={AddExercise} alt="add-exercise" />
-                        )}
-                      </div>
-                      <div
-                        className="challenge-player-container-exercies-box-details font-paragraph-white"
-                        style={{
-                          display: "grid",
-                          gridTemplateRows: "1fr 1fr",
-                        }}
-                      >
-                        <input
-                          className="v2workout-field v2workout-field-withborder v2workout-subtitle"
-                          onChange={(t) => handleExerciseTitle(t, e.id)}
-                          placeholder="Name Exercise"
-                          value={e.title}
-                          disabled={workout.renderWorkout}
-                          style={{
-                            paddingLeft: "5px",
-                            width: "fit-content",
-                          }}
-                        />
-                        {workout.renderWorkout && (
-                          <input
-                            onClick={(e) => e.stopPropagation()}
-                            className="v2workout-field v2workout-field-withborder v2workout-subtitle"
-                            onChange={(t) => handleExerciseDuration(t, e.id)}
-                            placeholder="Duration in sec"
-                            value={e.exerciseLength}
-                            type="number"
-                            style={{
-                              paddingLeft: "5px",
-                              width: "fit-content",
+                        <div
+                          className="challenge-player-container-exercies-box"
+                          key={e.id}
+                          onClick={() => handleChangeExercise(i)}
+                        >
+                          <div
+                            className="challenge-player-container-exercies-box-imagebox"
+                            onClick={(event) => {
+                              if (workout.renderWorkout) {
+                                openExerciseModal(e);
+                              } else {
+                                handleUpdateRenderedExercise(event, e);
+                              }
                             }}
-                          />
-                        )}
-                        {workout.renderWorkout && (
-                          <input
-                            onClick={(e) => e.stopPropagation()}
-                            className="v2workout-field v2workout-field-withborder v2workout-subtitle"
-                            onChange={(t) => handleExerciseBreakTimer(t, e.id)}
-                            placeholder="Exercise Break in Sec"
-                            value={e.break}
-                            type="number"
+                          >
+                            {e.videoURL ? (
+                              <VideoThumbnail
+                                videoUrl={
+                                  e.videoURL
+                                    ? `${process.env.REACT_APP_MEDIA_BASE_URL}${e.videoURL}`
+                                    : ""
+                                }
+                                width={250}
+                                height={200}
+                                cors={true}
+                              />
+                            ) : (
+                              <img src={AddExercise} alt="add-exercise" />
+                            )}
+                          </div>
+                          <div
+                            className="challenge-player-container-exercies-box-details font-paragraph-white"
                             style={{
-                              paddingLeft: "5px",
-                              width: "fit-content",
+                              display: "grid",
+                              gridTemplateRows: "1fr 1fr",
                             }}
-                          />
-                        )}
+                          >
+                            <input
+                              className="v2workout-field v2workout-field-withborder v2workout-subtitle"
+                              onChange={(t) => handleExerciseTitle(t, e.id)}
+                              placeholder="Name Exercise"
+                              value={e.title}
+                              disabled={workout.renderWorkout}
+                              style={{
+                                paddingLeft: "5px",
+                                width: "fit-content",
+                              }}
+                            />
+                            {workout.renderWorkout && (
+                              <input
+                                onClick={(e) => e.stopPropagation()}
+                                className="v2workout-field v2workout-field-withborder v2workout-subtitle"
+                                onChange={(t) =>
+                                  handleExerciseDuration(t, e.id)
+                                }
+                                placeholder="Duration in sec"
+                                value={e.exerciseLength}
+                                type="number"
+                                style={{
+                                  paddingLeft: "5px",
+                                  width: "fit-content",
+                                }}
+                              />
+                            )}
+                            {workout.renderWorkout && (
+                              <input
+                                onClick={(e) => e.stopPropagation()}
+                                className="v2workout-field v2workout-field-withborder v2workout-subtitle"
+                                onChange={(t) =>
+                                  handleExerciseBreakTimer(t, e.id)
+                                }
+                                placeholder="Exercise Break in Sec"
+                                value={e.break}
+                                type="number"
+                                style={{
+                                  paddingLeft: "5px",
+                                  width: "fit-content",
+                                }}
+                              />
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
-            {!workout.renderWorkout && workout.exercises?.length === 2 ? (
-              <div></div>
-            ) : (
-              <img
-                src={AddNewExercise}
-                onClick={addNewExercise}
-                alt="exercise"
-                style={{
-                  cursor: "pointer",
-                  marginTop: "00px",
-                }}
-              />
-            )}
-          </Carousel>
+                    </DraggableItem>
+                  );
+                })}
+              {!workout.renderWorkout && workout.exercises?.length === 2 ? (
+                <div></div>
+              ) : (
+                <img
+                  src={AddNewExercise}
+                  onClick={addNewExercise}
+                  alt="exercise"
+                  style={{
+                    cursor: "pointer",
+                    marginTop: "00px",
+                  }}
+                />
+              )}
+            </DraggableArea>
+          </div>
         </div>
       </div>
     </>
   );
 }
+
+const exercisesWithDragAndDrop = (props) => {};
+const exercisesWithoutDragAndDrop = (props) => {};
 
 export default Exercises;

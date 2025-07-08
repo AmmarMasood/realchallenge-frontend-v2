@@ -65,7 +65,7 @@ const ChallengeCompleteNextModal = ({
                 }`}
               >
                 <ChallengeCard
-                  picture={`${process.env.REACT_APP_SERVER}/uploads/${challenge.thumbnailLink}`}
+                  picture={`${process.env.REACT_APP_MEDIA_BASE_URL}${challenge.thumbnailLink}`}
                   rating={challenge.rating}
                   name={challenge.challengeName}
                   newc={true}

@@ -138,7 +138,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                       <div
                         className="dashboard-challenges-mychallenge-body-box"
                         style={{
-                          background: `url(${process.env.REACT_APP_SERVER}/uploads/${d.thumbnailLink})`,
+                          background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${d.thumbnailLink})`,
                           backgroundSize: "cover",
                           backgroundPosition: "50% 50%",
                           position: "relative",
@@ -226,7 +226,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                     style={{ backgroundColor: "#2F3E50", height: "100%" }}
                   >
                     <img
-                      src={`${process.env.REACT_APP_SERVER}/uploads/${pics[0]}`}
+                      src={`${process.env.REACT_APP_MEDIA_BASE_URL}${pics[0]}`}
                       alt="users-before"
                     />
                   </div>
@@ -237,7 +237,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                     style={{ backgroundColor: "#3C618F", height: "100%" }}
                   >
                     <img
-                      src={`${process.env.REACT_APP_SERVER}/uploads/${pics[1]}`}
+                      src={`${process.env.REACT_APP_MEDIA_BASE_URL}${pics[1]}`}
                       alt="users-after"
                     />
                   </div>
@@ -400,7 +400,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                   <div
                     className="dashboard-challenges-row3-inbox-challenge"
                     style={{
-                      background: `url(${process.env.REACT_APP_SERVER}/uploads/${challenge.thumbnailLink})`,
+                      background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${challenge.thumbnailLink})`,
                       backgroundSize: "cover",
                       backgroundPosition: "50% 50%",
                       position: "relative",

@@ -118,14 +118,14 @@ function MagazineArticle(props) {
       </Helmet>
       <Navbar />
       {console.log(
-        `${process.env.REACT_APP_SERVER}/uploads/${
+        `${process.env.REACT_APP_MEDIA_BASE_URL}${
           blogInfo ? blogInfo.featuredImage : ""
         }`
       )}
       <div
         className="magazine-article-head"
         style={{
-          background: `url(${process.env.REACT_APP_SERVER}/uploads/${
+          background: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${
             blogInfo ? blogInfo.featuredImage : ""
           }) no-repeat center center / cover`,
           backgroundSize: "cover",
@@ -137,7 +137,7 @@ function MagazineArticle(props) {
         autoplay
         isOpen={open}
         controlsList="nodownload"
-        url={`${process.env.REACT_APP_SERVER}/uploads/${blogInfo?.videoLink}`}
+        url={`${process.env.REACT_APP_MEDIA_BASE_URL}${blogInfo?.videoLink}`}
         onClose={() => setOpen(false)}
       /> */}
       <div className="article-container">
@@ -147,7 +147,7 @@ function MagazineArticle(props) {
               shape="square"
               size="large"
               icon={<UserOutlined />}
-              src={`${process.env.REACT_APP_SERVER}/uploads/${
+              src={`${process.env.REACT_APP_MEDIA_BASE_URL}${
                 blogInfo && blogInfo.user ? blogInfo.user.avatarLink : ""
               }`}
             />{" "}
@@ -193,7 +193,7 @@ function MagazineArticle(props) {
               </TwitterShareButton>
               <PinterestShareButton
                 url={window.location.href}
-                media={`${process.env.REACT_APP_SERVER}/uploads/${blogInfo.featuredImage}`}
+                media={`${process.env.REACT_APP_MEDIA_BASE_URL}${blogInfo.featuredImage}`}
                 description="Hi. Please checkout this amazing article I found at realchallenge.fit"
               >
                 <PinterestIcon

@@ -758,7 +758,7 @@ function ChallengeProfile(props) {
         autoplay
         isOpen={open}
         controlsList="nodownload"
-        url={`${process.env.REACT_APP_SERVER}/uploads/${challenge.videoThumbnailLink}`}
+        url={`${process.env.REACT_APP_MEDIA_BASE_URL}${challenge.videoThumbnailLink}`}
         onClose={() => setOpen(false)}
       /> */}
       <ChallengeReviewModal
@@ -862,7 +862,7 @@ function ChallengeProfile(props) {
                   >
                     <span
                       style={{
-                        backgroundImage: `url(${process.env.REACT_APP_SERVER}/uploads/${trainer.avatarLink})`,
+                        backgroundImage: `url(${process.env.REACT_APP_MEDIA_BASE_URL}${trainer.avatarLink})`,
                         backgroundPosition: "center center",
                         backgroundSize: "cover",
                         backgroundRepeat: "no-repeat",

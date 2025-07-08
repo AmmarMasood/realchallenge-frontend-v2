@@ -100,7 +100,7 @@ function UpdatePost({ postInfo, show, setShow, onUpdateComplete }) {
             >
               {image && (
                 <img
-                  src={`${process.env.REACT_APP_SERVER}/uploads/${image.link}`}
+                  src={`${process.env.REACT_APP_MEDIA_BASE_URL}${image.link}`}
                   alt=""
                   height="100px"
                 />

@@ -53,7 +53,7 @@ function NewPlayer({ exercise, musics, moveToNextExercise }) {
         <source
           src={
             exercise.videoURL
-              ? `${process.env.REACT_APP_SERVER}/uploads/${exercise.videoURL}`
+              ? `${process.env.REACT_APP_MEDIA_BASE_URL}${exercise.videoURL}`
               : ""
           }
           type="video/mp4"

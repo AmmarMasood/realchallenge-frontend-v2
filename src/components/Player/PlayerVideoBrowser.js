@@ -135,7 +135,7 @@ function PlayerVideoBrowser({
                       <VideoThumbnail
                         videoUrl={
                           e.videoURL
-                            ? `${process.env.REACT_APP_SERVER}/uploads/${e.videoURL}`
+                            ? `${process.env.REACT_APP_MEDIA_BASE_URL}${e.videoURL}`
                             : ""
                         }
                         width={250}
@@ -198,7 +198,7 @@ function PlayerVideoBrowser({
                       <VideoThumbnail
                         videoUrl={
                           e.videoURL
-                            ? `${process.env.REACT_APP_SERVER}/uploads/${e.videoURL}`
+                            ? `${process.env.REACT_APP_MEDIA_BASE_URL}${e.videoURL}`
                             : ""
                         }
                         width={250}
