@@ -108,7 +108,6 @@ export function DraggableHandle({ children }) {
       style={{
         display: "inline-block",
         cursor: "move",
-        zIndex: 10000000,
         position: "relative",
       }}
     >
