@@ -381,7 +381,6 @@ function Exercises({
                               fontSize: "22px",
                               position: "absolute",
                               right: "10px",
-                              zIndex: "10000000",
                             }}
                             onClick={(event) => removeExercise(event, e)}
                           />
@@ -410,7 +409,6 @@ function Exercises({
                               position: "absolute",
                               top: "8px",
                               right: "35px",
-                              zIndex: "10000000",
                             }}
                           />
                         )}
