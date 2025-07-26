@@ -33,7 +33,7 @@ export function addChallengeToCustomerDetail(userId, challengeId) {
         "Congratulations! Challenge added to your profile!",
         ""
       );
-      window.location.reload(false);
+      // window.location.reload(false);
       return { data: res.data, success: true };
     })
     .catch((err) => {

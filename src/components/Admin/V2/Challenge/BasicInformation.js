@@ -173,7 +173,7 @@ function BasicInformation(props) {
     enableBeforeUnloadConfirm: true,
     hasUnsavedChanges: true,
     backForwardMessage:
-      "You have unsaved changes. Are you sure you want to leave?",
+      "You have unsaved changes in this challenge. Are you sure you want to leave?",
     confirmMessage: "Any unsaved work will be lost. Continue?",
     onPopState: (e) => {
       console.log("Navigation detected", e);
@@ -354,7 +354,13 @@ function BasicInformation(props) {
       errors.push("Select a pack");
       errorToShow.pack = "Select a pack";
     }
-    if (pack === "CHALLENGE_1" && !customPrice) {
+    if (
+      pack === "CHALLENGE_1" &&
+      (customPrice === "" ||
+        customPrice === null ||
+        customPrice === undefined ||
+        customPrice < 0)
+    ) {
       errors.push("Price is required");
       errorToShow.customPrice = "Price is required";
     }
@@ -1824,6 +1830,9 @@ function BasicInformation(props) {
                       className="adminV2-bi-input"
                       type="number"
                       value={customPrice}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
                       onChange={(e) => {
                         if (errors.customPrice) {
                           setErrors((prev) => ({

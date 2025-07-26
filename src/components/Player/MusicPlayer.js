@@ -18,6 +18,7 @@ function MusicPlayer({ visible, setMusicPlayerVisible, musicList }) {
   const [currentBreak, setCurrentBreak] = useContext(breakContext);
   const { height, width } = useWindowDimensions();
   const [currentPlaying, setCurrentPLaying] = useState({
+    id: 12345,
     _id: 12345,
     name: "",
     url: "",
@@ -67,7 +68,7 @@ function MusicPlayer({ visible, setMusicPlayerVisible, musicList }) {
       className="music-player-modal-container"
       style={{ display: visible ? "flex" : "none" }}
     >
-      {console.log("======================================>", currentPlaying)}
+      {console.log("currentPlaying", musicList)}
       <CloseOutlined
         onClick={() => setMusicPlayerVisible(false)}
         style={{
@@ -81,7 +82,7 @@ function MusicPlayer({ visible, setMusicPlayerVisible, musicList }) {
       <ReactPlayer
         width="100%"
         height="100px"
-        url={`${currentPlaying.url}`}
+        url={`${currentPlaying.url || currentPlaying.link}`}
         style={{ outline: "none", border: "none", display: "none" }}
         playing={localStorage.getItem("music-playing")}
         controls={false}
@@ -136,15 +137,24 @@ function MusicPlayer({ visible, setMusicPlayerVisible, musicList }) {
           </div>
           {musicList.map((m) => (
             <div key={m._id} onClick={() => handleOnMusicSelect(m)}>
+              {console.log("ammar", currentPlaying, m)}
               <span
                 className="font-paragraph-white"
                 style={{
                   color:
-                    currentPlaying._id === m._id
+                    (currentPlaying?._id &&
+                      m?._id &&
+                      currentPlaying._id === m._id) ||
+                    (currentPlaying?.id && m?.id && currentPlaying.id === m.id)
                       ? "var(--color-orange)"
                       : "#fff",
                   transform:
-                    currentPlaying._id === m._id ? "scale(1.02)" : "scale(1)",
+                    (currentPlaying?._id &&
+                      m?._id &&
+                      currentPlaying._id === m._id) ||
+                    (currentPlaying?.id && m?.id && currentPlaying.id === m.id)
+                      ? "scale(1.02)"
+                      : "scale(1)",
                   display: "flex",
                   alignItems: "center",
                   cursor: "pointer",

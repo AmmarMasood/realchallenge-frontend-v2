@@ -20,7 +20,7 @@ import {
   ItemTypeExercise,
 } from "../../../../../helpers/DndWrapper";
 import DragAndDropIcon from "../../../../../assets/icons/drag-drop-icon-white.svg";
-
+import SquarePT from "../../../../../assets/icons/Square-PT.png";
 const responsive = {
   superLargeDesktop: {
     // the naming can be any, depends on you.
@@ -73,8 +73,11 @@ function Exercises({
   const [exerciseIdToUpdate, setExerciseIdToUpdate] = React.useState(null);
 
   const handleOpenExerciseForHelp = (e) => {
+    const exercise = allExercises.find(
+      (exercise) => exercise._id === e.exerciseId
+    );
     setPlayerState({ ...playerState, playing: false, muted: true });
-    setExerciseForHelpModal(e);
+    setExerciseForHelpModal({ ...e, description: exercise?.description || "" });
     setOpenHelpModal(true);
   };
 
@@ -274,7 +277,12 @@ function Exercises({
       >
         <div className="video-browser-container">
           <div
-            style={{ display: "flex", overflowX: "auto", overflowY: "hidden" }}
+            style={{
+              display: "flex",
+              overflowX: "auto",
+              overflowY: "hidden",
+              maxWidth: "90vw",
+            }}
           >
             {firstExercise && (
               <div
@@ -431,14 +439,19 @@ function Exercises({
                             </h4>
                           </div>
                         )}
-                        {/* {workout.renderWorkout && !fullscreen && (
-                    <img
-                      src={SquarePT}
-                      alt=""
-                      className="challenge-player-container-exercies-box-asktrainerbtn"
-                      onClick={() => handleOpenExerciseForHelp(e)}
-                    />
-                  )} */}
+                        {workout.renderWorkout &&
+                          !fullscreen &&
+                          e?.videoURL && (
+                            <img
+                              src={SquarePT}
+                              alt=""
+                              className="challenge-player-container-exercies-box-asktrainerbtn"
+                              style={{
+                                top: "85px",
+                              }}
+                              onClick={() => handleOpenExerciseForHelp(e)}
+                            />
+                          )}
                         <div
                           className="challenge-player-container-exercies-box"
                           key={e.id}

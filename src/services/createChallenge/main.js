@@ -160,7 +160,7 @@ export function getAllUserExercises(language) {
 
 export function removeChallenge(id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/challenges/${id}/delete`)
+    .delete(`${process.env.REACT_APP_SERVER}/api/challenges/${id}`)
     .then((res) => {
       openNotificationWithIcon("success", "Successfully Deleted", "");
       return res.data;

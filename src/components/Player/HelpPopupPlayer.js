@@ -85,7 +85,6 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
       contentLabel="Example Modal"
       style={{ zIndex: 3 }}
     >
-      {console.log(exercise)}
       <div
         style={{
           marginBottom: "10px",
@@ -115,7 +114,6 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
         className="helpPopOut-player-wrapper"
         style={{ position: "relative" }}
       >
-        {console.log(exercise)}
         <ReactPlayer
           width="100%"
           height="100%"
@@ -191,6 +189,21 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
           </div>
         </div>
       </div>
+      {exercise?.description && (
+        <p
+          style={{
+            color: "#fff",
+            fontSize: "16px",
+            marginTop: "10px",
+            padding: "0 10px",
+            maxHeight: "100px",
+            overflowY: "auto",
+            lineHeight: "1.5",
+          }}
+        >
+          {exercise?.description}
+        </p>
+      )}
     </Modal>
   );
 }

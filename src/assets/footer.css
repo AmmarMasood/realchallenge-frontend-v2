@@ -1,7 +1,7 @@
 .footer {
   background-color: #171e27;
   height: 100%;
-  z-index: 99999;
+  /* z-index: 99999; */
   position: relative;
   /* border: 1px solid red; */
 }

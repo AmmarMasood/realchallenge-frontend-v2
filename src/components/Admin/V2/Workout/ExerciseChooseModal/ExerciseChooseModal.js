@@ -1,8 +1,9 @@
 import { Modal } from "antd";
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import "./ExerciseChooseModal.css";
 import DumbellIcon from "../../../../../assets/icons/dumb-bell-icon-orange.svg";
 import { duration } from "moment";
+import { userInfoContext } from "../../../../../contexts/UserStore";
 
 function ExerciseChooseModal({
   open,
@@ -11,6 +12,7 @@ function ExerciseChooseModal({
   seletedTrainers,
   onExerciseSelect,
 }) {
+  const [userInfo, setUserInfo] = useContext(userInfoContext);
   const [filteredExercises, setFilteredExercises] = React.useState([]);
   const [selectedExercise, setSelectedExercise] = React.useState(null);
   const [currentStep, setCurrentStep] = React.useState(1);
@@ -18,17 +20,21 @@ function ExerciseChooseModal({
   const [selectedBreak, setSelectedBreak] = React.useState("");
 
   React.useEffect(() => {
-    if (
-      exercises &&
-      exercises.length > 0 &&
-      seletedTrainers &&
-      seletedTrainers.length > 0
-    ) {
-      const trainerIds = seletedTrainers.map((trainer) => trainer._id);
-      const filtered = exercises.filter((exercise) => {
-        return exercise.trainer && trainerIds.includes(exercise.trainer._id);
-      });
-      setFilteredExercises(filtered);
+    if (userInfo && userInfo.role === "admin") {
+      setFilteredExercises(exercises);
+    } else {
+      if (
+        exercises &&
+        exercises.length > 0 &&
+        seletedTrainers &&
+        seletedTrainers.length > 0
+      ) {
+        const trainerIds = seletedTrainers.map((trainer) => trainer._id);
+        const filtered = exercises.filter((exercise) => {
+          return exercise.trainer && trainerIds.includes(exercise.trainer._id);
+        });
+        setFilteredExercises(filtered);
+      }
     }
   }, [exercises, seletedTrainers]);
 

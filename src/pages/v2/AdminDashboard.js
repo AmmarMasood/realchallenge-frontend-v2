@@ -38,6 +38,7 @@ import {
   getAllUserExercises,
 } from "../../services/createChallenge/main";
 import ModalForEditList from "../../components/Admin/V2/Common/ModalForEditList";
+import ExerciseCreatorPopup from "./ExerciseCreatorPopup";
 
 function AdminDashboard(props) {
   const { language } = useContext(LanguageContext);
@@ -55,6 +56,9 @@ function AdminDashboard(props) {
     useState(false);
   const [openChallengeEditListModal, setOpenChallengeEditListModal] =
     useState(false);
+  const [openExerciseCreatorPopup, setOpenExerciseCreatorPopup] =
+    useState(false);
+  const [selectedExerciseForEdit, setSelectedExerciseForEdit] = useState(null);
 
   async function fetchTrainerGoals() {
     const { goals } = await getAllTrainerGoals(language);
@@ -102,14 +106,14 @@ function AdminDashboard(props) {
     props.history.push("/admin/v2/challenge-studio");
   };
   const goToNewExercise = () => {
-    props.history.push("/admin/dashboard?tab=new-exercise");
+    // props.history.push("/admin/dashboard?tab=new-exercise");
+    setOpenExerciseCreatorPopup(true);
   };
   const goToEditExercise = (exerciseId) => {
-    window.open(
-      `/admin/dashboard?tab=update-exercise&exerciseId=${exerciseId}`,
-      "_blank",
-      "noopener,noreferrer"
-    );
+    const exercise = exercises.find((e) => e._id === exerciseId);
+    setSelectedExerciseForEdit(exercise);
+    setOpenExerciseEditListModal(false);
+    setOpenExerciseCreatorPopup(true);
   };
 
   const goToEditChallenge = (challengeId) => {
@@ -346,6 +350,8 @@ function AdminDashboard(props) {
               onClickEdit={goToEditExercise}
               title="My Exercises"
               subtext="Exercise ID"
+              searchPlaceholder="Search by exercise name"
+              searchKeys={["title"]}
             />
           </div>
 
@@ -370,10 +376,24 @@ function AdminDashboard(props) {
               onClickEdit={goToEditChallenge}
               title="My Challenges"
               subtext="Challenge ID"
+              searchPlaceholder="Search by challenge name"
+              searchKeys={["challengeName"]}
             />
           </div>
         </div>
       </div>
+      {/* modaks */}
+      <ExerciseCreatorPopup
+        open={openExerciseCreatorPopup}
+        setOpen={setOpenExerciseCreatorPopup}
+        selectedExerciseForEdit={selectedExerciseForEdit}
+        onSuccess={() => {
+          if (selectedExerciseForEdit) {
+            setSelectedExerciseForEdit(null);
+          }
+          fetchExercises();
+        }}
+      />
       <Footer />
     </div>
   );

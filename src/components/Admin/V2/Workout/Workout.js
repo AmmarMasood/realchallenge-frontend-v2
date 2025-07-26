@@ -28,6 +28,7 @@ import {
 } from "../../../../contexts/PlayerState";
 import MusicIcon from "../../../../assets/icons/music-icon-white.svg";
 import MusicChooseModal from "./MusicChooseModal/MusicChooseModal";
+import HelpPopupPlayer from "../../../Player/HelpPopupPlayer";
 
 function Workout() {
   const {
@@ -67,6 +68,8 @@ function Workout() {
   );
   const [musicChooseModalVisible, setMusicChooseModalVisible] =
     React.useState(false);
+  const [exerciseForHelpModal, setExerciseForHelpModal] = React.useState({});
+  const [openHelpModal, setOpenHelpModal] = React.useState(false);
 
   const getWorkoutInfo = () => {
     const workout = weeks.find((week) =>
@@ -265,6 +268,18 @@ function Workout() {
     setMusicChooseModalVisible(true);
   };
 
+  const handleCloseExerciseForHelp = () => {
+    setPlayerState({ ...playerState, playing: false, muted: true });
+    setOpenHelpModal(false);
+    setExerciseForHelpModal({});
+    if (
+      localStorage.getItem("music-playing") &&
+      localStorage.getItem("music-playing") === false
+    ) {
+      localStorage.setItem("music-playing", true);
+    }
+  };
+
   return (
     <div
       className="challenge-player-container"
@@ -278,6 +293,14 @@ function Workout() {
         <div className="center-inpage">
           <LoadingOutlined style={{ fontSize: "50px", color: "#ff7700" }} />
         </div>
+      )}
+      {openHelpModal && (
+        <HelpPopupPlayer
+          open={openHelpModal}
+          onCancel={handleCloseExerciseForHelp}
+          setOpen={setOpenHelpModal}
+          exercise={exerciseForHelpModal}
+        />
       )}
       <MusicChooseModal
         open={musicChooseModalVisible}
@@ -396,10 +419,8 @@ function Workout() {
             key={selectedExercise.exercise?.id}
             // for full screen player video browser
             workout={workoutInfo}
-            setExerciseForHelpModal={() => {}}
-            setOpenHelpModal={() => {
-              console.log("open help modal");
-            }} // setOpenHelpModal}
+            setExerciseForHelpModal={setExerciseForHelpModal}
+            setOpenHelpModal={setOpenHelpModal}
             setCurrentExercise={setSelectedExercise}
             currentExercise={selectedExercise}
             inCreation={true}
@@ -415,6 +436,8 @@ function Workout() {
                 setCurrentExercise={setSelectedExercise}
                 currentExercise={selectedExercise}
                 handleUpdateRenderedExercise={handleUpdateRenderedExercise}
+                setExerciseForHelpModal={setExerciseForHelpModal}
+                setOpenHelpModal={setOpenHelpModal}
               />
             )}
           </div>

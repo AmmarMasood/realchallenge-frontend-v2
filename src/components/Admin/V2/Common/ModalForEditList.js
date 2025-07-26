@@ -1,7 +1,8 @@
-import { Modal } from "antd";
+import { useEffect, useState } from "react";
+import { Modal, Input, Select } from "antd";
 import "../Workout/ExerciseChooseModal/ExerciseChooseModal.css";
-
 import { EditFilled } from "@ant-design/icons";
+
 function ModalForEditList({
   open,
   setOpen,
@@ -9,7 +10,24 @@ function ModalForEditList({
   onClickEdit,
   title,
   subtext,
+  searchPlaceholder = "Search",
+  searchKeys = ["challengeName"], // default keys
 }) {
+  const [search, setSearch] = useState("");
+  const [searchKey, setSearchKey] = useState(searchKeys[0]);
+
+  // Filter data based on search and selected key
+  const filteredData = data.filter((d) =>
+    (d[searchKey] || "").toString().toLowerCase().includes(search.toLowerCase())
+  );
+
+  useEffect(() => {
+    // Reset search when modal opens
+    if (open) {
+      setSearch("");
+    }
+  }, [open]);
+
   return (
     <Modal
       open={open}
@@ -26,12 +44,23 @@ function ModalForEditList({
         <h2 className="exercise-selector__title">{title}</h2>
       </div>
 
-      <div className="exercise-selector__list" style={{ maxHeight: "230px" }}>
-        {data.map((d, index) => (
+      <Input
+        placeholder={searchPlaceholder}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ minWidth: 180, marginBottom: "10px" }}
+        allowClear
+      />
+
+      <div
+        className="exercise-selector__list"
+        style={{ maxHeight: "230px", overflowY: "auto" }}
+      >
+        {filteredData.map((d, index) => (
           <div
             key={index}
-            className={`exercise-selector__item `}
-            onClick={() => onClickEdit(d)}
+            className={`exercise-selector__item`}
+            style={{ cursor: "default" }}
           >
             <p>{d.name || d.title || d.challengeName || "Unnamed"}</p>
             <div
@@ -65,6 +94,11 @@ function ModalForEditList({
             </div>
           </div>
         ))}
+        {filteredData.length === 0 && (
+          <div style={{ color: "#fff", marginTop: "20px" }}>
+            No results found.
+          </div>
+        )}
       </div>
     </Modal>
   );

@@ -83,14 +83,28 @@ function ChallengeProfile(props) {
     if (localStorage.getItem("jwtToken") && userInfo.id) {
       const uInfo = await getUserProfileInfo(userInfo.id);
       uInfo && setUserDetails(uInfo.customer);
-      const check =
+      let check =
         uInfo &&
         uInfo.customer &&
         uInfo.customer.customerDetails &&
         uInfo.customer.customerDetails.challenges.find(
           (f) => f._id === res._id
         );
-      console.log("check", check, uInfo);
+      // console.log("check", check, uInfo, res);
+      // if user is admin or trainer and creater of his own callenge
+      if (uInfo && uInfo.customer && uInfo.customer.role === "admin") {
+        check = true;
+      }
+      if (uInfo && uInfo.customer && uInfo.customer.role === "trainer") {
+        // check = true;
+        const isChallengeTrainer = res.trainers.find(
+          (t) => t._id === uInfo.customer._id
+        );
+        if (isChallengeTrainer) {
+          check = true;
+        }
+      }
+
       setUserOwnsThisChallenge(check);
       // if users the challenge
       if (check) {
@@ -267,6 +281,7 @@ function ChallengeProfile(props) {
           }
           console.log("res", res);
           console.log("complete this part", ch);
+          // return;
         }
       }
     } else {
