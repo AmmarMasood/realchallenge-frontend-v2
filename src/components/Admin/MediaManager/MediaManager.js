@@ -9,643 +9,118 @@ import React, {
 
 import { showActionNotification } from "./mediaManagerUtils";
 import MediaFileUploader from "./MediaFileUploader";
-import {
-  getAllVideos,
-  getAllImages,
-  getAllDocs,
-  getAllMusics,
-  getAllVoiceOvers,
-  deleteMediaFiles,
-  getAllIcons,
-  getAllFoods,
-  getAllTemps,
-  getAllRcFiles,
-} from "../../../services/mediaManager";
+import { useMediaManager } from "../../../contexts/MediaManagerContext";
 import setAuthToken from "../../../helpers/setAuthToken";
+import { Button, Input, notification, Select } from "antd";
 
-// Hook that sets up our file map and defines functions used to mutate - `deleteFiles`,
-// `moveFiles`, and so on.
-const useCustomFileMap = () => {
-  // Setup the React state for our file map and the current folder.
-  const [fileMap, setFileMap] = useState({
-    qwerty123456: {
-      id: "qwerty123456",
-      name: "Media Manager",
-      isDir: true,
-      childrenIds: [
-        "images-e598a85f843c",
-        "videos-s9514a3d74d57",
-        "docs-e598a85f843b",
-        "voiceOvers-e598a85f84gb",
-        "musics-e598a85f8lgb",
-        "docs-e598a85f843b",
-        "icons-e598a85f843b",
-        "foods-e598a85f843b",
-        "temps-e598a85f843b",
-        "rc1-e598a85f843b",
-        "rc2-e598a85f843b",
-        "rc3-e598a85f843b",
-        "rc4-e598a85f843b",
-        "rc5-e598a85f843b",
-        "rc6-e598a85f843b",
-        "rc7-e598a85f843b",
-        "rc8-e598a85f843b",
-        "rc9-e598a85f843b",
-        "rc10-e598a85f843b",
-      ],
-      childrenCount: 5,
-    },
-
-    "images-e598a85f843c": {
-      id: "images-e598a85f843c",
-      name: "Images",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "videos-s9514a3d74d57": {
-      id: "videos-s9514a3d74d57",
-      name: "Videos",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "voiceOvers-e598a85f84gb": {
-      id: "voiceOvers-e598a85f84gb",
-      name: "Voice Overs",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "musics-e598a85f8lgb": {
-      id: "musics-e598a85f8lgb",
-      name: "Musics",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "docs-e598a85f843b": {
-      id: "docs-e598a85f843b",
-      name: "Document",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "icons-e598a85f843b": {
-      id: "icons-e598a85f843b",
-      name: "Icons",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "foods-e598a85f843b": {
-      id: "foods-e598a85f843b",
-      name: "Foods",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "temps-e598a85f843b": {
-      id: "temps-e598a85f843b",
-      name: "Temps",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-
-    "rc1-e598a85f843b": {
-      id: "rc1-e598a85f843b",
-      name: "RC001",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "rc2-e598a85f843b": {
-      id: "rc2-e598a85f843b",
-      name: "RC002",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "rc3-e598a85f843b": {
-      id: "rc3-e598a85f843b",
-      name: "RC003",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "rc4-e598a85f843b": {
-      id: "rc4-e598a85f843b",
-      name: "RC004",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "rc5-e598a85f843b": {
-      id: "rc5-e598a85f843b",
-      name: "RC005",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "rc6-e598a85f843b": {
-      id: "rc6-e598a85f843b",
-      name: "RC006",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "rc7-e598a85f843b": {
-      id: "rc7-e598a85f843b",
-      name: "RC007",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "rc8-e598a85f843b": {
-      id: "rc8-e598a85f843b",
-      name: "RC008",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "rc9-e598a85f843b": {
-      id: "rc9-e598a85f843b",
-      name: "RC009",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
-    "rc10-e598a85f843b": {
-      id: "rc10-e598a85f843b",
-      name: "RC010",
-      isDir: true,
-      parentId: "qwerty123456",
-      childrenIds: [],
-    },
+const openNotificationWithIcon = (type, message, description) => {
+  notification[type]({
+    message: message,
+    description: description,
   });
-  const [currentFolderId, setCurrentFolderId] = useState("qwerty123456");
+};
+
+// Hook that sets up our file map using the MediaManagerContext
+const useCustomFileMap = () => {
+  const {
+    folders,
+    filesByFolder,
+    loadingFolders,
+    loadingFiles,
+    fetchFolders,
+    fetchFiles,
+  } = useMediaManager();
+
+  const [currentFolderId, setCurrentFolderId] = useState("root");
   const [currentFolderName, setCurrentFolderName] = useState("Media Manager");
   const currentFolderIdRef = useRef(currentFolderId);
 
   useEffect(() => {
     setAuthToken(localStorage.getItem("jwtToken"));
-    getAllMedia();
+    // Only fetch folders on initial load
+    fetchFolders();
     currentFolderIdRef.current = currentFolderId;
-  }, [currentFolderId]);
-
-  // get all videos from backend
-  const getAllMedia = async () => {
-    const videoFiles = await getAllVideos();
-    const imageFiles = await getAllImages();
-    const docFiles = await getAllDocs();
-    const voiceOverFiles = await getAllVoiceOvers();
-    const musicFiles = await getAllMusics();
-    // new folders
-    const iconFiles = await getAllIcons();
-    const foodFiles = await getAllFoods();
-    const tempFiles = await getAllTemps();
-
-    // for rc folders
-    const rc1Files = await getAllRcFiles("rc1");
-    const rc2Files = await getAllRcFiles("rc2");
-    const rc3Files = await getAllRcFiles("rc3");
-    const rc4Files = await getAllRcFiles("rc4");
-    const rc5Files = await getAllRcFiles("rc5");
-    const rc6Files = await getAllRcFiles("rc6");
-    const rc7Files = await getAllRcFiles("rc7");
-    const rc8Files = await getAllRcFiles("rc8");
-    const rc9Files = await getAllRcFiles("rc9");
-    const rc10Files = await getAllRcFiles("rc10");
-
-    const musicIds = musicFiles ? musicFiles.musics.map((f) => f._id) : [];
-    const videoIds = videoFiles ? videoFiles.videos.map((f) => f._id) : [];
-    const imageIds = imageFiles ? imageFiles.images.map((f) => f._id) : [];
-    const docIds = docFiles ? docFiles.docs.map((f) => f._id) : [];
-    const voiceOverIds = voiceOverFiles
-      ? voiceOverFiles.voiceOvers.map((f) => f._id)
-      : [];
-    // new folders
-    const iconIds = iconFiles ? iconFiles.files.map((f) => f._id) : [];
-    const foodIds = foodFiles ? foodFiles.files.map((f) => f._id) : [];
-    const tempIds = tempFiles ? tempFiles.files.map((f) => f._id) : [];
-    // rc folders
-    const rc1Ids = rc1Files ? rc1Files.files.map((f) => f._id) : [];
-    const rc2Ids = rc2Files ? rc2Files.files.map((f) => f._id) : [];
-    const rc3Ids = rc3Files ? rc3Files.files.map((f) => f._id) : [];
-    const rc4Ids = rc4Files ? rc4Files.files.map((f) => f._id) : [];
-    const rc5Ids = rc5Files ? rc5Files.files.map((f) => f._id) : [];
-    const rc6Ids = rc6Files ? rc6Files.files.map((f) => f._id) : [];
-    const rc7Ids = rc7Files ? rc7Files.files.map((f) => f._id) : [];
-    const rc8Ids = rc8Files ? rc8Files.files.map((f) => f._id) : [];
-    const rc9Ids = rc9Files ? rc9Files.files.map((f) => f._id) : [];
-    const rc10Ids = rc10Files ? rc10Files.files.map((f) => f._id) : [];
-
-    const musicObjects = musicIds.map((id, i) => {
-      return {
-        [id]: {
-          name: musicFiles.musics[i].filename,
-          id: id,
-          link: musicFiles.musics[i].filelink,
-          parent: "musics-e598a85f8lgb",
-        },
-      };
-    });
-    const docObjects = docIds.map((id, i) => {
-      return {
-        [id]: {
-          name: docFiles.docs[i].filename,
-          id: id,
-          link: docFiles.docs[i].filelink,
-          parent: "docs-e598a85f843b",
-        },
-      };
-    });
-    const videoObjects = videoIds.map((id, i) => {
-      return {
-        [id]: {
-          name: videoFiles.videos[i].filename,
-          id: id,
-          link: videoFiles.videos[i].filelink,
-          parent: "videos-s9514a3d74d57",
-        },
-      };
-    });
-    console.log("ammar", imageFiles);
-    const imageObjects = imageIds.map((id, i) => {
-      return {
-        [id]: {
-          name: imageFiles.images[i].filename,
-          id: id,
-          link: imageFiles.images[i].filelink,
-          parent: "images-e598a85f843c",
-          thumbnailUrl: `${imageFiles.images[i].filelink}`,
-        },
-      };
-    });
-
-    const voiceOverObjects = voiceOverIds.map((id, i) => {
-      return {
-        [id]: {
-          name: voiceOverFiles.voiceOvers[i].filename,
-          id: id,
-          link: voiceOverFiles.voiceOvers[i].filelink,
-          parent: "voiceOvers-e598a85f84gb",
-        },
-      };
-    });
-
-    // new folder
-    const iconObjects = iconIds.map((id, i) => {
-      return {
-        [id]: {
-          name: iconFiles.files[i].filename,
-          id: id,
-          link: iconFiles.files[i].filelink,
-          parent: "icons-e598a85f84gb",
-          thumbnailUrl: `${iconFiles.files[i].filelink}`,
-        },
-      };
-    });
-
-    const foodObjects = foodIds.map((id, i) => {
-      return {
-        [id]: {
-          name: foodFiles.files[i].filename,
-          id: id,
-          link: foodFiles.files[i].filelink,
-          parent: "foods-e598a85f843b",
-          thumbnailUrl: `${foodFiles.files[i].filelink}`,
-        },
-      };
-    });
-
-    const tempObjects = tempIds.map((id, i) => {
-      return {
-        [id]: {
-          name: tempFiles.files[i].filename,
-          id: id,
-          link: tempFiles.files[i].filelink,
-          parent: "temps-e598a85f843b",
-          thumbnailUrl: `${tempFiles.files[i].filelink}`,
-        },
-      };
-    });
-
-    const rc1Objects = rc1Ids.map((id, i) => {
-      return {
-        [id]: {
-          name: rc1Files.files[i].filename,
-          id: id,
-          link: rc1Files.files[i].filelink,
-          parent: "rc1-e598a85f84gb",
-          thumbnailUrl: `${rc1Files.files[i].filelink}`,
-        },
-      };
-    });
-
-    const rc2Objects = rc2Ids.map((id, i) => {
-      return {
-        [id]: {
-          name: rc2Files.files[i].filename,
-          id: id,
-          link: rc2Files.files[i].filelink,
-          parent: "rc2-e598a85f84gb",
-          thumbnailUrl: `${rc2Files.files[i].filelink}`,
-        },
-      };
-    });
-
-    const rc3Objects = rc3Ids.map((id, i) => {
-      return {
-        [id]: {
-          name: rc3Files.files[i].filename,
-          id: id,
-          link: rc3Files.files[i].filelink,
-          parent: "rc3-e598a85f84gb",
-          thumbnailUrl: `${rc3Files.files[i].filelink}`,
-        },
-      };
-    });
-    const rc4Objects = rc4Ids.map((id, i) => {
-      return {
-        [id]: {
-          name: rc4Files.files[i].filename,
-          id: id,
-          link: rc4Files.files[i].filelink,
-          parent: "rc4-e598a85f84gb",
-          thumbnailUrl: `${rc4Files.files[i].filelink}`,
-        },
-      };
-    });
-    const rc5Objects = rc5Ids.map((id, i) => {
-      return {
-        [id]: {
-          name: rc5Files.files[i].filename,
-          id: id,
-          link: rc5Files.files[i].filelink,
-          parent: "rc5-e598a85f84gb",
-          thumbnailUrl: `${rc5Files.files[i].filelink}`,
-        },
-      };
-    });
-    const rc6Objects = rc6Ids.map((id, i) => {
-      return {
-        [id]: {
-          name: rc6Files.files[i].filename,
-          id: id,
-          link: rc6Files.files[i].filelink,
-          parent: "rc6-e598a85f84gb",
-          thumbnailUrl: `${rc6Files.files[i].filelink}`,
-        },
-      };
-    });
-    const rc7Objects = rc7Ids.map((id, i) => {
-      return {
-        [id]: {
-          name: rc7Files.files[i].filename,
-          id: id,
-          link: rc7Files.files[i].filelink,
-          parent: "rc7-e598a85f84gb",
-          thumbnailUrl: `${rc7Files.files[i].filelink}`,
-        },
-      };
-    });
-    const rc8Objects = rc8Ids.map((id, i) => {
-      return {
-        [id]: {
-          name: rc8Files.files[i].filename,
-          id: id,
-          link: rc8Files.files[i].filelink,
-          parent: "rc8-e598a85f84gb",
-          thumbnailUrl: `${rc8Files.files[i].filelink}`,
-        },
-      };
-    });
-    const rc9Objects = rc9Ids.map((id, i) => {
-      return {
-        [id]: {
-          name: rc9Files.files[i].filename,
-          id: id,
-          link: rc9Files.files[i].filelink,
-          parent: "rc9-e598a85f84gb",
-          thumbnailUrl: `${rc9Files.files[i].filelink}`,
-        },
-      };
-    });
-    const rc10Objects = rc10Ids.map((id, i) => {
-      return {
-        [id]: {
-          name: rc10Files.files[i].filename,
-          id: id,
-          link: rc10Files.files[i].filelink,
-          parent: "rc10-e598a85f84gb",
-          thumbnailUrl: `${rc10Files.files[i].filelink}`,
-        },
-      };
-    });
-
-    setFileMap((currentFileMap) => {
-      var newFileMap = { ...currentFileMap };
-      newFileMap["videos-s9514a3d74d57"] = {
-        ...newFileMap["videos-s9514a3d74d57"],
-        childrenIds: videoIds,
-      };
-      newFileMap["musics-e598a85f8lgb"] = {
-        ...newFileMap["musics-e598a85f8lgb"],
-        childrenIds: musicIds,
-      };
-      newFileMap["images-e598a85f843c"] = {
-        ...newFileMap["images-e598a85f843c"],
-        childrenIds: imageIds,
-      };
-
-      newFileMap["docs-e598a85f843b"] = {
-        ...newFileMap["docs-e598a85f843b"],
-        childrenIds: docIds,
-      };
-      newFileMap["voiceOvers-e598a85f84gb"] = {
-        ...newFileMap["voiceOvers-e598a85f84gb"],
-        childrenIds: voiceOverIds,
-      };
-      //new
-      newFileMap["icons-e598a85f843b"] = {
-        ...newFileMap["icons-e598a85f843b"],
-        childrenIds: iconIds,
-      };
-      newFileMap["foods-e598a85f843b"] = {
-        ...newFileMap["foods-e598a85f843b"],
-        childrenIds: foodIds,
-      };
-      newFileMap["temps-e598a85f843b"] = {
-        ...newFileMap["temps-e598a85f843b"],
-        childrenIds: tempIds,
-      };
-
-      newFileMap["temps-e598a85f843b"] = {
-        ...newFileMap["temps-e598a85f843b"],
-        childrenIds: tempIds,
-      };
-
-      newFileMap["rc1-e598a85f843b"] = {
-        ...newFileMap["rc1-e598a85f843b"],
-        childrenIds: rc1Ids,
-      };
-
-      newFileMap["rc2-e598a85f843b"] = {
-        ...newFileMap["rc2-e598a85f843b"],
-        childrenIds: rc2Ids,
-      };
-
-      newFileMap["rc3-e598a85f843b"] = {
-        ...newFileMap["rc3-e598a85f843b"],
-        childrenIds: rc3Ids,
-      };
-
-      newFileMap["rc4-e598a85f843b"] = {
-        ...newFileMap["rc4-e598a85f843b"],
-        childrenIds: rc4Ids,
-      };
-
-      newFileMap["rc5-e598a85f843b"] = {
-        ...newFileMap["rc5-e598a85f843b"],
-        childrenIds: rc5Ids,
-      };
-
-      newFileMap["rc6-e598a85f843b"] = {
-        ...newFileMap["rc6-e598a85f843b"],
-        childrenIds: rc6Ids,
-      };
-
-      newFileMap["rc7-e598a85f843b"] = {
-        ...newFileMap["rc7-e598a85f843b"],
-        childrenIds: rc7Ids,
-      };
-
-      newFileMap["rc8-e598a85f843b"] = {
-        ...newFileMap["rc8-e598a85f843b"],
-        childrenIds: rc8Ids,
-      };
-
-      newFileMap["rc9-e598a85f843b"] = {
-        ...newFileMap["rc9-e598a85f843b"],
-        childrenIds: rc9Ids,
-      };
-
-      newFileMap["rc10-e598a85f843b"] = {
-        ...newFileMap["rc10-e598a85f843b"],
-        childrenIds: rc10Ids,
-      };
-
-      musicObjects.forEach((obj, i) => {
-        newFileMap[musicIds[i]] = { ...obj[musicIds[i]] };
-      });
-      imageObjects.forEach((obj, i) => {
-        newFileMap[imageIds[i]] = { ...obj[imageIds[i]] };
-      });
-      videoObjects.forEach((obj, i) => {
-        newFileMap[videoIds[i]] = { ...obj[videoIds[i]] };
-      });
-      docObjects.forEach((obj, i) => {
-        newFileMap[docIds[i]] = { ...obj[docIds[i]] };
-      });
-      voiceOverObjects.forEach((obj, i) => {
-        newFileMap[voiceOverIds[i]] = { ...obj[voiceOverIds[i]] };
-      });
-      // new
-      foodObjects.forEach((obj, i) => {
-        newFileMap[foodIds[i]] = { ...obj[foodIds[i]] };
-      });
-      iconObjects.forEach((obj, i) => {
-        newFileMap[iconIds[i]] = { ...obj[iconIds[i]] };
-      });
-      tempObjects.forEach((obj, i) => {
-        newFileMap[tempIds[i]] = { ...obj[tempIds[i]] };
-      });
-      //rc
-      rc1Objects.forEach((obj, i) => {
-        newFileMap[rc1Ids[i]] = { ...obj[rc1Ids[i]] };
-      });
-      rc2Objects.forEach((obj, i) => {
-        newFileMap[rc2Ids[i]] = { ...obj[rc2Ids[i]] };
-      });
-      rc3Objects.forEach((obj, i) => {
-        newFileMap[rc3Ids[i]] = { ...obj[rc3Ids[i]] };
-      });
-      rc4Objects.forEach((obj, i) => {
-        newFileMap[rc4Ids[i]] = { ...obj[rc4Ids[i]] };
-      });
-      rc5Objects.forEach((obj, i) => {
-        newFileMap[rc5Ids[i]] = { ...obj[rc5Ids[i]] };
-      });
-      rc6Objects.forEach((obj, i) => {
-        newFileMap[rc6Ids[i]] = { ...obj[rc6Ids[i]] };
-      });
-      rc7Objects.forEach((obj, i) => {
-        newFileMap[rc7Ids[i]] = { ...obj[rc7Ids[i]] };
-      });
-      rc8Objects.forEach((obj, i) => {
-        newFileMap[rc8Ids[i]] = { ...obj[rc8Ids[i]] };
-      });
-      rc9Objects.forEach((obj, i) => {
-        newFileMap[rc9Ids[i]] = { ...obj[rc9Ids[i]] };
-      });
-      rc10Objects.forEach((obj, i) => {
-        newFileMap[rc10Ids[i]] = { ...obj[rc10Ids[i]] };
-      });
-
-      return newFileMap;
-    });
-  };
-
-  // Function that will be called when user deletes files either using the toolbar
-  // button or `Delete` key.
-  const deleteFiles = useCallback((files) => {
-    console.log(files);
-
-    setFileMap((currentFileMap) => {
-      // Create a copy of the file map to make sure we don't mutate it.
-      const newFileMap = { ...currentFileMap };
-
-      files.forEach((file) => {
-        // Delete file from the file map.
-        delete newFileMap[file.id];
-
-        // Update the parent folder to make sure it doesn't try to load the
-        // file we just deleted.
-        if (file.parentId) {
-          const parent = newFileMap[file.parentId];
-          const newChildrenIds = parent.childrenIds.filter(
-            (id) => id !== file.id
-          );
-          newFileMap[file.parentId] = {
-            ...parent,
-            childrenIds: newChildrenIds,
-            childrenCount: newChildrenIds.length,
-          };
-        }
-      });
-
-      return newFileMap;
-    });
   }, []);
 
+  // Fetch files when entering a folder (only if not already cached)
+  useEffect(() => {
+    if (currentFolderId !== "root" && !filesByFolder[currentFolderId]) {
+      fetchFiles(currentFolderId);
+    }
+  }, [currentFolderId, filesByFolder, fetchFiles]);
+
+  // Convert context data to Chonky file map format
+  const fileMap = useMemo(() => {
+    const newFileMap = {
+      root: {
+        id: "root",
+        name: "Media Manager",
+        isDir: true,
+        childrenIds: folders.map((folder) => folder._id),
+        childrenCount: folders.length,
+      },
+    };
+
+    // Add folders to file map
+    folders.forEach((folder) => {
+      newFileMap[folder._id] = {
+        id: folder._id,
+        name: folder.name,
+        isDir: true,
+        parentId: "root",
+        childrenIds: filesByFolder[folder._id]?.map((file) => file._id) || [],
+        // childrenCount: filesByFolder[folder._id]?.length || 0,
+        mediaType: folder.mediaType,
+        createdAt: folder.createdAt,
+      };
+    });
+
+    // Add files to file map for all cached folders
+    Object.entries(filesByFolder).forEach(([folderId, files]) => {
+      files.forEach((file) => {
+        newFileMap[file._id] = {
+          id: file._id,
+          name: file.originalName || file.filename,
+          isDir: false,
+          parentId: folderId,
+          link: file.filelink,
+          mediaType: file.mediaType,
+          thumbnailUrl: file.mediaType === "picture" ? file.filelink : null,
+          createdAt: file.createdAt,
+          filename: file.filename,
+        };
+      });
+    });
+
+    return newFileMap;
+  }, [folders, filesByFolder]);
+
+  // Refresh data when needed (force refetch)
+  const refreshData = useCallback(async () => {
+    await fetchFolders(true);
+    if (currentFolderId !== "root") {
+      await fetchFiles(currentFolderId, true);
+    }
+  }, [fetchFolders, fetchFiles, currentFolderId]);
+
   return {
-    getAllMedia,
     fileMap,
     currentFolderId,
     setCurrentFolderId,
     setCurrentFolderName,
     currentFolderName,
-    deleteFiles,
+    refreshData,
+    loading: loadingFolders || loadingFiles[currentFolderId],
   };
 };
 
 export const useFiles = (fileMap, currentFolderId) => {
   return useMemo(() => {
     const currentFolder = fileMap[currentFolderId];
-    const childrenIds = currentFolder.childrenIds;
-    const files = childrenIds.map((fileId) => fileMap[fileId]);
+    if (!currentFolder) return [];
+
+    const childrenIds = currentFolder.childrenIds || [];
+    const files = childrenIds.map((fileId) => fileMap[fileId]).filter(Boolean);
     return files;
   }, [currentFolderId, fileMap]);
 };
@@ -653,6 +128,7 @@ export const useFiles = (fileMap, currentFolderId) => {
 export const useFolderChain = (fileMap, currentFolderId) => {
   return useMemo(() => {
     const currentFolder = fileMap[currentFolderId];
+    if (!currentFolder) return [];
 
     const folderChain = [currentFolder];
 
@@ -674,35 +150,38 @@ export const useFolderChain = (fileMap, currentFolderId) => {
 export const useFileActionHandler = (
   setCurrentFolderName,
   setCurrentFolderId,
-  deleteFiles,
-  moveFiles,
-  createFolder,
   setOpenUploadModal,
+  setOpenCreateFolderModal,
   mediaActions,
   mediaType,
   setRemoteMediaManagerVisible,
-  checkForType
+  checkForType,
+  refreshData
 ) => {
+  const { deleteMediaFile, deleteMediaFolder, createMediaFolder, fetchFiles } =
+    useMediaManager();
+
   return useCallback(
     async (data) => {
       if (data.id === ChonkyActions.OpenFiles.id) {
         const { targetFile, files } = data.payload;
         const fileToOpen = targetFile ?? files[0];
+
         if (fileToOpen && FileHelper.isDirectory(fileToOpen)) {
           setCurrentFolderId(fileToOpen.id);
           setCurrentFolderName(fileToOpen.name);
-          console.log("ads", fileToOpen);
+          // Files will be fetched by useEffect if not already cached
           return;
         }
+
+        // Handle file selection for media
+        if (!mediaActions || !mediaActions.length) return;
+
         const [media, setMedia] = mediaActions;
-        console.log("media actions", mediaActions);
-        console.log("media type", mediaType);
-        console.log("target file parent", targetFile);
-        // here yo
+
         if (checkForType(targetFile.name, mediaType)) {
-          console.log(mediaType);
           if (mediaActions[2]) {
-            // check if 3rd option says that there are multiple images
+            // Multiple selection mode
             if (mediaActions[2] === "multiple") {
               setMedia([
                 ...media,
@@ -712,6 +191,7 @@ export const useFileActionHandler = (
               setRemoteMediaManagerVisible(false);
               return;
             }
+            // Custom setter with additional parameter
             setMedia(mediaActions[2], {
               name: targetFile.name,
               link: targetFile.link,
@@ -720,6 +200,7 @@ export const useFileActionHandler = (
             setRemoteMediaManagerVisible(false);
             return;
           }
+          // Single selection mode
           setMedia({
             name: targetFile.name,
             link: targetFile.link,
@@ -728,139 +209,469 @@ export const useFileActionHandler = (
           setRemoteMediaManagerVisible(false);
           return;
         } else {
-          console.log("media", mediaType);
-          window.alert("Wrong media type selected");
+          openNotificationWithIcon(
+            "error",
+            "Invalid file type",
+            `This file type is not compatible with ${mediaType} selection.`
+          );
         }
-      } else if (data.id === ChonkyActions.DeleteFiles.id) {
-        console.log(data.state.selectedFilesForAction);
-        const deletedFiles = await deleteMediaFiles(
-          data.state.selectedFilesForAction
-        );
-        // console.log(deletedFiles);
-        if (deletedFiles.status === "success") {
-          deleteFiles(deletedFiles.deleted);
+      } else if (data.id === "delete_files" || data.id === "delete_folders") {
+        try {
+          const filesToDelete = data.state.selectedFilesForAction;
+
+          // Separate files and folders
+          const files = filesToDelete.filter((f) => !f.isDir);
+          const foldersToDelete = filesToDelete.filter((f) => f.isDir);
+
+          // Delete files first
+          for (const file of files) {
+            await deleteMediaFile(file.parentId, file.id);
+          }
+
+          // Then delete folders
+          for (const folder of foldersToDelete) {
+            await deleteMediaFolder(folder.id);
+          }
+
+          showActionNotification(data);
+          openNotificationWithIcon("success", "Items deleted successfully", "");
+        } catch (error) {
+          console.error("Error deleting items:", error);
+          openNotificationWithIcon(
+            "error",
+            "Delete failed",
+            error.message || "Unable to delete selected items"
+          );
         }
       } else if (data.id === ChonkyActions.UploadFiles.id) {
         setOpenUploadModal(true);
-      } else if (data.id === "open_files") {
+      } else if (data.id === ChonkyActions.CreateFolder.id) {
+        setOpenCreateFolderModal(true);
       }
     },
-    [createFolder, deleteFiles, moveFiles, setCurrentFolderId]
+    [
+      deleteMediaFile,
+      deleteMediaFolder,
+      mediaActions,
+      mediaType,
+      setRemoteMediaManagerVisible,
+      setCurrentFolderId,
+      setCurrentFolderName,
+    ]
   );
 };
 
-function checkForType(file, fileType) {
-  var parts = file.split(".");
-  var ext = parts[parts.length - 1];
+// Updated checkForType function to work with the new media types
+function checkForType(filename, fileType) {
+  if (!filename) return false;
 
-  if (fileType === "images") {
-    switch (ext.toLowerCase()) {
-      case "png":
-      case "jpeg":
-      case "jpg":
-      case "tiff":
-        // etc
-        return true;
-    }
+  const parts = filename.split(".");
+  const ext = parts[parts.length - 1]?.toLowerCase();
 
-    return false;
-  } else if (fileType === "videos") {
-    switch (ext.toLowerCase()) {
-      case "m4v":
-      case "avi":
-      case "mpg":
-      case "mp4":
-        // etc
-        return true;
-    }
+  if (!ext) return false;
 
-    return false;
-  } else if (fileType === "docs") {
-    const isPdf = ext.toLowerCase() === "pdf";
-    return isPdf;
-  } else if (fileType === "voiceOvers") {
-    switch (ext.toLowerCase()) {
-      case "mp3":
-        // etc
-        return true;
-    }
+  switch (fileType) {
+    case "picture":
+    case "images":
+      return [
+        "png",
+        "jpeg",
+        "jpg",
+        "tiff",
+        "gif",
+        "bmp",
+        "webp",
+        "svg",
+      ].includes(ext);
 
-    return false;
-  } else if (fileType === "musics") {
-    switch (ext.toLowerCase()) {
-      case "mp3":
-      case "mp4":
-        // etc
-        return true;
-    }
+    case "video":
+    case "videos":
+      return [
+        "m4v",
+        "avi",
+        "mpg",
+        "mp4",
+        "mov",
+        "wmv",
+        "flv",
+        "webm",
+        "mkv",
+      ].includes(ext);
 
-    return false;
+    case "document":
+    case "docs":
+      return [
+        "pdf",
+        "doc",
+        "docx",
+        "txt",
+        "rtf",
+        "xls",
+        "xlsx",
+        "ppt",
+        "pptx",
+      ].includes(ext);
+
+    case "audio":
+    case "voiceOvers":
+    case "musics":
+      return ["mp3", "wav", "aac", "ogg", "flac", "m4a", "wma"].includes(ext);
+
+    case "other":
+    default:
+      return true; // Allow any file type for "other"
   }
 }
 
+// Create Folder Modal Component
+const CreateFolderModal = ({ visible, onClose, onSuccess }) => {
+  const [folderName, setFolderName] = useState("");
+  const [mediaType, setMediaType] = useState("other");
+  const [loading, setLoading] = useState(false);
+  const { createMediaFolder } = useMediaManager();
+
+  const handleCreate = async () => {
+    if (!folderName.trim()) {
+      openNotificationWithIcon(
+        "warning",
+        "Invalid input",
+        "Please enter a folder name"
+      );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await createMediaFolder({ name: folderName.trim(), mediaType });
+      setFolderName("");
+      setMediaType("other");
+      onClose();
+      onSuccess?.();
+      openNotificationWithIcon(
+        "success",
+        "Folder created",
+        `${folderName} has been created successfully`
+      );
+    } catch (error) {
+      console.error("Error creating folder:", error);
+      openNotificationWithIcon(
+        "error",
+        "Failed to create folder",
+        error.message || "Unable to create folder"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleCreate();
+    } else if (e.key === "Escape") {
+      onClose();
+    }
+  };
+
+  if (!visible) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <h3>Create New Folder</h3>
+        <div className="form-group">
+          <label>Folder Name:</label>
+
+          <Input
+            type="text"
+            value={folderName}
+            onChange={(e) => setFolderName(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Enter folder name"
+            autoFocus
+            style={{
+              padding: "4px 11px",
+            }}
+          />
+        </div>
+        <div className="form-group">
+          <label>Media Type:</label>
+          <Select
+            value={mediaType}
+            onChange={(value) => setMediaType(value)}
+            style={{ width: "100%" }}
+          >
+            <Select.Option value="picture">Picture</Select.Option>
+            <Select.Option value="video">Video</Select.Option>
+            <Select.Option value="audio">Audio</Select.Option>
+            <Select.Option value="document">Document</Select.Option>
+            <Select.Option value="other">Other</Select.Option>
+          </Select>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "8px",
+          }}
+        >
+          <Button
+            type="primary"
+            onClick={handleCreate}
+            disabled={loading || !folderName.trim()}
+          >
+            {loading ? "Creating..." : "Create"}
+          </Button>
+          <Button onClick={onClose}>Cancel</Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const VFSBrowser = React.memo((props) => {
   const [openUploadModal, setOpenUploadModal] = useState(false);
+  const [openCreateFolderModal, setOpenCreateFolderModal] = useState(false);
+
   const {
-    getAllMedia,
     fileMap,
     currentFolderId,
     setCurrentFolderId,
     setCurrentFolderName,
     currentFolderName,
-    resetFileMap,
-    deleteFiles,
-    moveFiles,
-    createFolder,
+    refreshData,
+    loading,
   } = useCustomFileMap();
+
   const files = useFiles(fileMap, currentFolderId);
   const folderChain = useFolderChain(fileMap, currentFolderId);
   const mediaActions = props.actions;
   const mediaType = props.mediaType;
   const setRemoteMediaManagerVisible = props.setRemoteMediaManagerVisible;
+
   const handleFileAction = useFileActionHandler(
     setCurrentFolderName,
     setCurrentFolderId,
-    deleteFiles,
-    moveFiles,
-    createFolder,
     setOpenUploadModal,
+    setOpenCreateFolderModal,
     mediaActions,
     mediaType,
     setRemoteMediaManagerVisible,
-    checkForType
+    checkForType,
+    refreshData
   );
-  const fileActions = useMemo(
-    () => [
-      // ChonkyActions.CreateFolder,
-      ChonkyActions.DeleteFiles,
-      ChonkyActions.UploadFiles,
-    ],
+
+  // Create separate actions for deleting files vs folders (context menu only)
+  const deleteFilesAction = useMemo(
+    () => ({
+      id: "delete_files",
+      button: {
+        name: "Delete Files",
+        toolbar: false,
+        contextMenu: true,
+        group: "Actions",
+        icon: ChonkyActions.DeleteFiles.button.icon,
+      },
+      hotkeys: ["Delete"],
+    }),
     []
   );
+
+  const deleteFoldersAction = useMemo(
+    () => ({
+      id: "delete_folders",
+      button: {
+        name: "Delete Folder",
+        toolbar: false,
+        contextMenu: true,
+        group: "Actions",
+        icon: ChonkyActions.DeleteFiles.button.icon,
+      },
+      hotkeys: ["Delete"],
+    }),
+    []
+  );
+
+  const fileActions = useMemo(() => {
+    const actions = [];
+
+    // Add appropriate delete action based on current location
+    if (currentFolderId === "root") {
+      // In root, we're dealing with folders
+      actions.push(deleteFoldersAction);
+      actions.push(ChonkyActions.CreateFolder);
+    } else {
+      // In a folder, we're dealing with files
+      actions.push(deleteFilesAction);
+      actions.push(ChonkyActions.UploadFiles);
+    }
+
+    return actions;
+  }, [currentFolderId, deleteFilesAction, deleteFoldersAction]);
 
   const thumbnailGenerator = useCallback(
     (file) => (file.thumbnailUrl ? file.thumbnailUrl : null),
     []
   );
 
+  // Handle successful folder creation
+  const handleFolderCreated = useCallback(() => {
+    // Context will automatically update the folders list
+    // No need to manually refresh since the context handles caching
+  }, []);
+
+  // Handle successful file upload
+  const handleFileUploaded = useCallback(() => {
+    // Context will automatically update the files list
+    // No need to manually refresh since the context handles caching
+  }, []);
+
   return (
     <>
-      <div style={{ height: "100vh" }}>
+      <div style={{ height: "100vh", position: "relative" }}>
         <MediaFileUploader
+          currentFolderId={currentFolderId}
           currentFolderName={currentFolderName}
           visible={openUploadModal}
-          getAllMedia={getAllMedia}
+          onSuccess={handleFileUploaded}
           setVisible={setOpenUploadModal}
         />
+
+        <CreateFolderModal
+          visible={openCreateFolderModal}
+          onClose={() => setOpenCreateFolderModal(false)}
+          onSuccess={handleFolderCreated}
+        />
+
+        {loading && (
+          <div className="loading-overlay">
+            <div className="loading-spinner">Loading...</div>
+          </div>
+        )}
+
         <FullFileBrowser
           files={files}
           folderChain={folderChain}
           fileActions={fileActions}
           onFileAction={handleFileAction}
           thumbnailGenerator={thumbnailGenerator}
+          disableSelection={loading}
           {...props}
         />
       </div>
+
+      <style jsx>{`
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
+
+        .modal-content {
+          background: white;
+          padding: 24px;
+          border-radius: 8px;
+          width: 400px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-content h3 {
+          margin: 0 0 20px 0;
+          color: #333;
+        }
+
+        .form-group {
+          margin-bottom: 16px;
+        }
+
+        .form-group label {
+          display: block;
+          margin-bottom: 4px;
+          font-weight: 500;
+          color: #555;
+        }
+
+        .form-group input,
+        .form-group select {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+          outline: none;
+          border-color: #1890ff;
+          box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+
+        .modal-actions {
+          display: flex;
+          gap: 8px;
+          justify-content: flex-end;
+          margin-top: 20px;
+        }
+
+        .modal-actions button {
+          padding: 8px 16px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          background: white;
+          cursor: pointer;
+          font-size: 14px;
+        }
+
+        .modal-actions button:first-child {
+          background: #1890ff;
+          color: white;
+          border-color: #1890ff;
+        }
+
+        .modal-actions button:first-child:hover:not(:disabled) {
+          background: #40a9ff;
+        }
+
+        .modal-actions button:first-child:disabled {
+          background: #f5f5f5;
+          color: #bbb;
+          cursor: not-allowed;
+        }
+
+        .modal-actions button:last-child:hover {
+          border-color: #40a9ff;
+          color: #40a9ff;
+        }
+
+        .loading-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(255, 255, 255, 0.8);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 10;
+        }
+
+        .loading-spinner {
+          padding: 12px 24px;
+          background: white;
+          border-radius: 4px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          font-size: 14px;
+          color: #666;
+        }
+      `}</style>
     </>
   );
 });

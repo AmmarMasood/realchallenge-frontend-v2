@@ -7,7 +7,7 @@ import HumanVector from "../images/FreeVectorHumanSilhouette 1.png";
 
 import { getNotifications, getUserProfileInfo } from "../services/users";
 import { userInfoContext } from "../contexts/UserStore";
-import { uploadImage } from "../services/mediaManager";
+// import { uploadImage } from "../services/mediaManager";
 // icons
 import Muscle from "../assets/icons/muscle.png";
 import Waist from "../assets/icons/waist.png";
@@ -134,54 +134,52 @@ function UserUpdate() {
   };
 
   const saveUserUpdate = async () => {
-    setLoading(true);
-    try {
-      const savedAfterePic = afterPic
-        ? typeof afterPic === "object"
-          ? await uploadImage(afterPic)
-          : afterPic
-        : "";
-      const savedBeforePic = beforePic
-        ? typeof beforePic === "object"
-          ? await uploadImage(beforePic)
-          : beforePic
-        : "";
-      const month = new Date().getMonth();
-      const w = weightArray;
-      w[month] = weight;
-
-      const values = {
-        goals: [goal],
-        currentFitnessLevel: [currentLevel],
-        measureSystem: metric ? "metrics" : "imperial",
-        height,
-        age,
-        weight: w,
-        bmi,
-        bmir: bmr,
-        waistSize,
-        shoulderSize,
-        hipSize,
-        chestSize,
-        afterImageLink:
-          typeof savedAfterePic === "string"
-            ? savedAfterePic
-            : savedAfterePic.file.filelink,
-        beforeImageLink:
-          typeof savedBeforePic === "string"
-            ? savedBeforePic
-            : savedBeforePic.file.filelink,
-      };
-
-      await createCustomerDetails(values, userInfo.id);
-      setLoading(false);
-      openNotificationWithIcon("success", "Information Updated!", "");
-      console.log("values to be saved", values);
-    } catch (error) {
-      console.log(error, "afterPic", afterPic, "beforePic", beforePic);
-      setLoading(false);
-      openNotificationWithIcon("error", "Unable to updated values", "");
-    }
+    // setLoading(true);
+    // try {
+    //   const savedAfterePic = afterPic
+    //     ? typeof afterPic === "object"
+    //       ? await uploadImage(afterPic)
+    //       : afterPic
+    //     : "";
+    //   const savedBeforePic = beforePic
+    //     ? typeof beforePic === "object"
+    //       ? await uploadImage(beforePic)
+    //       : beforePic
+    //     : "";
+    //   const month = new Date().getMonth();
+    //   const w = weightArray;
+    //   w[month] = weight;
+    //   const values = {
+    //     goals: [goal],
+    //     currentFitnessLevel: [currentLevel],
+    //     measureSystem: metric ? "metrics" : "imperial",
+    //     height,
+    //     age,
+    //     weight: w,
+    //     bmi,
+    //     bmir: bmr,
+    //     waistSize,
+    //     shoulderSize,
+    //     hipSize,
+    //     chestSize,
+    //     afterImageLink:
+    //       typeof savedAfterePic === "string"
+    //         ? savedAfterePic
+    //         : savedAfterePic.file.filelink,
+    //     beforeImageLink:
+    //       typeof savedBeforePic === "string"
+    //         ? savedBeforePic
+    //         : savedBeforePic.file.filelink,
+    //   };
+    //   await createCustomerDetails(values, userInfo.id);
+    //   setLoading(false);
+    //   openNotificationWithIcon("success", "Information Updated!", "");
+    //   console.log("values to be saved", values);
+    // } catch (error) {
+    //   console.log(error, "afterPic", afterPic, "beforePic", beforePic);
+    //   setLoading(false);
+    //   openNotificationWithIcon("error", "Unable to updated values", "");
+    // }
   };
 
   useEffect(() => {

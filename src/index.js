@@ -12,6 +12,7 @@ import { ChonkyIconFA } from "chonky-icon-fontawesome";
 // import "react-modal-video/scss/modal-video.scss";
 import PaymentProcessStore from "./contexts/PaymentProcessStore";
 import { fetchTranslations } from "./helpers/translationHelpers";
+import { MediaManagerProvider } from "./contexts/MediaManagerContext";
 
 // Somewhere in your `index.ts`:
 setChonkyDefaults({ iconComponent: ChonkyIconFA, disableDragAndDrop: true });
@@ -21,7 +22,9 @@ ReactDOM.render(
     <UserStore>
       <PaymentProcessStore>
         <LanguageProvider fetchTranslations={fetchTranslations}>
-          <App />
+          <MediaManagerProvider>
+            <App />
+          </MediaManagerProvider>
         </LanguageProvider>
       </PaymentProcessStore>
     </UserStore>
