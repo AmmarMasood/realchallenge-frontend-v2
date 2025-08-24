@@ -15,7 +15,7 @@ import { fetchTranslations } from "./helpers/translationHelpers";
 import { MediaManagerProvider } from "./contexts/MediaManagerContext";
 
 // Somewhere in your `index.ts`:
-setChonkyDefaults({ iconComponent: ChonkyIconFA, disableDragAndDrop: true });
+setChonkyDefaults({ iconComponent: ChonkyIconFA, disableDragAndDrop: false });
 
 ReactDOM.render(
   <React.StrictMode>

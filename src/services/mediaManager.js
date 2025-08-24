@@ -33,11 +33,12 @@ export function testMediaRoute() {
 }
 
 // --- FOLDER APIs ---
-export function createMediaFolder({ name, mediaType }) {
+export function createMediaFolder({ name, mediaType, parentId }) {
   return axios
     .post(`${process.env.REACT_APP_SERVER}/api/media/folder`, {
       name,
       mediaType,
+      parentId, // Add parentId support for nested folders
     })
     .then((res) => res.data)
     .catch((err) => {
@@ -173,6 +174,48 @@ export function deleteMediaFile(folderId, fileId) {
       openNotificationWithIcon(
         "error",
         "Unable to delete file",
+        err?.response?.data?.message || ""
+      );
+      throw err;
+    });
+}
+
+// --- NEW: Update file (rename) ---
+export function updateMediaFile(folderId, fileId, data) {
+  return axios
+    .put(
+      `${process.env.REACT_APP_SERVER}/api/media/folders/${folderId}/files/${fileId}`,
+      data
+    )
+    .then((res) => {
+      openNotificationWithIcon("success", "File updated successfully", "");
+      return res.data;
+    })
+    .catch((err) => {
+      openNotificationWithIcon(
+        "error",
+        "Unable to update file",
+        err?.response?.data?.message || ""
+      );
+      throw err;
+    });
+}
+
+// --- NEW: Move file between folders ---
+export function moveMediaFileS(fileId, oldFolderId, newFolderId) {
+  return axios
+    .put(
+      `${process.env.REACT_APP_SERVER}/api/media/folders/${oldFolderId}/files/${fileId}/move`,
+      { newFolderId }
+    )
+    .then((res) => {
+      openNotificationWithIcon("success", "File moved successfully", "");
+      return res.data;
+    })
+    .catch((err) => {
+      openNotificationWithIcon(
+        "error",
+        "Unable to move file",
         err?.response?.data?.message || ""
       );
       throw err;
