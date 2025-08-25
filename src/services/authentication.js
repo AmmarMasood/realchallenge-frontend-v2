@@ -169,6 +169,7 @@ export function logoutUser(histoy, setUserInfo) {
   localStorage.removeItem("jwtToken");
   localStorage.removeItem("package-type");
   localStorage.removeItem("isActive");
+  localStorage.removeItem("mediaManager_lastPath");
   histoy && histoy.push("/");
 }
 

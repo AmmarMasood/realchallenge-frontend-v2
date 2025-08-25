@@ -1,6 +1,7 @@
 import { ChonkyActions, FileHelper, FullFileBrowser } from "chonky";
 import React, {
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -11,9 +12,33 @@ import { showActionNotification } from "./mediaManagerUtils";
 import MediaFileUploader from "./MediaFileUploader";
 import { useMediaManager } from "../../../contexts/MediaManagerContext";
 import setAuthToken from "../../../helpers/setAuthToken";
-import { Button, Input, notification, Select, Modal, message } from "antd";
+import {
+  Button,
+  Input,
+  notification,
+  Select,
+  Modal,
+  message,
+  Card,
+  Table,
+  Typography,
+  Space,
+  Tag,
+  Divider,
+  Switch,
+  Tooltip,
+} from "antd";
+import {
+  UserOutlined,
+  FolderOutlined,
+  ArrowLeftOutlined,
+  SettingOutlined,
+  EyeOutlined,
+} from "@ant-design/icons";
+import { userInfoContext } from "../../../contexts/UserStore";
 
 const { confirm } = Modal;
+const { Title, Text } = Typography;
 
 const openNotificationWithIcon = (type, message, description) => {
   notification[type]({
@@ -22,7 +47,127 @@ const openNotificationWithIcon = (type, message, description) => {
   });
 };
 
-// Hook that sets up our file map using the MediaManagerContext
+// Admin Users Table Component
+const AdminUsersView = ({ onSelectUser, usersData, loading }) => {
+  const getMediaTypeColor = (mediaType) => {
+    const colors = {
+      video: "red",
+      audio: "orange",
+      picture: "green",
+      document: "blue",
+      other: "gray",
+    };
+    return colors[mediaType] || "gray";
+  };
+
+  const buildUserFolderTree = (folders) => {
+    return folders.map((folder) => (
+      <div key={folder._id} style={{ marginBottom: "4px" }}>
+        <Space size="small">
+          <FolderOutlined style={{ color: "#1890ff" }} />
+          <Text>{folder.name}</Text>
+          <Tag color={getMediaTypeColor(folder.mediaType)} size="small">
+            {folder.mediaType}
+          </Tag>
+        </Space>
+        {folder.children && folder.children.length > 0 && (
+          <div style={{ marginLeft: "20px", marginTop: "4px" }}>
+            {buildUserFolderTree(folder.children)}
+          </div>
+        )}
+      </div>
+    ));
+  };
+
+  const columns = [
+    {
+      title: "User",
+      dataIndex: "user",
+      key: "user",
+      render: (user) => (
+        <Space>
+          <UserOutlined />
+          <div>
+            <div style={{ fontWeight: "bold" }}>{user.name}</div>
+            <Text type="secondary" style={{ fontSize: "12px" }}>
+              {user.email}
+            </Text>
+          </div>
+        </Space>
+      ),
+    },
+    {
+      title: "Total Folders",
+      dataIndex: "totalFolders",
+      key: "totalFolders",
+      align: "center",
+      render: (count) => <Tag color="blue">{count}</Tag>,
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="primary"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => onSelectUser(record.user)}
+          >
+            View Folders
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <Card>
+      <Title level={3}>
+        <SettingOutlined /> Admin - All Users Media
+      </Title>
+      <Text type="secondary">
+        Select a user to view and manage their media folders and files.
+      </Text>
+
+      <Divider />
+
+      <Table
+        columns={columns}
+        dataSource={usersData}
+        rowKey={(record) => record.user._id}
+        loading={loading}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} of ${total} users`,
+        }}
+        expandable={{
+          expandedRowRender: (record) => (
+            <div
+              style={{ margin: 0, padding: "16px", backgroundColor: "#f9f9f9" }}
+            >
+              <Title level={5}>Folder Structure for {record.user.name}</Title>
+              {record.folders && record.folders.length > 0 ? (
+                <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+                  {buildUserFolderTree(record.folders)}
+                </div>
+              ) : (
+                <Text type="secondary">No folders found</Text>
+              )}
+            </div>
+          ),
+          rowExpandable: (record) =>
+            record.folders && record.folders.length > 0,
+        }}
+      />
+    </Card>
+  );
+};
+
+// Hook that sets up our file map using the MediaManagerContext with admin support
 const useCustomFileMap = () => {
   const {
     folders,
@@ -32,37 +177,116 @@ const useCustomFileMap = () => {
     fetchFolders,
     fetchFiles,
     moveMediaFile,
+    // Admin functions
+    adminMode,
+    usersData,
+    currentViewingUserId,
+    loadingUsers,
+    enableAdminMode,
+    disableAdminMode,
+    fetchAllUsersData,
+    fetchUserFolders,
+    getCurrentContext,
   } = useMediaManager();
 
+  const [userInfo, setUserInfo] = useContext(userInfoContext);
   const [currentFolderId, setCurrentFolderId] = useState("root");
   const [currentFolderName, setCurrentFolderName] = useState("Media Manager");
   const [lastViewedPath, setLastViewedPath] = useState("root");
+  const [showAdminView, setShowAdminView] = useState(false);
   const currentFolderIdRef = useRef(currentFolderId);
 
   useEffect(() => {
     setAuthToken(localStorage.getItem("jwtToken"));
-    // Only fetch folders on initial load
-    fetchFolders();
+
+    if (adminMode && !currentViewingUserId) {
+      // In admin mode but not viewing specific user - show users list
+      fetchAllUsersData();
+    } else if (!adminMode) {
+      // Regular user mode - fetch their folders
+      fetchFolders();
+    }
+
     currentFolderIdRef.current = currentFolderId;
 
-    // Remember last viewed path
-    const savedPath = localStorage.getItem("mediaManager_lastPath");
-    if (savedPath && savedPath !== "root") {
-      setCurrentFolderId(savedPath);
-      setLastViewedPath(savedPath);
+    // Remember last viewed path (only for regular user mode)
+    if (!adminMode) {
+      const savedPath = localStorage.getItem("mediaManager_lastPath");
+      if (savedPath && savedPath !== "root") {
+        setCurrentFolderId(savedPath);
+        setLastViewedPath(savedPath);
+      }
     }
-  }, []);
+  }, [adminMode, currentViewingUserId]);
 
-  // Fetch files when entering a folder (only if not already cached)
+  // Fetch files when entering a folder
   useEffect(() => {
-    if (currentFolderId !== "root" && !filesByFolder[currentFolderId]) {
+    if (
+      currentFolderId !== "root" &&
+      !filesByFolder[currentFolderId] &&
+      !adminMode
+    ) {
+      fetchFiles(currentFolderId);
+    } else if (
+      currentFolderId !== "root" &&
+      !filesByFolder[currentFolderId] &&
+      adminMode &&
+      currentViewingUserId
+    ) {
       fetchFiles(currentFolderId);
     }
 
-    // Save current path
-    localStorage.setItem("mediaManager_lastPath", currentFolderId);
-    setLastViewedPath(currentFolderId);
-  }, [currentFolderId, filesByFolder, fetchFiles]);
+    // Save current path (only for regular users)
+    if (!adminMode) {
+      localStorage.setItem("mediaManager_lastPath", currentFolderId);
+      setLastViewedPath(currentFolderId);
+    }
+  }, [
+    currentFolderId,
+    filesByFolder,
+    fetchFiles,
+    adminMode,
+    currentViewingUserId,
+  ]);
+
+  // Handle admin mode toggle
+  const handleAdminModeToggle = async (checked) => {
+    if (checked) {
+      const success = enableAdminMode();
+      if (success) {
+        setShowAdminView(true);
+        setCurrentFolderId("root");
+        setCurrentFolderName("Admin - Users Overview");
+        await fetchAllUsersData();
+      }
+    } else {
+      disableAdminMode();
+      setShowAdminView(false);
+      setCurrentFolderId("root");
+      setCurrentFolderName("Media Manager");
+      await fetchFolders();
+    }
+  };
+
+  // Handle user selection in admin mode
+  const handleSelectUser = async (user) => {
+    try {
+      console.log("ammar", user);
+      await fetchUserFolders(user._id);
+      setCurrentFolderId("root");
+      setCurrentFolderName(`${user.name}'s Media`);
+      setShowAdminView(false);
+    } catch (error) {
+      console.error("Error selecting user:", error);
+    }
+  };
+
+  // Handle back to users list
+  const handleBackToUsersList = () => {
+    setShowAdminView(true);
+    setCurrentFolderId("root");
+    setCurrentFolderName("Admin - Users Overview");
+  };
 
   // Build folder hierarchy with proper nesting
   const buildFolderHierarchy = useCallback((folders) => {
@@ -94,16 +318,34 @@ const useCustomFileMap = () => {
 
   // Convert context data to Chonky file map format with hierarchy
   const fileMap = useMemo(() => {
+    // Don't show file map when in admin users view
+    if (showAdminView) {
+      return {
+        root: {
+          id: "root",
+          name: "Admin - Users Overview",
+          isDir: true,
+          childrenIds: [],
+          depth: -1,
+          canDropFiles: false,
+          droppable: false,
+          draggable: false,
+        },
+      };
+    }
+
     const { folderMap, rootFolders } = buildFolderHierarchy(folders);
 
+    console.log("Folder Map:", userInfo, currentFolderName);
     const newFileMap = {
       root: {
         id: "root",
-        name: "Media Manager",
+        name:
+          adminMode && currentViewingUserId ? `User's Media` : "Media Manager",
         isDir: true,
         childrenIds: rootFolders.map((folder) => folder._id),
         depth: -1,
-        canDropFiles: false, // Root can't accept file drops
+        canDropFiles: false,
         droppable: false,
         draggable: false,
       },
@@ -130,10 +372,10 @@ const useCustomFileMap = () => {
         mediaType: folder.mediaType,
         createdAt: folder.createdAt,
         depth: folder.depth || 0,
-        canCreateSubfolder: (folder.depth || 0) < 2, // Can create subfolder if depth < 2
-        canDropFiles: true, // Folders can accept file drops
-        droppable: true, // Important: Make folder a drop target
-        draggable: false, // Folders shouldn't be draggable
+        canCreateSubfolder: (folder.depth || 0) < 2,
+        canDropFiles: true,
+        droppable: true,
+        draggable: false,
       };
     });
 
@@ -151,14 +393,21 @@ const useCustomFileMap = () => {
           createdAt: file.createdAt,
           filename: file.filename,
           size: file.size,
-          draggable: true, // Important: Enable dragging
-          droppable: false, // Files cannot be drop targets
+          draggable: true,
+          droppable: false,
         };
       });
     });
 
     return newFileMap;
-  }, [folders, filesByFolder, buildFolderHierarchy]);
+  }, [
+    folders,
+    filesByFolder,
+    buildFolderHierarchy,
+    showAdminView,
+    adminMode,
+    currentViewingUserId,
+  ]);
 
   // Get current folder depth
   const getCurrentDepth = useCallback(() => {
@@ -182,11 +431,28 @@ const useCustomFileMap = () => {
 
   // Refresh data when needed (force refetch)
   const refreshData = useCallback(async () => {
-    await fetchFolders(true);
-    if (currentFolderId !== "root") {
-      await fetchFiles(currentFolderId, true);
+    if (adminMode && !currentViewingUserId) {
+      await fetchAllUsersData(true);
+    } else if (adminMode && currentViewingUserId) {
+      await fetchUserFolders(currentViewingUserId, true);
+      if (currentFolderId !== "root") {
+        await fetchFiles(currentFolderId, true);
+      }
+    } else {
+      await fetchFolders(true);
+      if (currentFolderId !== "root") {
+        await fetchFiles(currentFolderId, true);
+      }
     }
-  }, [fetchFolders, fetchFiles, currentFolderId]);
+  }, [
+    fetchFolders,
+    fetchFiles,
+    fetchAllUsersData,
+    fetchUserFolders,
+    currentFolderId,
+    adminMode,
+    currentViewingUserId,
+  ]);
 
   return {
     fileMap,
@@ -195,11 +461,21 @@ const useCustomFileMap = () => {
     setCurrentFolderName,
     currentFolderName,
     refreshData,
-    loading: loadingFolders || loadingFiles[currentFolderId],
+    loading: loadingFolders || loadingFiles[currentFolderId] || loadingUsers,
     getCurrentDepth,
     isNameUnique,
     lastViewedPath,
     moveMediaFile,
+    // Admin specific
+    isAdmin: userInfo.role === "admin",
+    adminMode,
+    showAdminView,
+    usersData,
+    currentViewingUserId,
+    handleAdminModeToggle,
+    handleSelectUser,
+    handleBackToUsersList,
+    getCurrentContext,
   };
 };
 
@@ -736,7 +1012,7 @@ const RenameModal = ({ visible, onClose, onSuccess, target, isNameUnique }) => {
   );
 };
 
-// Enhanced VFSBrowser with all features including drag and drop
+// Enhanced VFSBrowser with admin support
 export const VFSBrowser = React.memo((props) => {
   const [openUploadModal, setOpenUploadModal] = useState(false);
   const [openCreateFolderModal, setOpenCreateFolderModal] = useState(false);
@@ -754,6 +1030,16 @@ export const VFSBrowser = React.memo((props) => {
     getCurrentDepth,
     isNameUnique,
     moveMediaFile,
+    // Admin specific
+    isAdmin,
+    adminMode,
+    showAdminView,
+    usersData,
+    currentViewingUserId,
+    handleAdminModeToggle,
+    handleSelectUser,
+    handleBackToUsersList,
+    getCurrentContext,
   } = useCustomFileMap();
 
   const files = useFiles(fileMap, currentFolderId);
@@ -784,6 +1070,11 @@ export const VFSBrowser = React.memo((props) => {
     const actions = [];
     const currentDepth = getCurrentDepth();
     const canCreateSubfolder = currentDepth < 2;
+
+    // Don't show actions in admin users view
+    if (showAdminView) {
+      return [];
+    }
 
     // Enable drag and drop
     actions.push(ChonkyActions.EnableDragAndDrop);
@@ -851,58 +1142,132 @@ export const VFSBrowser = React.memo((props) => {
     });
 
     return actions;
-  }, [currentFolderId, getCurrentDepth]);
+  }, [currentFolderId, getCurrentDepth, showAdminView]);
 
   const thumbnailGenerator = useCallback(
     (file) => (file.thumbnailUrl ? file.thumbnailUrl : null),
     []
   );
 
+  // Admin header component
+  const AdminHeader = () => {
+    const currentContext = getCurrentContext(); // Get the context first
+
+    return (
+      <Card size="small" style={{ marginBottom: "16px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Space>
+            {isAdmin && (
+              <Tooltip title="Toggle Admin Mode">
+                <Space>
+                  <Text>Admin Mode:</Text>
+                  <Switch
+                    checked={adminMode}
+                    onChange={handleAdminModeToggle}
+                    checkedChildren="ON"
+                    unCheckedChildren="OFF"
+                  />
+                </Space>
+              </Tooltip>
+            )}
+
+            {adminMode && currentViewingUserId && (
+              <>
+                <Divider type="vertical" />
+                <Button
+                  type="link"
+                  icon={<ArrowLeftOutlined />}
+                  onClick={handleBackToUsersList}
+                  size="small"
+                >
+                  Back to Users List
+                </Button>
+                <Text type="secondary">
+                  Viewing: <strong>{currentContext.currentUser?.email}</strong>
+                </Text>
+              </>
+            )}
+          </Space>
+
+          <Button
+            type="primary"
+            size="small"
+            onClick={refreshData}
+            loading={loading}
+          >
+            Refresh
+          </Button>
+        </div>
+      </Card>
+    );
+  };
+
   return (
     <>
       <div style={{ height: "100vh", position: "relative" }}>
-        <MediaFileUploader
-          currentFolderId={currentFolderId}
-          currentFolderName={currentFolderName}
-          visible={openUploadModal}
-          onSuccess={() => {}}
-          setVisible={setOpenUploadModal}
-        />
+        {/* Admin Header */}
+        {isAdmin && <AdminHeader />}
 
-        <CreateFolderModal
-          visible={openCreateFolderModal}
-          onClose={() => setOpenCreateFolderModal(false)}
-          onSuccess={() => {}}
-          currentFolderId={currentFolderId}
-          getCurrentDepth={getCurrentDepth}
-          isNameUnique={isNameUnique}
-        />
+        {/* Show admin users view */}
+        {showAdminView ? (
+          <AdminUsersView
+            onSelectUser={handleSelectUser}
+            usersData={usersData}
+            loading={loading}
+          />
+        ) : (
+          <>
+            {/* Regular file browser */}
+            <MediaFileUploader
+              currentFolderId={currentFolderId}
+              currentFolderName={currentFolderName}
+              visible={openUploadModal}
+              onSuccess={() => {}}
+              setVisible={setOpenUploadModal}
+            />
 
-        <RenameModal
-          visible={openRenameModal}
-          onClose={() => setOpenRenameModal(false)}
-          onSuccess={() => {}}
-          target={renameTarget}
-          isNameUnique={isNameUnique}
-        />
+            <CreateFolderModal
+              visible={openCreateFolderModal}
+              onClose={() => setOpenCreateFolderModal(false)}
+              onSuccess={() => {}}
+              currentFolderId={currentFolderId}
+              getCurrentDepth={getCurrentDepth}
+              isNameUnique={isNameUnique}
+            />
 
-        {loading && (
-          <div className="loading-overlay">
-            <div className="loading-spinner">Loading...</div>
-          </div>
+            <RenameModal
+              visible={openRenameModal}
+              onClose={() => setOpenRenameModal(false)}
+              onSuccess={() => {}}
+              target={renameTarget}
+              isNameUnique={isNameUnique}
+            />
+
+            {loading && (
+              <div className="loading-overlay">
+                <div className="loading-spinner">Loading...</div>
+              </div>
+            )}
+
+            <FullFileBrowser
+              files={files}
+              folderChain={folderChain}
+              fileActions={fileActions}
+              onFileAction={handleFileAction}
+              thumbnailGenerator={thumbnailGenerator}
+              disableSelection={loading}
+              disableToolbar={true}
+              disableDefaultFileActions={true}
+              {...props}
+            />
+          </>
         )}
-
-        <FullFileBrowser
-          files={files}
-          folderChain={folderChain}
-          fileActions={fileActions}
-          onFileAction={handleFileAction}
-          thumbnailGenerator={thumbnailGenerator}
-          disableSelection={loading}
-          disableToolbar={true}
-          disableDefaultFileActions={true}
-          {...props}
-        />
       </div>
 
       <style jsx>{`
@@ -1004,3 +1369,5 @@ export const VFSBrowser = React.memo((props) => {
     </>
   );
 });
+
+VFSBrowser.displayName = "VFSBrowser";

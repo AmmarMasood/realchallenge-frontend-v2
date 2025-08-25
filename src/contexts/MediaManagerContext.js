@@ -1,17 +1,20 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import {
   getAllMediaFolders,
+  getAllMediaFoldersGroupedByUser, // New admin function
+  getSpecificUserFolders, // New admin function
   getMediaFolderFiles,
   uploadMediaFile,
   deleteMediaFile,
   createMediaFolder,
   deleteMediaFolder,
   updateMediaFolder,
-  updateMediaFile, // Add this import
+  updateMediaFile,
   getUserMediaFolders,
   moveMediaFileS,
 } from "../services/mediaManager";
 import { notification } from "antd";
+import { userInfoContext } from "./UserStore";
 
 const openNotificationWithIcon = (type, message, description) => {
   notification[type]({
@@ -25,12 +28,22 @@ const MediaManagerContext = createContext();
 
 // Provider component
 export const MediaManagerProvider = ({ children }) => {
+  const [userInfo, setUserInfo] = useContext(userInfoContext); // Assuming userInfoContext is defined elsewhere
   const [folders, setFolders] = useState([]);
   const [filesByFolder, setFilesByFolder] = useState({}); // { [folderId]: [files] }
   const [loadingFolders, setLoadingFolders] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState({}); // { [folderId]: boolean }
 
-  // Fetch all folders (with cache)
+  // Admin-specific state
+  const [adminMode, setAdminMode] = useState(false);
+  const [usersData, setUsersData] = useState([]); // For admin view: [{user, folders, totalFolders}]
+  const [currentViewingUserId, setCurrentViewingUserId] = useState(null);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  // Check if current user is admin
+  const isAdmin = useCallback(() => userInfo.role === "admin", [userInfo]);
+
+  // Fetch all folders for regular users (with cache)
   const fetchFolders = useCallback(
     async (force = false) => {
       if (folders.length > 0 && !force) return folders;
@@ -46,7 +59,136 @@ export const MediaManagerProvider = ({ children }) => {
     [folders]
   );
 
-  // Fetch files for a folder (with cache)
+  // NEW: Fetch all users and their folders for admin
+  const fetchAllUsersData = useCallback(
+    async (force = false) => {
+      if (!isAdmin()) {
+        throw new Error("Admin access required");
+      }
+
+      if (usersData.length > 0 && !force) return usersData;
+
+      setLoadingUsers(true);
+      try {
+        const res = await getAllMediaFoldersGroupedByUser();
+        setUsersData(res.users || []);
+        return res.users || [];
+      } catch (error) {
+        openNotificationWithIcon(
+          "error",
+          "Failed to load users data",
+          error.message || "Unable to fetch users data"
+        );
+        throw error;
+      } finally {
+        setLoadingUsers(false);
+      }
+    },
+    [usersData, isAdmin]
+  );
+
+  // NEW: Fetch specific user's folders for admin
+  const fetchUserFolders = useCallback(
+    async (userId, force = false) => {
+      if (!isAdmin()) {
+        throw new Error("Admin access required");
+      }
+
+      // Check if we already have this user's folders cached
+      const existingUserData = usersData.find((u) => u.user._id === userId);
+      if (existingUserData && existingUserData.folders && !force) {
+        setFolders(existingUserData.folders);
+        setCurrentViewingUserId(userId);
+        return existingUserData.folders;
+      }
+
+      setLoadingFolders(true);
+      try {
+        const res = await getSpecificUserFolders(userId);
+        setFolders(res.folders || []);
+        setCurrentViewingUserId(userId);
+
+        // Update the users data cache
+        setUsersData((prevUsers) =>
+          prevUsers.map((userData) =>
+            userData.user._id === userId
+              ? { ...userData, folders: res.folders || [] }
+              : userData
+          )
+        );
+
+        return res.folders || [];
+      } catch (error) {
+        openNotificationWithIcon(
+          "error",
+          "Failed to load user folders",
+          error.message || "Unable to fetch user folders"
+        );
+        throw error;
+      } finally {
+        setLoadingFolders(false);
+      }
+    },
+    [usersData, isAdmin]
+  );
+
+  // Switch to admin mode
+  const enableAdminMode = useCallback(() => {
+    if (!isAdmin()) {
+      openNotificationWithIcon(
+        "error",
+        "Access Denied",
+        "Admin privileges required"
+      );
+      return false;
+    }
+    setAdminMode(true);
+    setFolders([]); // Clear regular folders
+    setFilesByFolder({}); // Clear files cache
+    setCurrentViewingUserId(null);
+    return true;
+  }, [isAdmin]);
+
+  // Switch back to regular user mode
+  const disableAdminMode = useCallback(() => {
+    setAdminMode(false);
+    setUsersData([]);
+    setCurrentViewingUserId(null);
+    setFolders([]);
+    setFilesByFolder({});
+  }, []);
+
+  // Get current context (admin viewing specific user vs regular user)
+  const getCurrentContext = useCallback(() => {
+    if (adminMode && currentViewingUserId) {
+      const userData = usersData.find(
+        (u) => u.user._id === currentViewingUserId
+      );
+      return {
+        isAdmin: true,
+        isViewingSpecificUser: true,
+        currentUser: userData?.user || null,
+        folders: folders,
+      };
+    } else if (adminMode) {
+      return {
+        isAdmin: true,
+        isViewingSpecificUser: false,
+        currentUser: null,
+        folders: [],
+        usersData: usersData,
+      };
+    } else {
+      return {
+        isAdmin: false,
+        isViewingSpecificUser: false,
+        currentUser: userInfo,
+        folders: folders,
+      };
+    }
+  }, [adminMode, currentViewingUserId, usersData, folders]);
+
+  // Fetch files for a folder (with cache) - works for both admin and regular users
   const fetchFiles = useCallback(
     async (folderId, force = false) => {
       if (filesByFolder[folderId] && !force) return filesByFolder[folderId];
@@ -131,8 +273,27 @@ export const MediaManagerProvider = ({ children }) => {
 
   // Create folder and update cache (with hierarchy support)
   const handleCreateFolder = async (data) => {
+    if (adminMode) {
+      data.forUser = currentViewingUserId;
+    }
     const res = await createMediaFolder(data);
     setFolders((prev) => [res.folder, ...prev]);
+
+    // If in admin mode viewing specific user, also update users data cache
+    if (adminMode && currentViewingUserId) {
+      setUsersData((prevUsers) =>
+        prevUsers.map((userData) =>
+          userData.user._id === currentViewingUserId
+            ? {
+                ...userData,
+                folders: [res.folder, ...userData.folders],
+                totalFolders: userData.totalFolders + 1,
+              }
+            : userData
+        )
+      );
+    }
+
     return res.folder;
   };
 
@@ -170,6 +331,24 @@ export const MediaManagerProvider = ({ children }) => {
         return newFiles;
       });
 
+      // If in admin mode viewing specific user, also update users data cache
+      if (adminMode && currentViewingUserId) {
+        setUsersData((prevUsers) =>
+          prevUsers.map((userData) =>
+            userData.user._id === currentViewingUserId
+              ? {
+                  ...userData,
+                  folders: newFolders,
+                  totalFolders: Math.max(
+                    0,
+                    userData.totalFolders - folderIdsToRemove.length
+                  ),
+                }
+              : userData
+          )
+        );
+      }
+
       return newFolders;
     });
   };
@@ -180,6 +359,23 @@ export const MediaManagerProvider = ({ children }) => {
     setFolders((prev) =>
       prev.map((f) => (f._id === folderId ? { ...f, ...res.folder } : f))
     );
+
+    // If in admin mode viewing specific user, also update users data cache
+    if (adminMode && currentViewingUserId) {
+      setUsersData((prevUsers) =>
+        prevUsers.map((userData) =>
+          userData.user._id === currentViewingUserId
+            ? {
+                ...userData,
+                folders: userData.folders.map((f) =>
+                  f._id === folderId ? { ...f, ...res.folder } : f
+                ),
+              }
+            : userData
+        )
+      );
+    }
+
     return res.folder;
   };
 
@@ -319,10 +515,19 @@ export const MediaManagerProvider = ({ children }) => {
   return (
     <MediaManagerContext.Provider
       value={{
+        // Regular state
         folders,
         filesByFolder,
         loadingFolders,
         loadingFiles,
+
+        // Admin state
+        adminMode,
+        usersData,
+        currentViewingUserId,
+        loadingUsers,
+
+        // Regular functions
         fetchFolders,
         fetchFiles,
         uploadMediaFile: handleUploadFile,
@@ -330,7 +535,15 @@ export const MediaManagerProvider = ({ children }) => {
         createMediaFolder: handleCreateFolder,
         deleteMediaFolder: handleDeleteFolder,
         updateMediaFolder: handleUpdateFolder,
-        updateMediaFile: handleUpdateFile, // Add this new method
+        updateMediaFile: handleUpdateFile,
+
+        // Admin functions
+        isAdmin,
+        enableAdminMode,
+        disableAdminMode,
+        fetchAllUsersData,
+        fetchUserFolders,
+        getCurrentContext,
 
         // Helper functions for hierarchy management
         getFolderHierarchy,

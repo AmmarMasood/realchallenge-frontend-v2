@@ -33,12 +33,13 @@ export function testMediaRoute() {
 }
 
 // --- FOLDER APIs ---
-export function createMediaFolder({ name, mediaType, parentId }) {
+export function createMediaFolder({ name, mediaType, parentId, forUser }) {
   return axios
     .post(`${process.env.REACT_APP_SERVER}/api/media/folder`, {
       name,
       mediaType,
       parentId, // Add parentId support for nested folders
+      forUser, // Admin can create folder for specific user
     })
     .then((res) => res.data)
     .catch((err) => {
@@ -96,6 +97,7 @@ export function deleteMediaFolder(id) {
     });
 }
 
+// Original admin function - gets all folders in flat structure
 export function getAllMediaFolders() {
   return axios
     .get(`${process.env.REACT_APP_SERVER}/api/media/folders`)
@@ -110,6 +112,39 @@ export function getAllMediaFolders() {
     });
 }
 
+// --- NEW ADMIN FUNCTIONS ---
+
+// Get all folders grouped by users (admin only)
+export function getAllMediaFoldersGroupedByUser() {
+  return axios
+    .get(`${process.env.REACT_APP_SERVER}/api/media/folders/admin`)
+    .then((res) => res.data)
+    .catch((err) => {
+      openNotificationWithIcon(
+        "error",
+        "Unable to get user folders",
+        err?.response?.data?.message || ""
+      );
+      throw err;
+    });
+}
+
+// Get specific user's folders (admin only)
+export function getSpecificUserFolders(userId) {
+  return axios
+    .get(`${process.env.REACT_APP_SERVER}/api/media/folders/user/${userId}`)
+    .then((res) => res.data)
+    .catch((err) => {
+      openNotificationWithIcon(
+        "error",
+        "Unable to get user folders",
+        err?.response?.data?.message || ""
+      );
+      throw err;
+    });
+}
+
+// Regular user folders
 export function getUserMediaFolders() {
   return axios
     .get(`${process.env.REACT_APP_SERVER}/api/media/folders/user`)
@@ -180,7 +215,7 @@ export function deleteMediaFile(folderId, fileId) {
     });
 }
 
-// --- NEW: Update file (rename) ---
+// --- Update file (rename) ---
 export function updateMediaFile(folderId, fileId, data) {
   return axios
     .put(
@@ -201,7 +236,7 @@ export function updateMediaFile(folderId, fileId, data) {
     });
 }
 
-// --- NEW: Move file between folders ---
+// --- Move file between folders ---
 export function moveMediaFileS(fileId, oldFolderId, newFolderId) {
   return axios
     .put(
