@@ -75,9 +75,11 @@ function ExerciseCreatorPopup({
     }
     setLoading(true);
     try {
+      console.log("Creating exercise with data:", videoFile);
       const data = {
         videoURL: videoFile.link,
         voiceOverLink: audioFile?.link,
+        videoThumbnailURL: videoFile?.thumbnailUrl || "",
         trainer: userInfo.id,
         language,
         title: exerciseTitle,

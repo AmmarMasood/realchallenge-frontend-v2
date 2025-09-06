@@ -55,3 +55,9 @@
   z-index: 1000;
   top: -35px;
 }
+
+@media (min-width: 1400px) {
+  .v2challenge-player-container {
+    width: 1200px;
+  }
+}

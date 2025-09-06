@@ -3,7 +3,7 @@
   min-height: 100vh;
 }
 .challenge-player-container-nav {
-  padding: 10px 10px 20px 10px;
+  padding: 10px 0px 20px 0px;
   color: var(--color-orange);
   display: flex;
   align-items: center;
@@ -19,7 +19,7 @@
   /* border: 1px solid green; */
 }
 .video-browser-container {
-  margin: 25px 25px 0 25px;
+  margin: 25px 0px 0 0px;
 }
 @media screen and (min-width: 2000px) {
   .video-browser-container {
@@ -101,7 +101,7 @@
   color: rgba(255, 255, 255, 0.459);
 }
 .player-download-stuff {
-  padding: 0 20px 20px 20px;
+  padding: 0 0px 20px 0px;
   /* border: 1px solid red; */
   display: flex;
   flex-direction: column;
@@ -156,14 +156,13 @@
   color: #fff;
 }
 .finish-workout-popup-container--reviewbox > div > span:hover {
-  color: #fff
+  color: #fff;
 }
 
 .challenge-player-container-exercies-heading {
   font-size: 20px;
   text-transform: uppercase;
   font-style: italic;
-  margin-left: 25px;
   opacity: 0.6;
   margin-bottom: 10px;
   letter-spacing: 1px;
@@ -172,7 +171,6 @@
 .challenge-player-container-exercies-subheading {
   font-size: 15px;
   text-transform: capitalize;
-  margin-left: 25px;
   opacity: 0.6;
 }
 
@@ -184,7 +182,7 @@
     flex-direction: column;
     width: 100%;
   }
-  .finish-workout-popup-container--reviewbox > div{
+  .finish-workout-popup-container--reviewbox > div {
     width: 100%;
   }
 }

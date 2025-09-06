@@ -389,7 +389,7 @@ const useCustomFileMap = () => {
           parentId: folderId,
           link: file.filelink,
           mediaType: file.mediaType,
-          thumbnailUrl: file.mediaType === "picture" ? file.filelink : null,
+          thumbnailUrl: file.thumbnailUrl || file.filelink,
           createdAt: file.createdAt,
           filename: file.filename,
           size: file.size,
@@ -688,7 +688,11 @@ export const useFileActionHandler = (
             if (mediaActions[2] === "multiple") {
               setMedia([
                 ...media,
-                { name: targetFile.name, link: targetFile.link },
+                {
+                  name: targetFile.name,
+                  link: targetFile.link,
+                  thumbnailUrl: targetFile.thumbnailUrl,
+                },
               ]);
               showActionNotification(data);
               setRemoteMediaManagerVisible(false);
@@ -697,6 +701,7 @@ export const useFileActionHandler = (
             setMedia(mediaActions[2], {
               name: targetFile.name,
               link: targetFile.link,
+              thumbnailUrl: targetFile.thumbnailUrl,
             });
             showActionNotification(data);
             setRemoteMediaManagerVisible(false);
@@ -705,6 +710,7 @@ export const useFileActionHandler = (
           setMedia({
             name: targetFile.name,
             link: targetFile.link,
+            thumbnailUrl: targetFile.thumbnailUrl,
           });
           showActionNotification(data);
           setRemoteMediaManagerVisible(false);
@@ -1076,8 +1082,10 @@ export const VFSBrowser = React.memo((props) => {
       return [];
     }
 
-    // Enable drag and drop
-    actions.push(ChonkyActions.EnableDragAndDrop);
+    // Enable drag and drop only if not in admin mode
+    if (!adminMode) {
+      actions.push(ChonkyActions.EnableDragAndDrop);
+    }
 
     if (currentFolderId === "root") {
       // Root level actions
@@ -1142,7 +1150,7 @@ export const VFSBrowser = React.memo((props) => {
     });
 
     return actions;
-  }, [currentFolderId, getCurrentDepth, showAdminView]);
+  }, [currentFolderId, getCurrentDepth, showAdminView, adminMode]);
 
   const thumbnailGenerator = useCallback(
     (file) => (file.thumbnailUrl ? file.thumbnailUrl : null),

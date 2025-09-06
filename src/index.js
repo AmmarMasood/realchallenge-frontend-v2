@@ -13,18 +13,21 @@ import { ChonkyIconFA } from "chonky-icon-fontawesome";
 import PaymentProcessStore from "./contexts/PaymentProcessStore";
 import { fetchTranslations } from "./helpers/translationHelpers";
 import { MediaManagerProvider } from "./contexts/MediaManagerContext";
+import { RemoteMediaManagerProvider } from "./contexts/RemoteMediaManagerContext";
 
 // Somewhere in your `index.ts`:
-setChonkyDefaults({ iconComponent: ChonkyIconFA, disableDragAndDrop: false });
+setChonkyDefaults({ iconComponent: ChonkyIconFA, disableDragAndDrop: true });
 
 ReactDOM.render(
   <React.StrictMode>
     <UserStore>
       <PaymentProcessStore>
         <LanguageProvider fetchTranslations={fetchTranslations}>
-          <MediaManagerProvider>
-            <App />
-          </MediaManagerProvider>
+          <RemoteMediaManagerProvider>
+            <MediaManagerProvider>
+              <App />
+            </MediaManagerProvider>
+          </RemoteMediaManagerProvider>
         </LanguageProvider>
       </PaymentProcessStore>
     </UserStore>

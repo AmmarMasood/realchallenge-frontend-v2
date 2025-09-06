@@ -132,12 +132,24 @@ function PlayerVideoBrowser({
                     onClick={() => handleChangeExercise(i)}
                   >
                     <div className="challenge-player-container-exercies-box-imagebox">
-                      <VideoThumbnail
-                        videoUrl={e.videoURL ? `${e.videoURL}` : ""}
-                        width={250}
-                        height={200}
-                        cors={true}
-                      />
+                      {e.videoThumbnailURL ? (
+                        <img
+                          src={e.videoThumbnailURL}
+                          alt="thumbnail"
+                          style={{
+                            width: 250,
+                            height: 200,
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <VideoThumbnail
+                          videoUrl={e.videoURL ? `${e.videoURL}` : ""}
+                          width={250}
+                          height={200}
+                          cors={true}
+                        />
+                      )}
                     </div>
                     <div className="challenge-player-container-exercies-box-details font-paragraph-white">
                       <p style={{ lineHeight: "10px" }}>{e.title}</p>
@@ -191,12 +203,24 @@ function PlayerVideoBrowser({
                     onClick={() => handleChangeExercise(i)}
                   >
                     <div className="challenge-player-container-exercies-box-imagebox">
-                      <VideoThumbnail
-                        videoUrl={e.videoURL ? `${e.videoURL}` : ""}
-                        width={250}
-                        height={200}
-                        cors={true}
-                      />
+                      {e.videoThumbnailURL ? (
+                        <img
+                          src={e.videoThumbnailURL}
+                          alt="thumbnail"
+                          style={{
+                            width: 250,
+                            height: 200,
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <VideoThumbnail
+                          videoUrl={e.videoURL ? `${e.videoURL}` : ""}
+                          width={250}
+                          height={200}
+                          cors={true}
+                        />
+                      )}
                     </div>
                     <div className="challenge-player-container-exercies-box-details font-paragraph-white">
                       <p style={{ lineHeight: "10px" }}>{e.title}</p>

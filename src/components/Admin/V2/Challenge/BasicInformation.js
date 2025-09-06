@@ -75,6 +75,7 @@ import {
   ItemTypeWorkout,
 } from "../../../../helpers/DndWrapper.jsx";
 import { debounce } from "lodash";
+import { createPost } from "../../../../services/posts.js";
 
 const tooltipText = `
 If you don’t choose any plan and hit start now, you can go through the wizard, get your free intake, make a free account and enjoy our free challenges collection and one week meal plan. 
@@ -169,6 +170,10 @@ function BasicInformation(props) {
   const [goalsModal, setGoalsModal] = useState(false);
   const [trainerModal, setTrainerModal] = useState(false);
   const [errors, setErrors] = useState({});
+  const [allowComments, setAllowComments] = useState(true);
+  const [allowReviews, setAllowReviews] = useState(true);
+  const [makePublic, setMakePublic] = useState(true);
+  const [userCreatePost, setUserCreatePost] = useState(false);
   const { reloadWithoutConfirmation } = useBrowserEvents({
     enableBeforeUnloadConfirm: true,
     hasUnsavedChanges: true,
@@ -327,6 +332,7 @@ function BasicInformation(props) {
             title: "Introduction to workout",
             videoURL: "",
             voiceOverLink: "",
+            videoThumbnailURL: "",
             id: v4(),
           },
         ],
@@ -443,9 +449,9 @@ function BasicInformation(props) {
               icon: "",
             }))
           : [],
-        allowComments: true,
-        allowReviews: true,
-        isPublic: true,
+        allowComments,
+        allowReviews,
+        isPublic: makePublic,
       };
       console.log("us update", isUpdate);
       if (isUpdate) {
@@ -453,6 +459,9 @@ function BasicInformation(props) {
         reloadWithoutConfirmation();
       } else {
         const res = await createChallenge(obj);
+        if (userCreatePost) {
+          await createAPost(res.weeks._id);
+        }
         props.history.push(`/admin/v2/challenge-studio/${res.weeks._id}`);
       }
     } catch (err) {
@@ -460,6 +469,20 @@ function BasicInformation(props) {
       setLoading(false);
     }
     setLoading(false);
+  };
+
+  const createAPost = async (id) => {
+    const values = {
+      title: challengeName,
+      text: challengeDescription,
+      image: typeof thumbnail === "object" ? thumbnail.link : "",
+      type: "Challenge",
+      url: `/challenge/${slug(challengeName)}/${id}`,
+      language: language,
+    };
+    await createPost(values);
+    // setCreatePostModalVisible(false);
+    // console.log(values);
   };
 
   const handleWeeksForUpdate = async (weeks, isUpdate) => {
@@ -486,6 +509,9 @@ function BasicInformation(props) {
           : [],
         relatedProducts: [],
         introVideoLink: introExercise ? introExercise.videoURL : "",
+        introVideoThumbnailLink: introExercise
+          ? introExercise.videoThumbnailURL
+          : "",
         introVideoLength: introExercise ? introExercise.exerciseLength : "",
         isRendered: workout.renderWorkout,
         exercises: workout.renderWorkout
@@ -1832,6 +1858,11 @@ function BasicInformation(props) {
                       value={customPrice}
                       onClick={(e) => {
                         e.stopPropagation();
+                        setPack("CHALLENGE_1");
+                        setErrors((prev) => ({
+                          ...prev,
+                          pack: "",
+                        }));
                       }}
                       onChange={(e) => {
                         if (errors.customPrice) {
@@ -1955,6 +1986,52 @@ function BasicInformation(props) {
                 </div>
               </div>
             </>
+
+            <>
+              <div>
+                <Checkbox
+                  checked={allowComments}
+                  onChange={(e) => setAllowComments(e.target.checked)}
+                  className="font-paragraph-white"
+                  style={{ marginTop: "10px" }}
+                >
+                  <T>adminDashboard.challenges.allowcb</T>
+                </Checkbox>
+              </div>
+              <div>
+                <Checkbox
+                  checked={allowReviews}
+                  onChange={(e) => setAllowReviews(e.target.checked)}
+                  className="font-paragraph-white"
+                  style={{ marginTop: "10px" }}
+                >
+                  <T>adminDashboard.challenges.allowrv</T>
+                </Checkbox>
+              </div>
+              <div>
+                <Checkbox
+                  checked={makePublic}
+                  onChange={(e) => setMakePublic(e.target.checked)}
+                  className="font-paragraph-white"
+                  style={{ marginTop: "10px" }}
+                >
+                  <T>adminDashboard.challenges.mp</T>
+                </Checkbox>
+              </div>
+              {!isUpdate && (
+                <div>
+                  <Checkbox
+                    checked={userCreatePost}
+                    onChange={(e) => setUserCreatePost(e.target.checked)}
+                    className="font-paragraph-white"
+                    style={{ marginTop: "10px" }}
+                  >
+                    Create a post
+                  </Checkbox>
+                </div>
+              )}
+            </>
+
             <button
               style={{
                 background: "#f37720",

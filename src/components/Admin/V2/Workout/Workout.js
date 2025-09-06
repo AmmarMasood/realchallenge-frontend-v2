@@ -29,6 +29,7 @@ import {
 import MusicIcon from "../../../../assets/icons/music-icon-white.svg";
 import MusicChooseModal from "./MusicChooseModal/MusicChooseModal";
 import HelpPopupPlayer from "../../../Player/HelpPopupPlayer";
+import { useRemoteMediaManager } from "../../../../contexts/RemoteMediaManagerContext";
 
 function Workout() {
   const {
@@ -40,9 +41,12 @@ function Workout() {
     setMusics,
   } = useChallenge();
   const { language } = useContext(LanguageContext);
-  const [mediaManagerVisible, setMediaManagerVisible] = React.useState(false);
-  const [mediaManagerType, setMediaManagerType] = React.useState("images");
-  const [mediaManagerActions, setMediaManagerActions] = React.useState([]);
+  const {
+    setMediaManagerVisible,
+    setMediaManagerType,
+
+    setMediaManagerActions,
+  } = useRemoteMediaManager();
   //
   const [introVideoFile, setIntroVideoFile] = React.useState(null);
 
@@ -118,6 +122,7 @@ function Workout() {
             return {
               ...exercise,
               videoURL: introVideoFile?.link,
+              videoThumbnailURL: introVideoFile?.thumbnailUrl || "",
             };
           }
           return exercise;
@@ -525,12 +530,7 @@ function Workout() {
           </div>
         </div>
       </div>
-      <RemoteMediaManager
-        visible={mediaManagerVisible}
-        setVisible={setMediaManagerVisible}
-        type={mediaManagerType}
-        actions={mediaManagerActions}
-      />
+
       <EquipmentModal
         selectedEquipments={workoutInfo.equipments}
         setSelectedEquipments={(updatedEquipments) => {

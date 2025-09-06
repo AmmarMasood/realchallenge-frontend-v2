@@ -91,6 +91,7 @@ function ChallengePlayer(props) {
             title: e.exerciseId.title,
             videoURL: e.exerciseId.videoURL,
             voiceOverLink: e.exerciseId.voiceOverLink,
+            videoThumbnailURL: e.exerciseId.videoThumbnailURL,
             _id: e.exerciseId._id,
           }))
         : res.exercises.map((e) => ({
@@ -109,6 +110,7 @@ function ChallengePlayer(props) {
         exerciseLength: res.introVideoLength,
         title: "Introduction to workout",
         videoURL: res.introVideoLink,
+        videoThumbnailURL: res.introVideoThumbnailLink,
         voiceOverLink: "",
         _id: v4(),
       });
@@ -123,7 +125,7 @@ function ChallengePlayer(props) {
       setCustomerDetails(cd);
     }
 
-    setWorkout(res);
+    setWorkout({ ...res, renderWorkout: res.isRendered });
     setCurrentExercise({
       exercise: res.exercises[0],
       index: 0,
@@ -293,7 +295,14 @@ function ChallengePlayer(props) {
       <LoadingOutlined style={{ fontSize: "50px", color: "#ff7700" }} />
     </div>
   ) : (
-    <div className="challenge-player-container">
+    <div
+      className="challenge-player-container "
+      style={{
+        width: "100%",
+        display: "flex",
+        justifyContent: "center",
+      }}
+    >
       {/* open help modal */}
       {openHelpModal && (
         <HelpPopupPlayer
@@ -350,64 +359,43 @@ function ChallengePlayer(props) {
             )}
           </div>
         )}
+        <div className="v2challenge-player-container">
+          <div className="v2workout-studio-middle">
+            <Player
+              moveToNextExercise={moveToNextExercise}
+              moveToPrevExercise={moveToPrevExercise}
+              // musics={workout.musics}
+              nextExerciseTitle={
+                workout.exercises &&
+                workout.exercises[currentExercise.index + 1]
+                  ? workout.exercises[currentExercise.index + 1].title
+                  : ""
+              }
+              musics={musics}
+              exercise={currentExercise.exercise}
+              challengePageAddress={`/challenge/${props.match.params.challengeName}/${props.match.params.challengeId}`}
+              // key={currentExercise.exercise._id}
+              // for full screen player video browser
+              workout={workout}
+              setExerciseForHelpModal={setExerciseForHelpModal}
+              setOpenHelpModal={setOpenHelpModal}
+              setCurrentExercise={setCurrentExercise}
+              currentExercise={currentExercise}
+            />
 
-        <Player
-          moveToNextExercise={moveToNextExercise}
-          moveToPrevExercise={moveToPrevExercise}
-          // musics={workout.musics}
-          nextExerciseTitle={
-            workout.exercises && workout.exercises[currentExercise.index + 1]
-              ? workout.exercises[currentExercise.index + 1].title
-              : ""
-          }
-          musics={musics}
-          exercise={currentExercise.exercise}
-          challengePageAddress={`/challenge/${props.match.params.challengeName}/${props.match.params.challengeId}`}
-          // key={currentExercise.exercise._id}
-          // for full screen player video browser
-          workout={workout}
-          setExerciseForHelpModal={setExerciseForHelpModal}
-          setOpenHelpModal={setOpenHelpModal}
-          setCurrentExercise={setCurrentExercise}
-          currentExercise={currentExercise}
-        />
+            <PlayerVideoBrowser
+              workout={workout}
+              playerState={playerState}
+              setPlayerState={setPlayerState}
+              setExerciseForHelpModal={setExerciseForHelpModal}
+              setOpenHelpModal={setOpenHelpModal}
+              setCurrentExercise={setCurrentExercise}
+              currentExercise={currentExercise}
+            />
+          </div>
 
-        <PlayerVideoBrowser
-          workout={workout}
-          playerState={playerState}
-          setPlayerState={setPlayerState}
-          setExerciseForHelpModal={setExerciseForHelpModal}
-          setOpenHelpModal={setOpenHelpModal}
-          setCurrentExercise={setCurrentExercise}
-          currentExercise={currentExercise}
-        />
-
-        <div className="player-download-stuff">
-          {workout.infoFile ? (
-            <div className="workout-info">
-              <p
-                className="font-paragraph-white"
-                style={{
-                  color: "#555A61",
-                  fontWeight: "500",
-                  textTransform: "uppercase",
-                }}
-              >
-                <T>player.today_woTkout_attachment</T>
-              </p>
-
-              <a href={`${workout.infoFile}`} target="_blank" download>
-                <button className="challenge-player-attachment font-paragraph-white">
-                  <img src={FileIcon} alt="" style={{ marginRight: "10px" }} />
-                  {workout.infoTitle ? workout.infoTitle : "Attachment"}
-                </button>
-              </a>
-            </div>
-          ) : (
-            ""
-          )}
-          {workout.relatedEquipments &&
-            workout.relatedEquipments.length > 0 && (
+          <div className="v2workout-studio-bottom player-download-stuff">
+            {workout.infoFile ? (
               <div className="workout-info">
                 <p
                   className="font-paragraph-white"
@@ -417,16 +405,73 @@ function ChallengePlayer(props) {
                     textTransform: "uppercase",
                   }}
                 >
-                  <T>playerTtoday_equipment</T>
+                  <T>player.today_woTkout_attachment</T>
+                </p>
+
+                <a href={`${workout.infoFile}`} target="_blank" download>
+                  <button className="challenge-player-attachment font-paragraph-white">
+                    <img
+                      src={FileIcon}
+                      alt=""
+                      style={{ marginRight: "10px" }}
+                    />
+                    {workout.infoTitle ? workout.infoTitle : "Attachment"}
+                  </button>
+                </a>
+              </div>
+            ) : (
+              ""
+            )}
+            {workout.relatedEquipments &&
+              workout.relatedEquipments.length > 0 && (
+                <div className="workout-info">
+                  <p
+                    className="font-paragraph-white"
+                    style={{
+                      color: "#555A61",
+                      fontWeight: "500",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    <T>playerTtoday_equipment</T>
+                  </p>
+                  <div>
+                    {workout.relatedEquipments.map((e) => (
+                      <button
+                        key={e._id}
+                        className="challenge-player-attachment font-paragraph-white"
+                      >
+                        <img
+                          src={DumbbellIcon}
+                          alt=""
+                          style={{ marginRight: "10px" }}
+                        />
+                        {e.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            {workout.relatedProducts && workout.relatedProducts.length > 0 && (
+              <div className="workout-info">
+                <p
+                  className="font-paragraph-white"
+                  style={{
+                    color: "#555A61",
+                    fontWeight: "500",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  <T>player.related</T>
                 </p>
                 <div>
-                  {workout.relatedEquipments.map((e) => (
+                  {workout.relatedProducts.map((e) => (
                     <button
                       key={e._id}
                       className="challenge-player-attachment font-paragraph-white"
                     >
                       <img
-                        src={DumbbellIcon}
+                        src={ShopIcon}
                         alt=""
                         style={{ marginRight: "10px" }}
                       />
@@ -436,44 +481,15 @@ function ChallengePlayer(props) {
                 </div>
               </div>
             )}
-          {workout.relatedProducts && workout.relatedProducts.length > 0 && (
-            <div className="workout-info">
-              <p
-                className="font-paragraph-white"
-                style={{
-                  color: "#555A61",
-                  fontWeight: "500",
-                  textTransform: "uppercase",
-                }}
-              >
-                <T>player.related</T>
-              </p>
-              <div>
-                {workout.relatedProducts.map((e) => (
-                  <button
-                    key={e._id}
-                    className="challenge-player-attachment font-paragraph-white"
-                  >
-                    <img
-                      src={ShopIcon}
-                      alt=""
-                      style={{ marginRight: "10px" }}
-                    />
-                    {e.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          <WorkoutCompleteModal
-            finishWorkoutPopupVisible={finishWorkoutPopupVisible}
-            setFinishWorkoutPopupVisible={setFinishWorkoutPopupVisible}
-            challengeId={props.match.params.challengeId}
-            challengeSlug={props.match.params.challengeName}
-            history={props.history}
-          />
+            <WorkoutCompleteModal
+              finishWorkoutPopupVisible={finishWorkoutPopupVisible}
+              setFinishWorkoutPopupVisible={setFinishWorkoutPopupVisible}
+              challengeId={props.match.params.challengeId}
+              challengeSlug={props.match.params.challengeName}
+              history={props.history}
+            />
 
-          {/* <div className="buy-related-products">
+            {/* <div className="buy-related-products">
           <p className="font-heading-white">Related Products</p>
           {workout.relatedProducts.map((p) => (
             <div className="buy-related-products-p font-paragraph-white">
@@ -484,6 +500,7 @@ function ChallengePlayer(props) {
             Buy Products
           </button>
         </div> */}
+          </div>
         </div>
       </div>
     </div>

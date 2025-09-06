@@ -95,6 +95,7 @@ function RenderedVideoPlayer({
     }
   }, [exerciseSeconds]);
 
+
   const handleProgress = (changeState) => {
     if (count > 1) {
       controlsRef.current.style.visibility = "hidden";

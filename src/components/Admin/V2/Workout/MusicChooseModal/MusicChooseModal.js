@@ -6,15 +6,20 @@ import AddMusicIcon from "../../../../../assets/icons/add-music-icon.svg";
 import DeleteIcon from "../../../../../assets/icons/delete-icon-white.svg";
 import RemoteMediaManager from "../../../MediaManager/RemoteMediaManager";
 import { v4 } from "uuid";
+import { useRemoteMediaManager } from "../../../../../contexts/RemoteMediaManagerContext";
 
 function MusicChooseModal({ open, setOpen, musics, setMusics }) {
   const [musicsList, setMusicsList] = React.useState([]);
-  const [mediaManagerVisible, setMediaManagerVisible] = React.useState(false);
-  const [mediaManagerType, setMediaManagerType] = React.useState("musics");
-  const [mediaManagerActions, setMediaManagerActions] = React.useState([]);
   const [infoFile, setInfoFile] = React.useState("");
+  const {
+    setMediaManagerVisible,
+    setMediaManagerType,
+
+    setMediaManagerActions,
+  } = useRemoteMediaManager();
 
   useEffect(() => {
+    setMediaManagerType("musics");
     if (musics && musics.length > 0) {
       setMusicsList(musics);
     }
@@ -72,12 +77,6 @@ function MusicChooseModal({ open, setOpen, musics, setMusics }) {
         textAlign: "center",
       }}
     >
-      <RemoteMediaManager
-        visible={mediaManagerVisible}
-        setVisible={setMediaManagerVisible}
-        type={mediaManagerType}
-        actions={mediaManagerActions}
-      />
       <div className="music-selector__header">
         <img src={PlayerMusicIcon} alt="img" className="music-selector__icon" />
         <h2 className="music-selector__title">

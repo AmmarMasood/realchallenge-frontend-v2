@@ -197,6 +197,14 @@ function Exercises({
     setWorkout({ ...workout, exercises: updatedExercises });
   };
 
+  const removeIntroExercise = (e, exercise) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const updatedExercises = workout.exercises.map((ex, idx) =>
+      idx === 0 ? { ...ex, videoURL: "", exerciseLength: 0 } : ex
+    );
+    setWorkout({ ...workout, exercises: updatedExercises });
+  };
   const duplicateExercise = (exercise) => {
     const newExercise = {
       id: v4(),
@@ -226,6 +234,7 @@ function Exercises({
           ...ex,
           title: exercise.title,
           videoURL: exercise.videoURL,
+          videoThumbnailURL: exercise.videoThumbnailURL,
           voiceOverLink: exercise.voiceOverLink,
           exerciseId: exercise._id,
           exerciseLength: parseInt(duration) || ex.exerciseLength,
@@ -294,6 +303,23 @@ function Exercises({
                     : "exercise-browser-card"
                 }`}
               >
+                {workout.renderWorkout &&
+                  (firstExercise?.videoURL ||
+                    firstExercise?.exerciseLength > 0) && (
+                    <DeleteFilled
+                      style={{
+                        color: "#fff",
+                        fontSize: "22px",
+                        position: "absolute",
+                        right: "10px",
+                        zIndex: 100,
+                        cursor: "pointers",
+                      }}
+                      onClick={(event) =>
+                        removeIntroExercise(event, firstExercise)
+                      }
+                    />
+                  )}
                 <div>
                   <h4 className="challenge-player-container-exercies-round font-paragraph-white">
                     {firstExercise.exerciseGroupName ? (
@@ -326,16 +352,24 @@ function Exercises({
                     }
                   >
                     {firstExercise.videoURL ? (
-                      <VideoThumbnail
-                        videoUrl={
-                          firstExercise.videoURL
-                            ? `${firstExercise.videoURL}`
-                            : ""
-                        }
-                        width={250}
-                        height={200}
-                        cors={true}
-                      />
+                      firstExercise.videoThumbnailURL ? (
+                        <img
+                          src={firstExercise.videoThumbnailURL}
+                          alt="thumbnail"
+                          style={{
+                            width: 250,
+                            height: 200,
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <VideoThumbnail
+                          videoUrl={firstExercise.videoURL}
+                          width={250}
+                          height={200}
+                          cors={true}
+                        />
+                      )
                     ) : (
                       <img src={AddExercise} alt="add-exercise" />
                     )}
@@ -468,12 +502,24 @@ function Exercises({
                             }}
                           >
                             {e.videoURL ? (
-                              <VideoThumbnail
-                                videoUrl={e.videoURL ? `${e.videoURL}` : ""}
-                                width={250}
-                                height={200}
-                                cors={true}
-                              />
+                              e.videoThumbnailURL ? (
+                                <img
+                                  src={e.videoThumbnailURL}
+                                  alt="thumbnail"
+                                  style={{
+                                    width: 250,
+                                    height: 200,
+                                    objectFit: "cover",
+                                  }}
+                                />
+                              ) : (
+                                <VideoThumbnail
+                                  videoUrl={e.videoURL}
+                                  width={250}
+                                  height={200}
+                                  cors={true}
+                                />
+                              )
                             ) : (
                               <img src={AddExercise} alt="add-exercise" />
                             )}

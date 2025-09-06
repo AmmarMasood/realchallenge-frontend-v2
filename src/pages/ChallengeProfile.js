@@ -838,9 +838,11 @@ function ChallengeProfile(props) {
                       />
                     ))}
                 </div>
-                <span onClick={() => setReviewOpen(true)}>
-                  <T>challenge_profile.reviews</T>
-                </span>
+                {challenge.reviews && challenge.reviews.length > 0 && (
+                  <span onClick={() => setReviewOpen(true)}>
+                    <T>challenge_profile.reviews</T>
+                  </span>
+                )}
               </div>
               <div className="challenge-profile-box-2-info">
                 <div className="challenge-profile-box-2-container">

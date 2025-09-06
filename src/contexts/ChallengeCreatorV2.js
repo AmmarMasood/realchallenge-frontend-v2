@@ -103,14 +103,15 @@ export function ChallengeProvider({ children }) {
           title: "Introduction to workout",
           videoURL: workout.introVideoLink,
           voiceOverLink: "",
+          videoThumbnailURL: workout.introVideoThumbnailLink,
         };
         workout.exercises.unshift(introExercise);
         return {
           ...workout,
           id: v4(),
           renderWorkout: workout.isRendered,
-          infoFile: {
-            name: workout.infoFile || "Workout Info",
+          infoFile: workout.infoFile && {
+            name: workout.infoTitle || "Workout Info",
             link: workout.infoFile || "",
           },
           equipments: workout.relatedEquipments || [],
@@ -135,6 +136,7 @@ export function ChallengeProvider({ children }) {
                 title: exs?.title,
                 videoURL: exs?.videoURL,
                 voiceOverLink: exs?.voiceOverLink,
+                videoThumbnailURL: exs?.videoThumbnailURL,
                 exerciseId: exercise.exerciseId,
                 id: v4(),
               };
@@ -147,6 +149,7 @@ export function ChallengeProvider({ children }) {
                 voiceOverLink: "",
                 title: exercise.renderedWorkoutExerciseName,
                 videoURL: exercise.renderedWorkoutExerciseVideo,
+                videoThumbnailURL: exercise.renderedWorkoutExerciseThumbnail,
                 id: v4(),
               };
             }

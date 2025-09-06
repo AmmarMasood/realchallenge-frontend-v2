@@ -78,12 +78,14 @@ function ChallengeProfileWeb(props) {
                 <div className="overlap-group11">
                   <div className="rectangle-1863"></div>
                 </div>
-                <div className="flex-row">
-                  <img className="stars" src={StarFilled} />
-                  <div className="address valign-text-middle poppins-medium-sandy-brown-14px">
-                    {reviews && reviews.length} REVIEWS
+                {reviews && reviews.length > 0 && (
+                  <div className="flex-row">
+                    <img className="stars" src={StarFilled} />
+                    <div className="address valign-text-middle poppins-medium-sandy-brown-14px">
+                      {reviews.length} REVIEWS
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className="flex-row-1">
                   <div className="overlap-group9">
                     <div className="overlap-group7-1">
