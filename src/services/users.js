@@ -135,8 +135,8 @@ export function swapRecipeInRecommandedNutrients(customerId, meal) {
 
 export function saveChallengeProgress(data, customerId) {
   return axios
-    .post(
-      `${process.env.REACT_APP_SERVER}/api/customerDetails/track-challenge/${customerId}/update`,
+    .put(
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/track-challenge/${customerId}`,
       { progress: data }
     )
     .then((res) => {

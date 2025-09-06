@@ -150,6 +150,10 @@
 .finish-workout-popup-container--reviewbox > div > span {
   color: inherit;
   font-weight: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 5px;
 }
 .finish-workout-popup-container--reviewbox > div:hover {
   background-color: var(--color-orange);

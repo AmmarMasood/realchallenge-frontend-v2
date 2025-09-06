@@ -132,9 +132,6 @@ function ChallengePlayer(props) {
       completed: 0,
     });
     setLoading(false);
-
-    console.log("resss", res);
-    console.log("customer details", customerDetails);
   };
 
   const updateTrackChallengeInBackend = async (
