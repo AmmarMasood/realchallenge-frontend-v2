@@ -83,6 +83,11 @@ function PlayerControls(
   );
   const { height, width } = useWindowDimensions();
 
+  // Chromecast states
+  const [castAvailable, setCastAvailable] = useState(false);
+  const [castConnected, setCastConnected] = useState(false);
+  const [castSession, setCastSession] = useState(null);
+
   useEffect(() => {
     console.log("lworkout", exerciseWorkoutTimeTrack);
   }, [exerciseWorkoutTimeTrack]);
@@ -97,6 +102,59 @@ function PlayerControls(
       setFullscreen(false);
     }
   });
+
+  // Initialize Chromecast
+  useEffect(() => {
+    const initializeCast = () => {
+      if (window.cast && window.cast.framework) {
+        const context = window.cast.framework.CastContext.getInstance();
+
+        context.setOptions({
+          receiverApplicationId:
+            window.chrome?.cast?.media?.DEFAULT_MEDIA_RECEIVER_APP_ID ||
+            "CC1AD845",
+          autoJoinPolicy:
+            window.chrome?.cast?.AutoJoinPolicy.ORIGIN_SCOPED ||
+            "origin_scoped",
+        });
+
+        // Listen for cast availability
+        context.addEventListener(
+          window.cast.framework.CastContextEventType.CAST_STATE_CHANGED,
+          (event) => {
+            setCastAvailable(
+              event.castState !==
+                window.cast.framework.CastState.NO_DEVICES_AVAILABLE
+            );
+          }
+        );
+
+        // Listen for session changes
+        context.addEventListener(
+          window.cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+          (event) => {
+            const session = context.getCurrentSession();
+            setCastSession(session);
+            setCastConnected(!!session);
+          }
+        );
+      }
+    };
+
+    // Wait for Cast SDK to load
+    if (window.cast && window.cast.framework) {
+      initializeCast();
+    } else {
+      const checkCastSDK = setInterval(() => {
+        if (window.cast && window.cast.framework) {
+          clearInterval(checkCastSDK);
+          initializeCast();
+        }
+      }, 100);
+
+      return () => clearInterval(checkCastSDK);
+    }
+  }, []);
   const currentTime = playerRef.current
     ? playerRef.current.getCurrentTime()
     : "00:00";
@@ -147,11 +205,107 @@ function PlayerControls(
     playerRef.current.seekTo(playerRef.current.getCurrentTime() + 15);
   };
 
+  // Chromecast functions
+  const startCasting = () => {
+    if (
+      !castAvailable ||
+      !workout?.exercises ||
+      !currentExercise?.exercise?.videoURL
+    ) {
+      console.warn("Cast not available or no video to cast");
+      return;
+    }
+
+    const context = window.cast.framework.CastContext.getInstance();
+
+    if (castConnected) {
+      // Already connected, just load the current exercise
+      loadCurrentExerciseOnCast();
+    } else {
+      // Request session
+      context
+        .requestSession()
+        .then(() => {
+          console.log("Cast session started");
+          loadCurrentExerciseOnCast();
+        })
+        .catch((error) => {
+          console.error("Error starting cast session:", error);
+        });
+    }
+  };
+
+  const loadCurrentExerciseOnCast = () => {
+    if (!castSession || !currentExercise?.exercise?.videoURL) return;
+
+    const mediaInfo = new window.chrome.cast.media.MediaInfo(
+      currentExercise.exercise.videoURL,
+      "video/mp4"
+    );
+
+    mediaInfo.metadata = new window.chrome.cast.media.GenericMediaMetadata();
+    mediaInfo.metadata.title =
+      currentExercise.exercise.title || `Exercise ${currentExercise.index + 1}`;
+    mediaInfo.metadata.subtitle = workout.title || "";
+
+    const request = new window.chrome.cast.media.LoadRequest(mediaInfo);
+    request.currentTime = playerRef.current
+      ? playerRef.current.getCurrentTime()
+      : 0;
+    request.autoplay = playerState.playing;
+
+    castSession
+      .loadMedia(request)
+      .then(() => {
+        console.log("Media loaded on cast device");
+        // Pause local player when casting
+        setPlayerState((prev) => ({ ...prev, playing: false }));
+      })
+      .catch((error) => {
+        console.error("Error loading media on cast device:", error);
+      });
+  };
+
+  const stopCasting = () => {
+    if (castSession) {
+      castSession.endSession(true);
+    }
+  };
+
+  // Update cast when exercise changes
+  useEffect(() => {
+    if (castConnected && castSession && currentExercise?.exercise?.videoURL) {
+      loadCurrentExerciseOnCast();
+    }
+  }, [currentExercise?.index]);
+
+  const handleCastButtonClick = () => {
+    if (castConnected) {
+      stopCasting();
+    } else {
+      startCasting();
+    }
+  };
+
   return (
     <div>
       <div className="controls-details" ref={descriptionRef}>
         <div className="controls-details-top-title font-paragraph-white">
           <span>{exerciseTitle}</span>
+          {castConnected && (
+            <span
+              style={{
+                fontSize: "12px",
+                color: "#FF7700",
+                marginTop: "5px",
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+            >
+              📺 Casting to TV
+            </span>
+          )}
           {exerciseLength && (
             <span style={{ marginTop: "10px" }}>
               <span style={{ fontSize: "26px", marginRight: "5px" }}>
@@ -241,7 +395,21 @@ function PlayerControls(
                 <img
                   src={PlayerChromeIcon}
                   alt="player-chrome-icon"
-                  style={playerIconStyle}
+                  style={{
+                    ...playerIconStyle,
+                    opacity: castAvailable ? 1 : 0.5,
+                    filter: castConnected
+                      ? "brightness(1.5) sepia(1) hue-rotate(45deg)"
+                      : "none",
+                  }}
+                  onClick={castAvailable ? handleCastButtonClick : undefined}
+                  title={
+                    !castAvailable
+                      ? "No cast devices available"
+                      : castConnected
+                      ? "Disconnect from cast device"
+                      : "Cast to device"
+                  }
                 />
                 <img
                   src={PlayerMusicIcon}
@@ -276,7 +444,21 @@ function PlayerControls(
                 <img
                   src={SmPlayerChromeIcon}
                   alt="player-chrome-icon"
-                  style={playerIconStyle}
+                  style={{
+                    ...playerIconStyle,
+                    opacity: castAvailable ? 1 : 0.5,
+                    filter: castConnected
+                      ? "brightness(1.5) sepia(1) hue-rotate(45deg)"
+                      : "none",
+                  }}
+                  onClick={castAvailable ? handleCastButtonClick : undefined}
+                  title={
+                    !castAvailable
+                      ? "No cast devices available"
+                      : castConnected
+                      ? "Disconnect from cast device"
+                      : "Cast to device"
+                  }
                 />
                 <img
                   src={SmPlayerMusicIcon}
