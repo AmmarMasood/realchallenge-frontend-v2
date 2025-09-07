@@ -272,7 +272,7 @@
 .helpPopOut-progress-bar-container {
   margin: -24px 45px 0px;
   width: 90%;
-  padding: 0px 40px 0 30px;
+  padding: 0px 40px 0 50px;
 }
 
 .player-elasped-time-container {
@@ -285,6 +285,12 @@
 }
 .challenge-player-container-exercies {
   width: 100%;
+}
+.player-play-pause-icon-box {
+  background-color: var(--color-orange);
+  margin: 0px 25px 0px 35px;
+  padding: 8px 12px;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
 }
 
 .player-download-stuff {
@@ -418,7 +424,7 @@
   .helpPopOut-progress-bar-container {
     margin: -24px 45px 0px;
     width: 80%;
-    padding: 0px 40px 0 30px;
+    padding: 0px 40px 0 50px;
   }
 
   .challenge-player-container-exercies {
@@ -531,7 +537,7 @@
   .helpPopOut-progress-bar-container {
     margin: -24px 45px 0px;
     width: 80%;
-    padding: 0px 40px 0 30px;
+    padding: 0px 40px 0 50px;
   }
   .controls-wrapper-middle {
     width: 300px;

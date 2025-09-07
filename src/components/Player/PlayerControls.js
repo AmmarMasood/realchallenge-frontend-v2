@@ -521,24 +521,26 @@ function PlayerControls(
                   onClick={handleRewind}
                 />
                 <span className="font-paragraph-white">15</span>
-                {playerState.playing ? (
-                  // PlayerPauseIcon
-                  <img
-                    src={PlayerPauseIcon}
-                    alt="skip-left-icon"
-                    style={{ cursor: "pointer", margin: "0 20px 0 35px" }}
-                    className="controls-wrapper-bottom-icons"
-                    onClick={onPlayPause}
-                  />
-                ) : (
-                  <img
-                    src={PlayerPlayIcon}
-                    alt="skip-left-icon"
-                    style={{ cursor: "pointer", margin: "0 20px 0 35px" }}
-                    className="controls-wrapper-bottom-icons"
-                    onClick={onPlayPause}
-                  />
-                )}
+                <div className="player-play-pause-icon-box">
+                  {playerState.playing ? (
+                    // PlayerPauseIcon
+                    <img
+                      src={PlayerPauseIcon}
+                      alt="skip-left-icon"
+                      style={{ cursor: "pointer" }}
+                      className="controls-wrapper-bottom-icons"
+                      onClick={onPlayPause}
+                    />
+                  ) : (
+                    <img
+                      src={PlayerPlayIcon}
+                      alt="skip-left-icon"
+                      style={{ cursor: "pointer" }}
+                      className="controls-wrapper-bottom-icons"
+                      onClick={onPlayPause}
+                    />
+                  )}
+                </div>
                 <span className="font-paragraph-white">15</span>
                 <img
                   src={SkipRightIcon}
@@ -595,23 +597,25 @@ function PlayerControls(
                   }}
                 />
                 {/* PlayerPlayIcon */}
-                {playerState.playing ? (
-                  <img
-                    src={PlayerPauseIcon}
-                    alt="skip-left-icon"
-                    style={{ cursor: "pointer", margin: "0 30px 0 30px" }}
-                    className="controls-wrapper-bottom-icons"
-                    onClick={onPlayPause}
-                  />
-                ) : (
-                  <img
-                    src={PlayerPlayIcon}
-                    alt="skip-left-icon"
-                    style={{ cursor: "pointer", margin: "0 25px 0 35px" }}
-                    className="controls-wrapper-bottom-icons"
-                    onClick={onPlayPause}
-                  />
-                )}
+                <div className="player-play-pause-icon-box">
+                  {playerState.playing ? (
+                    <img
+                      src={PlayerPauseIcon}
+                      alt="skip-left-icon"
+                      style={{ cursor: "pointer" }}
+                      className="controls-wrapper-bottom-icons"
+                      onClick={onPlayPause}
+                    />
+                  ) : (
+                    <img
+                      src={PlayerPlayIcon}
+                      alt="skip-left-icon"
+                      style={{ cursor: "pointer" }}
+                      className="controls-wrapper-bottom-icons"
+                      onClick={onPlayPause}
+                    />
+                  )}
+                </div>
                 <img
                   src={SkipRightIcon}
                   alt="skip-left-icon"

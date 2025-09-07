@@ -156,25 +156,28 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
               display: "flex",
               justifyContent: "space-between",
               margin: "0 30px",
+              alignItems: "center",
             }}
           >
-            {playing ? (
-              <img
-                src={PopupPauseIcon}
-                alt="pause"
-                style={{ cursor: "pointer", height: "25px" }}
-                className="controls-wrapper-bottom-icons"
-                onClick={onPlayPause}
-              />
-            ) : (
-              <img
-                src={PopupPlayIcon}
-                alt="play"
-                style={{ cursor: "pointer", height: "25px" }}
-                className="controls-wrapper-bottom-icons"
-                onClick={onPlayPause}
-              />
-            )}
+            <div className="player-play-pause-icon-box" style={{ margin: 0 }}>
+              {playing ? (
+                <img
+                  src={PopupPauseIcon}
+                  alt="pause"
+                  style={{ cursor: "pointer", height: "25px" }}
+                  className="controls-wrapper-bottom-icons"
+                  onClick={onPlayPause}
+                />
+              ) : (
+                <img
+                  src={PopupPlayIcon}
+                  alt="play"
+                  style={{ cursor: "pointer", height: "25px" }}
+                  className="controls-wrapper-bottom-icons"
+                  onClick={onPlayPause}
+                />
+              )}
+            </div>
             <span className="font-paragraph-white" style={{ fontSize: "16px" }}>
               {elapsedTime}
             </span>
