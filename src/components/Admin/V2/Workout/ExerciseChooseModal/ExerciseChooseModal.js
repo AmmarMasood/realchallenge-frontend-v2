@@ -63,6 +63,15 @@ function ExerciseChooseModal({
     setOpen(false);
   };
 
+  const handleDurationChange = (e) => {
+    const { value } = e.target;
+    // Prevent values less than 1
+    if (parseInt(value) < 1) {
+      return;
+    }
+    setSelectedDuration(value);
+  };
+
   const makDurationAndBreakEmpty = () => {
     setSelectedDuration("");
     setSelectedBreak("");
@@ -144,7 +153,8 @@ function ExerciseChooseModal({
                 <input
                   placeholder="00"
                   type="number"
-                  onChange={(e) => setSelectedDuration(e.target.value)}
+                  min="1"
+                  onChange={handleDurationChange}
                 />
               </div>
               <label>Duration</label>

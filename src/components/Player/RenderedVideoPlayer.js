@@ -33,6 +33,7 @@ function RenderedVideoPlayer({
   currentExercise,
   challengePageAddress,
   inCreation,
+  onWorkoutComplete,
 }) {
   const [timerVisible, setTimerVisible] = useContext(timerVisibleContext);
   const [playerState, setPlayerState] = useContext(playerStateContext);
@@ -79,13 +80,25 @@ function RenderedVideoPlayer({
         playAudio();
       }
 
-      if (workout?.exercises && workout.exercises[currentExercise.index + 1]) {
+      // Get current exercise data
+      const currentExerciseData = workout?.exercises?.[currentExercise.index];
+      const isCurrentlyLastExercise = workout?.exercises && currentExercise.index === workout.exercises.length - 1;
+      
+      // Show break timer if current exercise has break > 0
+      if (currentExerciseData && currentExerciseData.break > 0) {
         setPlayerState((prev) => ({ ...prev, playing: false }));
         setTimeout(() => {
           setTimerVisible(true);
         }, 500);
       } else {
-        moveToNextExercise();
+        // No break time
+        if (isCurrentlyLastExercise && onWorkoutComplete) {
+          // Last exercise with no break - show success popup
+          onWorkoutComplete();
+        } else {
+          // Move to next exercise
+          moveToNextExercise();
+        }
       }
     }
 
@@ -123,12 +136,15 @@ function RenderedVideoPlayer({
     count = 0;
   };
 
-  // Don't show the timer if no exercise is available
+  // Show timer if timerVisible is true and current exercise exists
   const shouldShowTimer =
     timerVisible &&
     workout?.exercises &&
-    currentExercise.index > 0 &&
-    workout.exercises[currentExercise.index - 1];
+    currentExercise.index >= 0 &&
+    workout.exercises[currentExercise.index];
+
+  // Check if current exercise is the last one
+  const isLastExercise = workout?.exercises && currentExercise.index === workout.exercises.length - 1;
 
   return (
     <div
@@ -187,9 +203,11 @@ function RenderedVideoPlayer({
         <BreakTimer
           moveToNextExercise={moveToNextExercise}
           nextExerciseTitle={nextExerciseTitle}
-          exercise={workout.exercises[currentExercise.index - 1]}
+          exercise={workout.exercises[currentExercise.index]}
           timerVisible={timerVisible}
           setTimerVisible={setTimerVisible}
+          isLastExercise={isLastExercise}
+          onWorkoutComplete={onWorkoutComplete}
         />
       )}
 

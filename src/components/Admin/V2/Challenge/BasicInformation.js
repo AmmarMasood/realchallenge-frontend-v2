@@ -328,7 +328,7 @@ function BasicInformation(props) {
             break: 5,
             createdAt: "",
             exerciseGroupName: "Introduction",
-            exerciseLength: 0,
+            exerciseLength: 10,
             title: "Introduction to workout",
             videoURL: "",
             voiceOverLink: "",
@@ -2018,18 +2018,17 @@ function BasicInformation(props) {
                   <T>adminDashboard.challenges.mp</T>
                 </Checkbox>
               </div>
-              {!isUpdate && (
-                <div>
-                  <Checkbox
-                    checked={userCreatePost}
-                    onChange={(e) => setUserCreatePost(e.target.checked)}
-                    className="font-paragraph-white"
-                    style={{ marginTop: "10px" }}
-                  >
-                    Create a post
-                  </Checkbox>
-                </div>
-              )}
+
+              <div>
+                <Checkbox
+                  checked={userCreatePost}
+                  onChange={(e) => setUserCreatePost(e.target.checked)}
+                  className="font-paragraph-white"
+                  style={{ marginTop: "10px" }}
+                >
+                  Create a post
+                </Checkbox>
+              </div>
             </>
 
             <button

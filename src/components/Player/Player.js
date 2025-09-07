@@ -23,7 +23,6 @@ function Player({
   return workout.renderWorkout || workout.isRendered ? (
     <div>
       {" "}
-      <h1>YES</h1>
       <RenderedVideoPlayer
         exercise={exercise}
         musics={musics}
@@ -43,7 +42,6 @@ function Player({
     </div>
   ) : (
     <div>
-      <h1>NO</h1>
       <NonRenderedVideoPlayer
         exercise={exercise}
         musics={musics}

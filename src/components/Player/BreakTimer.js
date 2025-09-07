@@ -8,7 +8,7 @@ import {
   timerVisibleContext,
 } from "../../contexts/PlayerState";
 
-function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise }) {
+function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExercise, onWorkoutComplete }) {
   const [currentBreak, setCurrentBreak] = useContext(breakContext);
   const [playerState, setPlayerState] = useContext(playerStateContext);
   const [timerVisible, setTimerVisible] = useContext(timerVisibleContext);
@@ -81,8 +81,15 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise }) {
           console.log("timer completed");
           setTimerVisible(false);
           setCurrentBreak(false);
-          moveToNextExercise();
-          setPlayerState((prevState) => ({ ...prevState, playing: true }));
+          
+          if (isLastExercise && onWorkoutComplete) {
+            // Last exercise completed, show success popup
+            onWorkoutComplete();
+          } else {
+            // Move to next exercise
+            moveToNextExercise();
+            setPlayerState((prevState) => ({ ...prevState, playing: true }));
+          }
           console.log("break ended");
         }}
       />

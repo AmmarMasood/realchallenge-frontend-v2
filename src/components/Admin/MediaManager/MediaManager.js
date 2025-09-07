@@ -34,6 +34,9 @@ import {
   ArrowLeftOutlined,
   SettingOutlined,
   EyeOutlined,
+  HomeOutlined,
+  UnorderedListOutlined,
+  AppstoreOutlined,
 } from "@ant-design/icons";
 import { userInfoContext } from "../../../contexts/UserStore";
 
@@ -194,6 +197,8 @@ const useCustomFileMap = () => {
   const [currentFolderName, setCurrentFolderName] = useState("Media Manager");
   const [lastViewedPath, setLastViewedPath] = useState("root");
   const [showAdminView, setShowAdminView] = useState(false);
+  const [folderViewModes, setFolderViewModes] = useState({});
+  const [currentViewMode, setCurrentViewMode] = useState("grid");
   const currentFolderIdRef = useRef(currentFolderId);
 
   useEffect(() => {
@@ -208,6 +213,16 @@ const useCustomFileMap = () => {
     }
 
     currentFolderIdRef.current = currentFolderId;
+
+    // Load view mode preferences from localStorage
+    const savedViewModes = localStorage.getItem("mediaManager_viewModes");
+    if (savedViewModes) {
+      try {
+        setFolderViewModes(JSON.parse(savedViewModes));
+      } catch (error) {
+        console.error("Error loading view modes:", error);
+      }
+    }
 
     // Remember last viewed path (only for regular user mode)
     if (!adminMode) {
@@ -241,12 +256,17 @@ const useCustomFileMap = () => {
       localStorage.setItem("mediaManager_lastPath", currentFolderId);
       setLastViewedPath(currentFolderId);
     }
+
+    // Update current view mode based on folder preference
+    const savedViewMode = folderViewModes[currentFolderId] || "grid";
+    setCurrentViewMode(savedViewMode);
   }, [
     currentFolderId,
     filesByFolder,
     fetchFiles,
     adminMode,
     currentViewingUserId,
+    folderViewModes,
   ]);
 
   // Handle admin mode toggle
@@ -286,6 +306,19 @@ const useCustomFileMap = () => {
     setShowAdminView(true);
     setCurrentFolderId("root");
     setCurrentFolderName("Admin - Users Overview");
+  };
+
+  // Handle view mode change
+  const handleViewModeChange = (newViewMode) => {
+    const updatedViewModes = {
+      ...folderViewModes,
+      [currentFolderId]: newViewMode,
+    };
+    setFolderViewModes(updatedViewModes);
+    setCurrentViewMode(newViewMode);
+    
+    // Save to localStorage
+    localStorage.setItem("mediaManager_viewModes", JSON.stringify(updatedViewModes));
   };
 
   // Build folder hierarchy with proper nesting
@@ -466,6 +499,9 @@ const useCustomFileMap = () => {
     isNameUnique,
     lastViewedPath,
     moveMediaFile,
+    // View mode functionality
+    currentViewMode,
+    handleViewModeChange,
     // Admin specific
     isAdmin: userInfo.role === "admin",
     adminMode,
@@ -534,7 +570,8 @@ export const useFileActionHandler = (
   refreshData,
   isNameUnique,
   getCurrentDepth,
-  moveMediaFile
+  moveMediaFile,
+  handleViewModeChange
 ) => {
   const { deleteMediaFile, deleteMediaFolder, updateMediaFile } =
     useMediaManager();
@@ -555,6 +592,9 @@ export const useFileActionHandler = (
       const fileWord = items.length === 1 ? "file" : "files";
       content = `Are you sure you want to delete ${items.length} ${fileWord}? This action cannot be undone.`;
     }
+
+    // add that this action cannot be undone
+    content += " This action cannot be undone.";
 
     confirm({
       title,
@@ -668,7 +708,13 @@ export const useFileActionHandler = (
 
   return useCallback(
     async (data) => {
-      if (data.id === ChonkyActions.OpenFiles.id) {
+      if (data.id === ChonkyActions.EnableListView.id) {
+        handleViewModeChange("list");
+        return;
+      } else if (data.id === ChonkyActions.EnableGridView.id) {
+        handleViewModeChange("grid");
+        return;
+      } else if (data.id === ChonkyActions.OpenFiles.id) {
         const { targetFile, files } = data.payload;
         const fileToOpen = targetFile ?? files[0];
 
@@ -787,6 +833,7 @@ export const useFileActionHandler = (
       setCurrentFolderName,
       confirmDelete,
       handleDrop,
+      handleViewModeChange,
     ]
   );
 };
@@ -1036,6 +1083,9 @@ export const VFSBrowser = React.memo((props) => {
     getCurrentDepth,
     isNameUnique,
     moveMediaFile,
+    // View mode functionality
+    currentViewMode,
+    handleViewModeChange,
     // Admin specific
     isAdmin,
     adminMode,
@@ -1068,7 +1118,8 @@ export const VFSBrowser = React.memo((props) => {
     refreshData,
     isNameUnique,
     getCurrentDepth,
-    moveMediaFile
+    moveMediaFile,
+    handleViewModeChange
   );
 
   // Enhanced file actions with depth-aware logic and drag and drop
@@ -1080,6 +1131,13 @@ export const VFSBrowser = React.memo((props) => {
     // Don't show actions in admin users view
     if (showAdminView) {
       return [];
+    }
+
+    // Add view mode actions based on current mode
+    if (currentViewMode === "list") {
+      actions.push(ChonkyActions.EnableGridView);
+    } else {
+      actions.push(ChonkyActions.EnableListView);
     }
 
     // Enable drag and drop only if not in admin mode
@@ -1150,7 +1208,7 @@ export const VFSBrowser = React.memo((props) => {
     });
 
     return actions;
-  }, [currentFolderId, getCurrentDepth, showAdminView, adminMode]);
+  }, [currentFolderId, getCurrentDepth, showAdminView, adminMode, currentViewMode]);
 
   const thumbnailGenerator = useCallback(
     (file) => (file.thumbnailUrl ? file.thumbnailUrl : null),
@@ -1216,6 +1274,28 @@ export const VFSBrowser = React.memo((props) => {
     );
   };
 
+  // Back to root navigation component
+  const BackToRootNavigation = () => {
+    if (showAdminView || currentFolderId === "root") return null;
+
+    return (
+      <Card size="small" style={{ marginBottom: "8px" }}>
+        <Button
+          type="link"
+          icon={<HomeOutlined />}
+          onClick={() => {
+            setCurrentFolderId('root');
+            setCurrentFolderName(adminMode && currentViewingUserId ? "User's Media" : "Media Manager");
+          }}
+          style={{ padding: '0', height: 'auto' }}
+        >
+          Back to Root
+        </Button>
+      </Card>
+    );
+  };
+
+
   return (
     <>
       <div style={{ height: "100vh", position: "relative" }}>
@@ -1231,6 +1311,9 @@ export const VFSBrowser = React.memo((props) => {
           />
         ) : (
           <>
+            {/* Back to Root Navigation */}
+            <BackToRootNavigation />
+            
             {/* Regular file browser */}
             <MediaFileUploader
               currentFolderId={currentFolderId}
@@ -1270,7 +1353,7 @@ export const VFSBrowser = React.memo((props) => {
               onFileAction={handleFileAction}
               thumbnailGenerator={thumbnailGenerator}
               disableSelection={loading}
-              disableToolbar={true}
+              disableToolbar={false}
               disableDefaultFileActions={true}
               {...props}
             />

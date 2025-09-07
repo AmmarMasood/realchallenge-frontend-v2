@@ -111,11 +111,45 @@ function Exercises({
     }
   };
 
-  const handleExerciseDuration = (e, id) => {
+  const getVideoDuration = (videoUrl) => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(video.src);
+        resolve(Math.round(video.duration));
+      };
+      video.onerror = () => {
+        reject(new Error("Could not load video"));
+      };
+      video.src = videoUrl;
+    });
+  };
+
+  const handleExerciseDuration = async (e, id) => {
     e.preventDefault();
     const { value } = e.target;
     const exercise = workout.exercises.find((exercise) => exercise.id === id);
-    const updatedExercise = { ...exercise, exerciseLength: value };
+
+    // Prevent values less than or equal to 0
+    if (parseInt(value) <= 0) {
+      return;
+    }
+
+    let finalValue = value;
+
+    // If user inputs 0 and there's a video URL, get the video's original duration
+    if (parseInt(value) === 0 && exercise.videoURL) {
+      try {
+        const videoDuration = await getVideoDuration(exercise.videoURL);
+        finalValue = videoDuration;
+      } catch (error) {
+        console.warn("Could not get video duration:", error);
+        finalValue = value; // Keep original value if getting duration fails
+      }
+    }
+
+    const updatedExercise = { ...exercise, exerciseLength: finalValue };
     const updatedExercises = workout.exercises.map((exercise) =>
       exercise.id === id ? updatedExercise : exercise
     );
@@ -176,7 +210,7 @@ function Exercises({
       break: 0,
       createdAt: "",
       exerciseGroupName: "",
-      exerciseLength: 0,
+      exerciseLength: 10,
       title: "",
       videoURL: "",
       voiceOverLink: "",
@@ -213,7 +247,7 @@ function Exercises({
       voiceOverLink: exercise.voiceOverLink || "",
       break: exercise.break || 0,
       exerciseGroupName: exercise.exerciseGroupName || "",
-      exerciseLength: exercise.exerciseLength || 0,
+      exerciseLength: exercise.exerciseLength || 10,
       exerciseId: exercise.exerciseId || "",
     };
     setWorkout((prev) => ({

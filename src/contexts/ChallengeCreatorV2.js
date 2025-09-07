@@ -99,7 +99,7 @@ export function ChallengeProvider({ children }) {
           break: 5,
           createdAt: workout.createdAt,
           exerciseGroupName: "Introduction",
-          exerciseLength: parseInt(workout.introVideoLength || 0),
+          exerciseLength: parseInt(workout.introVideoLength || 10),
           title: "Introduction to workout",
           videoURL: workout.introVideoLink,
           voiceOverLink: "",

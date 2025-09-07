@@ -38,6 +38,7 @@ import slug from "elegant-slug";
 import { Helmet } from "react-helmet";
 import { T } from "../components/Translate";
 import { LanguageContext } from "../contexts/LanguageContext";
+import PopupPlayer from "../components/PopupPlayer/PopupPlayer";
 
 const tooltipText = `
 If you don’t choose any plan and hit start now, you can go through the wizard, get your free intake, make a free account and enjoy our free challenges collection and one week meal plan. 
@@ -45,6 +46,7 @@ If you don’t choose any plan and hit start now, you can go through the wizard,
 function ChallengeProfile(props) {
   const { language, updateLanguage } = useContext(LanguageContext);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [openPopupPlayer, setOpenPopupPlayer] = useState(false);
   const [open, setOpen] = useState(false);
   // eslint-disable-next-line
 
@@ -745,6 +747,15 @@ function ChallengeProfile(props) {
     }
   };
 
+  const openTailerPlayer = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (challenge.videoThumbnailLink) {
+      // show video player
+      setOpenPopupPlayer(true);
+    }
+  };
+
   return loading ? (
     <div className="center-inpage">
       <LoadingOutlined style={{ fontSize: "50px", color: "#ff7700" }} />
@@ -785,13 +796,7 @@ function ChallengeProfile(props) {
         <div
           className="trainer-profile-container-column1"
           style={{
-            background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${
-              process.env.REACT_APP_SERVER
-            }/uploads/${
-              challenge.thumbnailLink
-                ? challenge.thumbnailLink.replaceAll(" ", "%20")
-                : ""
-            })`,
+            background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${challenge.thumbnailLink})`,
             backgroundSize: "100% 100vh",
             backgroundPosition: "10% 10%",
             backgroundRepeat: "no-repeat",
@@ -799,11 +804,16 @@ function ChallengeProfile(props) {
         >
           <div className="profile-box">
             <div className="challenge-profile-box-1">
-              <img
-                src={ChallengeProfileSubtract}
-                alt=""
-                onClick={() => setOpen(true)}
-              />
+              {challenge?.videoThumbnailLink && (
+                <img
+                  src={ChallengeProfileSubtract}
+                  alt=""
+                  style={{
+                    cursor: "pointer",
+                  }}
+                  onClick={openTailerPlayer}
+                />
+              )}
               <h1 className="font-heading-white" style={{ fontSize: "4rem" }}>
                 {challenge.challengeName ? challenge.challengeName : ""}
               </h1>
@@ -1078,6 +1088,12 @@ function ChallengeProfile(props) {
         visible={replaceFreeChallengePopupVisible}
         setVisible={setReplaceFreeChallengePopupVisible}
         fetchData={fetchData}
+      />
+      {console.log("challenge.thumbnailLink", challenge.thumbnailLink)}
+      <PopupPlayer
+        open={openPopupPlayer}
+        onCancel={() => setOpenPopupPlayer(false)}
+        video={challenge.videoThumbnailLink}
       />
 
       {/* <Footer /> */}
