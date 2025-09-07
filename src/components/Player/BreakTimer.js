@@ -82,11 +82,16 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
           setTimerVisible(false);
           setCurrentBreak(false);
           
-          if (isLastExercise && onWorkoutComplete) {
-            // Last exercise completed, show success popup
-            onWorkoutComplete();
+          if (isLastExercise) {
+            // Last exercise completed, keep video paused and show success popup
+            setPlayerState((prevState) => ({ ...prevState, playing: false }));
+            if (onWorkoutComplete) {
+              setTimeout(() => {
+                onWorkoutComplete();
+              }, 100);
+            }
           } else {
-            // Move to next exercise
+            // Move to next exercise and resume playing
             moveToNextExercise();
             setPlayerState((prevState) => ({ ...prevState, playing: true }));
           }

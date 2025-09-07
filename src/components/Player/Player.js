@@ -19,6 +19,7 @@ function Player({
   currentExercise,
   challengePageAddress,
   inCreation,
+  onWorkoutComplete,
 }) {
   return workout.renderWorkout || workout.isRendered ? (
     <div>
@@ -38,6 +39,7 @@ function Player({
         currentExercise={currentExercise}
         challengePageAddress={challengePageAddress}
         inCreation={inCreation}
+        onWorkoutComplete={onWorkoutComplete}
       />
     </div>
   ) : (
@@ -56,6 +58,7 @@ function Player({
         setCurrentExercise={setCurrentExercise}
         currentExercise={currentExercise}
         challengePageAddress={challengePageAddress}
+        onWorkoutComplete={onWorkoutComplete}
       />
     </div>
   );

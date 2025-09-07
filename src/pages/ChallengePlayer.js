@@ -85,14 +85,14 @@ function ChallengePlayer(props) {
       res && res.isRendered
         ? res.exercises.map((e) => ({
             break: e.break,
-            createdAt: e.exerciseId.createdAt,
+            createdAt: e.exerciseId?.createdAt,
             exerciseGroupName: e.groupName,
             exerciseLength: e.exerciseLength,
-            title: e.exerciseId.title,
-            videoURL: e.exerciseId.videoURL,
-            voiceOverLink: e.exerciseId.voiceOverLink,
-            videoThumbnailURL: e.exerciseId.videoThumbnailURL,
-            _id: e.exerciseId._id,
+            title: e.exerciseId?.title,
+            videoURL: e.exerciseId?.videoURL,
+            voiceOverLink: e.exerciseId?.voiceOverLink,
+            videoThumbnailURL: e.exerciseId?.videoThumbnailURL,
+            _id: e.exerciseId?._id,
           }))
         : res.exercises.map((e) => ({
             title: e.renderedWorkoutExerciseName,
@@ -378,6 +378,7 @@ function ChallengePlayer(props) {
               setOpenHelpModal={setOpenHelpModal}
               setCurrentExercise={setCurrentExercise}
               currentExercise={currentExercise}
+              onWorkoutComplete={() => setFinishWorkoutPopupVisible(true)}
             />
 
             <PlayerVideoBrowser

@@ -70,6 +70,11 @@ function RenderedVideoPlayer({
       } else if (playerRef.current && playerRef.current.getDuration) {
         setExerciseSeconds(Math.round(playerRef.current.getDuration()));
       }
+      
+      // Reset video to beginning when exercise changes
+      if (playerRef.current && playerRef.current.seekTo) {
+        playerRef.current.seekTo(0);
+      }
     }
   }, [exercise]);
 
@@ -93,8 +98,11 @@ function RenderedVideoPlayer({
       } else {
         // No break time
         if (isCurrentlyLastExercise && onWorkoutComplete) {
-          // Last exercise with no break - show success popup
-          onWorkoutComplete();
+          // Last exercise with no break - keep paused and show success popup
+          setPlayerState((prev) => ({ ...prev, playing: false }));
+          setTimeout(() => {
+            onWorkoutComplete();
+          }, 100);
         } else {
           // Move to next exercise
           moveToNextExercise();
@@ -157,6 +165,7 @@ function RenderedVideoPlayer({
       onMouseMove={handleMouseMove}
     >
       <ReactPlayer
+        key={`${exercise?.id || 'default'}-${currentExercise.index}`}
         ref={playerRef}
         className="react-player"
         onBuffer={() => {

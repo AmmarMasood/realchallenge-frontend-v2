@@ -273,11 +273,11 @@ function PlayerControls(
                     style={playerIconStyle}
                   />
                 )}
-                {/* <img
+                <img
                   src={SmPlayerChromeIcon}
                   alt="player-chrome-icon"
                   style={playerIconStyle}
-                /> */}
+                />
                 <img
                   src={SmPlayerMusicIcon}
                   onClick={() => setMusicPlayerVisible(!musicPlayerVisible)}
