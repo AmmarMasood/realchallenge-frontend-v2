@@ -7,9 +7,12 @@ import React, {
   useRef,
   useState,
 } from "react";
+import ReactModal from "react-modal";
+import ReactPlayer from "react-player";
 
 import { showActionNotification } from "./mediaManagerUtils";
 import MediaFileUploader from "./MediaFileUploader";
+import AdminSearchPanel from "./AdminSearchPanel";
 import { useMediaManager } from "../../../contexts/MediaManagerContext";
 import setAuthToken from "../../../helpers/setAuthToken";
 import {
@@ -17,7 +20,6 @@ import {
   Input,
   notification,
   Select,
-  Modal,
   message,
   Card,
   Table,
@@ -27,6 +29,8 @@ import {
   Divider,
   Switch,
   Tooltip,
+  Modal,
+  Tabs,
 } from "antd";
 import {
   UserOutlined,
@@ -37,11 +41,15 @@ import {
   HomeOutlined,
   UnorderedListOutlined,
   AppstoreOutlined,
+  CloseOutlined,
+  SearchOutlined,
+  FileOutlined,
 } from "@ant-design/icons";
 import { userInfoContext } from "../../../contexts/UserStore";
 
 const { confirm } = Modal;
 const { Title, Text } = Typography;
+const { TabPane } = Tabs;
 
 const openNotificationWithIcon = (type, message, description) => {
   notification[type]({
@@ -190,6 +198,11 @@ const useCustomFileMap = () => {
     fetchAllUsersData,
     fetchUserFolders,
     getCurrentContext,
+    // Copy/paste functions
+    clipboardFiles,
+    cutFilesToClipboard,
+    pasteFilesFromClipboard,
+    clearClipboard,
   } = useMediaManager();
 
   const [userInfo, setUserInfo] = useContext(userInfoContext);
@@ -199,6 +212,7 @@ const useCustomFileMap = () => {
   const [showAdminView, setShowAdminView] = useState(false);
   const [folderViewModes, setFolderViewModes] = useState({});
   const [currentViewMode, setCurrentViewMode] = useState("grid");
+  const [adminActiveTab, setAdminActiveTab] = useState("users");
   const currentFolderIdRef = useRef(currentFolderId);
 
   useEffect(() => {
@@ -316,9 +330,12 @@ const useCustomFileMap = () => {
     };
     setFolderViewModes(updatedViewModes);
     setCurrentViewMode(newViewMode);
-    
+
     // Save to localStorage
-    localStorage.setItem("mediaManager_viewModes", JSON.stringify(updatedViewModes));
+    localStorage.setItem(
+      "mediaManager_viewModes",
+      JSON.stringify(updatedViewModes)
+    );
   };
 
   // Build folder hierarchy with proper nesting
@@ -512,6 +529,14 @@ const useCustomFileMap = () => {
     handleSelectUser,
     handleBackToUsersList,
     getCurrentContext,
+    // Admin tab functionality
+    adminActiveTab,
+    setAdminActiveTab,
+    // Copy/paste functionality
+    clipboardFiles,
+    cutFilesToClipboard,
+    pasteFilesFromClipboard,
+    clearClipboard,
   };
 };
 
@@ -555,6 +580,133 @@ export const useFolderChain = (fileMap, currentFolderId) => {
   }, [currentFolderId, fileMap]);
 };
 
+// Preview Modal Component for files
+const PreviewModal = ({ visible, onClose, file }) => {
+  const [loading, setLoading] = useState(true);
+
+  if (!visible || !file) return null;
+
+  const isVideo =
+    file.mediaType === "video" ||
+    ["mp4", "mov", "avi", "mkv", "webm", "flv", "wmv", "m4v", "mpg"].includes(
+      file.name.split(".").pop()?.toLowerCase() || ""
+    );
+
+  const isImage =
+    file.mediaType === "picture" ||
+    ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff"].includes(
+      file.name.split(".").pop()?.toLowerCase() || ""
+    );
+
+  return (
+    <ReactModal
+      isOpen={visible}
+      onRequestClose={onClose}
+      style={{
+        overlay: {
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          zIndex: 1000,
+        },
+        content: {
+          background: "#1f1f1f",
+          border: "none",
+          borderRadius: "8px",
+          padding: "20px",
+          maxWidth: "90vw",
+          maxHeight: "90vh",
+          margin: "auto",
+        },
+      }}
+    >
+      <div
+        style={{
+          marginBottom: "15px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <h3 style={{ color: "white", margin: 0 }}>{file.name}</h3>
+        <CloseOutlined
+          style={{
+            color: "white",
+            fontSize: "24px",
+            cursor: "pointer",
+            padding: "4px",
+          }}
+          onClick={onClose}
+        />
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "300px",
+          position: "relative",
+        }}
+      >
+        {isVideo ? (
+          <ReactPlayer
+            url={file.link}
+            controls={true}
+            width="100%"
+            height="auto"
+            style={{ maxWidth: "100%", maxHeight: "70vh" }}
+            onReady={() => setLoading(false)}
+            onError={() => setLoading(false)}
+          />
+        ) : isImage ? (
+          <>
+            {loading && (
+              <div
+                style={{
+                  position: "absolute",
+                  color: "white",
+                  fontSize: "16px",
+                }}
+              >
+                Loading...
+              </div>
+            )}
+            <img
+              src={file.link}
+              alt={file.name}
+              style={{
+                maxWidth: "100%",
+                maxHeight: "70vh",
+                objectFit: "contain",
+                display: loading ? "none" : "block",
+              }}
+              onLoad={() => setLoading(false)}
+              onError={() => setLoading(false)}
+            />
+          </>
+        ) : (
+          <div
+            style={{
+              color: "white",
+              textAlign: "center",
+              padding: "20px",
+            }}
+          >
+            <p>Preview not available for this file type.</p>
+            <a
+              href={file.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#1890ff" }}
+            >
+              Open in new tab
+            </a>
+          </div>
+        )}
+      </div>
+    </ReactModal>
+  );
+};
+
 // Enhanced File Action Handler with drag and drop support
 export const useFileActionHandler = (
   setCurrentFolderName,
@@ -571,7 +723,13 @@ export const useFileActionHandler = (
   isNameUnique,
   getCurrentDepth,
   moveMediaFile,
-  handleViewModeChange
+  handleViewModeChange,
+  setPreviewFile,
+  setShowPreviewModal,
+  cutFilesToClipboard,
+  pasteFilesFromClipboard,
+  clearClipboard,
+  currentFolderId
 ) => {
   const { deleteMediaFile, deleteMediaFolder, updateMediaFile } =
     useMediaManager();
@@ -609,23 +767,52 @@ export const useFileActionHandler = (
     });
   }, []);
 
-  // Handle file preview in new tab
-  const handlePreviewFile = useCallback((file) => {
-    if (!file || !file.link) {
-      message.error("File link not available");
-      return;
-    }
+  // Handle file preview in popup
+  const handlePreviewFile = useCallback(
+    (file) => {
+      if (!file || !file.link) {
+        message.error("File link not available");
+        return;
+      }
 
-    // Open file in new tab
-    window.open(file.link, "_blank", "noopener,noreferrer");
+      // Set preview file and show modal
+      setPreviewFile(file);
+      setShowPreviewModal(true);
 
-    // Show notification
-    openNotificationWithIcon(
-      "info",
-      "Opening Preview",
-      `Opening ${file.name} in new tab`
-    );
-  }, []);
+      // Show notification
+      openNotificationWithIcon(
+        "info",
+        "Opening Preview",
+        `Opening ${file.name} in preview popup`
+      );
+    },
+    [setPreviewFile, setShowPreviewModal]
+  );
+
+  // Handle cut files to clipboard
+  const handleCutFiles = useCallback(
+    (files) => {
+      const filesToCut = files.filter((file) => !file.isDir); // Only cut files, not folders
+      if (filesToCut.length === 0) {
+        message.warning("No files selected to cut");
+        return;
+      }
+      cutFilesToClipboard(filesToCut);
+    },
+    [cutFilesToClipboard]
+  );
+
+  // Handle paste files from clipboard
+  const handlePasteFiles = useCallback(
+    async (targetFolderId) => {
+      try {
+        await pasteFilesFromClipboard(targetFolderId);
+      } catch (error) {
+        console.error("Paste operation failed:", error);
+      }
+    },
+    [pasteFilesFromClipboard]
+  );
 
   // Handle file/folder drop - FIXED VERSION
   const handleDrop = useCallback(
@@ -820,6 +1007,15 @@ export const useFileActionHandler = (
         if (item && !item.isDir) {
           handlePreviewFile(item);
         }
+      } else if (data.id === "cut_files") {
+        const selectedFiles = data.state.selectedFilesForAction;
+        handleCutFiles(selectedFiles);
+      } else if (data.id === "paste_files") {
+        // For paste, we need to determine the target folder
+        // If we're in a folder, paste into that folder, otherwise paste into root
+        const targetFolderId =
+          currentFolderId === "root" ? null : currentFolderId;
+        await handlePasteFiles(targetFolderId);
       }
     },
     [
@@ -834,6 +1030,10 @@ export const useFileActionHandler = (
       confirmDelete,
       handleDrop,
       handleViewModeChange,
+      handlePreviewFile,
+      handleCutFiles,
+      handlePasteFiles,
+      currentFolderId,
     ]
   );
 };
@@ -1071,6 +1271,8 @@ export const VFSBrowser = React.memo((props) => {
   const [openCreateFolderModal, setOpenCreateFolderModal] = useState(false);
   const [openRenameModal, setOpenRenameModal] = useState(false);
   const [renameTarget, setRenameTarget] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
 
   const {
     fileMap,
@@ -1096,6 +1298,14 @@ export const VFSBrowser = React.memo((props) => {
     handleSelectUser,
     handleBackToUsersList,
     getCurrentContext,
+    // Admin tab functionality
+    adminActiveTab,
+    setAdminActiveTab,
+    // Copy/paste functionality
+    clipboardFiles,
+    cutFilesToClipboard,
+    pasteFilesFromClipboard,
+    clearClipboard,
   } = useCustomFileMap();
 
   const files = useFiles(fileMap, currentFolderId);
@@ -1119,7 +1329,13 @@ export const VFSBrowser = React.memo((props) => {
     isNameUnique,
     getCurrentDepth,
     moveMediaFile,
-    handleViewModeChange
+    handleViewModeChange,
+    setPreviewFile,
+    setShowPreviewModal,
+    cutFilesToClipboard,
+    pasteFilesFromClipboard,
+    clearClipboard,
+    currentFolderId
   );
 
   // Enhanced file actions with depth-aware logic and drag and drop
@@ -1195,6 +1411,31 @@ export const VFSBrowser = React.memo((props) => {
       });
     }
 
+    // Add cut action (always available for files) - cuts/moves files
+    actions.push({
+      id: "cut_files",
+      button: {
+        name: "Cut",
+        toolbar: true,
+        contextMenu: true,
+        group: "Actions",
+        icon: ChonkyActions.CopyFiles.button.icon, // Reuse copy icon for now
+      },
+      hotkeys: ["ctrl+v"],
+    });
+
+    // Add custom paste action (no hotkey to avoid conflict with cut)
+    actions.push({
+      id: "paste_files",
+      button: {
+        name: "Paste (Move)",
+        toolbar: true,
+        contextMenu: true,
+        group: "Actions",
+        icon: ChonkyActions.CopyFiles.button.icon, // Reuse copy icon for now
+      },
+    });
+
     // Add rename action (always available)
     actions.push({
       id: "rename_item",
@@ -1208,7 +1449,14 @@ export const VFSBrowser = React.memo((props) => {
     });
 
     return actions;
-  }, [currentFolderId, getCurrentDepth, showAdminView, adminMode, currentViewMode]);
+  }, [
+    currentFolderId,
+    getCurrentDepth,
+    showAdminView,
+    adminMode,
+    currentViewMode,
+    clipboardFiles,
+  ]);
 
   const thumbnailGenerator = useCallback(
     (file) => (file.thumbnailUrl ? file.thumbnailUrl : null),
@@ -1284,10 +1532,14 @@ export const VFSBrowser = React.memo((props) => {
           type="link"
           icon={<HomeOutlined />}
           onClick={() => {
-            setCurrentFolderId('root');
-            setCurrentFolderName(adminMode && currentViewingUserId ? "User's Media" : "Media Manager");
+            setCurrentFolderId("root");
+            setCurrentFolderName(
+              adminMode && currentViewingUserId
+                ? "User's Media"
+                : "Media Manager"
+            );
           }}
-          style={{ padding: '0', height: 'auto' }}
+          style={{ padding: "0", height: "auto" }}
         >
           Back to Root
         </Button>
@@ -1295,25 +1547,51 @@ export const VFSBrowser = React.memo((props) => {
     );
   };
 
-
   return (
     <>
       <div style={{ height: "100vh", position: "relative" }}>
         {/* Admin Header */}
         {isAdmin && <AdminHeader />}
 
-        {/* Show admin users view */}
+        {/* Show admin tabs view */}
         {showAdminView ? (
-          <AdminUsersView
-            onSelectUser={handleSelectUser}
-            usersData={usersData}
-            loading={loading}
-          />
+          <Tabs
+            activeKey={adminActiveTab}
+            onChange={setAdminActiveTab}
+            style={{ minHeight: "60vh", color: "#fff" }}
+          >
+            <TabPane
+              tab={
+                <span>
+                  <UserOutlined />
+                  Users & Folders
+                </span>
+              }
+              key="users"
+            >
+              <AdminUsersView
+                onSelectUser={handleSelectUser}
+                usersData={usersData}
+                loading={loading}
+              />
+            </TabPane>
+            <TabPane
+              tab={
+                <span>
+                  <SearchOutlined />
+                  Search Files
+                </span>
+              }
+              key="search"
+            >
+              <AdminSearchPanel />
+            </TabPane>
+          </Tabs>
         ) : (
           <>
             {/* Back to Root Navigation */}
             <BackToRootNavigation />
-            
+
             {/* Regular file browser */}
             <MediaFileUploader
               currentFolderId={currentFolderId}
@@ -1338,6 +1616,12 @@ export const VFSBrowser = React.memo((props) => {
               onSuccess={() => {}}
               target={renameTarget}
               isNameUnique={isNameUnique}
+            />
+
+            <PreviewModal
+              visible={showPreviewModal}
+              onClose={() => setShowPreviewModal(false)}
+              file={previewFile}
             />
 
             {loading && (

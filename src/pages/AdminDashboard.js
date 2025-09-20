@@ -62,12 +62,19 @@ function AdminDashboard(props) {
       <Link to="/user/profile" className="font-paragraph-white">
         <T>admin.profile_setting</T>
       </Link>
-      <Link
+      <button
         className="font-paragraphw-white hover-orange"
         onClick={() => logoutUser(props.history, setAdminInfo)}
+        style={{ 
+          background: 'none', 
+          border: 'none', 
+          cursor: 'pointer',
+          padding: 0,
+          textAlign: 'left'
+        }}
       >
         <T>admin.logout</T>
-      </Link>
+      </button>
     </div>
   );
 

@@ -237,7 +237,7 @@ export function updateMediaFile(folderId, fileId, data) {
 }
 
 // --- Move file between folders ---
-export function moveMediaFileS(fileId, oldFolderId, newFolderId) {
+export function moveMediaFile(fileId, oldFolderId, newFolderId) {
   return axios
     .put(
       `${process.env.REACT_APP_SERVER}/api/media/folders/${oldFolderId}/files/${fileId}/move`,
@@ -252,6 +252,62 @@ export function moveMediaFileS(fileId, oldFolderId, newFolderId) {
         "error",
         "Unable to move file",
         err?.response?.data?.message || ""
+      );
+      throw err;
+    });
+}
+
+// --- Copy/Move file between folders (actually moves the file) ---
+export function copyMediaFile(fileId, fromFolderId, toFolderId) {
+  return axios
+    .put(
+      `${process.env.REACT_APP_SERVER}/api/media/folders/${fromFolderId}/files/${fileId}/move`,
+      { newFolderId: toFolderId }
+    )
+    .then((res) => {
+      openNotificationWithIcon("success", "File moved successfully", "");
+      return res.data;
+    })
+    .catch((err) => {
+      openNotificationWithIcon(
+        "error",
+        "Unable to move file",
+        err?.response?.data?.message || ""
+      );
+      throw err;
+    });
+}
+
+// --- Search media files (admin only) ---
+export function searchMediaFiles(searchParams) {
+  const { filename, userId, mediaType, page = 1, limit = 20 } = searchParams;
+
+  // Build query parameters
+  const queryParams = new URLSearchParams();
+
+  if (filename && filename.trim()) {
+    queryParams.append('filename', filename.trim());
+  }
+
+  if (userId && userId.trim()) {
+    queryParams.append('userId', userId.trim());
+  }
+
+  if (mediaType && mediaType !== 'all') {
+    queryParams.append('mediaType', mediaType);
+  }
+
+  queryParams.append('page', page.toString());
+  queryParams.append('limit', limit.toString());
+
+  return axios
+    .get(`${process.env.REACT_APP_SERVER}/api/media/search?${queryParams.toString()}`)
+    .then((res) => res.data)
+    .catch((err) => {
+      openNotificationWithIcon(
+        "error",
+        "Search failed",
+        err?.response?.data?.message || "Unable to search files"
       );
       throw err;
     });

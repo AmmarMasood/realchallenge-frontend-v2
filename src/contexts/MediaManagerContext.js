@@ -12,6 +12,8 @@ import {
   updateMediaFile,
   getUserMediaFolders,
   moveMediaFileS,
+  copyMediaFile,
+  searchMediaFiles, // New search function for admin
 } from "../services/mediaManager";
 import { notification } from "antd";
 import { userInfoContext } from "./UserStore";
@@ -39,6 +41,16 @@ export const MediaManagerProvider = ({ children }) => {
   const [usersData, setUsersData] = useState([]); // For admin view: [{user, folders, totalFolders}]
   const [currentViewingUserId, setCurrentViewingUserId] = useState(null);
   const [loadingUsers, setLoadingUsers] = useState(false);
+
+  // Clipboard state for copy/paste functionality
+  const [clipboardFiles, setClipboardFiles] = useState([]);
+
+  // Search state for admin
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchPagination, setSearchPagination] = useState(null);
+  const [lastSearchCriteria, setLastSearchCriteria] = useState(null);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   // Check if current user is admin
   const isAdmin = useCallback(() => userInfo.role === "admin", [userInfo]);
@@ -465,7 +477,7 @@ export const MediaManagerProvider = ({ children }) => {
         console.log("Making API request to move file...");
 
         try {
-          const data = await moveMediaFileS(fileId, oldFolderId, newFolderId);
+          const data = await moveMediaFile(fileId, oldFolderId, newFolderId);
           console.log("Move operation successful:", data);
           // Update the local state to reflect the move
           setFilesByFolder((prev) => {
@@ -512,6 +524,206 @@ export const MediaManagerProvider = ({ children }) => {
     []
   );
 
+  // Cut files to clipboard (for move operation)
+  const cutFilesToClipboard = useCallback((files) => {
+    setClipboardFiles(files);
+    openNotificationWithIcon(
+      "info",
+      "Files Cut",
+      `${files.length} file(s) cut to clipboard - they will be moved when pasted`
+    );
+  }, []);
+
+  // Paste files from clipboard to target folder (actually moves them)
+  const pasteFilesFromClipboard = useCallback(
+    async (targetFolderId) => {
+      if (clipboardFiles.length === 0) {
+        openNotificationWithIcon(
+          "warning",
+          "Nothing to Paste",
+          "No files in clipboard"
+        );
+        return;
+      }
+
+      console.log(
+        `Moving ${clipboardFiles.length} files to folder ${targetFolderId}`
+      );
+
+      try {
+        const results = [];
+        for (const file of clipboardFiles) {
+          console.log(
+            `Moving file ${file.name} from ${file.parentId} to ${targetFolderId}`
+          );
+
+          if (file.parentId === targetFolderId) {
+            console.log(
+              `Skipping file ${file.name} - already in target folder`
+            );
+            continue;
+          }
+
+          const result = await copyMediaFile(
+            file.id,
+            file.parentId,
+            targetFolderId
+          );
+          results.push(result);
+        }
+
+        if (results.length > 0) {
+          // Update local state: remove from source folders and add to target folder
+          setFilesByFolder((prev) => {
+            const updated = { ...prev };
+
+            // Remove files from their original folders
+            clipboardFiles.forEach((file) => {
+              if (updated[file.parentId]) {
+                updated[file.parentId] = updated[file.parentId].filter(
+                  (f) => f._id !== file.id
+                );
+              }
+            });
+
+            // Add files to target folder
+            if (updated[targetFolderId]) {
+              const movedFiles = results.map((r) => r.file);
+              updated[targetFolderId] = [
+                ...updated[targetFolderId],
+                ...movedFiles,
+              ];
+            }
+
+            return updated;
+          });
+
+          openNotificationWithIcon(
+            "success",
+            "Files Moved",
+            `${results.length} file(s) moved successfully`
+          );
+        } else {
+          openNotificationWithIcon(
+            "info",
+            "No Files Moved",
+            "All files were already in the target folder"
+          );
+        }
+
+        // Clear clipboard after moving
+        setClipboardFiles([]);
+
+        return results;
+      } catch (error) {
+        console.error("Error moving files:", error);
+        openNotificationWithIcon(
+          "error",
+          "Move Failed",
+          error.message || "Failed to move files"
+        );
+        throw error;
+      }
+    },
+    [clipboardFiles]
+  );
+
+  // Clear clipboard
+  const clearClipboard = useCallback(() => {
+    setClipboardFiles([]);
+  }, []);
+
+  // Search files (admin only)
+  const searchFiles = useCallback(
+    async (searchParams) => {
+      if (!isAdmin()) {
+        throw new Error("Admin access required");
+      }
+
+      setSearchLoading(true);
+      try {
+        const res = await searchMediaFiles(searchParams);
+        setSearchResults(res.files || []);
+        setSearchPagination(res.pagination || null);
+        setLastSearchCriteria(res.searchCriteria || null);
+        setShowSearchResults(true);
+
+        openNotificationWithIcon(
+          "success",
+          "Search completed",
+          `Found ${res.pagination?.totalFiles || 0} files`
+        );
+
+        return res;
+      } catch (error) {
+        openNotificationWithIcon(
+          "error",
+          "Search failed",
+          error.message || "Unable to search files"
+        );
+        throw error;
+      } finally {
+        setSearchLoading(false);
+      }
+    },
+    [isAdmin]
+  );
+
+  // Clear search results
+  const clearSearchResults = useCallback(() => {
+    setSearchResults([]);
+    setSearchPagination(null);
+    setLastSearchCriteria(null);
+    setShowSearchResults(false);
+  }, []);
+
+  // Load more search results (pagination)
+  const loadMoreSearchResults = useCallback(
+    async (page) => {
+      if (!lastSearchCriteria || !isAdmin()) {
+        return;
+      }
+
+      setSearchLoading(true);
+      try {
+        const searchParams = {
+          ...lastSearchCriteria,
+          page,
+        };
+
+        const res = await searchMediaFiles(searchParams);
+
+        // Append new results to existing ones
+        setSearchResults((prev) => [...prev, ...(res.files || [])]);
+        setSearchPagination(res.pagination || null);
+
+        return res;
+      } catch (error) {
+        openNotificationWithIcon(
+          "error",
+          "Failed to load more results",
+          error.message || "Unable to load more search results"
+        );
+        throw error;
+      } finally {
+        setSearchLoading(false);
+      }
+    },
+    [lastSearchCriteria, isAdmin]
+  );
+
+  // Refresh search with same criteria
+  const refreshSearchResults = useCallback(
+    async () => {
+      if (!lastSearchCriteria || !isAdmin()) {
+        return;
+      }
+
+      await searchFiles(lastSearchCriteria);
+    },
+    [lastSearchCriteria, isAdmin, searchFiles]
+  );
+
   return (
     <MediaManagerContext.Provider
       value={{
@@ -551,6 +763,23 @@ export const MediaManagerProvider = ({ children }) => {
         getFolderDepth,
         isNameUniqueInFolder,
         moveMediaFile,
+
+        // Cut/paste functions
+        clipboardFiles,
+        cutFilesToClipboard,
+        pasteFilesFromClipboard,
+        clearClipboard,
+
+        // Search functions (admin only)
+        searchFiles,
+        clearSearchResults,
+        loadMoreSearchResults,
+        refreshSearchResults,
+        searchResults,
+        searchLoading,
+        searchPagination,
+        lastSearchCriteria,
+        showSearchResults,
       }}
     >
       {children}

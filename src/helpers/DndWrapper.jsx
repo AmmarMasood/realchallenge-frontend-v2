@@ -13,6 +13,7 @@ export function DraggableArea({
   onChange,
   direction = "vertical",
   itemType,
+  onDragStateChange,
 }) {
   const childArray = React.Children.toArray(children);
 
@@ -45,7 +46,7 @@ export function DraggableArea({
   };
 
   return (
-    <DragContext.Provider value={{ moveItem, direction, itemType }}>
+    <DragContext.Provider value={{ moveItem, direction, itemType, onDragStateChange }}>
       <div
         style={{
           display: direction === "horizontal" ? "flex" : "block",
@@ -60,9 +61,9 @@ export function DraggableArea({
   );
 }
 
-export function DraggableItem({ children, index, ...rest }) {
+export function DraggableItem({ children, index, id, ...rest }) {
   const ref = useRef(null);
-  const { moveItem, direction, itemType } = useContext(DragContext);
+  const { moveItem, direction, itemType, onDragStateChange } = useContext(DragContext);
 
   const [, drop] = useDrop({
     accept: itemType,
@@ -76,7 +77,17 @@ export function DraggableItem({ children, index, ...rest }) {
 
   const [{ isDragging }, drag, preview] = useDrag({
     type: itemType,
-    item: { index },
+    item: () => {
+      if (onDragStateChange) {
+        onDragStateChange(true, id);
+      }
+      return { index, id };
+    },
+    end: () => {
+      if (onDragStateChange) {
+        onDragStateChange(false, null);
+      }
+    },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
