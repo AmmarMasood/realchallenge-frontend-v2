@@ -61,7 +61,22 @@ export const MediaManagerProvider = ({ children }) => {
       if (folders.length > 0 && !force) return folders;
       setLoadingFolders(true);
       try {
+        console.log("📁 REGULAR: Fetching user's own folders");
         const res = await getUserMediaFolders();
+        console.log("📁 REGULAR: Raw response:", res);
+        console.log("📁 REGULAR: Folders array:", res.folders);
+        console.log("📁 REGULAR: Folders count:", res.folders?.length);
+        if (res.folders?.length > 0) {
+          console.log("📁 REGULAR: Sample folder structure:", res.folders[0]);
+          console.log("📁 REGULAR: All folder relationships:", res.folders.map(f => ({
+            name: f.name,
+            id: f._id,
+            parentId: f.parentId,
+            depth: f.depth,
+            parentIdType: typeof f.parentId,
+            idType: typeof f._id
+          })));
+        }
         setFolders(res.folders || []);
         return res.folders || [];
       } finally {
@@ -116,7 +131,22 @@ export const MediaManagerProvider = ({ children }) => {
 
       setLoadingFolders(true);
       try {
+        console.log("📁 ADMIN: Fetching folders for user:", userId);
         const res = await getSpecificUserFolders(userId);
+        console.log("📁 ADMIN: Raw response:", res);
+        console.log("📁 ADMIN: Folders array:", res.folders);
+        console.log("📁 ADMIN: Folders count:", res.folders?.length);
+        if (res.folders?.length > 0) {
+          console.log("📁 ADMIN: Sample folder structure:", res.folders[0]);
+          console.log("📁 ADMIN: All folder relationships:", res.folders.map(f => ({
+            name: f.name,
+            id: f._id,
+            parentId: f.parentId,
+            depth: f.depth,
+            parentIdType: typeof f.parentId,
+            idType: typeof f._id
+          })));
+        }
         setFolders(res.folders || []);
         setCurrentViewingUserId(userId);
 
@@ -633,6 +663,12 @@ export const MediaManagerProvider = ({ children }) => {
     setClipboardFiles([]);
   }, []);
 
+  // Cache management - clear files cache to force fresh fetch
+  const clearFilesByFolderCache = useCallback(() => {
+    console.log("🧹 CACHE: Clearing filesByFolder cache");
+    setFilesByFolder({});
+  }, []);
+
   // Search files (admin only)
   const searchFiles = useCallback(
     async (searchParams) => {
@@ -769,6 +805,9 @@ export const MediaManagerProvider = ({ children }) => {
         cutFilesToClipboard,
         pasteFilesFromClipboard,
         clearClipboard,
+
+        // Cache management
+        clearFilesByFolderCache,
 
         // Search functions (admin only)
         searchFiles,

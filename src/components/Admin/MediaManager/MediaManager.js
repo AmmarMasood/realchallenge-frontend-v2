@@ -203,6 +203,8 @@ const useCustomFileMap = () => {
     cutFilesToClipboard,
     pasteFilesFromClipboard,
     clearClipboard,
+    // Cache management
+    clearFilesByFolderCache,
   } = useMediaManager();
 
   const [userInfo, setUserInfo] = useContext(userInfoContext);
@@ -211,6 +213,7 @@ const useCustomFileMap = () => {
   const [lastViewedPath, setLastViewedPath] = useState("root");
   const [showAdminView, setShowAdminView] = useState(false);
   const [folderViewModes, setFolderViewModes] = useState({});
+  const [forceRefreshFiles, setForceRefreshFiles] = useState(false); // Flag to force file refresh after main refresh
   const [currentViewMode, setCurrentViewMode] = useState("grid");
   const [adminActiveTab, setAdminActiveTab] = useState("users");
   const currentFolderIdRef = useRef(currentFolderId);
@@ -252,17 +255,24 @@ const useCustomFileMap = () => {
   useEffect(() => {
     if (
       currentFolderId !== "root" &&
-      !filesByFolder[currentFolderId] &&
+      (!filesByFolder[currentFolderId] || forceRefreshFiles) &&
       !adminMode
     ) {
+      console.log("📁 FETCH: Fetching files for folder (user mode):", currentFolderId, "Force:", forceRefreshFiles);
       fetchFiles(currentFolderId);
     } else if (
       currentFolderId !== "root" &&
-      !filesByFolder[currentFolderId] &&
+      (!filesByFolder[currentFolderId] || forceRefreshFiles) &&
       adminMode &&
       currentViewingUserId
     ) {
+      console.log("📁 FETCH: Fetching files for folder (admin mode):", currentFolderId, "Force:", forceRefreshFiles);
       fetchFiles(currentFolderId);
+    }
+
+    // Reset the force refresh flag after use
+    if (forceRefreshFiles) {
+      setForceRefreshFiles(false);
     }
 
     // Save current path (only for regular users)
@@ -281,6 +291,7 @@ const useCustomFileMap = () => {
     adminMode,
     currentViewingUserId,
     folderViewModes,
+    forceRefreshFiles,
   ]);
 
   // Handle admin mode toggle
@@ -305,8 +316,10 @@ const useCustomFileMap = () => {
   // Handle user selection in admin mode
   const handleSelectUser = async (user) => {
     try {
-      console.log("ammar", user);
+      console.log("👤 USER_SELECT: Selecting user:", user);
+      console.log("👤 USER_SELECT: Calling fetchUserFolders WITHOUT force flag");
       await fetchUserFolders(user._id);
+      console.log("👤 USER_SELECT: Completed fetchUserFolders for:", user.name);
       setCurrentFolderId("root");
       setCurrentFolderName(`${user.name}'s Media`);
       setShowAdminView(false);
@@ -338,36 +351,70 @@ const useCustomFileMap = () => {
     );
   };
 
-  // Build folder hierarchy with proper nesting
+  // Build folder hierarchy using the pre-built children arrays from backend
   const buildFolderHierarchy = useCallback((folders) => {
+    console.log("🏗️ HIERARCHY: Building folder hierarchy with", folders.length, "folders");
+    console.log("🏗️ HIERARCHY: Using backend children arrays instead of parentId relationships");
+    console.log("🏗️ HIERARCHY: Input folders detailed:", JSON.stringify(folders.map(f => ({
+      name: f.name,
+      id: f._id,
+      children: f.children?.map(c => ({ name: c.name, id: c._id })) || []
+    })), null, 2));
+
     const folderMap = new Map();
     const rootFolders = [];
 
-    // Create folder map with hierarchy info
-    folders.forEach((folder) => {
-      folderMap.set(folder._id, {
-        ...folder,
-        children: [],
-        depth: folder.depth || 0,
-      });
-    });
+    // Recursive function to add folders and their children to the map
+    const addFolderToMap = (folder, depth = 0) => {
+      const stringId = String(folder._id);
+      console.log(`🏗️ HIERARCHY: Adding folder to map: ${folder.name} (${stringId}) depth: ${depth}`);
 
-    // Build parent-child relationships
+      const folderData = {
+        ...folder,
+        children: folder.children || [],
+        depth: depth,
+      };
+
+      folderMap.set(stringId, folderData);
+
+      // Recursively add children
+      if (folder.children && folder.children.length > 0) {
+        console.log(`🏗️ HIERARCHY: ${folder.name} has ${folder.children.length} children:`, folder.children.map(c => c.name));
+        folder.children.forEach(child => {
+          addFolderToMap(child, depth + 1);
+        });
+      }
+
+      return folderData;
+    };
+
+    // Process top-level folders and their children recursively
     folders.forEach((folder) => {
-      const folderData = folderMap.get(folder._id);
-      if (folder.parentId && folderMap.has(folder.parentId)) {
-        const parent = folderMap.get(folder.parentId);
-        parent.children.push(folderData);
-      } else {
+      if (!folder.parentId) { // Root level folders
+        const folderData = addFolderToMap(folder, 0);
         rootFolders.push(folderData);
       }
     });
+
+    console.log("🏗️ HIERARCHY: FolderMap keys:", Array.from(folderMap.keys()));
+    console.log("🏗️ HIERARCHY: Final root folders:", rootFolders.map(f => f.name));
+    console.log("🏗️ HIERARCHY: All folders in map:", Array.from(folderMap.values()).map(f => ({
+      name: f.name,
+      id: f._id,
+      depth: f.depth,
+      childrenCount: f.children?.length || 0,
+      childrenNames: f.children?.map(c => c.name) || []
+    })));
 
     return { folderMap, rootFolders };
   }, []);
 
   // Convert context data to Chonky file map format with hierarchy
   const fileMap = useMemo(() => {
+    console.log("📊 FILEMAP: Creating fileMap, folders data:", folders);
+    console.log("📊 FILEMAP: Folders count:", folders?.length || 0);
+    console.log("📊 FILEMAP: AdminMode:", adminMode, "ShowAdminView:", showAdminView, "CurrentViewingUserId:", currentViewingUserId);
+
     // Don't show file map when in admin users view
     if (showAdminView) {
       return {
@@ -386,7 +433,14 @@ const useCustomFileMap = () => {
 
     const { folderMap, rootFolders } = buildFolderHierarchy(folders);
 
-    console.log("Folder Map:", userInfo, currentFolderName);
+    console.log("🗂️ FILEMAP: Starting fileMap creation");
+    console.log("🗂️ FILEMAP: Admin mode:", adminMode, "Viewing user:", currentViewingUserId);
+    console.log("🗂️ FILEMAP: Show admin view:", showAdminView);
+    console.log("🗂️ FILEMAP: Folders available:", folders.length);
+    console.log("🗂️ FILEMAP: Root folders:", rootFolders.length);
+    console.log("🗂️ FILEMAP: filesByFolder content:", filesByFolder);
+    console.log("🗂️ FILEMAP: filesByFolder keys:", Object.keys(filesByFolder));
+
     const newFileMap = {
       root: {
         id: "root",
@@ -402,13 +456,17 @@ const useCustomFileMap = () => {
     };
 
     // Add all folders to file map with proper parent-child relationships
+    console.log("🗂️ FILEMAP: Processing folderMap entries:", folderMap.size);
+    console.log("🗂️ FILEMAP: filesByFolder data:", filesByFolder);
     folderMap.forEach((folder, folderId) => {
       const childFiles = filesByFolder[folderId] || [];
 
-      // Get immediate child folders (direct children only)
-      const immediateChildFolders = folders.filter(
-        (f) => f.parentId === folderId
-      );
+      // Use the children array from the folder data (these are sub-folders)
+      const childFolders = folder.children || [];
+
+      console.log(`🗂️ FILEMAP: Processing folder ${folder.name} (${folderId}):`);
+      console.log(`  - Child files from filesByFolder: ${childFiles.length}`);
+      console.log(`  - Child folders from hierarchy: ${childFolders.length}`, childFolders.map(f => f.name));
 
       newFileMap[folderId] = {
         id: folderId,
@@ -416,8 +474,8 @@ const useCustomFileMap = () => {
         isDir: true,
         parentId: folder.parentId || "root",
         childrenIds: [
-          ...immediateChildFolders.map((f) => f._id),
-          ...childFiles.map((f) => f._id),
+          ...childFolders.map((f) => f._id), // Child folders from hierarchy
+          ...childFiles.map((f) => f._id),   // Child files from filesByFolder
         ],
         mediaType: folder.mediaType,
         createdAt: folder.createdAt,
@@ -431,11 +489,24 @@ const useCustomFileMap = () => {
 
     // Add files to file map for all cached folders
     Object.entries(filesByFolder).forEach(([folderId, files]) => {
+      console.log(`🗂️ FILEMAP: Adding files for folder ${folderId}:`, files);
       files.forEach((file) => {
+        console.log(`🗂️ FILEMAP: Processing file/item:`, {
+          id: file._id,
+          name: file.originalName || file.filename,
+          type: file.type,
+          mediaType: file.mediaType,
+          isFolder: file.isFolder,
+          fullItem: file
+        });
+
+        // Check if this is actually a folder that's being treated as a file
+        const isActuallyFolder = file.type === 'folder' || file.isFolder === true || file.mediaType === 'folder';
+
         newFileMap[file._id] = {
           id: file._id,
           name: file.originalName || file.filename,
-          isDir: false,
+          isDir: isActuallyFolder, // Use the correct folder detection
           parentId: folderId,
           link: file.filelink,
           mediaType: file.mediaType,
@@ -443,10 +514,17 @@ const useCustomFileMap = () => {
           createdAt: file.createdAt,
           filename: file.filename,
           size: file.size,
-          draggable: true,
-          droppable: false,
+          draggable: !isActuallyFolder,
+          droppable: isActuallyFolder,
         };
       });
+    });
+
+    console.log("🗂️ FILEMAP: Final fileMap structure:");
+    Object.entries(newFileMap).forEach(([id, item]) => {
+      if (item.isDir) {
+        console.log(`  📁 ${item.name} (${id}): ${item.childrenIds?.length || 0} children`, item.childrenIds);
+      }
     });
 
     return newFileMap;
@@ -479,29 +557,72 @@ const useCustomFileMap = () => {
     [fileMap]
   );
 
-  // Refresh data when needed (force refetch)
+  // Simple refresh - calls API exactly like initial user selection (no force flag for user folders)
   const refreshData = useCallback(async () => {
+    console.log("🔄 REFRESH: Starting simple refresh...");
+
+    // Clear clipboard and cache
+    clearClipboard();
+    clearFilesByFolderCache(); // Clear files cache to force fresh fetch
+
+    // Reset navigation to root
+    setCurrentFolderId("root");
+    setLastViewedPath("root");
+
     if (adminMode && !currentViewingUserId) {
+      // In admin users overview mode - refresh users data
+      setCurrentFolderName("Admin - Users Overview");
+      setShowAdminView(true);
       await fetchAllUsersData(true);
+      console.log("🔄 REFRESH: Refreshed all users data");
     } else if (adminMode && currentViewingUserId) {
-      await fetchUserFolders(currentViewingUserId, true);
-      if (currentFolderId !== "root") {
-        await fetchFiles(currentFolderId, true);
+      // Viewing a specific user - refresh exactly like initial selection
+      const currentUser = usersData?.find(user => user._id === currentViewingUserId);
+
+      // First refresh users data to get fresh user list
+      await fetchAllUsersData(true);
+      console.log("🔄 REFRESH: Refreshed users data");
+
+      // Then call fetchUserFolders WITHOUT force flag (same as initial selection)
+      console.log("🔄 REFRESH: Calling fetchUserFolders WITHOUT force flag (same as handleSelectUser)");
+      await fetchUserFolders(currentViewingUserId);
+      console.log("🔄 REFRESH: Completed fetchUserFolders");
+
+      if (currentUser) {
+        setCurrentFolderName(`${currentUser.name}'s Media`);
+      } else {
+        setCurrentFolderName("User's Media");
       }
+      setShowAdminView(false);
     } else {
+      // Normal user mode - refresh own folders
+      setCurrentFolderName("Media Manager");
+      setShowAdminView(false);
       await fetchFolders(true);
-      if (currentFolderId !== "root") {
-        await fetchFiles(currentFolderId, true);
-      }
+      console.log("🔄 REFRESH: Refreshed own folders");
     }
+
+    // Clear localStorage cache
+    localStorage.removeItem("mediaManager_lastPath");
+
+    // Set flag to force fresh file fetching when navigating to folders
+    setForceRefreshFiles(true);
+    console.log("🔄 REFRESH: Set forceRefreshFiles flag - next folder navigation will fetch fresh data");
+
+    console.log("🔄 REFRESH: Simple refresh completed");
   }, [
-    fetchFolders,
-    fetchFiles,
-    fetchAllUsersData,
-    fetchUserFolders,
-    currentFolderId,
     adminMode,
     currentViewingUserId,
+    usersData,
+    fetchAllUsersData,
+    fetchUserFolders,
+    fetchFolders,
+    clearClipboard,
+    clearFilesByFolderCache,
+    setCurrentFolderId,
+    setCurrentFolderName,
+    setLastViewedPath,
+    setShowAdminView
   ]);
 
   return {
@@ -542,14 +663,24 @@ const useCustomFileMap = () => {
 
 export const useFiles = (fileMap, currentFolderId) => {
   return useMemo(() => {
+    console.log("🗂️ FILES: Building files list for folder:", currentFolderId);
     const currentFolder = fileMap[currentFolderId];
-    if (!currentFolder) return [];
+    if (!currentFolder) {
+      console.log("🗂️ FILES: No current folder found");
+      return [];
+    }
 
+    console.log("🗂️ FILES: Current folder:", currentFolder.name, "Children:", currentFolder.childrenIds?.length || 0);
     const childrenIds = currentFolder.childrenIds || [];
-    const files = childrenIds.map((fileId) => fileMap[fileId]).filter(Boolean);
+    let files = childrenIds.map((fileId) => fileMap[fileId]).filter(Boolean);
 
-    // Sort: folders first, then files, both alphabetically
+    // Parent folder navigation removed as requested
+
+    console.log("🗂️ FILES: Final files list:", files.map(f => ({ name: f.name, isDir: f.isDir, isParentDir: f.isParentDir })));
+
+    // Sort: folders first, then files, all alphabetically
     return files.sort((a, b) => {
+      // Folders vs files
       if (a.isDir !== b.isDir) {
         return a.isDir ? -1 : 1;
       }
@@ -729,7 +860,8 @@ export const useFileActionHandler = (
   cutFilesToClipboard,
   pasteFilesFromClipboard,
   clearClipboard,
-  currentFolderId
+  currentFolderId,
+  fileMap
 ) => {
   const { deleteMediaFile, deleteMediaFolder, updateMediaFile } =
     useMediaManager();
@@ -906,6 +1038,19 @@ export const useFileActionHandler = (
         const fileToOpen = targetFile ?? files[0];
 
         if (fileToOpen && FileHelper.isDirectory(fileToOpen)) {
+          console.log("🗂️ NAVIGATION: Opening folder:", fileToOpen.name, "ID:", fileToOpen.id, "isParentDir:", fileToOpen.isParentDir);
+
+          // Handle parent folder navigation
+          if (fileToOpen.isParentDir) {
+            const parentFolder = fileMap[fileToOpen.id];
+            console.log("🗂️ NAVIGATION: Going to parent folder:", parentFolder ? parentFolder.name : "Media Manager");
+            setCurrentFolderId(fileToOpen.id);
+            setCurrentFolderName(parentFolder ? parentFolder.name : "Media Manager");
+            return;
+          }
+
+          // Handle regular folder navigation
+          console.log("🗂️ NAVIGATION: Entering folder:", fileToOpen.name);
           setCurrentFolderId(fileToOpen.id);
           setCurrentFolderName(fileToOpen.name);
           return;
@@ -1335,7 +1480,8 @@ export const VFSBrowser = React.memo((props) => {
     cutFilesToClipboard,
     pasteFilesFromClipboard,
     clearClipboard,
-    currentFolderId
+    currentFolderId,
+    fileMap
   );
 
   // Enhanced file actions with depth-aware logic and drag and drop
@@ -1514,8 +1660,9 @@ export const VFSBrowser = React.memo((props) => {
             size="small"
             onClick={refreshData}
             loading={loading}
+            title="Refresh all data and reset to root folder"
           >
-            Refresh
+            🔄 Refresh All
           </Button>
         </div>
       </Card>
