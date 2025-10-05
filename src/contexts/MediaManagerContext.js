@@ -14,6 +14,7 @@ import {
   moveMediaFileS,
   copyMediaFile,
   searchMediaFiles, // New search function for admin
+  searchMyMediaFiles, // New search function for regular users
 } from "../services/mediaManager";
 import { notification } from "antd";
 import { userInfoContext } from "./UserStore";
@@ -121,12 +122,31 @@ export const MediaManagerProvider = ({ children }) => {
         throw new Error("Admin access required");
       }
 
+      // Helper to flatten hierarchy into flat array
+      const flattenFolders = (folders) => {
+        const flat = [];
+        const traverse = (folder) => {
+          // Add folder without children property (will be rebuilt)
+          const { children, ...folderWithoutChildren } = folder;
+          flat.push(folderWithoutChildren);
+          // Recursively traverse children
+          if (children && children.length > 0) {
+            children.forEach(traverse);
+          }
+        };
+        folders.forEach(traverse);
+        return flat;
+      };
+
       // Check if we already have this user's folders cached
       const existingUserData = usersData.find((u) => u.user._id === userId);
       if (existingUserData && existingUserData.folders && !force) {
-        setFolders(existingUserData.folders);
+        // Flatten the hierarchical folders into a flat array
+        const flatFolders = flattenFolders(existingUserData.folders);
+        console.log('📁 ADMIN: Using cached folders, flattened count:', flatFolders.length);
+        setFolders(flatFolders);
         setCurrentViewingUserId(userId);
-        return existingUserData.folders;
+        return flatFolders;
       }
 
       setLoadingFolders(true);
