@@ -278,6 +278,34 @@ export function copyMediaFile(fileId, fromFolderId, toFolderId) {
     });
 }
 
+// --- Search user's own media files and folders ---
+export function searchMyMediaFiles(searchParams) {
+  const { filename, mediaType } = searchParams;
+
+  // Build query parameters
+  const queryParams = new URLSearchParams();
+
+  if (filename && filename.trim()) {
+    queryParams.append('filename', filename.trim());
+  }
+
+  if (mediaType && mediaType !== 'all') {
+    queryParams.append('mediaType', mediaType);
+  }
+
+  return axios
+    .get(`${process.env.REACT_APP_SERVER}/api/media/search/my-files?${queryParams.toString()}`)
+    .then((res) => res.data)
+    .catch((err) => {
+      openNotificationWithIcon(
+        "error",
+        "Search failed",
+        err?.response?.data?.message || "Unable to search files"
+      );
+      throw err;
+    });
+}
+
 // --- Search media files (admin only) ---
 export function searchMediaFiles(searchParams) {
   const { filename, userId, mediaType, page = 1, limit = 20 } = searchParams;

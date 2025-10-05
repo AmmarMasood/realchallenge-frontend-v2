@@ -72,22 +72,31 @@ const AdminUsersView = ({ onSelectUser, usersData, loading }) => {
   };
 
   const buildUserFolderTree = (folders) => {
-    return folders.map((folder) => (
-      <div key={folder._id} style={{ marginBottom: "4px" }}>
-        <Space size="small">
-          <FolderOutlined style={{ color: "#1890ff" }} />
-          <Text>{folder.name}</Text>
-          <Tag color={getMediaTypeColor(folder.mediaType)} size="small">
-            {folder.mediaType}
-          </Tag>
-        </Space>
-        {folder.children && folder.children.length > 0 && (
-          <div style={{ marginLeft: "20px", marginTop: "4px" }}>
-            {buildUserFolderTree(folder.children)}
-          </div>
-        )}
-      </div>
-    ));
+    console.log("🌳 Building folder tree, folders:", folders);
+    return folders.map((folder) => {
+      console.log(
+        "📁 Folder:",
+        folder.name,
+        "has children:",
+        folder.children?.length || 0
+      );
+      return (
+        <div key={folder._id} style={{ marginBottom: "4px" }}>
+          <Space size="small">
+            <FolderOutlined style={{ color: "#1890ff" }} />
+            <Text>{folder.name}</Text>
+            <Tag color={getMediaTypeColor(folder.mediaType)} size="small">
+              {folder.mediaType}
+            </Tag>
+          </Space>
+          {folder.children && folder.children.length > 0 && (
+            <div style={{ marginLeft: "20px", marginTop: "4px" }}>
+              {buildUserFolderTree(folder.children)}
+            </div>
+          )}
+        </div>
+      );
+    });
   };
 
   const columns = [
@@ -217,6 +226,10 @@ const useCustomFileMap = () => {
   const [currentViewMode, setCurrentViewMode] = useState("grid");
   const [adminActiveTab, setAdminActiveTab] = useState("users");
   const currentFolderIdRef = useRef(currentFolderId);
+
+  // Search state for Chonky's built-in search
+  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     setAuthToken(localStorage.getItem("jwtToken"));
@@ -363,7 +376,7 @@ const useCustomFileMap = () => {
     );
   };
 
-  // Build folder hierarchy using the pre-built children arrays from backend
+  // Build folder hierarchy - supports both pre-built children and parentId-based building
   const buildFolderHierarchy = useCallback((folders) => {
     console.log(
       "🏗️ HIERARCHY: Building folder hierarchy with",
@@ -371,14 +384,12 @@ const useCustomFileMap = () => {
       "folders"
     );
     console.log(
-      "🏗️ HIERARCHY: Using backend children arrays instead of parentId relationships"
-    );
-    console.log(
       "🏗️ HIERARCHY: Input folders detailed:",
       JSON.stringify(
         folders.map((f) => ({
           name: f.name,
           id: f._id,
+          parentId: f.parentId,
           children: f.children?.map((c) => ({ name: c.name, id: c._id })) || [],
         })),
         null,
@@ -389,41 +400,68 @@ const useCustomFileMap = () => {
     const folderMap = new Map();
     const rootFolders = [];
 
-    // Recursive function to add folders and their children to the map
-    const addFolderToMap = (folder, depth = 0) => {
+    // First pass: Add all folders to map with empty/existing children arrays
+    folders.forEach((folder) => {
       const stringId = String(folder._id);
-      console.log(
-        `🏗️ HIERARCHY: Adding folder to map: ${folder.name} (${stringId}) depth: ${depth}`
-      );
-
-      const folderData = {
+      folderMap.set(stringId, {
         ...folder,
-        children: folder.children || [],
-        depth: depth,
-      };
+        children: folder.children || [], // Preserve existing or create empty
+        depth: folder.depth || 0,
+      });
+    });
 
-      folderMap.set(stringId, folderData);
+    console.log("🏗️ HIERARCHY: First pass - Added all folders to map");
 
-      // Recursively add children
+    // Second pass: Build children arrays using parentId for folders without pre-built children
+    folders.forEach((folder) => {
+      if (folder.parentId) {
+        const parentId = String(folder.parentId);
+        const childId = String(folder._id);
+        const parent = folderMap.get(parentId);
+        const child = folderMap.get(childId);
+
+        if (parent && child) {
+          // Check if this folder already has pre-built children (admin mode)
+          const hasPrebuiltChildren =
+            folder.children && folder.children.length > 0;
+
+          // Only add if not already in children array
+          const childExists = parent.children.some(
+            (c) => String(c._id) === childId
+          );
+
+          if (!childExists) {
+            console.log(
+              `🏗️ HIERARCHY: Adding ${child.name} as child of ${parent.name}`
+            );
+            parent.children.push(child);
+          }
+        }
+      }
+    });
+
+    console.log(
+      "🏗️ HIERARCHY: Second pass - Built children arrays from parentId"
+    );
+
+    // Third pass: Recursively process folders to set proper depth
+    const setDepthRecursively = (folder, depth = 0) => {
+      folder.depth = depth;
       if (folder.children && folder.children.length > 0) {
-        console.log(
-          `🏗️ HIERARCHY: ${folder.name} has ${folder.children.length} children:`,
-          folder.children.map((c) => c.name)
-        );
         folder.children.forEach((child) => {
-          addFolderToMap(child, depth + 1);
+          setDepthRecursively(child, depth + 1);
         });
       }
-
-      return folderData;
     };
 
-    // Process top-level folders and their children recursively
+    // Fourth pass: Collect root folders and set depths
     folders.forEach((folder) => {
       if (!folder.parentId) {
-        // Root level folders
-        const folderData = addFolderToMap(folder, 0);
-        rootFolders.push(folderData);
+        const rootFolder = folderMap.get(String(folder._id));
+        if (rootFolder) {
+          setDepthRecursively(rootFolder, 0);
+          rootFolders.push(rootFolder);
+        }
       }
     });
 
@@ -729,8 +767,9 @@ const useCustomFileMap = () => {
   };
 };
 
-export const useFiles = (fileMap, currentFolderId) => {
+export const useFiles = (fileMap, currentFolderId, allSearchableItems = []) => {
   return useMemo(() => {
+    // Build current folder's children
     console.log("🗂️ FILES: Building files list for folder:", currentFolderId);
     const currentFolder = fileMap[currentFolderId];
     if (!currentFolder) {
@@ -747,14 +786,11 @@ export const useFiles = (fileMap, currentFolderId) => {
     const childrenIds = currentFolder.childrenIds || [];
     let files = childrenIds.map((fileId) => fileMap[fileId]).filter(Boolean);
 
-    // Parent folder navigation removed as requested
-
     console.log(
-      "🗂️ FILES: Final files list:",
+      "🗂️ FILES: Final files list (current folder only):",
       files.map((f) => ({
         name: f.name,
         isDir: f.isDir,
-        isParentDir: f.isParentDir,
       }))
     );
 
@@ -795,19 +831,52 @@ export const useFolderChain = (fileMap, currentFolderId) => {
 const PreviewModal = ({ visible, onClose, file }) => {
   const [loading, setLoading] = useState(true);
 
+  console.log("ammar", file);
   if (!visible || !file) return null;
 
-  const isVideo =
-    file.mediaType === "video" ||
-    ["mp4", "mov", "avi", "mkv", "webm", "flv", "wmv", "m4v", "mpg"].includes(
-      file.name.split(".").pop()?.toLowerCase() || ""
-    );
+  // Helper function to check if URL is a video link
+  const isVideoUrl = (url) => {
+    if (!url) return false;
+    const videoExtensions = ["mp4", "mov", "avi", "mkv", "webm", "flv", "wmv", "m4v", "mpg"];
+    try {
+      const urlPath = new URL(url).pathname.toLowerCase();
+      return videoExtensions.some(ext => urlPath.endsWith(`.${ext}`));
+    } catch {
+      // If URL parsing fails, check as string
+      const lowerUrl = url.toLowerCase();
+      return videoExtensions.some(ext => lowerUrl.includes(`.${ext}`));
+    }
+  };
 
-  const isImage =
-    file.mediaType === "picture" ||
-    ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff"].includes(
+  // Helper function to check if URL is an image link
+  const isImageUrl = (url) => {
+    if (!url) return false;
+    const imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff"];
+    try {
+      const urlPath = new URL(url).pathname.toLowerCase();
+      return imageExtensions.some(ext => urlPath.endsWith(`.${ext}`));
+    } catch {
+      // If URL parsing fails, check as string
+      const lowerUrl = url.toLowerCase();
+      return imageExtensions.some(ext => lowerUrl.includes(`.${ext}`));
+    }
+  };
+
+  // Check video: first by link URL, then by mediaType, finally by filename extension
+  const isVideo =
+    isVideoUrl(file.link) ||
+    file.mediaType === "video" ||
+    (file.name && ["mp4", "mov", "avi", "mkv", "webm", "flv", "wmv", "m4v", "mpg"].includes(
       file.name.split(".").pop()?.toLowerCase() || ""
-    );
+    ));
+
+  // Check image: first by link URL, then by mediaType, finally by filename extension
+  const isImage =
+    isImageUrl(file.link) ||
+    file.mediaType === "picture" ||
+    (file.name && ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff"].includes(
+      file.name.split(".").pop()?.toLowerCase() || ""
+    ));
 
   return (
     <ReactModal
@@ -941,7 +1010,8 @@ export const useFileActionHandler = (
   pasteFilesFromClipboard,
   clearClipboard,
   currentFolderId,
-  fileMap
+  fileMap,
+  setSearchMode
 ) => {
   const { deleteMediaFile, deleteMediaFolder, updateMediaFile } =
     useMediaManager();
@@ -982,7 +1052,12 @@ export const useFileActionHandler = (
   // Handle file preview in popup
   const handlePreviewFile = useCallback(
     (file) => {
+      console.log("🎬 Preview file clicked:", file);
+      console.log("🎬 File link:", file?.link);
+      console.log("🎬 File properties:", Object.keys(file || {}));
+
       if (!file || !file.link) {
+        console.error("🎬 Preview failed - no file link:", file);
         message.error("File link not available");
         return;
       }
@@ -1126,6 +1201,11 @@ export const useFileActionHandler = (
             "isParentDir:",
             fileToOpen.isParentDir
           );
+
+          // Disable search mode when entering a folder
+          if (setSearchMode) {
+            setSearchMode(false);
+          }
 
           // Handle parent folder navigation
           if (fileToOpen.isParentDir) {
@@ -1504,6 +1584,9 @@ const RenameModal = ({ visible, onClose, onSuccess, target, isNameUnique }) => {
 
 // Enhanced VFSBrowser with admin support
 export const VFSBrowser = React.memo((props) => {
+  // Search mode toggle - enables searching across all folders and files
+  const [searchMode, setSearchMode] = useState(false);
+
   const [openUploadModal, setOpenUploadModal] = useState(false);
   const [openCreateFolderModal, setOpenCreateFolderModal] = useState(false);
   const [openRenameModal, setOpenRenameModal] = useState(false);
@@ -1547,6 +1630,136 @@ export const VFSBrowser = React.memo((props) => {
 
   const files = useFiles(fileMap, currentFolderId);
   const folderChain = useFolderChain(fileMap, currentFolderId);
+
+  // When search mode is enabled, redirect to root folder
+  useEffect(() => {
+    if (searchMode && currentFolderId !== "root") {
+      setCurrentFolderId("root");
+      setCurrentFolderName(
+        adminMode && currentViewingUserId ? "User's Media" : "Media Manager"
+      );
+    }
+  }, [
+    searchMode,
+    currentFolderId,
+    adminMode,
+    currentViewingUserId,
+    setCurrentFolderId,
+    setCurrentFolderName,
+  ]);
+
+  // State for all searchable files (fetched from backend when search mode is enabled)
+  const [allSearchableItems, setAllSearchableItems] = useState([]);
+
+  // Fetch all searchable files and folders when search mode is enabled
+  useEffect(() => {
+    const fetchAllSearchableItems = async () => {
+      if (!searchMode || showAdminView) {
+        // Clear items when search mode is disabled
+        setAllSearchableItems([]);
+        return;
+      }
+
+      try {
+        console.log("🔍 SEARCH: Fetching all searchable items from backend");
+
+        let result;
+
+        // If admin viewing specific user, use admin search API with userId
+        if (adminMode && currentViewingUserId) {
+          const { searchMediaFiles } = await import(
+            "../../../services/mediaManager"
+          );
+          result = await searchMediaFiles({
+            userId: currentViewingUserId,
+            page: 1,
+            limit: 10000, // Get all items
+          });
+        } else {
+          // Regular user or admin in their own view
+          const { searchMyMediaFiles } = await import(
+            "../../../services/mediaManager"
+          );
+          result = await searchMyMediaFiles({});
+        }
+
+        console.log("🔍 SEARCH: Backend returned:", result);
+
+        const searchableFiles = [];
+
+        // Add folders with display names
+        result.folders?.forEach((folder) => {
+          searchableFiles.push({
+            id: folder._id,
+            _id: folder._id,
+            name: folder.name,
+            isDir: true,
+            parentId: folder.parentId,
+            mediaType: folder.mediaType,
+            createdAt: folder.createdAt,
+            depth: folder.depth,
+            searchPath: folder.folderPath,
+            displayName: folder.folderPath
+              ? `${folder.name} (in ${folder.folderPath})`
+              : folder.name,
+          });
+        });
+
+        // Add files with display names
+        result.files?.forEach((file) => {
+          searchableFiles.push({
+            id: file._id,
+            _id: file._id,
+            name: file.originalName,
+            isDir: false,
+            parentId: file.folderId,
+            link: file.filelink,
+            mediaType: file.mediaType,
+            thumbnailUrl: file.thumbnailUrl,
+            createdAt: file.createdAt,
+            filename: file.filename,
+            size: file.size,
+            searchPath: file.folderPath,
+            displayName: file.folderPath
+              ? `${file.originalName} (in ${file.folderPath})`
+              : file.originalName,
+          });
+        });
+
+        console.log(
+          `🔍 SEARCH: Processed ${searchableFiles.length} searchable items`
+        );
+        setAllSearchableItems(searchableFiles);
+      } catch (error) {
+        console.error("🔍 SEARCH: Error fetching searchable items:", error);
+      }
+    };
+
+    fetchAllSearchableItems();
+  }, [searchMode, showAdminView, adminMode, currentViewingUserId]);
+
+  // Combine files based on search mode
+  const filesForBrowser = useMemo(() => {
+    if (!searchMode) {
+      // When NOT in search mode, only show current folder files
+      return files;
+    }
+
+    // When in search mode, combine current folder files with all searchable items
+    const combinedFiles = [...files];
+    const existingIds = new Set(files.map((f) => f.id));
+
+    allSearchableItems.forEach((item) => {
+      if (!existingIds.has(item.id)) {
+        combinedFiles.push({
+          ...item,
+          name: item.displayName || item.name,
+        });
+      }
+    });
+
+    return combinedFiles;
+  }, [files, allSearchableItems, searchMode]);
   const mediaActions = props.actions;
   const mediaType = props.mediaType;
   const setRemoteMediaManagerVisible = props.setRemoteMediaManagerVisible;
@@ -1573,7 +1786,8 @@ export const VFSBrowser = React.memo((props) => {
     pasteFilesFromClipboard,
     clearClipboard,
     currentFolderId,
-    fileMap
+    fileMap,
+    setSearchMode
   );
 
   // Enhanced file actions with depth-aware logic and drag and drop
@@ -1615,6 +1829,20 @@ export const VFSBrowser = React.memo((props) => {
 
       if (canCreateSubfolder) {
         actions.push(ChonkyActions.CreateFolder);
+      }
+
+      // Add preview action for search mode (when at root but showing files)
+      if (searchMode) {
+        actions.push({
+          id: "preview_file",
+          button: {
+            name: "Preview",
+            toolbar: false,
+            contextMenu: true,
+            group: "Actions",
+          },
+          fileFilter: (file) => !file.isDir, // Only show for files, not folders
+        });
       }
     } else {
       // Inside folder actions
@@ -1694,6 +1922,7 @@ export const VFSBrowser = React.memo((props) => {
     adminMode,
     currentViewMode,
     clipboardFiles,
+    searchMode,
   ]);
 
   const thumbnailGenerator = useCallback(
@@ -1747,15 +1976,73 @@ export const VFSBrowser = React.memo((props) => {
             )}
           </Space>
 
-          <Button
-            type="primary"
-            size="small"
-            onClick={refreshData}
-            loading={loading}
-            title="Refresh all data and reset to root folder"
-          >
-            🔄 Refresh All
-          </Button>
+          <Space>
+            {!showAdminView && (
+              <Tooltip
+                title={
+                  searchMode
+                    ? "Exit search mode to browse folders normally"
+                    : "Enable search mode to search across all folders and files"
+                }
+              >
+                <Space>
+                  <Text>Search Mode:</Text>
+                  <Switch
+                    checked={searchMode}
+                    onChange={(checked) => setSearchMode(checked)}
+                    checkedChildren="ON"
+                    unCheckedChildren="OFF"
+                  />
+                </Space>
+              </Tooltip>
+            )}
+            <Button
+              type="primary"
+              size="small"
+              onClick={refreshData}
+              loading={loading}
+              title="Refresh all data and reset to root folder"
+            >
+              🔄 Refresh All
+            </Button>
+          </Space>
+        </div>
+      </Card>
+    );
+  };
+
+  // User header component (for non-admin users)
+  const UserHeader = () => {
+    return (
+      <Card size="small" style={{ marginBottom: "16px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Text strong>Media Manager</Text>
+
+          <Space>
+            <Tooltip
+              title={
+                searchMode
+                  ? "Exit search mode to browse folders normally"
+                  : "Enable search mode to search across all folders and files"
+              }
+            >
+              <Space>
+                <Text>Search Mode:</Text>
+                <Switch
+                  checked={searchMode}
+                  onChange={(checked) => setSearchMode(checked)}
+                  checkedChildren="ON"
+                  unCheckedChildren="OFF"
+                />
+              </Space>
+            </Tooltip>
+          </Space>
         </div>
       </Card>
     );
@@ -1788,46 +2075,65 @@ export const VFSBrowser = React.memo((props) => {
 
   return (
     <>
-      <div style={{ height: "100vh", position: "relative" }}>
-        {/* Admin Header */}
-        {isAdmin && <AdminHeader />}
+      <div
+        style={{
+          height: "100%",
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Header - Admin or User */}
+        {isAdmin ? <AdminHeader /> : <UserHeader />}
 
         {/* Show admin tabs view */}
         {showAdminView ? (
-          <Tabs
-            activeKey={adminActiveTab}
-            onChange={setAdminActiveTab}
-            style={{ minHeight: "60vh", color: "#fff" }}
-          >
-            <TabPane
-              tab={
-                <span>
-                  <UserOutlined />
-                  Users & Folders
-                </span>
-              }
-              key="users"
+          <div style={{ flex: 1, overflow: "auto" }}>
+            <Tabs
+              activeKey={adminActiveTab}
+              onChange={setAdminActiveTab}
+              style={{ height: "100%", color: "#fff" }}
             >
-              <AdminUsersView
-                onSelectUser={handleSelectUser}
-                usersData={usersData}
-                loading={loading}
-              />
-            </TabPane>
-            <TabPane
-              tab={
-                <span>
-                  <SearchOutlined />
-                  Search Files
-                </span>
-              }
-              key="search"
-            >
-              <AdminSearchPanel />
-            </TabPane>
-          </Tabs>
+              <TabPane
+                tab={
+                  <span>
+                    <UserOutlined />
+                    Users & Folders
+                  </span>
+                }
+                key="users"
+              >
+                <AdminUsersView
+                  onSelectUser={handleSelectUser}
+                  usersData={usersData}
+                  loading={loading}
+                />
+                {usersData &&
+                  usersData.length > 0 &&
+                  console.log("👥 Admin usersData:", usersData)}
+              </TabPane>
+              <TabPane
+                tab={
+                  <span>
+                    <SearchOutlined />
+                    Search Files
+                  </span>
+                }
+                key="search"
+              >
+                <AdminSearchPanel />
+              </TabPane>
+            </Tabs>
+          </div>
         ) : (
-          <>
+          <div
+            style={{
+              flex: 1,
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             {/* Back to Root Navigation */}
             <BackToRootNavigation />
 
@@ -1869,18 +2175,20 @@ export const VFSBrowser = React.memo((props) => {
               </div>
             )}
 
-            <FullFileBrowser
-              files={files}
-              folderChain={folderChain}
-              fileActions={fileActions}
-              onFileAction={handleFileAction}
-              thumbnailGenerator={thumbnailGenerator}
-              disableSelection={loading}
-              disableToolbar={false}
-              disableDefaultFileActions={true}
-              {...props}
-            />
-          </>
+            <div style={{ flex: 1, overflow: "auto" }}>
+              <FullFileBrowser
+                files={filesForBrowser}
+                folderChain={folderChain}
+                fileActions={fileActions}
+                onFileAction={handleFileAction}
+                thumbnailGenerator={thumbnailGenerator}
+                disableSelection={loading}
+                disableToolbar={false}
+                disableDefaultFileActions={true}
+                {...props}
+              />
+            </div>
+          </div>
         )}
       </div>
 

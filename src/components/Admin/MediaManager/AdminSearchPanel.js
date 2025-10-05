@@ -15,6 +15,7 @@ import {
   Tooltip,
   Empty,
   Spin,
+  notification,
 } from "antd";
 import {
   SearchOutlined,
@@ -112,10 +113,38 @@ const AdminSearchPanel = () => {
 
   // Handle file preview
   const handlePreview = useCallback((file) => {
-    if (file && file.filelink) {
-      setPreviewFile(file);
-      setShowPreviewModal(true);
+    console.log('🎬 PREVIEW: File object received:', file);
+    console.log('🎬 PREVIEW: File properties:', Object.keys(file || {}));
+    console.log('🎬 PREVIEW: File.filelink:', file?.filelink);
+
+    if (!file) {
+      console.error('🎬 PREVIEW: No file object provided');
+      notification.error({
+        message: 'Preview Error',
+        description: 'No file selected for preview'
+      });
+      return;
     }
+
+    if (!file.filelink) {
+      console.error('🎬 PREVIEW: File has no filelink property');
+      console.error('🎬 PREVIEW: Available properties:', Object.keys(file));
+      notification.error({
+        message: 'Preview Error',
+        description: 'File link is not available. Please refresh and try again.'
+      });
+      return;
+    }
+
+    console.log('🎬 PREVIEW: Setting preview file and showing modal');
+    setPreviewFile(file);
+    setShowPreviewModal(true);
+
+    notification.success({
+      message: 'Opening Preview',
+      description: `Loading ${file.originalName || file.filename}...`,
+      duration: 2
+    });
   }, []);
 
   // Format file size
@@ -142,7 +171,19 @@ const AdminSearchPanel = () => {
   const PreviewModal = ({ visible, onClose, file }) => {
     const [loading, setLoading] = useState(true);
 
-    if (!visible || !file) return null;
+    console.log('🎬 MODAL: Preview modal render - visible:', visible, 'file:', file);
+
+    if (!visible || !file) {
+      console.log('🎬 MODAL: Not showing modal - visible:', visible, 'file exists:', !!file);
+      return null;
+    }
+
+    console.log('🎬 MODAL: File data:', {
+      filelink: file.filelink,
+      originalName: file.originalName,
+      filename: file.filename,
+      mediaType: file.mediaType
+    });
 
     const isVideo =
       file.mediaType === "video" ||
@@ -155,6 +196,8 @@ const AdminSearchPanel = () => {
       ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff"].includes(
         (file.originalName || file.filename)?.split(".").pop()?.toLowerCase() || ""
       );
+
+    console.log('🎬 MODAL: File type detection - isVideo:', isVideo, 'isImage:', isImage);
 
     return (
       <ReactModal
@@ -207,15 +250,34 @@ const AdminSearchPanel = () => {
             position: "relative",
           }}
         >
-          {isVideo ? (
+          {!file.filelink ? (
+            <div
+              style={{
+                color: "white",
+                textAlign: "center",
+                padding: "20px",
+              }}
+            >
+              <p style={{ color: "#ff4d4f" }}>File link not available</p>
+              <p style={{ fontSize: "12px", marginTop: "8px" }}>
+                The file link is missing. Please try refreshing or contact support.
+              </p>
+            </div>
+          ) : isVideo ? (
             <ReactPlayer
               url={file.filelink}
               controls={true}
               width="100%"
               height="auto"
               style={{ maxWidth: "100%", maxHeight: "70vh" }}
-              onReady={() => setLoading(false)}
-              onError={() => setLoading(false)}
+              onReady={() => {
+                console.log('🎬 MODAL: Video ready to play');
+                setLoading(false);
+              }}
+              onError={(error) => {
+                console.error('🎬 MODAL: Video load error:', error);
+                setLoading(false);
+              }}
             />
           ) : isImage ? (
             <>
@@ -239,8 +301,14 @@ const AdminSearchPanel = () => {
                   objectFit: "contain",
                   display: loading ? "none" : "block",
                 }}
-                onLoad={() => setLoading(false)}
-                onError={() => setLoading(false)}
+                onLoad={() => {
+                  console.log('🎬 MODAL: Image loaded successfully');
+                  setLoading(false);
+                }}
+                onError={(error) => {
+                  console.error('🎬 MODAL: Image load error:', error);
+                  setLoading(false);
+                }}
               />
             </>
           ) : (
@@ -252,14 +320,16 @@ const AdminSearchPanel = () => {
               }}
             >
               <p>Preview not available for this file type.</p>
-              <a
-                href={file.filelink}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#1890ff" }}
-              >
-                Open in new tab
-              </a>
+              {file.filelink && (
+                <a
+                  href={file.filelink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "#1890ff" }}
+                >
+                  Open in new tab
+                </a>
+              )}
             </div>
           )}
         </div>

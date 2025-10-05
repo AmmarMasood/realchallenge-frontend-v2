@@ -10,7 +10,13 @@ function MediaManager({ open, setOpen }) {
       onOk={() => setOpen(false)}
       onCancel={() => setOpen(false)}
       footer={null}
-      width={"100%"}
+      width="90vw"
+      centered
+      bodyStyle={{
+        height: "70vh",
+        overflow: "hidden",
+        // padding: 0,
+      }}
     >
       <VFSBrowser />
     </Modal>

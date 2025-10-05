@@ -14,7 +14,13 @@ function RemoteMediaManager({ visible, setVisible, type, actions }) {
       onOk={() => setVisible(false)}
       onCancel={() => setVisible(false)}
       footer={false}
-      width="80%"
+      width="90vw"
+      centered
+      bodyStyle={{
+        height: "70vh",
+        overflow: "hidden",
+        // padding: 0,
+      }}
     >
       <VFSBrowser
         actions={actions}
