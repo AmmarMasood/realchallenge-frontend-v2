@@ -242,7 +242,7 @@ function ChallengePlayer(props) {
       });
       setFinishWorkoutPopupVisible(true);
       updateTrackChallengeInBackend(
-        workout.exercises[currentExercise.index + 1],
+        currentExercise.exercise,
         0,
         true
       );

@@ -81,10 +81,11 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
           console.log("timer completed");
           setTimerVisible(false);
           setCurrentBreak(false);
-          
+
           if (isLastExercise) {
-            // Last exercise completed, keep video paused and show success popup
+            // Last exercise completed, update progress first then show success popup
             setPlayerState((prevState) => ({ ...prevState, playing: false }));
+            moveToNextExercise(); // This updates backend progress
             if (onWorkoutComplete) {
               setTimeout(() => {
                 onWorkoutComplete();

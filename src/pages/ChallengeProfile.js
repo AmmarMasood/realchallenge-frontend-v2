@@ -83,6 +83,7 @@ function ChallengeProfile(props) {
     }
 
     if (localStorage.getItem("jwtToken") && userInfo.id) {
+      console.log("yesssssss", userInfo);
       const uInfo = await getUserProfileInfo(userInfo.id);
       uInfo && setUserDetails(uInfo.customer);
       let check =

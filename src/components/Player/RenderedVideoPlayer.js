@@ -98,8 +98,9 @@ function RenderedVideoPlayer({
       } else {
         // No break time
         if (isCurrentlyLastExercise && onWorkoutComplete) {
-          // Last exercise with no break - keep paused and show success popup
+          // Last exercise with no break - update progress first, then show success popup
           setPlayerState((prev) => ({ ...prev, playing: false }));
+          moveToNextExercise(); // This updates backend progress
           setTimeout(() => {
             onWorkoutComplete();
           }, 100);

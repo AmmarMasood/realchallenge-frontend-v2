@@ -1,8 +1,10 @@
 import { useContext, useEffect, useState } from "react";
 import { Modal, Input, Select } from "antd";
+import { Link } from "react-router-dom";
 import "../Workout/ExerciseChooseModal/ExerciseChooseModal.css";
-import { EditFilled } from "@ant-design/icons";
+import { EditFilled, EyeOutlined } from "@ant-design/icons";
 import { userInfoContext } from "../../../../contexts/UserStore";
+import slug from "elegant-slug";
 
 function ModalForEditList({
   open,
@@ -18,17 +20,56 @@ function ModalForEditList({
   const [adminInfo, setAdminInfo] = useContext(userInfoContext);
   const [search, setSearch] = useState("");
   const [searchKey, setSearchKey] = useState(searchKeys[0]);
+  const [selectedTrainer, setSelectedTrainer] = useState("all");
 
-  // Filter data based on search and selected key
-  const filteredData = data.filter((d) =>
-    (d[searchKey] || "").toString().toLowerCase().includes(search.toLowerCase())
-  );
+  // Check if admin features should be shown
+  const isAdmin = adminInfo?.role === "admin";
+  const showAdminFeatures =
+    isAdmin && (type === "exercise" || type === "challenge");
+
+  // Get unique trainers for the filter dropdown
+  const uniqueTrainers = showAdminFeatures
+    ? Array.from(
+        new Map(
+          data
+            .filter((d) => d.trainer || d.user)
+            .map((d) => {
+              const trainer = d.trainer || d.user;
+              return [
+                trainer._id,
+                {
+                  _id: trainer._id,
+                  firstName: trainer.firstName,
+                  lastName: trainer.lastName,
+                },
+              ];
+            })
+        ).values()
+      )
+    : [];
+
+  // Filter data based on search, selected key, and trainer
+  const filteredData = data.filter((d) => {
+    const matchesSearch = (d[searchKey] || "")
+      .toString()
+      .toLowerCase()
+      .includes(search.toLowerCase());
+
+    const matchesTrainer =
+      !showAdminFeatures ||
+      selectedTrainer === "all" ||
+      (d.trainer && d.trainer._id === selectedTrainer) ||
+      (d.user && d.user._id === selectedTrainer);
+
+    return matchesSearch && matchesTrainer;
+  });
 
   useEffect(() => {
-    console.log(type, JSON.stringify(data));
+    console.log("test", type, JSON.stringify([data[0]]));
     // Reset search when modal opens
     if (open) {
       setSearch("");
+      setSelectedTrainer("all");
     }
   }, [open]);
 
@@ -48,14 +89,39 @@ function ModalForEditList({
         <h2 className="exercise-selector__title">{title}</h2>
       </div>
 
-      <Input
-        placeholder={searchPlaceholder}
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{ minWidth: 180, marginBottom: "10px" }}
-        allowClear
-      />
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+        }}
+      >
+        <Input
+          placeholder={searchPlaceholder}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ minWidth: 180, marginBottom: "10px", width: "100%" }}
+          allowClear
+        />
 
+        {showAdminFeatures && uniqueTrainers.length > 0 && (
+          <Select
+            placeholder="Filter by Trainer"
+            value={selectedTrainer}
+            onChange={setSelectedTrainer}
+            style={{ width: "150px", marginBottom: "10px" }}
+            allowClear
+            onClear={() => setSelectedTrainer("all")}
+          >
+            <Select.Option value="all">All Trainers</Select.Option>
+            {uniqueTrainers.map((trainer) => (
+              <Select.Option key={trainer._id} value={trainer._id}>
+                {trainer.firstName} {trainer.lastName}
+              </Select.Option>
+            ))}
+          </Select>
+        )}
+      </div>
       <div
         className="exercise-selector__list"
         style={{ maxHeight: "230px", overflowY: "auto" }}
@@ -74,27 +140,60 @@ function ModalForEditList({
                 alignItems: "center",
               }}
             >
-              <span
-                style={{
-                  fontWeight: 500,
-                  fontSize: "12px",
-                  lineHeight: "100%",
-                  letterSpacing: "0%",
-                  verticalAlign: "middle",
-                  color: "#465060",
-                }}
-              >
-                {subtext || "ID"}: {d._id}
-              </span>
+              <div style={{ flex: 1 }}>
+                <span
+                  style={{
+                    fontWeight: 500,
+                    fontSize: "12px",
+                    lineHeight: "100%",
+                    letterSpacing: "0%",
+                    verticalAlign: "middle",
+                    color: "#465060",
+                  }}
+                >
+                  {subtext || "ID"}: {d._id}
+                </span>
+                {showAdminFeatures && (d.trainer || d.user) && (
+                  <div
+                    style={{
+                      fontWeight: 400,
+                      fontSize: "11px",
+                      lineHeight: "140%",
+                      color: "#6B7280",
+                      marginTop: "4px",
+                    }}
+                  >
+                    Created by: {(d.trainer || d.user).firstName}{" "}
+                    {(d.trainer || d.user).lastName}
+                  </div>
+                )}
+              </div>
 
-              <EditFilled
-                style={{
-                  cursor: "pointer",
-                  color: "white",
-                  fontSize: "18px",
-                }}
-                onClick={() => onClickEdit(d._id)}
-              />
+              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                {isAdmin && type === "challenge" && (
+                  <Link
+                    to={`/challenge/${slug(d.challengeName)}/${d._id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <EyeOutlined
+                      style={{
+                        cursor: "pointer",
+                        color: "white",
+                        fontSize: "18px",
+                      }}
+                    />
+                  </Link>
+                )}
+                <EditFilled
+                  style={{
+                    cursor: "pointer",
+                    color: "white",
+                    fontSize: "18px",
+                  }}
+                  onClick={() => onClickEdit(d._id)}
+                />
+              </div>
             </div>
           </div>
         ))}

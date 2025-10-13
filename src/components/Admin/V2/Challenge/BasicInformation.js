@@ -199,7 +199,7 @@ function BasicInformation(props) {
   const fetchDataV2 = async () => {
     setLoading(true);
     // if user is trainer we need to get his info
-    if (userInfo.role === "trainer") {
+    if (userInfo.role === "trainer" || userInfo.role === "admin") {
       const uInfo = await getUserProfileInfo(userInfo.id);
       uInfo &&
         seletedTrainers.length <= 0 &&
