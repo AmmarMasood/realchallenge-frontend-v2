@@ -155,6 +155,16 @@ function RenderedVideoPlayer({
   // Check if current exercise is the last one
   const isLastExercise = workout?.exercises && currentExercise.index === workout.exercises.length - 1;
 
+  // Get next exercise for preloading during break
+  const nextExercise = workout?.exercises && currentExercise.index >= 0 && currentExercise.index < workout.exercises.length - 1
+    ? workout.exercises[currentExercise.index + 1]
+    : null;
+
+  // During break timer, preload next exercise video if it exists
+  const videoUrlToLoad = shouldShowTimer && nextExercise
+    ? (nextExercise.videoURL || "")
+    : (exercise?.videoURL || "");
+
   return (
     <div
       className="player-wrapper"
@@ -179,7 +189,7 @@ function RenderedVideoPlayer({
         muted={playerState.muted}
         loop={true}
         volume={playerState.volume}
-        url={exercise?.videoURL ? `${exercise.videoURL}` : ""}
+        url={videoUrlToLoad}
         progress={playerState.progress}
         onProgress={handleProgress}
         width="100%"
