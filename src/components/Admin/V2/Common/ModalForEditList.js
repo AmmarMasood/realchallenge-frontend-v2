@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Modal, Input, Select } from "antd";
 import "../Workout/ExerciseChooseModal/ExerciseChooseModal.css";
 import { EditFilled } from "@ant-design/icons";
+import { userInfoContext } from "../../../../contexts/UserStore";
 
 function ModalForEditList({
   open,
@@ -12,7 +13,9 @@ function ModalForEditList({
   subtext,
   searchPlaceholder = "Search",
   searchKeys = ["challengeName"], // default keys
+  type,
 }) {
+  const [adminInfo, setAdminInfo] = useContext(userInfoContext);
   const [search, setSearch] = useState("");
   const [searchKey, setSearchKey] = useState(searchKeys[0]);
 
@@ -22,6 +25,7 @@ function ModalForEditList({
   );
 
   useEffect(() => {
+    console.log(type, JSON.stringify(data));
     // Reset search when modal opens
     if (open) {
       setSearch("");

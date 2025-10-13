@@ -66,7 +66,7 @@ function AdminDashboard(props) {
   }
 
   const fetchChallenges = async () => {
-    const { challenges } = await getAllChallenges(language);
+    const { challenges } = await getAllUserChallenges(language);
     setAllChallenges(challenges);
   };
 
@@ -80,7 +80,7 @@ function AdminDashboard(props) {
     await fetchTrainerGoals();
     await fetchChallenges();
     await fetchExercises();
-    await fetchExercises();
+    // await fetchExercises();
     setTrainer(user);
     setLoading(false);
   }
@@ -335,23 +335,36 @@ function AdminDashboard(props) {
               style={{ cursor: "pointer" }}
               onClick={() => setOpenExerciseEditListModal(true)}
             >
-              <h1
-                style={{
-                  fontSize: "22px",
-                }}
-              >
-                <T>adminv2.my_exercises</T>
-              </h1>
+              {adminInfo.role === "admin" ? (
+                <h1
+                  style={{
+                    fontSize: "22px",
+                  }}
+                >
+                  All Exercises
+                </h1>
+              ) : (
+                <h1
+                  style={{
+                    fontSize: "22px",
+                  }}
+                >
+                  <T>adminv2.my_exercises</T>
+                </h1>
+              )}
             </div>
             <ModalForEditList
               data={exercises}
               open={openExerciseEditListModal}
               setOpen={setOpenExerciseEditListModal}
               onClickEdit={goToEditExercise}
-              title="My Exercises"
+              title={
+                adminInfo.role === "admin" ? "All Exercises" : "My Exercises"
+              }
               subtext="Exercise ID"
               searchPlaceholder="Search by exercise name"
               searchKeys={["title"]}
+              type={"exercise"}
             />
           </div>
 
@@ -361,23 +374,36 @@ function AdminDashboard(props) {
               style={{ cursor: "pointer" }}
               onClick={() => setOpenChallengeEditListModal(true)}
             >
-              <h1
-                style={{
-                  fontSize: "22px",
-                }}
-              >
-                <T>adminv2.my_challenges</T>
-              </h1>
+              {adminInfo.role === "admin" ? (
+                <h1
+                  style={{
+                    fontSize: "22px",
+                  }}
+                >
+                  All Challenges
+                </h1>
+              ) : (
+                <h1
+                  style={{
+                    fontSize: "22px",
+                  }}
+                >
+                  <T>adminv2.my_challenges</T>
+                </h1>
+              )}
             </div>
             <ModalForEditList
               data={challenges}
               open={openChallengeEditListModal}
               setOpen={setOpenChallengeEditListModal}
               onClickEdit={goToEditChallenge}
-              title="My Challenges"
+              title={
+                adminInfo.role === "admin" ? "All Challenges" : "My Challenges"
+              }
               subtext="Challenge ID"
               searchPlaceholder="Search by challenge name"
               searchKeys={["challengeName"]}
+              type="challenge"
             />
           </div>
         </div>

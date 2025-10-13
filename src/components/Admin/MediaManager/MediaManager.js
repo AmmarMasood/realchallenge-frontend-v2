@@ -506,6 +506,8 @@ const useCustomFileMap = () => {
           isDir: true,
           childrenIds: [],
           depth: -1,
+          size: 0,
+          modDate: null,
           canDropFiles: false,
           droppable: false,
           draggable: false,
@@ -536,6 +538,8 @@ const useCustomFileMap = () => {
         isDir: true,
         childrenIds: rootFolders.map((folder) => folder._id),
         depth: -1,
+        size: 0,
+        modDate: null,
         canDropFiles: false,
         droppable: false,
         draggable: false,
@@ -571,6 +575,8 @@ const useCustomFileMap = () => {
         ],
         mediaType: folder.mediaType,
         createdAt: folder.createdAt,
+        modDate: folder.createdAt ? new Date(folder.createdAt) : null, // For Chonky date sorting
+        size: 0, // Folders have size 0
         depth: folder.depth || 0,
         canCreateSubfolder: (folder.depth || 0) < 2,
         canDropFiles: true,
@@ -607,8 +613,9 @@ const useCustomFileMap = () => {
           mediaType: file.mediaType,
           thumbnailUrl: file.thumbnailUrl || file.filelink,
           createdAt: file.createdAt,
+          modDate: file.createdAt ? new Date(file.createdAt) : null, // For Chonky date sorting
           filename: file.filename,
-          size: file.size,
+          size: file.size || 0, // Ensure size is a number for sorting
           draggable: !isActuallyFolder,
           droppable: isActuallyFolder,
         };
@@ -1807,6 +1814,11 @@ export const VFSBrowser = React.memo((props) => {
     } else {
       actions.push(ChonkyActions.EnableListView);
     }
+
+    // Add sorting actions
+    actions.push(ChonkyActions.SortFilesByName);
+    actions.push(ChonkyActions.SortFilesBySize);
+    actions.push(ChonkyActions.SortFilesByDate);
 
     // Enable drag and drop only if not in admin mode
     if (!adminMode) {

@@ -16,6 +16,7 @@ export function ChallengeProvider({ children }) {
   const [duration, setDuration] = useState(0);
   const [openPopupPlayer, setOpenPopupPlayer] = useState(false);
   const [pack, setPack] = useState("");
+  const [points, setPoints] = useState(null);
   const [customPrice, setCustomPrice] = useState(0);
   const [challengeInfo, setChallengeInfo] = useState(null);
   const [result, setResult] = useState("");
@@ -58,6 +59,7 @@ export function ChallengeProvider({ children }) {
     setChallengeDescription(challengeData.description || "");
     setDifficulty(challengeData.difficulty || "high");
     setDuration(challengeData.duration || 0);
+    setPoints(challengeData.points || null);
 
     // Set pricing details
     setPack(challengeData.access[0] || "");
@@ -241,6 +243,8 @@ export function ChallengeProvider({ children }) {
         setAllExercises,
         isFirstRender,
         setIsFirstRender,
+        points,
+        setPoints,
       }}
     >
       {children}

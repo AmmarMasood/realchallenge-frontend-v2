@@ -148,6 +148,8 @@ function BasicInformation(props) {
     populateChallengeInfo,
     isFirstRender,
     setIsFirstRender,
+    points,
+    setPoints,
   } = useChallenge();
   const [dataLoaded, setDataLoaded] = useState(false); // Track when all setters are done
 
@@ -275,6 +277,10 @@ function BasicInformation(props) {
   };
 
   const onAddTrainer = () => {
+    setErrors((prev) => ({
+      ...prev,
+      trainers: "",
+    }));
     setTrainerModal(true);
   };
 
@@ -384,8 +390,10 @@ function BasicInformation(props) {
     //   errors.push("Duration is required");
     // }
     // if (!difficulty) errors.push("Difficulty is required");
-    if (!seletedTrainers || seletedTrainers.length === 0)
+    if (!seletedTrainers || seletedTrainers.length === 0) {
       errors.push("At least one Trainer is required");
+      errorToShow.trainers = "At least one Trainer is required";
+    }
     // if (!selectedGoals || selectedGoals.length === 0) {
     //   errors.push("At least one Goal is required");
     //   errorToShow.selectedGoals = "At least one Goal is required";
@@ -414,7 +422,7 @@ function BasicInformation(props) {
         challengeName: challengeName,
         description: challengeDescription,
         price: customPrice,
-        points: 100,
+        points: points,
         currency: "€",
         thumbnailLink: typeof thumbnail === "object" ? thumbnail.link : "",
         videoThumbnailLink:
@@ -1090,6 +1098,16 @@ function BasicInformation(props) {
                       border: errors.duration && "2px solid red",
                     }}
                   />
+
+                  <input
+                    placeholder="Challenge Points"
+                    className="font-paragraph-white adminV2-bi-input"
+                    onChange={(e) => {
+                      setPoints(e.target.value);
+                    }}
+                    value={points}
+                    type="number"
+                  />
                 </div>
 
                 <textarea
@@ -1180,7 +1198,10 @@ function BasicInformation(props) {
                 ))}
 
                 <AddNewButton
-                  style={{ margin: "5px" }}
+                  style={{
+                    margin: "5px",
+                    border: errors.trainers && "2px solid red",
+                  }}
                   onClick={onAddTrainer}
                 />
               </div>

@@ -20,21 +20,17 @@ function ExerciseChooseModal({
   const [selectedBreak, setSelectedBreak] = React.useState("");
 
   React.useEffect(() => {
-    if (userInfo && userInfo.role === "admin") {
-      setFilteredExercises(exercises);
-    } else {
-      if (
-        exercises &&
-        exercises.length > 0 &&
-        seletedTrainers &&
-        seletedTrainers.length > 0
-      ) {
-        const trainerIds = seletedTrainers.map((trainer) => trainer._id);
-        const filtered = exercises.filter((exercise) => {
-          return exercise.trainer && trainerIds.includes(exercise.trainer._id);
-        });
-        setFilteredExercises(filtered);
-      }
+    if (
+      exercises &&
+      exercises.length > 0 &&
+      seletedTrainers &&
+      seletedTrainers.length > 0
+    ) {
+      const trainerIds = seletedTrainers.map((trainer) => trainer._id);
+      const filtered = exercises.filter((exercise) => {
+        return exercise.trainer && trainerIds.includes(exercise.trainer._id);
+      });
+      setFilteredExercises(filtered);
     }
   }, [exercises, seletedTrainers]);
 
@@ -99,6 +95,19 @@ function ExerciseChooseModal({
             />
             <h2 className="exercise-selector__title">Choose Exercise</h2>
           </div>
+
+          {seletedTrainers.length === 0 && (
+            <div className="exercise-selector__no-exercise">
+              <p className="font-paragraph-white">
+                Please select at least one trainer to see their exercises.
+              </p>
+            </div>
+          )}
+          {seletedTrainers.length > 0 && filteredExercises.length === 0 && (
+            <div className="exercise-selector__no-exercise">
+              <p className="font-paragraph-white">No exercises available </p>
+            </div>
+          )}
 
           <div className="exercise-selector__list">
             {filteredExercises.map((exercise, index) => (
