@@ -65,8 +65,13 @@ function ChallengePlayer(props) {
       localStorage.getItem("jwtToken"),
       props.history
     );
-    fetchData();
   }, []);
+
+  useEffect(() => {
+    if (userInfo) {
+      fetchData();
+    }
+  }, [userInfo]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -92,6 +97,7 @@ function ChallengePlayer(props) {
             videoURL: e.exerciseId?.videoURL,
             voiceOverLink: e.exerciseId?.voiceOverLink,
             videoThumbnailURL: e.exerciseId?.videoThumbnailURL,
+            description: e.exerciseId?.description,
             _id: e.exerciseId?._id,
           }))
         : res.exercises.map((e) => ({
@@ -241,11 +247,7 @@ function ChallengePlayer(props) {
         completed: 100,
       });
       setFinishWorkoutPopupVisible(true);
-      updateTrackChallengeInBackend(
-        currentExercise.exercise,
-        0,
-        true
-      );
+      updateTrackChallengeInBackend(currentExercise.exercise, 0, true);
       localStorage.removeItem("music-playing");
     }
   };

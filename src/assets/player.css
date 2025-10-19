@@ -13,7 +13,8 @@
   margin: 0 auto;
 }
 .helpPopOut-player-wrapper {
-  width: 800px;
+  /* max-width: 900px; */
+  width: 100%;
   height: 100%;
   margin: 0 auto;
 }
@@ -270,9 +271,10 @@
   text-align: center;
 }
 .helpPopOut-progress-bar-container {
-  margin: -24px 45px 0px;
+  /* margin: -20px 45px 0px;
   width: 90%;
-  padding: 0px 40px 0 50px;
+  padding: 0px 50px 0 50px; */
+  width: 100%;
 }
 
 .player-elasped-time-container {
@@ -313,7 +315,7 @@
     margin: 0 auto;
   }
   .helpPopOut-player-wrapper {
-    width: 1200px;
+    width: 100%;
     height: 100%;
     margin: 0 auto;
   }
@@ -330,7 +332,7 @@
     margin: 0 auto;
   }
   .helpPopOut-player-wrapper {
-    width: 700px;
+    width: 100%;
     height: auto;
     margin: 0 auto;
   }
@@ -348,7 +350,7 @@
     margin: 0 auto;
   }
   .helpPopOut-player-wrapper {
-    width: 700px;
+    width: 100%;
     height: 100%;
     margin: 0 auto;
   }
@@ -365,7 +367,7 @@
     margin: 0 auto;
   }
   .helpPopOut-player-wrapper {
-    width: 700px;
+    width: 100%;
     height: 100%;
     margin: 0 auto;
   }
@@ -399,7 +401,7 @@
     margin: 0 auto;
   }
   .helpPopOut-player-wrapper {
-    width: 550px;
+    width: 700px;
     height: 100%;
     margin: 0 auto;
   }
@@ -417,14 +419,9 @@
     margin: 0 auto;
   }
   .helpPopOut-player-wrapper {
-    width: 400px;
+    width: 700px;
     height: 100%;
     margin: 0 auto;
-  }
-  .helpPopOut-progress-bar-container {
-    margin: -24px 45px 0px;
-    width: 80%;
-    padding: 0px 40px 0 50px;
   }
 
   .challenge-player-container-exercies {
@@ -530,15 +527,11 @@
     /* margin: 0 auto; */
   }
   .helpPopOut-player-wrapper {
-    width: 200px;
+    width: 500px;
     height: 100%;
     margin: 0 auto;
   }
-  .helpPopOut-progress-bar-container {
-    margin: -24px 45px 0px;
-    width: 80%;
-    padding: 0px 40px 0 50px;
-  }
+
   .controls-wrapper-middle {
     width: 300px;
     font-size: 20px;

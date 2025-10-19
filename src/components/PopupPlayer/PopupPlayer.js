@@ -30,10 +30,32 @@ const formatTime = (seconds) => {
   return `${mm}:${ss}`;
 };
 
-function PopupPlayer({ open, setOpen, onCancel, video }) {
+function PopupPlayer({ open, setOpen, onCancel, video, exercise }) {
   const playerRef = useRef(null);
+  const audioRef = useRef(null);
   const [progress, setProgress] = useState({});
   const [playing, setPlaying] = useState(false);
+
+  // Sync audio playback with video
+  useEffect(() => {
+    if (audioRef.current && exercise?.voiceOverLink) {
+      if (playing) {
+        audioRef.current.play().catch((error) => {
+          console.error("Audio play failed:", error);
+        });
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [playing, exercise?.voiceOverLink]);
+
+  // Reset audio when modal closes
+  useEffect(() => {
+    if (!open && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  }, [open]);
 
   return (
     <Modal
@@ -77,6 +99,13 @@ function PopupPlayer({ open, setOpen, onCancel, video }) {
           stopOnUnmount={false}
         />
       </div>
+      {exercise?.voiceOverLink && (
+        <audio
+          ref={audioRef}
+          src={exercise.voiceOverLink}
+          preload="auto"
+        />
+      )}
     </Modal>
   );
 }

@@ -1,12 +1,13 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import ReactPlayer from "react-player";
 import useWindowDimensions from "../../helpers/useWindowDimensions";
-import { VideoSeekSlider } from "react-video-seek-slider";
 import {
   CaretRightOutlined,
   PauseOutlined,
   CloseOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
+import { Spin, Slider } from "antd";
 import Modal from "react-modal";
 import SquarePT from "../../assets/icons/Square-PT.png";
 import PopupPlayIcon from "../../assets/icons/help-pop-out-play-icon.svg";
@@ -22,6 +23,7 @@ const formatTime = (seconds) => {
 
 function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
   const playerRef = useRef(null);
+  const audioRef = useRef(null);
   const [progress, setProgress] = useState({
     playedSeconds: 0,
     loadedSeconds: 0,
@@ -68,6 +70,27 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
 
   const onPlayPause = () => setPlaying((p) => !p);
 
+  // Sync audio playback with video
+  useEffect(() => {
+    if (audioRef.current && exercise?.voiceOverLink) {
+      if (playing) {
+        audioRef.current.play().catch((error) => {
+          console.error("Audio play failed:", error);
+        });
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [playing, exercise?.voiceOverLink]);
+
+  // Reset audio when modal closes
+  useEffect(() => {
+    if (!open && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  }, [open]);
+
   return (
     <Modal
       isOpen={open}
@@ -92,7 +115,7 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
             className="font-paragraph-white"
             style={{ marginLeft: "10px", fontWeight: "600", fontSize: "15px" }}
           >
-            Your Trainer
+            Your Trainer's Input
           </span>
         </div>
         <CloseOutlined
@@ -116,22 +139,27 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
               left: "50%",
               transform: "translate(-50%, -50%)",
               zIndex: 10,
-              color: "#fff",
-              fontSize: "32px",
               background: "rgba(0,0,0,0.6)",
               padding: "20px",
               borderRadius: "10px",
             }}
           >
-            Loading...
+            <Spin
+              indicator={
+                <LoadingOutlined
+                  style={{ fontSize: 48, color: "#FB7600" }}
+                  spin
+                />
+              }
+            />
           </div>
         )}
-
+        {console.log("ammar", exercise)}
         <ReactPlayer
           ref={playerRef}
           width="100%"
           height="100%"
-          url={exercise.voiceOverLink || exercise.videoURL}
+          url={exercise.videoURL}
           loop={true}
           controls={false}
           muted={true}
@@ -157,6 +185,7 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
               justifyContent: "space-between",
               margin: "0 30px",
               alignItems: "center",
+              gap: "10px",
             }}
           >
             <div className="player-play-pause-icon-box" style={{ margin: 0 }}>
@@ -178,28 +207,33 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
                 />
               )}
             </div>
+            <div className="helpPopOut-progress-bar-container">
+              <Slider
+                min={0}
+                max={progress.duration || 0}
+                value={progress.playedSeconds || 0}
+                onChange={onSeek}
+                tooltip={{ open: false }}
+                disabled={progress.duration === 0}
+                styles={{
+                  track: {
+                    backgroundColor: "rgba(255, 255, 255, 1)",
+                    height: "5px",
+                  },
+                  tracks: {
+                    backgroundColor: "#FF761A",
+                    height: "5px",
+                  },
+                  rail: {
+                    backgroundColor: "rgba(255, 255, 255, 0.3)",
+                    height: "5px",
+                  },
+                }}
+              />
+            </div>
             <span className="font-paragraph-white" style={{ fontSize: "16px" }}>
               {elapsedTime}
             </span>
-          </div>
-          <div className="helpPopOut-progress-bar-container">
-            <VideoSeekSlider
-              max={progress.duration || 0}
-              currentTime={progress.playedSeconds || 0}
-              progress={
-                progress.duration
-                  ? (progress.playedSeconds / progress.duration) * 100
-                  : 0
-              }
-              onChange={onSeek}
-              offset={0}
-              limitTimeTooltipBySides={true}
-              hideSeekTimes={false}
-              secondsPrefix="00:00:"
-              minutesPrefix="00:"
-              tipFormatter={() => formatTime(progress.playedSeconds)}
-              disabled={progress.duration === 0}
-            />
           </div>
         </div>
       </div>
@@ -217,6 +251,9 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
         >
           {exercise?.description}
         </p>
+      )}
+      {exercise?.voiceOverLink && (
+        <audio ref={audioRef} src={exercise.voiceOverLink} preload="auto" />
       )}
     </Modal>
   );
