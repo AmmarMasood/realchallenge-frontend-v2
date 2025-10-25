@@ -170,7 +170,6 @@ function RenderedVideoPlayer({
       className="player-wrapper"
       style={{
         position: "relative",
-        minHeight: "450px",
       }}
       ref={playerContainerRef}
       onMouseMove={handleMouseMove}

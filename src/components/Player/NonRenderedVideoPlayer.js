@@ -60,7 +60,7 @@ function NonRenderedVideoPlayer({
   return (
     <div
       className="player-wrapper"
-      style={{ position: "relative", minHeight: "450px" }}
+      style={{ position: "relative" }}
       ref={playerContainerRef}
       onMouseMove={handleMouseMove}
     >

@@ -176,6 +176,8 @@ function BasicInformation(props) {
   const [allowReviews, setAllowReviews] = useState(true);
   const [makePublic, setMakePublic] = useState(true);
   const [userCreatePost, setUserCreatePost] = useState(false);
+  const [isDraggingWorkout, setIsDraggingWorkout] = useState(false);
+  const [draggedWorkoutId, setDraggedWorkoutId] = useState(null);
   const { reloadWithoutConfirmation } = useBrowserEvents({
     enableBeforeUnloadConfirm: true,
     hasUnsavedChanges: true,
@@ -1587,106 +1589,77 @@ function BasicInformation(props) {
                             key={i + 1}
                           >
                             <div className="trainer-profile-goals-container">
-                              <DraggableArea
-                                onChange={(newOrder) =>
-                                  handleWorkoutReorder(newOrder, i)
-                                }
-                                direction="vertical"
-                                itemType={ItemTypeWorkout}
+                              <div
+                                style={{
+                                  backgroundColor: isDraggingWorkout
+                                    ? "rgba(59, 130, 246, 0.1)"
+                                    : "transparent",
+                                  border: isDraggingWorkout
+                                    ? "2px dashed #3b82f6"
+                                    : "2px solid transparent",
+                                  transition: "all 0.3s ease",
+                                  width: "100%",
+                                  borderRadius: isDraggingWorkout
+                                    ? "8px"
+                                    : "0px",
+                                }}
                               >
-                                {w.workouts &&
-                                  w.workouts.map((workout) => (
-                                    <DraggableItem key={workout.id}>
-                                      <div
-                                        className="challenge-profile-comment font-paragraph-white"
+                                <DraggableArea
+                                  onChange={(newOrder) =>
+                                    handleWorkoutReorder(newOrder, i)
+                                  }
+                                  direction="vertical"
+                                  itemType={ItemTypeWorkout}
+                                  onDragStateChange={(dragging, draggedId) => {
+                                    setIsDraggingWorkout(dragging);
+                                    setDraggedWorkoutId(draggedId);
+                                  }}
+                                >
+                                  {w.workouts &&
+                                    w.workouts.map((workout) => (
+                                      <DraggableItem
                                         key={workout.id}
-                                        style={{
-                                          display: "flex",
-                                          flexDirection: "column",
-                                          justifyContent: "space-between",
-                                          alignItems: "flex-start",
-                                          backgroundColor: "#2A2F368C",
-                                          position: "relative",
-                                        }}
+                                        id={workout.id}
                                       >
-                                        <input
-                                          style={{
-                                            fontSize: "13px",
-                                            padding: "5px",
-                                            width: "200px",
-                                            margin: "0 0 12px 5px",
-                                          }}
-                                          className="adminV2-bi-input font-paragraph-white"
-                                          value={workout.title}
-                                          placeholder="Add Workout Title"
-                                          onChange={(e) => {
-                                            const newWeeks = [...weeks];
-                                            const weekIndex =
-                                              newWeeks.findIndex(
-                                                (week) => week.id === w.id
-                                              );
-                                            if (weekIndex !== -1) {
-                                              const workoutIndex = newWeeks[
-                                                weekIndex
-                                              ].workouts.findIndex(
-                                                (item) => item.id === workout.id
-                                              );
-                                              if (workoutIndex !== -1) {
-                                                newWeeks[weekIndex].workouts[
-                                                  workoutIndex
-                                                ].title = e.target.value;
-                                                setWeeks(newWeeks);
-                                              }
-                                            }
-                                          }}
-                                        />
-                                        <input
-                                          style={{
-                                            fontSize: "13px",
-                                            padding: "5px",
-                                            width: "250px",
-                                            margin: "0 0 12px 5px",
-                                          }}
-                                          className="adminV2-bi-input font-paragraph-white"
-                                          value={workout.subtitle}
-                                          placeholder="Add More Info"
-                                          onChange={(e) => {
-                                            const newWeeks = [...weeks];
-                                            const weekIndex =
-                                              newWeeks.findIndex(
-                                                (week) => week.id === w.id
-                                              );
-                                            if (weekIndex !== -1) {
-                                              const workoutIndex = newWeeks[
-                                                weekIndex
-                                              ].workouts.findIndex(
-                                                (item) => item.id === workout.id
-                                              );
-                                              if (workoutIndex !== -1) {
-                                                newWeeks[weekIndex].workouts[
-                                                  workoutIndex
-                                                ].subtitle = e.target.value;
-                                                setWeeks(newWeeks);
-                                              }
-                                            }
-                                          }}
-                                        />
-
                                         <div
+                                          className="challenge-profile-comment font-paragraph-white"
+                                          key={workout.id}
                                           style={{
                                             display: "flex",
-                                            alignItems: "center",
+                                            flexDirection: "column",
                                             justifyContent: "space-between",
+                                            alignItems: "flex-start",
+                                            backgroundColor:
+                                              draggedWorkoutId === workout.id
+                                                ? "rgba(34, 197, 94, 0.15)"
+                                                : "#2A2F368C",
+                                            position: "relative",
+                                            border:
+                                              draggedWorkoutId === workout.id
+                                                ? "2px solid #22c55e"
+                                                : "2px solid transparent",
+                                            transition: "all 0.3s ease",
                                             width: "100%",
+                                            borderRadius:
+                                              draggedWorkoutId === workout.id
+                                                ? "8px"
+                                                : "0px",
+                                            opacity:
+                                              draggedWorkoutId === workout.id
+                                                ? "0.8"
+                                                : "1",
                                           }}
                                         >
-                                          <Checkbox
+                                          <input
                                             style={{
-                                              color: "#fff",
                                               fontSize: "13px",
+                                              padding: "5px",
+                                              width: "200px",
                                               margin: "0 0 12px 5px",
                                             }}
-                                            checked={workout.renderWorkout}
+                                            className="adminV2-bi-input font-paragraph-white"
+                                            value={workout.title}
+                                            placeholder="Add Workout Title"
                                             onChange={(e) => {
                                               const newWeeks = [...weeks];
                                               const weekIndex =
@@ -1703,102 +1676,175 @@ function BasicInformation(props) {
                                                 if (workoutIndex !== -1) {
                                                   newWeeks[weekIndex].workouts[
                                                     workoutIndex
-                                                  ].renderWorkout =
-                                                    e.target.checked;
+                                                  ].title = e.target.value;
                                                   setWeeks(newWeeks);
                                                 }
                                               }
                                             }}
-                                          >
-                                            Render Workout
-                                          </Checkbox>
-
-                                          <div
+                                          />
+                                          <input
                                             style={{
-                                              background: "#344150B0",
-                                              padding: "10px",
-                                              cursor: "pointer",
+                                              fontSize: "13px",
+                                              padding: "5px",
+                                              width: "250px",
+                                              margin: "0 0 12px 5px",
                                             }}
-                                            onClick={() => {
-                                              setShowVideoCreator(true);
-                                              setSelectedWorkoutForStudioId({
-                                                workoutId: workout.id,
-                                                weekId: w.id,
-                                              });
-                                            }}
-                                          >
-                                            <img
-                                              src={WorkoutStudioIcon}
-                                              alt=""
-                                            />
-                                          </div>
-                                        </div>
-                                        <div
-                                          style={{
-                                            position: "absolute",
-                                            right: "20px",
-                                            top: "10px",
-                                            display: "flex",
-                                            gap: "14px",
-                                          }}
-                                        >
-                                          <img
-                                            src={DeleteWhite}
-                                            alt="delete"
-                                            onClick={() => {
+                                            className="adminV2-bi-input font-paragraph-white"
+                                            value={workout.subtitle}
+                                            placeholder="Add More Info"
+                                            onChange={(e) => {
                                               const newWeeks = [...weeks];
                                               const weekIndex =
                                                 newWeeks.findIndex(
-                                                  (week) => week._id === w._id
+                                                  (week) => week.id === w.id
                                                 );
                                               if (weekIndex !== -1) {
                                                 const workoutIndex = newWeeks[
                                                   weekIndex
                                                 ].workouts.findIndex(
                                                   (item) =>
-                                                    item._id === workout._id
+                                                    item.id === workout.id
                                                 );
                                                 if (workoutIndex !== -1) {
-                                                  newWeeks[
-                                                    weekIndex
-                                                  ].workouts.splice(
-                                                    workoutIndex,
-                                                    1
-                                                  );
+                                                  newWeeks[weekIndex].workouts[
+                                                    workoutIndex
+                                                  ].subtitle = e.target.value;
                                                   setWeeks(newWeeks);
                                                 }
                                               }
                                             }}
-                                            style={iconStyle}
                                           />
-                                          <img
-                                            src={CopyIconWhite}
-                                            alt="drag-drop"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              duplicateWorkout(w.id, workout);
+
+                                          <div
+                                            style={{
+                                              display: "flex",
+                                              alignItems: "center",
+                                              justifyContent: "space-between",
+                                              width: "100%",
                                             }}
-                                            style={iconStyle}
-                                          />
-                                          <DraggableHandle>
+                                          >
+                                            <Checkbox
+                                              style={{
+                                                color: "#fff",
+                                                fontSize: "13px",
+                                                margin: "0 0 12px 5px",
+                                              }}
+                                              checked={workout.renderWorkout}
+                                              onChange={(e) => {
+                                                const newWeeks = [...weeks];
+                                                const weekIndex =
+                                                  newWeeks.findIndex(
+                                                    (week) => week.id === w.id
+                                                  );
+                                                if (weekIndex !== -1) {
+                                                  const workoutIndex = newWeeks[
+                                                    weekIndex
+                                                  ].workouts.findIndex(
+                                                    (item) =>
+                                                      item.id === workout.id
+                                                  );
+                                                  if (workoutIndex !== -1) {
+                                                    newWeeks[
+                                                      weekIndex
+                                                    ].workouts[
+                                                      workoutIndex
+                                                    ].renderWorkout =
+                                                      e.target.checked;
+                                                    setWeeks(newWeeks);
+                                                  }
+                                                }
+                                              }}
+                                            >
+                                              Render Workout
+                                            </Checkbox>
+
+                                            <div
+                                              style={{
+                                                background: "#344150B0",
+                                                padding: "10px",
+                                                cursor: "pointer",
+                                              }}
+                                              onClick={() => {
+                                                setShowVideoCreator(true);
+                                                setSelectedWorkoutForStudioId({
+                                                  workoutId: workout.id,
+                                                  weekId: w.id,
+                                                });
+                                              }}
+                                            >
+                                              <img
+                                                src={WorkoutStudioIcon}
+                                                alt=""
+                                              />
+                                            </div>
+                                          </div>
+                                          <div
+                                            style={{
+                                              position: "absolute",
+                                              right: "20px",
+                                              top: "10px",
+                                              display: "flex",
+                                              gap: "14px",
+                                            }}
+                                          >
                                             <img
-                                              src={DragAndDropIconWhite}
+                                              src={DeleteWhite}
+                                              alt="delete"
+                                              onClick={() => {
+                                                const newWeeks = [...weeks];
+                                                const weekIndex =
+                                                  newWeeks.findIndex(
+                                                    (week) => week._id === w._id
+                                                  );
+                                                if (weekIndex !== -1) {
+                                                  const workoutIndex = newWeeks[
+                                                    weekIndex
+                                                  ].workouts.findIndex(
+                                                    (item) =>
+                                                      item._id === workout._id
+                                                  );
+                                                  if (workoutIndex !== -1) {
+                                                    newWeeks[
+                                                      weekIndex
+                                                    ].workouts.splice(
+                                                      workoutIndex,
+                                                      1
+                                                    );
+                                                    setWeeks(newWeeks);
+                                                  }
+                                                }
+                                              }}
+                                              style={iconStyle}
+                                            />
+                                            <img
+                                              src={CopyIconWhite}
                                               alt="drag-drop"
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                // duplicateWorkout(w.id, workout);
+                                                duplicateWorkout(w.id, workout);
                                               }}
-                                              style={{
-                                                ...iconStyle,
-                                                cursor: "move",
-                                              }}
+                                              style={iconStyle}
                                             />
-                                          </DraggableHandle>
+                                            <DraggableHandle>
+                                              <img
+                                                src={DragAndDropIconWhite}
+                                                alt="drag-drop"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  // duplicateWorkout(w.id, workout);
+                                                }}
+                                                style={{
+                                                  ...iconStyle,
+                                                  cursor: "move",
+                                                }}
+                                              />
+                                            </DraggableHandle>
+                                          </div>
                                         </div>
-                                      </div>
-                                    </DraggableItem>
-                                  ))}
-                              </DraggableArea>
+                                      </DraggableItem>
+                                    ))}
+                                </DraggableArea>
+                              </div>
                               <AddNewButton
                                 style={{
                                   margin: "5px",
