@@ -869,6 +869,20 @@ const PreviewModal = ({ visible, onClose, file }) => {
     }
   };
 
+  // Helper function to check if URL is an audio link
+  const isAudioUrl = (url) => {
+    if (!url) return false;
+    const audioExtensions = ["mp3", "wav", "ogg", "m4a", "aac", "flac", "wma", "webm"];
+    try {
+      const urlPath = new URL(url).pathname.toLowerCase();
+      return audioExtensions.some(ext => urlPath.endsWith(`.${ext}`));
+    } catch {
+      // If URL parsing fails, check as string
+      const lowerUrl = url.toLowerCase();
+      return audioExtensions.some(ext => lowerUrl.includes(`.${ext}`));
+    }
+  };
+
   // Check video: first by link URL, then by mediaType, finally by filename extension
   const isVideo =
     isVideoUrl(file.link) ||
@@ -882,6 +896,14 @@ const PreviewModal = ({ visible, onClose, file }) => {
     isImageUrl(file.link) ||
     file.mediaType === "picture" ||
     (file.name && ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff"].includes(
+      file.name.split(".").pop()?.toLowerCase() || ""
+    ));
+
+  // Check audio: first by link URL, then by mediaType, finally by filename extension
+  const isAudio =
+    isAudioUrl(file.link) ||
+    file.mediaType === "audio" ||
+    (file.name && ["mp3", "wav", "ogg", "m4a", "aac", "flac", "wma", "webm"].includes(
       file.name.split(".").pop()?.toLowerCase() || ""
     ));
 
@@ -970,6 +992,24 @@ const PreviewModal = ({ visible, onClose, file }) => {
               onError={() => setLoading(false)}
             />
           </>
+        ) : isAudio ? (
+          <div style={{ width: "100%", maxWidth: "600px" }}>
+            <ReactPlayer
+              url={file.link}
+              controls={true}
+              width="100%"
+              height="50px"
+              config={{
+                file: {
+                  attributes: {
+                    controlsList: 'nodownload'
+                  }
+                }
+              }}
+              onReady={() => setLoading(false)}
+              onError={() => setLoading(false)}
+            />
+          </div>
         ) : (
           <div
             style={{
