@@ -99,6 +99,7 @@ function ChallengePlayer(props) {
             videoThumbnailURL: e.exerciseId?.videoThumbnailURL,
             description: e.exerciseId?.description,
             _id: e.exerciseId?._id,
+            exerciseId: e.exerciseId?._id,
           }))
         : res.exercises.map((e) => ({
             title: e.renderedWorkoutExerciseName,
@@ -109,6 +110,7 @@ function ChallengePlayer(props) {
     console.log("ressssssss", res);
     res &&
       res.introVideoLink &&
+      res.introVideoLength > 0 &&
       res.exercises.unshift({
         break: 5,
         createdAt: "",

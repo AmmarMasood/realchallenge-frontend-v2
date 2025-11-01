@@ -135,7 +135,7 @@ function PlayerVideoBrowser({
                       )}
                     </h4>
                   </div>
-                  {workout.isRendered && (
+                  {workout.isRendered && !e?.exerciseId && (
                     <img
                       src={SquarePlay}
                       onClick={() =>
@@ -144,6 +144,14 @@ function PlayerVideoBrowser({
                       alt=""
                       className="challenge-player-container-exercies-box-asktrainerbtn"
                       style={{ padding: "8px" }}
+                    />
+                  )}
+                  {workout.isRendered && e?.exerciseId && (
+                    <img
+                      src={SquarePT}
+                      alt=""
+                      className="challenge-player-container-exercies-box-asktrainerbtn"
+                      onClick={() => handleOpenExerciseForHelp(e)}
                     />
                   )}
                   <div

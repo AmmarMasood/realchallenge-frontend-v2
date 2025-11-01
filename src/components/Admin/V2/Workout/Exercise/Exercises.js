@@ -22,6 +22,7 @@ import {
 } from "../../../../../helpers/DndWrapper";
 import DragAndDropIcon from "../../../../../assets/icons/drag-drop-icon-white.svg";
 import SquarePT from "../../../../../assets/icons/Square-PT.png";
+import SquarePlay from "../../../../../assets/icons/player-video-browser-play-icon.svg";
 const responsive = {
   superLargeDesktop: {
     // the naming can be any, depends on you.
@@ -377,17 +378,33 @@ function Exercises({
                     )}
                   </h4>
                 </div>
-                {/* {workout.renderWorkout && e.videoURL && (
-                      <img
-                        src={SquarePlay}
-                        onClick={() =>
-                          setPlayerState({ ...playerState, playing: true })
-                        }
-                        alt=""
-                        className="challenge-player-container-exercies-box-asktrainerbtn"
-                        style={{ padding: "8px" }}
-                      />
-                    )} */}
+                {workout.renderWorkout &&
+                  firstExercise?.videoURL &&
+                  !firstExercise?.exerciseId && (
+                    <img
+                      src={SquarePlay}
+                      onClick={() =>
+                        setPlayerState({ ...playerState, playing: true })
+                      }
+                      alt=""
+                      className="challenge-player-container-exercies-box-asktrainerbtn"
+                      style={{ padding: "8px" }}
+                    />
+                  )}
+                {workout.renderWorkout &&
+                  !fullscreen &&
+                  firstExercise?.videoURL &&
+                  firstExercise?.exerciseId && (
+                    <img
+                      src={SquarePT}
+                      alt=""
+                      className="challenge-player-container-exercies-box-asktrainerbtn"
+                      style={{
+                        top: "85px",
+                      }}
+                      onClick={() => handleOpenExerciseForHelp(firstExercise)}
+                    />
+                  )}
                 <div
                   className="challenge-player-container-exercies-box"
                   key={firstExercise.id}
