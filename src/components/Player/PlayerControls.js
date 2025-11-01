@@ -349,7 +349,7 @@ function PlayerControls(
 
         <div className="controls-wrapper-top">
           <div>
-            {(fullscreen || width <= 768) && (
+            {!inCreation && (fullscreen || width <= 768) && (
               <div style={{ display: "flex", alignItems: "center" }}>
                 <Link
                   to={challengePageAddress}
@@ -645,8 +645,10 @@ function PlayerControls(
               className="react-player-stepper-container"
               style={{
                 gridTemplateColumns: `repeat(${
-                  workout && workout.exercises.filter((ex, idx) =>
-                    idx !== 0 || (ex.videoURL || ex.exerciseLength > 0)
+                  workout &&
+                  workout.exercises.filter(
+                    (ex, idx) =>
+                      idx !== 0 || ex.videoURL || ex.exerciseLength > 0
                   ).length
                 }, 1fr)`,
               }}
@@ -654,8 +656,11 @@ function PlayerControls(
               {workout &&
                 workout.exercises
                   .map((ex, originalIndex) => ({ ex, originalIndex }))
-                  .filter(({ ex, originalIndex }) =>
-                    originalIndex !== 0 || (ex.videoURL || ex.exerciseLength > 0)
+                  .filter(
+                    ({ ex, originalIndex }) =>
+                      originalIndex !== 0 ||
+                      ex.videoURL ||
+                      ex.exerciseLength > 0
                   )
                   .map(({ ex, originalIndex }) => {
                     return (

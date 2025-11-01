@@ -32,6 +32,13 @@
   align-items: center;
   margin-bottom: 20px;
   gap: 10px;
+  padding: 0 clamp(5px, 2vw, 10px);
+}
+
+.v2workout-studio-middle {
+  width: 100%;
+  max-width: 100%;
+  position: relative;
 }
 
 .v2workout-studio-bottom-grid {
@@ -58,6 +65,101 @@
 
 @media (min-width: 1400px) {
   .v2challenge-player-container {
-    width: 1200px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
+
+/* Responsive Styles */
+@media screen and (max-width: 1000px) {
+  .music-icon-button {
+    right: 45px;
+    top: -30px;
+    font-size: 13px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .v2workout-studio-top {
+    padding: 0 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+
+  .v2workout-studio-top > div:first-child {
+    width: 100%;
+  }
+
+  .v2workout-studio-top img[alt="workout-studio"] {
+    display: none;
+  }
+
+  .v2workout-title {
+    font-size: clamp(20px, 4vw, 30px);
+  }
+
+  .v2workout-subtitle {
+    font-size: clamp(13px, 2vw, 15px);
+  }
+
+  .v2workout-studio-bottom-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .music-icon-button {
+    position: relative;
+    right: auto;
+    top: auto;
+    margin: 10px 0;
+    justify-content: flex-start;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .v2workout-studio-top {
+    padding: 0 8px;
+    margin-bottom: 10px;
+  }
+
+  .v2workout-title {
+    font-size: 18px;
+  }
+
+  .v2workout-subtitle {
+    font-size: 13px;
+  }
+}
+
+@media screen and (max-width: 550px) {
+  .v2workout-studio-top {
+    padding: 0 5px;
+  }
+
+  .v2workout-studio-top > div:first-child img[alt="back-button"] {
+    height: 22px;
+    margin-right: 10px;
+  }
+
+  .v2workout-title {
+    font-size: 16px;
+  }
+
+  .v2workout-subtitle {
+    font-size: 12px;
+  }
+
+  .v2workout-studio-bottom-grid {
+    gap: 6px;
+  }
+
+  .workout-info > div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .music-icon-button {
+    font-size: 12px;
+    gap: 6px;
   }
 }

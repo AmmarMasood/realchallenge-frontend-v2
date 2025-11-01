@@ -372,6 +372,7 @@ function Workout() {
           </Button>
         )} */}
       </div>
+      <div className="fullplayer-container">
       <div className="v2challenge-player-container">
         <div className="v2workout-studio-top">
           <div style={{ display: "flex", alignItems: "center" }}>
@@ -430,7 +431,7 @@ function Workout() {
           <img src={WorkoutStudio} alt="workout-studio" />
         </div>
 
-        <div style={{ position: "relative", marginTop: "20px" }}>
+        <div className="v2workout-studio-middle">
           <button className="music-icon-button" onClick={openMusicAdder}>
             <span>Add background music</span>
             <img src={MusicIcon} alt="music-icon" />
@@ -456,10 +457,8 @@ function Workout() {
             currentExercise={selectedExercise}
             inCreation={true}
           />
-        </div>
 
-        <div className="v2workout-studio-middle">
-          <div className="v2workout-studio-middle-exercises">
+          <div className="video-browser-container">
             {workoutInfo && workoutInfo.exercises && (
               <Exercises
                 workout={workoutInfo}
@@ -475,7 +474,7 @@ function Workout() {
         </div>
 
         <div
-          className="v2workout-studio-bottom"
+          className="v2workout-studio-bottom player-download-stuff"
           style={{
             marginBottom: "50px",
           }}
@@ -555,6 +554,7 @@ function Workout() {
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       <EquipmentModal
