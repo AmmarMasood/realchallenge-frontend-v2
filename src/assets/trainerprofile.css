@@ -157,7 +157,7 @@
     /* border: 1px solid yellow; */
     background: var(--color-gray-dark);
     /* overflow: scroll; */
-    padding: 100px 50px 50px 50px;
+    padding: 100px 30px 30px 30px;
     margin-left: 0;
     width: 100%;
   }
@@ -202,8 +202,8 @@
   }
 }
 
-@media screen and (max-width: 400px) {
+@media screen and (max-width: 600px) {
   .trainer-profile-container-column2 {
-    padding: 10px;
+    padding: 10px !important;
   }
 }

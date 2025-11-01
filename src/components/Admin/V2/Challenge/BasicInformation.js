@@ -1503,7 +1503,7 @@ function BasicInformation(props) {
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "space-between",
-
+                                    gap: "10px",
                                     textTransform: "uppercase",
                                   }}
                                   className="font-paragraph-white"
@@ -1657,7 +1657,7 @@ function BasicInformation(props) {
                                               width: "200px",
                                               margin: "0 0 12px 5px",
                                             }}
-                                            className="adminV2-bi-input font-paragraph-white"
+                                            className="workout-input-field-1 adminV2-bi-input font-paragraph-white"
                                             value={workout.title}
                                             placeholder="Add Workout Title"
                                             onChange={(e) => {
@@ -1716,6 +1716,7 @@ function BasicInformation(props) {
                                           />
 
                                           <div
+                                            className="workout-box-field-below"
                                             style={{
                                               display: "flex",
                                               alignItems: "center",

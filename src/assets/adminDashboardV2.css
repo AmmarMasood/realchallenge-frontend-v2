@@ -147,6 +147,7 @@
   padding: 0;
   margin: 0;
 }
+
 .adminV2-bi-input {
   background-color: rgba(255, 255, 255, 0.1);
   border: 2px dashed #fff; /* 1px dotted white border */
@@ -166,4 +167,17 @@
 }
 .challenge-profile-box-2-info > div > .ant-select-selector {
   background-color: transparent !important;
+}
+
+/* add media query for workout-input-field-1 to make it responsive on screen width less than 500px */
+@media (max-width: 500px) {
+  .workout-input-field-1 {
+    margin-top: 30px !important;
+  }
+
+  .workout-box-field-below {
+    flex-direction: column;
+    align-items: flex-start !important;
+    /* justify-content: flex-start; */
+  }
 }
