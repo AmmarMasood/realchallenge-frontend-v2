@@ -1,7 +1,7 @@
 import React, { useContext, useEffect } from "react";
 import { LoadingOutlined } from "@ant-design/icons";
 import { Link, withRouter } from "react-router-dom";
-import { Button, Spin, Tag } from "antd";
+import { Button, Spin, Tag, notification } from "antd";
 
 import BackButton from "../../../../assets/icons/Back-button.png";
 import WorkoutStudio from "../../../../assets/icons/workout-studio.svg";
@@ -104,12 +104,12 @@ function Workout() {
   }, [selectedWorkoutForStudioId, weeks]); // Dependencies: selectedWorkoutForStudioId and weeks
 
   useEffect(() => {
-    if (workoutInfo) {
+    if (workoutInfo && workoutInfo.exercises?.length > 0) {
+      setSelectedExercise({
+        ...selectedExercise,
+        exercise: workoutInfo.exercises[0],
+      });
     }
-    setSelectedExercise({
-      ...selectedExercise,
-      exercise: workoutInfo.exercises?.length > 0 && workoutInfo.exercises[0],
-    });
     fetchData();
   }, []);
 
@@ -117,12 +117,14 @@ function Workout() {
     if (introVideoFile) {
       setWorkoutInfo({
         ...workoutInfo,
-        exercises: workoutInfo.exercises?.map((exercise) => {
+        exercises: workoutInfo.exercises?.map((exercise, index) => {
           if (exercise.id === selectedExercise.id) {
             return {
               ...exercise,
               videoURL: introVideoFile?.link,
               videoThumbnailURL: introVideoFile?.thumbnailUrl || "",
+              // Auto-populate break to 5 seconds for intro exercise (index 0)
+              break: index === 0 ? 5 : exercise.break,
             };
           }
           return exercise;
@@ -224,18 +226,30 @@ function Workout() {
 
   const moveToNextExercise = (playerProgress) => {
     if (workoutInfo.exercises[selectedExercise.index + 1]) {
-      // console.log("dasdsa", currentExercise);
+      const nextIndex = selectedExercise.index + 1;
+      const nextExercise = workoutInfo.exercises[nextIndex];
+
+      // Validate intro exercise has duration if it has a video
+      if (nextIndex === 0 && nextExercise.videoURL && (!nextExercise.exerciseLength || nextExercise.exerciseLength <= 0)) {
+        notification.error({
+          message: "Duration Required",
+          description: "Please enter a duration for the intro exercise before playing it.",
+          placement: "topRight",
+        });
+        setPlayerState({ ...playerState, playing: false });
+        return;
+      }
+
       const completeionRate = Math.round(
-        ((selectedExercise.index + 1) / (workoutInfo.exercises.length - 1)) *
-          100
+        (nextIndex / (workoutInfo.exercises.length - 1)) * 100
       );
       setSelectedExercise({
-        exercise: workoutInfo.exercises[selectedExercise.index + 1],
-        index: selectedExercise.index + 1,
+        exercise: nextExercise,
+        index: nextIndex,
         completed: completeionRate,
       });
 
-      updateExerciseWorkoutTimer("next", selectedExercise.index + 1);
+      updateExerciseWorkoutTimer("next", nextIndex);
       setPlayerState({ ...playerState, playing: false });
       return;
     } else {
@@ -251,17 +265,29 @@ function Workout() {
 
   const moveToPrevExercise = (playerProgress) => {
     if (workoutInfo.exercises[selectedExercise.index - 1]) {
-      // console.log("dasdsa", currentExercise);
+      const prevIndex = selectedExercise.index - 1;
+      const prevExercise = workoutInfo.exercises[prevIndex];
+
+      // Validate intro exercise has duration if it has a video
+      if (prevIndex === 0 && prevExercise.videoURL && (!prevExercise.exerciseLength || prevExercise.exerciseLength <= 0)) {
+        notification.error({
+          message: "Duration Required",
+          description: "Please enter a duration for the intro exercise before playing it.",
+          placement: "topRight",
+        });
+        setPlayerState({ ...playerState, playing: false });
+        return;
+      }
+
       const completeionRate = Math.round(
-        ((selectedExercise.index - 1) / (workoutInfo.exercises.length - 1)) *
-          100
+        (prevIndex / (workoutInfo.exercises.length - 1)) * 100
       );
       setSelectedExercise({
-        exercise: workoutInfo.exercises[selectedExercise.index - 1],
-        index: selectedExercise.index - 1,
+        exercise: prevExercise,
+        index: prevIndex,
         completed: completeionRate,
       });
-      updateExerciseWorkoutTimer("prev", selectedExercise.index - 1);
+      updateExerciseWorkoutTimer("prev", prevIndex);
       setPlayerState({ ...playerState, playing: true });
       return;
     } else {

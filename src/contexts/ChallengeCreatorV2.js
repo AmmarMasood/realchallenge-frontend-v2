@@ -98,14 +98,14 @@ export function ChallengeProvider({ children }) {
       id: v4(),
       workouts: week.workouts.map((workout) => {
         const introExercise = {
-          break: 5,
+          break: 0,
           createdAt: workout.createdAt,
           exerciseGroupName: "Introduction",
-          exerciseLength: parseInt(workout.introVideoLength || 10),
+          exerciseLength: workout.introVideoLink ? parseInt(workout.introVideoLength || 10) : 0,
           title: "Introduction to workout",
-          videoURL: workout.introVideoLink,
+          videoURL: workout.introVideoLink || "",
           voiceOverLink: "",
-          videoThumbnailURL: workout.introVideoThumbnailLink,
+          videoThumbnailURL: workout.introVideoThumbnailLink || "",
         };
         workout.exercises.unshift(introExercise);
         return {

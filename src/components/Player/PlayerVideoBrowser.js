@@ -2,6 +2,7 @@ import React, { useContext } from "react";
 
 import Carousel from "react-multi-carousel";
 import VideoThumbnail from "react-video-thumbnail";
+import { notification } from "antd";
 import SquarePT from "../../assets/icons/player-video-browser-whistle-icon.svg";
 import SquarePlay from "../../assets/icons/player-video-browser-play-icon.svg";
 import { exerciseWorkoutTimeTrackContext } from "../../contexts/PlayerState";
@@ -60,8 +61,20 @@ function PlayerVideoBrowser({
   };
 
   const handleChangeExercise = (i) => {
+    const selectedExercise = workout.exercises[i];
+
+    // Validate intro exercise has duration if it has a video
+    if (i === 0 && selectedExercise.videoURL && (!selectedExercise.exerciseLength || selectedExercise.exerciseLength <= 0)) {
+      notification.error({
+        message: "Duration Required",
+        description: "Please enter a duration for the intro exercise before playing it.",
+        placement: "topRight",
+      });
+      return;
+    }
+
     setCurrentExercise({
-      exercise: workout.exercises[i],
+      exercise: selectedExercise,
       index: i,
       completed: Math.round((i / (workout.exercises.length - 1)) * 100),
     });
@@ -97,8 +110,15 @@ function PlayerVideoBrowser({
       <div className="video-browser-container">
         <Carousel responsive={responsive}>
           {workout.exercises &&
-            workout.exercises.map((e, i) => {
-              return i === 0 ? (
+            workout.exercises
+              .map((e, originalIndex) => ({ e, originalIndex }))
+              .filter(({ e, originalIndex }) =>
+                originalIndex !== 0 || (e.videoURL || e.exerciseLength > 0)
+              )
+              .map(({ e, originalIndex }) => {
+                const i = originalIndex;
+
+                return i === 0 ? (
                 <div
                   className={`${
                     currentExercise.index === i
@@ -233,7 +253,7 @@ function PlayerVideoBrowser({
                   </div>
                 </div>
               );
-            })}
+              })}
         </Carousel>
       </div>
       {!fromFullScreen && workout.isRendered && (

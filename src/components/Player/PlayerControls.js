@@ -645,24 +645,34 @@ function PlayerControls(
               className="react-player-stepper-container"
               style={{
                 gridTemplateColumns: `repeat(${
-                  workout && workout.exercises.length
+                  workout && workout.exercises.filter((ex, idx) =>
+                    idx !== 0 || (ex.videoURL || ex.exerciseLength > 0)
+                  ).length
                 }, 1fr)`,
               }}
             >
               {workout &&
-                workout.exercises.map((j, i) => (
-                  <div
-                    className="react-player-stepper"
-                    style={{
-                      background:
-                        currentExercise &&
-                        currentExercise.index === i &&
-                        currentExercise.index !== -1
-                          ? "#fff"
-                          : "#FB7600",
-                    }}
-                  ></div>
-                ))}
+                workout.exercises
+                  .map((ex, originalIndex) => ({ ex, originalIndex }))
+                  .filter(({ ex, originalIndex }) =>
+                    originalIndex !== 0 || (ex.videoURL || ex.exerciseLength > 0)
+                  )
+                  .map(({ ex, originalIndex }) => {
+                    return (
+                      <div
+                        key={originalIndex}
+                        className="react-player-stepper"
+                        style={{
+                          background:
+                            currentExercise &&
+                            currentExercise.index === originalIndex &&
+                            currentExercise.index !== -1
+                              ? "#fff"
+                              : "#FB7600",
+                        }}
+                      ></div>
+                    );
+                  })}
             </div>
           </>
         )}

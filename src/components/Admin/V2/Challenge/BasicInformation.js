@@ -333,10 +333,10 @@ function BasicInformation(props) {
         renderWorkout: false,
         exercises: [
           {
-            break: 5,
+            break: 0,
             createdAt: "",
             exerciseGroupName: "Introduction",
-            exerciseLength: 10,
+            exerciseLength: 0,
             title: "Introduction to workout",
             videoURL: "",
             voiceOverLink: "",

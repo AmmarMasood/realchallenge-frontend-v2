@@ -10,6 +10,7 @@ import {
 import AddExercise from "../../../../../assets/icons/add-exercise.svg";
 import AddNewExercise from "../../../../../assets/icons/add-new-exercise.svg";
 import { CopyOutlined, DeleteFilled } from "@ant-design/icons";
+import { notification } from "antd";
 import { v4 } from "uuid";
 import { useChallenge } from "../../../../../contexts/ChallengeCreatorV2";
 import ExerciseChooseModal from "../ExerciseChooseModal/ExerciseChooseModal";
@@ -84,8 +85,20 @@ function Exercises({
   };
 
   const handleChangeExercise = (i) => {
+    const selectedExercise = workout.exercises[i];
+
+    // Validate intro exercise has duration if it has a video
+    if (i === 0 && selectedExercise.videoURL && (!selectedExercise.exerciseLength || selectedExercise.exerciseLength <= 0)) {
+      notification.error({
+        message: "Duration Required",
+        description: "Please enter a duration for the intro exercise before playing it.",
+        placement: "topRight",
+      });
+      return;
+    }
+
     setCurrentExercise({
-      exercise: workout.exercises[i],
+      exercise: selectedExercise,
       index: i,
       completed: Math.round((i / (workout.exercises.length - 1)) * 100),
     });
@@ -158,7 +171,7 @@ function Exercises({
     setWorkout({ ...workout, exercises: updatedExercises });
 
     // if current exercise is the one being updated, update the workout time track
-    if (currentExercise && currentExercise?.exercise.id === id) {
+    if (currentExercise && currentExercise.exercise && currentExercise.exercise.id === id) {
       const allExercisesBeforeTheNextExercise = workout.exercises
         .slice(0, currentExercise.index)
         .reduce((a, b) => a + (parseInt(b["exerciseLength"]) || 0), 0);
@@ -237,7 +250,7 @@ function Exercises({
     e.stopPropagation();
     e.preventDefault();
     const updatedExercises = workout.exercises.map((ex, idx) =>
-      idx === 0 ? { ...ex, videoURL: "", exerciseLength: 0 } : ex
+      idx === 0 ? { ...ex, videoURL: "", videoThumbnailURL: "", exerciseLength: 0, break: 0 } : ex
     );
     setWorkout({ ...workout, exercises: updatedExercises });
   };
@@ -340,8 +353,7 @@ function Exercises({
                 }`}
               >
                 {workout.renderWorkout &&
-                  (firstExercise?.videoURL ||
-                    firstExercise?.exerciseLength > 0) && (
+                  firstExercise?.videoURL && (
                     <DeleteFilled
                       style={{
                         color: "#fff",
@@ -349,7 +361,7 @@ function Exercises({
                         position: "absolute",
                         right: "10px",
                         zIndex: 100,
-                        cursor: "pointers",
+                        cursor: "pointer",
                       }}
                       onClick={(event) =>
                         removeIntroExercise(event, firstExercise)
@@ -466,12 +478,11 @@ function Exercises({
                               ? "exercise-browser-card challenge-player-container-exercies-box--currentRunning"
                               : "exercise-browser-card"
                           }`}
-                          key={e.id}
                           style={{
                             backgroundColor:
                               draggedItemId === e.id
                                 ? "rgba(34, 197, 94, 0.15)"
-                                : "transparent",
+                                : undefined,
                             border:
                               draggedItemId === e.id
                                 ? "2px solid #22c55e"
