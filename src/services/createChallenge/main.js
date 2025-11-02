@@ -1,7 +1,7 @@
 import axios from "axios";
 import { notification } from "antd";
 
-const openNotificationWithIcon = (type, message, description) => {
+export const openNotificationWithIcon = (type, message, description) => {
   notification[type]({
     message: message,
     description: description,
@@ -39,7 +39,8 @@ export function createExercise(e) {
     })
     .catch((err) => {
       console.log(err);
-      openNotificationWithIcon("error", "Unable to create", "");
+      throw err;
+      // openNotificationWithIcon("error", "Unable to create", "");
     });
 }
 
@@ -65,7 +66,8 @@ export function updateExercise(e, id) {
     })
     .catch((err) => {
       console.log(err);
-      openNotificationWithIcon("error", "Unable to update", "");
+      // openNotificationWithIcon("error", "Unable to update", "");
+      throw err;
     });
 }
 

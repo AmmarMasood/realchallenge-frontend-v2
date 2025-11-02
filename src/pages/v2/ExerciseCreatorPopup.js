@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { Modal, Input, Select } from "antd";
+import { Modal, Input, Select, message } from "antd";
 import "../../components/Admin/V2/Workout/MusicChooseModal/MusicChooseModal.css";
 import ExerciseIcon from "../../assets/icons/dumb-bell-icon-orange.svg";
 import RemoteMediaManager from "../../components/Admin/MediaManager/RemoteMediaManager";
@@ -9,6 +9,7 @@ import { LanguageContext } from "../../contexts/LanguageContext";
 import { userInfoContext } from "../../contexts/UserStore";
 import {
   createExercise,
+  openNotificationWithIcon,
   updateExercise,
 } from "../../services/createChallenge/main";
 
@@ -97,6 +98,21 @@ function ExerciseCreatorPopup({
     } catch (error) {
       console.error("Error creating exercise:", error);
       setLoading(false);
+
+      // Handle duplicate exercise name error
+      if (error.response && error.response.status === 409) {
+        openNotificationWithIcon(
+          "error",
+          "An exercise with this name already exists. Please choose a different name.",
+          ""
+        );
+      } else {
+        openNotificationWithIcon(
+          "error",
+          "Failed to save exercise. Please try again.",
+          ""
+        );
+      }
     }
   };
   return (
@@ -120,7 +136,10 @@ function ExerciseCreatorPopup({
       <div className="music-selector__header">
         <img src={ExerciseIcon} alt="img" className="music-selector__icon" />
         <h2 className="music-selector__title">
-          <span>Create Exercise</span>
+          <span>
+            {" "}
+            {selectedExerciseForEdit ? "Edit Exercise" : "Create Exercise"}
+          </span>
         </h2>
       </div>
 
