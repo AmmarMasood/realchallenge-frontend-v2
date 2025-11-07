@@ -345,7 +345,7 @@ function BasicInformation(props) {
         id: v4(),
         title: "",
         subtitle: "",
-        renderWorkout: false,
+        renderWorkout: true, // Default to "with exercises"
         exercises: [
           {
             break: 0,
@@ -628,7 +628,7 @@ function BasicInformation(props) {
     const newWorkout = {
       title: workout.title,
       subtitle: workout.subtitle,
-      renderWorkout: workout.renderWorkout,
+      renderWorkout: workout.renderWorkout, // Keep same type as original
       equipments: workout.equipments || [],
       infoFile: workout.infoFile,
       id: v4(),
@@ -673,6 +673,21 @@ function BasicInformation(props) {
       return newOrderIds.map((key) =>
         updatedWeeks.find((w) => (w.id || w._id) === key)
       );
+    });
+  };
+
+  // Helper function to check if workout has content (is locked)
+  const isWorkoutLocked = (workout) => {
+    if (!workout.exercises || workout.exercises.length === 0) return false;
+
+    // Check if any exercise has content
+    return workout.exercises.some((exercise, index) => {
+      // Intro exercise (index 0) - check if it has video or exerciseId
+      if (index === 0) {
+        return exercise.videoURL || exercise.exerciseId;
+      }
+      // Other exercises - check if they have video, exerciseId, or meaningful title
+      return exercise.videoURL || exercise.exerciseId || (exercise.title && exercise.title.trim() !== "");
     });
   };
 
@@ -1739,40 +1754,69 @@ function BasicInformation(props) {
                                               width: "100%",
                                             }}
                                           >
-                                            <Checkbox
-                                              style={{
-                                                color: "#fff",
-                                                fontSize: "13px",
-                                                margin: "0 0 12px 5px",
-                                              }}
-                                              checked={workout.renderWorkout}
-                                              onChange={(e) => {
-                                                const newWeeks = [...weeks];
-                                                const weekIndex =
-                                                  newWeeks.findIndex(
-                                                    (week) => week.id === w.id
-                                                  );
-                                                if (weekIndex !== -1) {
-                                                  const workoutIndex = newWeeks[
-                                                    weekIndex
-                                                  ].workouts.findIndex(
-                                                    (item) =>
-                                                      item.id === workout.id
-                                                  );
-                                                  if (workoutIndex !== -1) {
-                                                    newWeeks[
-                                                      weekIndex
-                                                    ].workouts[
-                                                      workoutIndex
-                                                    ].renderWorkout =
-                                                      e.target.checked;
-                                                    setWeeks(newWeeks);
+                                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                              <Checkbox
+                                                style={{
+                                                  color: "#fff",
+                                                  fontSize: "13px",
+                                                  margin: "0 0 12px 5px",
+                                                }}
+                                                checked={!workout.renderWorkout}
+                                                onChange={(e) => {
+                                                  // Check if workout is locked
+                                                  if (isWorkoutLocked(workout)) {
+                                                    notification.error({
+                                                      message: "Workout Type is Locked",
+                                                      description: "Workout type is locked after adding content. Please create a new workout to change the type.",
+                                                      placement: "topRight",
+                                                      duration: 5,
+                                                    });
+                                                    return;
                                                   }
-                                                }
-                                              }}
-                                            >
-                                              Render Workout
-                                            </Checkbox>
+
+                                                  const newWeeks = [...weeks];
+                                                  const weekIndex =
+                                                    newWeeks.findIndex(
+                                                      (week) => week.id === w.id
+                                                    );
+                                                  if (weekIndex !== -1) {
+                                                    const workoutIndex = newWeeks[
+                                                      weekIndex
+                                                    ].workouts.findIndex(
+                                                      (item) =>
+                                                        item.id === workout.id
+                                                    );
+                                                    if (workoutIndex !== -1) {
+                                                      // Invert the checkbox logic
+                                                      newWeeks[
+                                                        weekIndex
+                                                      ].workouts[
+                                                        workoutIndex
+                                                      ].renderWorkout =
+                                                        !e.target.checked;
+                                                      setWeeks(newWeeks);
+                                                    }
+                                                  }
+                                                }}
+                                              >
+                                                This workout contains no exercises
+                                              </Checkbox>
+                                              <Tooltip
+                                                title="Workouts are 'with exercises' by default. Turn this on to create a workout without exercises"
+                                                placement="top"
+                                              >
+                                                <img
+                                                  src={HelpIcon}
+                                                  alt="help"
+                                                  style={{
+                                                    height: "16px",
+                                                    width: "16px",
+                                                    cursor: "pointer",
+                                                    marginBottom: "12px",
+                                                  }}
+                                                />
+                                              </Tooltip>
+                                            </div>
 
                                             <div
                                               style={{
