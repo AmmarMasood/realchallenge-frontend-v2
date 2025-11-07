@@ -26,6 +26,7 @@ function ExerciseChooseModal({
       seletedTrainers &&
       seletedTrainers.length > 0
     ) {
+      // console.log("seletedTrainers", seletedTrainers, exercises);
       const trainerIds = seletedTrainers.map((trainer) => trainer._id);
       const filtered = exercises.filter((exercise) => {
         return exercise.trainer && trainerIds.includes(exercise.trainer._id);

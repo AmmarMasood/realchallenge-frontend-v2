@@ -3,6 +3,7 @@ import { Modal, Input, Select, message } from "antd";
 import "../../components/Admin/V2/Workout/MusicChooseModal/MusicChooseModal.css";
 import ExerciseIcon from "../../assets/icons/dumb-bell-icon-orange.svg";
 import RemoteMediaManager from "../../components/Admin/MediaManager/RemoteMediaManager";
+import { PreviewModal } from "../../components/Admin/MediaManager/MediaManager";
 import ExericseIconWhite from "../../assets/icons/dumb-bell-icon.svg";
 import WhistleIconWhite from "../../assets/icons/whitsle-icon-white.svg";
 import { LanguageContext } from "../../contexts/LanguageContext";
@@ -12,6 +13,8 @@ import {
   openNotificationWithIcon,
   updateExercise,
 } from "../../services/createChallenge/main";
+import { getAllTrainers } from "../../services/trainers";
+import { getUserProfileInfo } from "../../services/users";
 
 function ExerciseCreatorPopup({
   open,
@@ -30,12 +33,45 @@ function ExerciseCreatorPopup({
   const [videoFile, setVideoFile] = useState(null);
   const [audioFile, setAudioFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [previewModalVisible, setPreviewModalVisible] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
+  const [allTrainers, setAllTrainers] = useState([]);
+  const [selectedTrainer, setSelectedTrainer] = useState(null);
+
+  // Fetch trainers when modal opens (for admin only)
+  useEffect(() => {
+    const fetchTrainers = async () => {
+      if (open && userInfo.role === "admin") {
+        try {
+          const response = await getAllTrainers(language);
+          let trainersList = response.trainers || [];
+
+          // Get admin's profile and add them to the list if not already present
+          const adminProfile = await getUserProfileInfo(userInfo.id);
+          if (adminProfile && adminProfile.customer) {
+            const adminExists = trainersList.find(
+              (t) => t._id === adminProfile.customer._id
+            );
+            if (!adminExists) {
+              trainersList = [...trainersList, adminProfile.customer];
+            }
+          }
+
+          setAllTrainers(trainersList);
+        } catch (error) {
+          console.error("Error fetching trainers:", error);
+        }
+      }
+    };
+    fetchTrainers();
+  }, [open, userInfo.role, userInfo.id, language]);
 
   useEffect(() => {
     console.log("ammar", open, selectedExerciseForEdit);
-    // Reset the state
+    // Reset the state when modal opens or closes
     if (open) {
       if (selectedExerciseForEdit) {
+        // Edit mode - populate with existing data
         setExerciseTitle(selectedExerciseForEdit.title || "");
         setExerciseDescription(selectedExerciseForEdit.description || "");
         setVideoFile(
@@ -48,7 +84,12 @@ function ExerciseCreatorPopup({
             ? { link: selectedExerciseForEdit.voiceOverLink }
             : null
         );
+        // Set trainer from exercise being edited
+        setSelectedTrainer(
+          selectedExerciseForEdit.trainer?._id || selectedExerciseForEdit.trainer || null
+        );
       } else {
+        // Create mode - clear everything
         setExerciseTitle("");
         setExerciseDescription("");
         setVideoFile(null);
@@ -56,9 +97,23 @@ function ExerciseCreatorPopup({
         setMediaManagerVisible(false);
         setMediaManagerType("videos");
         setMediaManagerActions([]);
+        // For trainers, auto-select themselves; for admins, clear selection
+        setSelectedTrainer(userInfo.role === "trainer" ? userInfo.id : null);
       }
+    } else {
+      // Modal closed - clear all state
+      setExerciseTitle("");
+      setExerciseDescription("");
+      setVideoFile(null);
+      setAudioFile(null);
+      setMediaManagerVisible(false);
+      setMediaManagerType("videos");
+      setMediaManagerActions([]);
+      setSelectedTrainer(null);
+      setPreviewModalVisible(false);
+      setPreviewFile(null);
     }
-  }, [open]);
+  }, [open, selectedExerciseForEdit, userInfo]);
 
   const openMediaManager = (type) => {
     setMediaManagerVisible(true);
@@ -71,7 +126,7 @@ function ExerciseCreatorPopup({
   };
 
   const onCreate = async () => {
-    if (!exerciseTitle || !videoFile) {
+    if (!exerciseTitle || !videoFile || !selectedTrainer) {
       return;
     }
     setLoading(true);
@@ -81,7 +136,7 @@ function ExerciseCreatorPopup({
         videoURL: videoFile.link,
         voiceOverLink: audioFile?.link,
         videoThumbnailURL: videoFile?.thumbnailUrl || "",
-        trainer: userInfo.id,
+        trainer: selectedTrainer,
         language,
         title: exerciseTitle,
         description: exerciseDescription,
@@ -103,7 +158,7 @@ function ExerciseCreatorPopup({
       if (error.response && error.response.status === 409) {
         openNotificationWithIcon(
           "error",
-          "An exercise with this name already exists. Please choose a different name.",
+          "An exercise with this name already exists for this trainer. Please choose a different name.",
           ""
         );
       } else {
@@ -159,6 +214,38 @@ function ExerciseCreatorPopup({
           width: "100%",
         }}
       />
+
+      {/* Trainer Selector - Only for Admins */}
+      {userInfo.role === "admin" && (
+        <Select
+          placeholder="Select Trainer"
+          value={selectedTrainer}
+          onChange={(value) => setSelectedTrainer(value)}
+          style={{
+            width: "100%",
+            marginTop: "10px",
+          }}
+          dropdownStyle={{
+            backgroundColor: "#222935",
+            border: "1px solid #FF950A",
+          }}
+          className="trainer-selector"
+        >
+          {allTrainers.map((trainer) => (
+            <Select.Option
+              key={trainer._id}
+              value={trainer._id}
+              style={{
+                backgroundColor: "#222935",
+                color: "#fff",
+              }}
+            >
+              {trainer.firstName} {trainer.lastName}
+            </Select.Option>
+          ))}
+        </Select>
+      )}
+
       <div
         style={{
           display: "flex",
@@ -191,7 +278,7 @@ function ExerciseCreatorPopup({
                   alignItems: "center",
                 }}
               >
-                <a
+                <span
                   style={{
                     textDecoration: "underline",
                     color: "#FF950A",
@@ -202,16 +289,16 @@ function ExerciseCreatorPopup({
                     textOverflow: "ellipsis",
                     textWrap: "balance",
                     whiteSpace: "nowrap",
+                    cursor: "pointer",
                   }}
-                  href={videoFile.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   onClick={(e) => {
                     e.stopPropagation();
+                    setPreviewFile({ link: videoFile.link, name: exerciseTitle || "Video Preview" });
+                    setPreviewModalVisible(true);
                   }}
                 >
                   {videoFile.link}
-                </a>
+                </span>
                 <span
                   style={{
                     color: "#fff",
@@ -267,7 +354,7 @@ function ExerciseCreatorPopup({
                   alignItems: "center",
                 }}
               >
-                <a
+                <span
                   style={{
                     textDecoration: "underline",
                     color: "#FF950A",
@@ -278,16 +365,16 @@ function ExerciseCreatorPopup({
                     textOverflow: "ellipsis",
                     textWrap: "balance",
                     whiteSpace: "nowrap",
+                    cursor: "pointer",
                   }}
-                  href={audioFile.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   onClick={(e) => {
                     e.stopPropagation();
+                    setPreviewFile({ link: audioFile.link, name: exerciseTitle || "Audio Preview" });
+                    setPreviewModalVisible(true);
                   }}
                 >
                   {audioFile.link}
-                </a>
+                </span>
                 <span
                   style={{
                     color: "#fff",
@@ -343,10 +430,15 @@ function ExerciseCreatorPopup({
         className="music-selector__next-btn"
         onClick={onCreate}
         style={{ marginTop: "10px" }}
-        disabled={!exerciseTitle || !videoFile || loading}
+        disabled={!exerciseTitle || !videoFile || !selectedTrainer || loading}
       >
         Save
       </button>
+      <PreviewModal
+        visible={previewModalVisible}
+        onClose={() => setPreviewModalVisible(false)}
+        file={previewFile}
+      />
     </Modal>
   );
 }

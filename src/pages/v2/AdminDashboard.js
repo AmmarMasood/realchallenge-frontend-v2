@@ -107,6 +107,7 @@ function AdminDashboard(props) {
   };
   const goToNewExercise = () => {
     // props.history.push("/admin/dashboard?tab=new-exercise");
+    setSelectedExerciseForEdit(null); // Clear any previously selected exercise
     setOpenExerciseCreatorPopup(true);
   };
   const goToEditExercise = (exerciseId) => {
@@ -411,12 +412,16 @@ function AdminDashboard(props) {
       {/* modaks */}
       <ExerciseCreatorPopup
         open={openExerciseCreatorPopup}
-        setOpen={setOpenExerciseCreatorPopup}
-        selectedExerciseForEdit={selectedExerciseForEdit}
-        onSuccess={() => {
-          if (selectedExerciseForEdit) {
+        setOpen={(isOpen) => {
+          setOpenExerciseCreatorPopup(isOpen);
+          if (!isOpen) {
+            // Clear selected exercise when modal closes
             setSelectedExerciseForEdit(null);
           }
+        }}
+        selectedExerciseForEdit={selectedExerciseForEdit}
+        onSuccess={() => {
+          setSelectedExerciseForEdit(null);
           fetchExercises();
         }}
       />

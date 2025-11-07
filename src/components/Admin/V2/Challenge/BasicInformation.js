@@ -200,12 +200,17 @@ function BasicInformation(props) {
 
   const fetchDataV2 = async () => {
     setLoading(true);
-    // if user is trainer we need to get his info
+    let currentUserDetails = null;
+    // Get user info for both trainer and admin
     if (userInfo.role === "trainer" || userInfo.role === "admin") {
       const uInfo = await getUserProfileInfo(userInfo.id);
-      uInfo &&
-        seletedTrainers.length <= 0 &&
-        setSelectedTrainers((prev) => [...prev, uInfo.customer]);
+      currentUserDetails = uInfo.customer;
+      // Only auto-add trainer, not admin
+      if (userInfo.role === "trainer") {
+        uInfo &&
+          seletedTrainers.length <= 0 &&
+          setSelectedTrainers((prev) => [...prev, uInfo.customer]);
+      }
       setUserDetails(uInfo.customer);
     }
     const bodyFocus = await getAllBodyFocus(language);
@@ -213,7 +218,17 @@ function BasicInformation(props) {
     const res = await getAllTrainerGoals(language);
     const allExercises = await getAllExercises(language);
     setAllBodyFocus(bodyFocus.body);
-    setAllTrainers(trainers.trainers);
+
+    // If user is admin, ensure they appear in the trainers list
+    let trainersList = trainers.trainers || [];
+    if (userInfo.role === "admin" && currentUserDetails) {
+      const adminExists = trainersList.find(t => t._id === currentUserDetails._id);
+      if (!adminExists) {
+        trainersList = [...trainersList, currentUserDetails];
+      }
+    }
+    setAllTrainers(trainersList);
+
     setAllFitnessInterests(res.goals);
     setAllExercises(allExercises.exercises);
 
@@ -978,7 +993,7 @@ function BasicInformation(props) {
                 </span>
 
                 <span>
-                  {g._id !== usereDtails._id && (
+                  {!(g._id === usereDtails._id && userInfo.role === "trainer") && (
                     <Button
                       onClick={() => {
                         setSelectedTrainers((prev) => {
@@ -1173,7 +1188,7 @@ function BasicInformation(props) {
                     >
                       {trainer.firstName + " " + trainer.lastName}
                     </a>
-                    {trainer._id !== usereDtails._id && (
+                    {!(trainer._id === usereDtails._id && userInfo.role === "trainer") && (
                       <img
                         src={DeleteWhite}
                         alt="delete"

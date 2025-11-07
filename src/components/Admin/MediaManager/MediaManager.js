@@ -1,4 +1,4 @@
-import { ChonkyActions, FileHelper, FullFileBrowser } from "chonky";
+import { ChonkyActions, FileHelper, FullFileBrowser, defineFileAction } from "chonky";
 import React, {
   useCallback,
   useContext,
@@ -50,6 +50,52 @@ import { userInfoContext } from "../../../contexts/UserStore";
 const { confirm } = Modal;
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
+
+// Override default sort actions to change group name from "Options" to "Sort by"
+const SortFilesByName = defineFileAction({
+  id: ChonkyActions.SortFilesByName.id,
+  sortKeySelector: ChonkyActions.SortFilesByName.sortKeySelector,
+  button: {
+    name: 'Sort by Name',
+    toolbar: true,
+    group: 'Sort by',
+  },
+});
+
+const SortFilesBySize = defineFileAction({
+  id: ChonkyActions.SortFilesBySize.id,
+  sortKeySelector: ChonkyActions.SortFilesBySize.sortKeySelector,
+  button: {
+    name: 'Sort by Size',
+    toolbar: true,
+    group: 'Sort by',
+  },
+});
+
+const SortFilesByDate = defineFileAction({
+  id: ChonkyActions.SortFilesByDate.id,
+  sortKeySelector: ChonkyActions.SortFilesByDate.sortKeySelector,
+  button: {
+    name: 'Sort by Date',
+    toolbar: true,
+    group: 'Sort by',
+  },
+});
+
+// Custom sort action for file type/extension
+const SortFilesByType = defineFileAction({
+  id: 'sort_by_type',
+  sortKeySelector: (file) => {
+    if (file.isDir) return ''; // Folders come first
+    const extension = file.name ? file.name.split('.').pop()?.toLowerCase() || '' : '';
+    return extension;
+  },
+  button: {
+    name: 'Sort by Type',
+    toolbar: true,
+    group: 'Sort by',
+  },
+});
 
 const openNotificationWithIcon = (type, message, description) => {
   notification[type]({
@@ -835,7 +881,7 @@ export const useFolderChain = (fileMap, currentFolderId) => {
 };
 
 // Preview Modal Component for files
-const PreviewModal = ({ visible, onClose, file }) => {
+export const PreviewModal = ({ visible, onClose, file }) => {
   const [loading, setLoading] = useState(true);
 
   console.log("ammar", file);
@@ -993,12 +1039,12 @@ const PreviewModal = ({ visible, onClose, file }) => {
             />
           </>
         ) : isAudio ? (
-          <div style={{ width: "100%", maxWidth: "600px" }}>
+          <div style={{ width: "100%", minWidth: "500px", maxWidth: "1200px" }}>
             <ReactPlayer
               url={file.link}
               controls={true}
               width="100%"
-              height="50px"
+              height="80px"
               config={{
                 file: {
                   attributes: {
@@ -1855,10 +1901,11 @@ export const VFSBrowser = React.memo((props) => {
       actions.push(ChonkyActions.EnableListView);
     }
 
-    // Add sorting actions
-    actions.push(ChonkyActions.SortFilesByName);
-    actions.push(ChonkyActions.SortFilesBySize);
-    actions.push(ChonkyActions.SortFilesByDate);
+    // Add sorting actions with custom "Sort by" group
+    actions.push(SortFilesByName);
+    actions.push(SortFilesBySize);
+    actions.push(SortFilesByDate);
+    actions.push(SortFilesByType);
 
     // Enable drag and drop only if not in admin mode
     if (!adminMode) {
