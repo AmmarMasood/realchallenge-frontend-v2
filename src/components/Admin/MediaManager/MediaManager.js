@@ -2141,6 +2141,15 @@ export const VFSBrowser = React.memo((props) => {
                 />
               </Space>
             </Tooltip>
+            <Button
+              type="primary"
+              size="small"
+              onClick={refreshData}
+              loading={loading}
+              title="Refresh all folders and files"
+            >
+              🔄 Refresh All
+            </Button>
           </Space>
         </div>
       </Card>
