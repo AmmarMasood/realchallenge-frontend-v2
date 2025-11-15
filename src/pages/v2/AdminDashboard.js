@@ -66,12 +66,12 @@ function AdminDashboard(props) {
   }
 
   const fetchChallenges = async () => {
-    const { challenges } = await getAllUserChallenges(language);
+    const { challenges } = await getAllUserChallenges(language, true);
     setAllChallenges(challenges);
   };
 
   const fetchExercises = async () => {
-    const { exercises } = await getAllUserExercises(language);
+    const { exercises } = await getAllUserExercises(language, true);
     setAllExercises(exercises);
   };
   async function fetchData(id) {

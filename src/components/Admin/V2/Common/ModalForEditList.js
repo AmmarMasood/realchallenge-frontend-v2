@@ -24,10 +24,30 @@ function ModalForEditList({
 
   // Check if admin features should be shown
   const isAdmin = adminInfo?.role === "admin";
+  const isTrainer = adminInfo?.role === "trainer";
+
+  // Only admins can see filter dropdown
   const showAdminFeatures =
     isAdmin && (type === "exercise" || type === "challenge");
 
-  // Get unique trainers for the filter dropdown
+  // Both admins and trainers can see metadata
+  const showMetadata =
+    (isAdmin || isTrainer) && (type === "exercise" || type === "challenge");
+
+  // Both admins and trainers can view challenges
+  const canViewChallenge = (isAdmin || isTrainer) && type === "challenge";
+
+  // Check if user can edit a specific item
+  const canEdit = (item) => {
+    console.log("item", item, adminInfo);
+    if (isAdmin) return true; // Admins can edit everything
+    if (isTrainer && item.user && item.user._id === adminInfo.id) {
+      return true; // Trainers can only edit their own content
+    }
+    return false;
+  };
+
+  // Get unique trainers for the filter dropdown (admin only)
   const uniqueTrainers = showAdminFeatures
     ? Array.from(
         new Map(
@@ -60,7 +80,9 @@ function ModalForEditList({
     if (showAdminFeatures && selectedTrainer !== "all") {
       const creatorId = (d.user || d.trainer)?._id; // Creator can be in user or trainer field
       const assignedTrainerId = d.trainer?._id; // Assigned trainer
-      const isInTrainersArray = d.trainers?.some((trainer) => trainer._id === selectedTrainer); // Check trainers array
+      const isInTrainersArray = d.trainers?.some(
+        (trainer) => trainer._id === selectedTrainer
+      ); // Check trainers array
 
       matchesTrainer =
         creatorId === selectedTrainer || // Matches as creator
@@ -160,7 +182,7 @@ function ModalForEditList({
                 >
                   {subtext || "ID"}: {d._id}
                 </span>
-                {showAdminFeatures && (d.trainer || d.user) && (
+                {showMetadata && (d.trainer || d.user) && (
                   <div
                     style={{
                       fontWeight: 400,
@@ -173,7 +195,7 @@ function ModalForEditList({
                     Created by: {d.user.firstName} {d.user.lastName}
                   </div>
                 )}
-                {showAdminFeatures && d.trainer && (
+                {showMetadata && d.trainer && (
                   <div
                     style={{
                       fontWeight: 400,
@@ -186,27 +208,30 @@ function ModalForEditList({
                     Trainer: {d.trainer.firstName} {d.trainer.lastName}
                   </div>
                 )}
-                {showAdminFeatures &&
-                  d.trainers &&
-                  d.trainers.length > 0 && (
-                    <div
-                      style={{
-                        fontWeight: 400,
-                        fontSize: "11px",
-                        lineHeight: "140%",
-                        color: "#6B7280",
-                        marginTop: "4px",
-                      }}
-                    >
-                      Trainers: {d.trainers.map((trainer) => `${trainer.firstName} ${trainer.lastName}`).join(", ")}
-                    </div>
-                  )}
+                {showMetadata && d.trainers && d.trainers.length > 0 && (
+                  <div
+                    style={{
+                      fontWeight: 400,
+                      fontSize: "11px",
+                      lineHeight: "140%",
+                      color: "#6B7280",
+                      marginTop: "4px",
+                    }}
+                  >
+                    Trainers:{" "}
+                    {d.trainers
+                      .map(
+                        (trainer) => `${trainer.firstName} ${trainer.lastName}`
+                      )
+                      .join(", ")}
+                  </div>
+                )}
               </div>
 
               <div
                 style={{ display: "flex", gap: "12px", alignItems: "center" }}
               >
-                {isAdmin && type === "challenge" && (
+                {canViewChallenge && (
                   <Link
                     to={`/challenge/${slug(d.challengeName)}/${d._id}`}
                     target="_blank"
@@ -221,14 +246,16 @@ function ModalForEditList({
                     />
                   </Link>
                 )}
-                <EditFilled
-                  style={{
-                    cursor: "pointer",
-                    color: "white",
-                    fontSize: "18px",
-                  }}
-                  onClick={() => onClickEdit(d._id)}
-                />
+                {canEdit(d) && (
+                  <EditFilled
+                    style={{
+                      cursor: "pointer",
+                      color: "white",
+                      fontSize: "18px",
+                    }}
+                    onClick={() => onClickEdit(d._id)}
+                  />
+                )}
               </div>
             </div>
           </div>

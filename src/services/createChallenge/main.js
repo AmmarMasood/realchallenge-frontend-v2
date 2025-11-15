@@ -151,10 +151,14 @@ export function getAllChallenges(language) {
     });
 }
 
-export function getAllUserChallenges(language) {
+export function getAllUserChallenges(language, includeAssigned = false) {
+  const params = new URLSearchParams();
+  if (language) params.append('language', language);
+  if (includeAssigned) params.append('includeAssigned', 'true');
+
   return axios
     .get(
-      `${process.env.REACT_APP_SERVER}/api/challenges/users/all?language=${language}`
+      `${process.env.REACT_APP_SERVER}/api/challenges/users/all?${params.toString()}`
     )
     .then((res) => res.data)
     .catch((err) => {
@@ -173,10 +177,14 @@ export function getAllExercises(language) {
     });
 }
 
-export function getAllUserExercises(language) {
+export function getAllUserExercises(language, includeAssigned = false) {
+  const params = new URLSearchParams();
+  if (language) params.append('language', language);
+  if (includeAssigned) params.append('includeAssigned', 'true');
+
   return axios
     .get(
-      `${process.env.REACT_APP_SERVER}/api/exercise/user/all?language=${language}`
+      `${process.env.REACT_APP_SERVER}/api/exercise/user/all?${params.toString()}`
     )
     .then((res) => res.data)
     .catch((err) => {
