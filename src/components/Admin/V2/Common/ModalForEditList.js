@@ -167,9 +167,24 @@ function ModalForEditList({
                     {(d.trainer || d.user).lastName}
                   </div>
                 )}
+                {showAdminFeatures && d.trainer && (
+                  <div
+                    style={{
+                      fontWeight: 400,
+                      fontSize: "11px",
+                      lineHeight: "140%",
+                      color: "#6B7280",
+                      marginTop: "4px",
+                    }}
+                  >
+                    Trainer: {d.trainer.firstName} {d.trainer.lastName}
+                  </div>
+                )}
               </div>
 
-              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+              <div
+                style={{ display: "flex", gap: "12px", alignItems: "center" }}
+              >
                 {isAdmin && type === "challenge" && (
                   <Link
                     to={`/challenge/${slug(d.challengeName)}/${d._id}`}

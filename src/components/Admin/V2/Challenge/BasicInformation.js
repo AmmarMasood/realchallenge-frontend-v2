@@ -489,11 +489,22 @@ function BasicInformation(props) {
         }
         props.history.push(`/admin/v2/challenge-studio/${res.weeks._id}`);
       }
+      setLoading(false);
     } catch (err) {
       console.log("Error saving challenge:", err);
+
+      // Check if it's a duplicate challenge name error
+      if (err.response?.status === 409 && err.response?.data?.error === "DUPLICATE_CHALLENGE_NAME") {
+        setErrors((prev) => ({
+          ...prev,
+          challengeName: "A challenge with this name already exists",
+        }));
+      }
+
       setLoading(false);
+      // Error notification is already handled in the service function
+      return;
     }
-    setLoading(false);
   };
 
   const createAPost = async (id) => {

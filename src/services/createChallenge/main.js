@@ -20,13 +20,26 @@ export function createChallenge(challenge) {
       console.log("status", err.response.status);
       console.log("headers", err.response.headers);
       console.log(err);
-      err.response.data.header
-        ? openNotificationWithIcon(
-            "error",
-            err.response.data.header.message,
-            ""
-          )
-        : openNotificationWithIcon("error", "Unable to create", "");
+
+      // Check for duplicate challenge name error
+      if (err.response?.status === 409 && err.response?.data?.error === "DUPLICATE_CHALLENGE_NAME") {
+        openNotificationWithIcon(
+          "error",
+          "Duplicate Challenge Name",
+          err.response.data.message || "A challenge with this name already exists"
+        );
+        throw err;
+      } else if (err.response?.data?.header) {
+        openNotificationWithIcon(
+          "error",
+          err.response.data.header.message,
+          ""
+        );
+        throw err;
+      } else {
+        openNotificationWithIcon("error", "Unable to create", "");
+        throw err;
+      }
     });
 }
 
@@ -53,7 +66,19 @@ export function updateChallenge(challenge, id) {
     })
     .catch((err) => {
       console.log(err);
-      openNotificationWithIcon("error", "Unable to update", "");
+
+      // Check for duplicate challenge name error
+      if (err.response?.status === 409 && err.response?.data?.error === "DUPLICATE_CHALLENGE_NAME") {
+        openNotificationWithIcon(
+          "error",
+          "Duplicate Challenge Name",
+          err.response.data.message || "A challenge with this name already exists"
+        );
+        throw err;
+      } else {
+        openNotificationWithIcon("error", "Unable to update", "");
+        throw err;
+      }
     });
 }
 
