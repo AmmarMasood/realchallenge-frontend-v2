@@ -798,8 +798,8 @@ function ChallengeProfile(props) {
           className="trainer-profile-container-column1"
           style={{
             background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${challenge.thumbnailLink})`,
-            backgroundSize: "100% 100vh",
-            backgroundPosition: "10% 10%",
+            backgroundSize: "cover",
+            backgroundPosition: "center center",
             backgroundRepeat: "no-repeat",
           }}
         >

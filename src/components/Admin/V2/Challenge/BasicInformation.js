@@ -222,7 +222,9 @@ function BasicInformation(props) {
     // If user is admin, ensure they appear in the trainers list
     let trainersList = trainers.trainers || [];
     if (userInfo.role === "admin" && currentUserDetails) {
-      const adminExists = trainersList.find(t => t._id === currentUserDetails._id);
+      const adminExists = trainersList.find(
+        (t) => t._id === currentUserDetails._id
+      );
       if (!adminExists) {
         trainersList = [...trainersList, currentUserDetails];
       }
@@ -494,7 +496,10 @@ function BasicInformation(props) {
       console.log("Error saving challenge:", err);
 
       // Check if it's a duplicate challenge name error
-      if (err.response?.status === 409 && err.response?.data?.error === "DUPLICATE_CHALLENGE_NAME") {
+      if (
+        err.response?.status === 409 &&
+        err.response?.data?.error === "DUPLICATE_CHALLENGE_NAME"
+      ) {
         setErrors((prev) => ({
           ...prev,
           challengeName: "A challenge with this name already exists",
@@ -698,7 +703,11 @@ function BasicInformation(props) {
         return exercise.videoURL || exercise.exerciseId;
       }
       // Other exercises - check if they have video, exerciseId, or meaningful title
-      return exercise.videoURL || exercise.exerciseId || (exercise.title && exercise.title.trim() !== "");
+      return (
+        exercise.videoURL ||
+        exercise.exerciseId ||
+        (exercise.title && exercise.title.trim() !== "")
+      );
     });
   };
 
@@ -1019,7 +1028,9 @@ function BasicInformation(props) {
                 </span>
 
                 <span>
-                  {!(g._id === usereDtails._id && userInfo.role === "trainer") && (
+                  {!(
+                    g._id === usereDtails._id && userInfo.role === "trainer"
+                  ) && (
                     <Button
                       onClick={() => {
                         setSelectedTrainers((prev) => {
@@ -1062,6 +1073,9 @@ function BasicInformation(props) {
             onClick={openForThumbnail}
             style={{
               background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${thumbnail?.link})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
               border: errors.thumbnail && "2px solid red",
               cursor: "pointer",
             }}
@@ -1080,7 +1094,12 @@ function BasicInformation(props) {
                     border: errors.videoThumbnail && "2px solid red",
                   }}
                 >
-                  <p className="font-paragraph-white adminV2-bi-trailername">
+                  <p
+                    className="font-paragraph-white adminV2-bi-trailername"
+                    style={{
+                      cursor: "pointer",
+                    }}
+                  >
                     {videoThumbnail ? videoThumbnail.link : "Add Trailer"}
                   </p>
                   <img
@@ -1196,11 +1215,12 @@ function BasicInformation(props) {
                     <span
                       style={{
                         backgroundImage: `url(${trainer.avatarLink})`,
-                        backgroundPosition: "center center",
+                        backgroundPosition: "center",
                         backgroundSize: "cover",
                         backgroundRepeat: "no-repeat",
                         height: "50px",
                         width: "60px",
+                        display: "block",
                       }}
                     ></span>
 
@@ -1214,7 +1234,10 @@ function BasicInformation(props) {
                     >
                       {trainer.firstName + " " + trainer.lastName}
                     </a>
-                    {!(trainer._id === usereDtails._id && userInfo.role === "trainer") && (
+                    {!(
+                      trainer._id === usereDtails._id &&
+                      userInfo.role === "trainer"
+                    ) && (
                       <img
                         src={DeleteWhite}
                         alt="delete"
@@ -1765,7 +1788,13 @@ function BasicInformation(props) {
                                               width: "100%",
                                             }}
                                           >
-                                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                            <div
+                                              style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "8px",
+                                              }}
+                                            >
                                               <Checkbox
                                                 style={{
                                                   color: "#fff",
@@ -1775,10 +1804,14 @@ function BasicInformation(props) {
                                                 checked={!workout.renderWorkout}
                                                 onChange={(e) => {
                                                   // Check if workout is locked
-                                                  if (isWorkoutLocked(workout)) {
+                                                  if (
+                                                    isWorkoutLocked(workout)
+                                                  ) {
                                                     notification.error({
-                                                      message: "Workout Type is Locked",
-                                                      description: "Workout type is locked after adding content. Please create a new workout to change the type.",
+                                                      message:
+                                                        "Workout Type is Locked",
+                                                      description:
+                                                        "Workout type is locked after adding content. Please create a new workout to change the type.",
                                                       placement: "topRight",
                                                       duration: 5,
                                                     });
@@ -1791,12 +1824,13 @@ function BasicInformation(props) {
                                                       (week) => week.id === w.id
                                                     );
                                                   if (weekIndex !== -1) {
-                                                    const workoutIndex = newWeeks[
-                                                      weekIndex
-                                                    ].workouts.findIndex(
-                                                      (item) =>
-                                                        item.id === workout.id
-                                                    );
+                                                    const workoutIndex =
+                                                      newWeeks[
+                                                        weekIndex
+                                                      ].workouts.findIndex(
+                                                        (item) =>
+                                                          item.id === workout.id
+                                                      );
                                                     if (workoutIndex !== -1) {
                                                       // Invert the checkbox logic
                                                       newWeeks[
@@ -1810,7 +1844,8 @@ function BasicInformation(props) {
                                                   }
                                                 }}
                                               >
-                                                This workout contains no exercises
+                                                This workout contains no
+                                                exercises
                                               </Checkbox>
                                               <Tooltip
                                                 title="Workouts are 'with exercises' by default. Turn this on to create a workout without exercises"
