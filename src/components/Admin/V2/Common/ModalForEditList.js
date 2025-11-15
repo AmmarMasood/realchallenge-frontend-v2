@@ -55,15 +55,17 @@ function ModalForEditList({
       .toLowerCase()
       .includes(search.toLowerCase());
 
-    // Check if the selected trainer matches as creator OR as assigned trainer
+    // Check if the selected trainer matches as creator OR as assigned trainer OR in trainers array
     let matchesTrainer = true;
     if (showAdminFeatures && selectedTrainer !== "all") {
       const creatorId = (d.user || d.trainer)?._id; // Creator can be in user or trainer field
       const assignedTrainerId = d.trainer?._id; // Assigned trainer
+      const isInTrainersArray = d.trainers?.some((trainer) => trainer._id === selectedTrainer); // Check trainers array
 
       matchesTrainer =
         creatorId === selectedTrainer || // Matches as creator
-        assignedTrainerId === selectedTrainer; // Matches as assigned trainer
+        assignedTrainerId === selectedTrainer || // Matches as assigned trainer
+        isInTrainersArray; // Matches in trainers array
     }
 
     return matchesSearch && matchesTrainer;
@@ -184,6 +186,21 @@ function ModalForEditList({
                     Trainer: {d.trainer.firstName} {d.trainer.lastName}
                   </div>
                 )}
+                {showAdminFeatures &&
+                  d.trainers &&
+                  d.trainers.length > 0 && (
+                    <div
+                      style={{
+                        fontWeight: 400,
+                        fontSize: "11px",
+                        lineHeight: "140%",
+                        color: "#6B7280",
+                        marginTop: "4px",
+                      }}
+                    >
+                      Trainers: {d.trainers.map((trainer) => `${trainer.firstName} ${trainer.lastName}`).join(", ")}
+                    </div>
+                  )}
               </div>
 
               <div
