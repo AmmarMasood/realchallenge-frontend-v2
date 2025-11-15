@@ -45,7 +45,7 @@ export function updateUserProfileByAdmin(userInfo, id, type) {
       });
   } else {
     return axios
-      .post(`${process.env.REACT_APP_SERVER}/api/users/${id}/update`, userInfo)
+      .put(`${process.env.REACT_APP_SERVER}/api/users/${id}`, userInfo)
       .then((res) => {
         openNotificationWithIcon("success", "User updated successfully!");
         return res.data;
@@ -59,7 +59,7 @@ export function updateUserProfileByAdmin(userInfo, id, type) {
 
 export function deleteUser(id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/users/${id}/delete`)
+    .delete(`${process.env.REACT_APP_SERVER}/api/users/${id}`)
     .then((res) => {
       openNotificationWithIcon("success", "User deleted successfully!");
     })
