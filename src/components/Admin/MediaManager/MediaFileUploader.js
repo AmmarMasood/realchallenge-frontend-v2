@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Modal, Progress } from "antd";
+import { Modal, Progress, notification } from "antd";
 import {
   LoadingOutlined,
   CloseCircleOutlined,
@@ -9,6 +9,9 @@ import { useDropzone } from "react-dropzone";
 import { useMediaManager } from "../../../contexts/MediaManagerContext";
 import axios from "axios";
 import "../../../assets/mediaManager.css";
+
+// Maximum file size: 150MB in bytes
+const MAX_FILE_SIZE = 150 * 1024 * 1024; // 150MB
 
 const allowedMimeTypes = {
   picture: [
@@ -43,6 +46,7 @@ const MediaFileUploader = ({
   const [uploadProgress, setUploadProgress] = useState({});
   const [overallProgress, setOverallProgress] = useState(0);
   const [completedFiles, setCompletedFiles] = useState(new Set());
+  const [failedFiles, setFailedFiles] = useState(new Map()); // Map of fileId -> error message
   const [simulateSlowUpload, setSimulateSlowUpload] = useState(false);
   const [useBackendProgress, setUseBackendProgress] = useState(true);
   const [progressMessages, setProgressMessages] = useState({});
@@ -61,22 +65,69 @@ const MediaFileUploader = ({
   }, [folderType]);
 
   // Validate file type
-  const isFileAllowed = (file) => {
+  const isFileTypeAllowed = (file) => {
     if (folderType === "other") return true;
     return (allowedMimeTypes[folderType] || []).includes(file.type);
   };
 
+  // Validate file size
+  const isFileSizeAllowed = (file) => {
+    return file.size <= MAX_FILE_SIZE;
+  };
+
+  // Format file size for display
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
+
   const onDrop = (acceptedFiles) => {
-    // Filter out files that are not allowed
-    const validFiles = acceptedFiles.filter(isFileAllowed);
-    const invalidFiles = acceptedFiles.filter((f) => !isFileAllowed(f));
-    if (invalidFiles.length > 0) {
-      alert(
-        `Some files were not allowed: ${invalidFiles
-          .map((f) => f.name)
-          .join(", ")}`
-      );
+    // Separate files by validation criteria
+    const oversizedFiles = acceptedFiles.filter((f) => !isFileSizeAllowed(f));
+    const wrongTypeFiles = acceptedFiles.filter(
+      (f) => isFileSizeAllowed(f) && !isFileTypeAllowed(f)
+    );
+    const validFiles = acceptedFiles.filter(
+      (f) => isFileTypeAllowed(f) && isFileSizeAllowed(f)
+    );
+
+    // Show error for oversized files
+    if (oversizedFiles.length > 0) {
+      const fileList = oversizedFiles
+        .map((f) => `${f.name} (${formatFileSize(f.size)})`)
+        .join("\n");
+      notification.error({
+        message: "File Size Limit Exceeded",
+        description: (
+          <div>
+            <p>
+              The following files exceed the maximum size limit of{" "}
+              {formatFileSize(MAX_FILE_SIZE)}:
+            </p>
+            <pre style={{ fontSize: "11px", marginTop: "8px" }}>
+              {fileList}
+            </pre>
+          </div>
+        ),
+        duration: 8,
+      });
     }
+
+    // Show error for wrong file types
+    if (wrongTypeFiles.length > 0) {
+      notification.warning({
+        message: "Invalid File Type",
+        description: `Some files were not allowed: ${wrongTypeFiles
+          .map((f) => f.name)
+          .join(", ")}`,
+        duration: 5,
+      });
+    }
+
+    // Add valid files to upload queue
     setMyFiles((prev) => [...prev, ...validFiles]);
   };
 
@@ -92,13 +143,32 @@ const MediaFileUploader = ({
     onDrop,
   });
 
+  // Helper function to extract error message from error object
+  const getErrorMessage = (error) => {
+    if (error.response?.data?.message) {
+      return error.response.data.message;
+    } else if (error.message) {
+      return error.message;
+    } else if (typeof error === "string") {
+      return error;
+    } else {
+      return "Upload failed due to an unknown error";
+    }
+  };
+
   const uploadFile = async () => {
     if (!folder) {
-      alert("No folder selected.");
+      notification.error({
+        message: "No Folder Selected",
+        description: "Please select a folder before uploading files.",
+      });
       return;
     }
     if (myFiles.length === 0) {
-      alert("Please add files before uploading");
+      notification.warning({
+        message: "No Files Selected",
+        description: "Please add files before uploading",
+      });
       return;
     }
 
@@ -106,6 +176,7 @@ const MediaFileUploader = ({
     setUploadProgress({});
     setOverallProgress(0);
     setCompletedFiles(new Set());
+    setFailedFiles(new Map());
     setProgressMessages({});
 
     try {
@@ -178,32 +249,93 @@ const MediaFileUploader = ({
           // Update overall progress
           setOverallProgress(Math.round((completedCount / totalFiles) * 100));
         } catch (fileErr) {
+          // Extract error message
+          const errorMessage = getErrorMessage(fileErr);
+
           // Mark file as failed
           setUploadProgress((prev) => ({
             ...prev,
-            [fileId]: { progress: 0, status: "error" },
+            [fileId]: { progress: 0, status: "error", errorMessage },
           }));
+
+          // Track failed file
+          setFailedFiles((prev) => {
+            const newMap = new Map(prev);
+            newMap.set(fileId, errorMessage);
+            return newMap;
+          });
+
+          // Show error notification
+          notification.error({
+            message: `Upload Failed: ${file.name}`,
+            description: errorMessage,
+            duration: 8,
+          });
+
           console.error(`Failed to upload ${file.name}:`, fileErr);
         }
       }
 
       await fetchFiles(folder._id, true);
 
+      // Show summary notification
+      const failedCount = failedFiles.size;
+      const successCount = completedCount;
+
+      if (failedCount > 0 && successCount > 0) {
+        // Some succeeded, some failed
+        notification.warning({
+          message: "Upload Completed with Errors",
+          description: `${successCount} file(s) uploaded successfully, but ${failedCount} file(s) failed.`,
+          duration: 10,
+        });
+      } else if (failedCount > 0) {
+        // All failed
+        notification.error({
+          message: "Upload Failed",
+          description: `All ${failedCount} file(s) failed to upload. Please check the errors and try again.`,
+          duration: 10,
+        });
+      } else if (successCount > 0) {
+        // All succeeded
+        notification.success({
+          message: "Upload Successful",
+          description: `${successCount} file(s) uploaded successfully!`,
+          duration: 5,
+        });
+      }
+
       // Small delay to show completion before closing
       setTimeout(() => {
-        setMyFiles([]);
-        setUploadProgress({});
-        setOverallProgress(0);
-        setCompletedFiles(new Set());
-        setProgressMessages({});
-        setVisible(false);
-        if (onUpload) onUpload();
+        // Only close modal if all files succeeded
+        if (failedCount === 0) {
+          setMyFiles([]);
+          setUploadProgress({});
+          setOverallProgress(0);
+          setCompletedFiles(new Set());
+          setFailedFiles(new Map());
+          setProgressMessages({});
+          setVisible(false);
+          if (onUpload) onUpload();
+        } else {
+          // Keep modal open to show errors, but allow user to retry or close manually
+          setLoading(false);
+        }
       }, 1000);
     } catch (err) {
-      // Error notification handled in context
+      // General error notification
+      const errorMessage = getErrorMessage(err);
+      notification.error({
+        message: "Upload Error",
+        description: errorMessage,
+        duration: 10,
+      });
       console.error("Upload error:", err);
     }
-    setLoading(false);
+
+    if (failedFiles.size === 0) {
+      setLoading(false);
+    }
   };
 
   // Enhanced axios upload function with both client-side and backend progress tracking
@@ -304,14 +436,14 @@ const MediaFileUploader = ({
           }
         };
 
-        // SSE timeout
+        // SSE timeout - 15 minutes for 150MB files
         setTimeout(() => {
           if (!uploadCompleted && sseConnected) {
             console.log(`Enhanced upload ${uploadId} SSE timed out`);
             eventSource.close();
             sseReject(new Error("SSE timed out"));
           }
-        }, 10 * 60 * 1000);
+        }, 15 * 60 * 1000);
       });
 
       // Start the axios upload
@@ -338,7 +470,7 @@ const MediaFileUploader = ({
               }
             }
           },
-          timeout: 300000, // 5 minute timeout
+          timeout: 720000, // 12 minute timeout (sufficient for 150MB files)
         }
       );
 
@@ -414,7 +546,7 @@ const MediaFileUploader = ({
               onProgress(percentComplete);
             }
           },
-          timeout: 300000, // 5 minute timeout
+          timeout: 720000, // 12 minute timeout (sufficient for 150MB files)
         }
       );
 
@@ -458,7 +590,131 @@ const MediaFileUploader = ({
   };
 
   const removeFile = (file) => () => {
+    const fileId = file.name + file.size;
     setMyFiles((prev) => prev.filter((f) => f !== file));
+    // Also remove from failed files map
+    setFailedFiles((prev) => {
+      const newMap = new Map(prev);
+      newMap.delete(fileId);
+      return newMap;
+    });
+    // Remove from upload progress
+    setUploadProgress((prev) => {
+      const newProgress = { ...prev };
+      delete newProgress[fileId];
+      return newProgress;
+    });
+  };
+
+  // Retry failed uploads
+  const retryFailedUploads = async () => {
+    const failedFilesList = myFiles.filter((file) => {
+      const fileId = file.name + file.size;
+      return failedFiles.has(fileId);
+    });
+
+    if (failedFilesList.length === 0) {
+      notification.info({
+        message: "No Failed Uploads",
+        description: "There are no failed uploads to retry.",
+      });
+      return;
+    }
+
+    // Clear failed files state for retry
+    setFailedFiles(new Map());
+
+    // Reset progress for failed files
+    failedFilesList.forEach((file) => {
+      const fileId = file.name + file.size;
+      setUploadProgress((prev) => ({
+        ...prev,
+        [fileId]: { progress: 0, status: "uploading" },
+      }));
+    });
+
+    notification.info({
+      message: "Retrying Failed Uploads",
+      description: `Retrying ${failedFilesList.length} failed upload(s)...`,
+    });
+
+    // Trigger upload for failed files only
+    setLoading(true);
+    let completedCount = 0;
+
+    for (const file of failedFilesList) {
+      const fileId = file.name + file.size;
+
+      try {
+        const onProgress = (progressPercent, stage, message) => {
+          setUploadProgress((prev) => ({
+            ...prev,
+            [fileId]: {
+              progress: progressPercent,
+              status: "uploading",
+              stage: stage || "uploading",
+            },
+          }));
+        };
+
+        const onMessage = (message) => {
+          setProgressMessages((prev) => ({
+            ...prev,
+            [fileId]: message,
+          }));
+        };
+
+        if (useBackendProgress) {
+          await uploadMediaFileWithEnhancedProgress(
+            folder._id,
+            file,
+            onProgress,
+            onMessage
+          );
+        } else {
+          await uploadMediaFileWithProgress(folder._id, file, onProgress);
+        }
+
+        // Mark file as completed
+        setUploadProgress((prev) => ({
+          ...prev,
+          [fileId]: { progress: 100, status: "completed" },
+        }));
+
+        setCompletedFiles((prev) => new Set([...prev, fileId]));
+        completedCount++;
+      } catch (fileErr) {
+        const errorMessage = getErrorMessage(fileErr);
+
+        setUploadProgress((prev) => ({
+          ...prev,
+          [fileId]: { progress: 0, status: "error", errorMessage },
+        }));
+
+        setFailedFiles((prev) => {
+          const newMap = new Map(prev);
+          newMap.set(fileId, errorMessage);
+          return newMap;
+        });
+
+        notification.error({
+          message: `Retry Failed: ${file.name}`,
+          description: errorMessage,
+          duration: 8,
+        });
+      }
+    }
+
+    setLoading(false);
+    await fetchFiles(folder._id, true);
+
+    if (completedCount > 0) {
+      notification.success({
+        message: "Retry Successful",
+        description: `${completedCount} file(s) uploaded successfully!`,
+        duration: 5,
+      });
+    }
   };
 
   const acceptedFileItems = myFiles.map((file) => {
@@ -466,12 +722,20 @@ const MediaFileUploader = ({
     const fileProgress = uploadProgress[fileId];
     const progressMessage = progressMessages[fileId];
     const isCompleted = completedFiles.has(fileId);
+    const isFailed = fileProgress?.status === "error";
+    const errorMessage = fileProgress?.errorMessage || failedFiles.get(fileId);
 
     return (
       <li
         key={file.path || file.name}
         className="font-paragraph-white"
-        style={{ marginBottom: "12px" }}
+        style={{
+          marginBottom: "12px",
+          padding: "8px",
+          backgroundColor: isFailed ? "#fff1f0" : "transparent",
+          borderRadius: "4px",
+          border: isFailed ? "1px solid #ffa39e" : "none"
+        }}
       >
         <div
           style={{
@@ -480,18 +744,27 @@ const MediaFileUploader = ({
             justifyContent: "space-between",
           }}
         >
-          <span>
+          <span style={{ color: isFailed ? "#cf1322" : "inherit" }}>
             {file.name} - {(file.size / (1024 * 1024)).toFixed(2)} MB
-            {isCompleted && (
+            {isCompleted && !isFailed && (
               <CheckCircleOutlined
                 style={{ marginLeft: "8px", color: "#52c41a" }}
+              />
+            )}
+            {isFailed && (
+              <CloseCircleOutlined
+                style={{ marginLeft: "8px", color: "#cf1322" }}
               />
             )}
           </span>
           {!loading && (
             <CloseCircleOutlined
               onClick={removeFile(file)}
-              style={{ marginLeft: "10px", cursor: "pointer" }}
+              style={{
+                marginLeft: "10px",
+                cursor: "pointer",
+                color: isFailed ? "#cf1322" : "inherit"
+              }}
             />
           )}
         </div>
@@ -509,11 +782,23 @@ const MediaFileUploader = ({
               }
               showInfo={true}
             />
-            {progressMessage && (
+            {progressMessage && !isFailed && (
               <div
                 style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}
               >
                 {progressMessage} - {fileProgress.progress}%
+              </div>
+            )}
+            {isFailed && errorMessage && (
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#cf1322",
+                  marginTop: "6px",
+                  fontWeight: "500"
+                }}
+              >
+                ❌ Error: {errorMessage}
               </div>
             )}
           </div>
@@ -522,17 +807,52 @@ const MediaFileUploader = ({
     );
   });
 
+  const handleModalClose = () => {
+    if (loading) {
+      notification.warning({
+        message: "Upload In Progress",
+        description: "Please wait for the current upload to complete before closing.",
+        duration: 5,
+      });
+      return;
+    }
+
+    if (failedFiles.size > 0) {
+      Modal.confirm({
+        title: "Close Upload Modal?",
+        content: `You have ${failedFiles.size} failed upload(s). Are you sure you want to close without retrying?`,
+        okText: "Yes, Close",
+        cancelText: "Cancel",
+        onOk: () => {
+          setVisible(false);
+          setMyFiles([]);
+          setFailedFiles(new Map());
+          setUploadProgress({});
+          setCompletedFiles(new Set());
+          setProgressMessages({});
+        },
+      });
+      return;
+    }
+
+    setVisible(false);
+    setMyFiles([]);
+    setFailedFiles(new Map());
+    setUploadProgress({});
+    setCompletedFiles(new Set());
+    setProgressMessages({});
+  };
+
   return (
     <Modal
       title="Upload File"
       visible={visible}
-      onOk={() => setVisible(false)}
-      onCancel={() => {
-        setVisible(false);
-        setMyFiles([]);
-      }}
+      onOk={handleModalClose}
+      onCancel={handleModalClose}
       footer={false}
       width="50%"
+      closable={!loading}
+      maskClosable={!loading}
     >
       <div className="container">
         <div
@@ -586,17 +906,57 @@ const MediaFileUploader = ({
             <LoadingOutlined style={{ fontSize: "30px", color: "#ff7700" }} />
           </div>
         ) : (
-          <button
-            className="common-orange-button font-paragraph-white"
-            onClick={uploadFile}
-            style={{ marginTop: "20px" }}
-            disabled={myFiles.length === 0}
+          <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+            <button
+              className="common-orange-button font-paragraph-white"
+              onClick={uploadFile}
+              style={{ flex: failedFiles.size > 0 ? 1 : "auto" }}
+              disabled={myFiles.length === 0}
+            >
+              Upload{" "}
+              {myFiles.length > 0
+                ? `${myFiles.length} File${myFiles.length > 1 ? "s" : ""}`
+                : "Files"}
+            </button>
+            {failedFiles.size > 0 && (
+              <button
+                className="common-orange-button font-paragraph-white"
+                onClick={retryFailedUploads}
+                style={{
+                  flex: 1,
+                  backgroundColor: "#faad14",
+                  borderColor: "#faad14",
+                }}
+              >
+                Retry Failed ({failedFiles.size})
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Show error summary if there are failed files */}
+        {failedFiles.size > 0 && !loading && (
+          <div
+            style={{
+              marginTop: "16px",
+              padding: "12px",
+              backgroundColor: "#fff1f0",
+              border: "1px solid #ffa39e",
+              borderRadius: "4px",
+            }}
           >
-            Upload{" "}
-            {myFiles.length > 0
-              ? `${myFiles.length} File${myFiles.length > 1 ? "s" : ""}`
-              : "Files"}
-          </button>
+            <p
+              style={{
+                margin: 0,
+                color: "#cf1322",
+                fontWeight: "500",
+                fontSize: "14px",
+              }}
+            >
+              ⚠️ {failedFiles.size} file(s) failed to upload. You can retry the
+              failed uploads or remove them and try again.
+            </p>
+          </div>
         )}
       </div>
     </Modal>

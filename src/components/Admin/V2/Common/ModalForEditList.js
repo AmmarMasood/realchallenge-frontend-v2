@@ -55,11 +55,16 @@ function ModalForEditList({
       .toLowerCase()
       .includes(search.toLowerCase());
 
-    const matchesTrainer =
-      !showAdminFeatures ||
-      selectedTrainer === "all" ||
-      (d.trainer && d.trainer._id === selectedTrainer) ||
-      (d.user && d.user._id === selectedTrainer);
+    // Check if the selected trainer matches as creator OR as assigned trainer
+    let matchesTrainer = true;
+    if (showAdminFeatures && selectedTrainer !== "all") {
+      const creatorId = (d.user || d.trainer)?._id; // Creator can be in user or trainer field
+      const assignedTrainerId = d.trainer?._id; // Assigned trainer
+
+      matchesTrainer =
+        creatorId === selectedTrainer || // Matches as creator
+        assignedTrainerId === selectedTrainer; // Matches as assigned trainer
+    }
 
     return matchesSearch && matchesTrainer;
   });
@@ -163,8 +168,7 @@ function ModalForEditList({
                       marginTop: "4px",
                     }}
                   >
-                    Created by: {(d.trainer || d.user).firstName}{" "}
-                    {(d.trainer || d.user).lastName}
+                    Created by: {d.user.firstName} {d.user.lastName}
                   </div>
                 )}
                 {showAdminFeatures && d.trainer && (
