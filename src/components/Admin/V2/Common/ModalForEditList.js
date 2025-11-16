@@ -21,6 +21,10 @@ function ModalForEditList({
   const [search, setSearch] = useState("");
   const [searchKey, setSearchKey] = useState(searchKeys[0]);
   const [selectedTrainer, setSelectedTrainer] = useState("all");
+  const [dimensions, setDimensions] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
 
   // Check if admin features should be shown
   const isAdmin = adminInfo?.role === "admin";
@@ -93,6 +97,19 @@ function ModalForEditList({
     return matchesSearch && matchesTrainer;
   });
 
+  // Update dimensions on window resize for dynamic responsiveness
+  useEffect(() => {
+    const handleResize = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     console.log("test", type, JSON.stringify([data[0]]));
     // Reset search when modal opens
@@ -102,16 +119,62 @@ function ModalForEditList({
     }
   }, [open]);
 
+  // Calculate responsive dimensions based on screen size
+  const getResponsiveDimensions = () => {
+    const { width, height } = dimensions;
+
+    // Mobile portrait (< 600px width)
+    if (width < 600) {
+      return {
+        width: "95vw",
+        listHeight: `${height - 250}px`, // Account for header, search, and margins
+        maxListHeight: "60vh",
+      };
+    }
+    // Mobile landscape or small tablet (600-900px width)
+    else if (width < 900) {
+      return {
+        width: "80vw",
+        listHeight: `${height - 280}px`,
+        maxListHeight: "65vh",
+      };
+    }
+    // Tablet (900-1200px width)
+    else if (width < 1200) {
+      return {
+        width: "70vw",
+        listHeight: `${height - 300}px`,
+        maxListHeight: "70vh",
+      };
+    }
+    // Desktop (>= 1200px width)
+    else {
+      return {
+        width: "60vw",
+        listHeight: `${height - 350}px`,
+        maxListHeight: "75vh",
+      };
+    }
+  };
+
+  const responsiveDimensions = getResponsiveDimensions();
+
   return (
     <Modal
       open={open}
       footer={null}
       onCancel={() => setOpen(false)}
       title=""
+      width={responsiveDimensions.width}
+      centered
       bodyStyle={{
         backgroundColor: "#171e27",
         border: "1px solid #FF950A",
         textAlign: "center",
+        padding: dimensions.width < 600 ? "12px" : "24px", // Less padding on mobile
+      }}
+      style={{
+        top: dimensions.width < 600 ? 10 : undefined, // Minimize top margin on mobile
       }}
     >
       <div className="exercise-selector__header">
@@ -153,7 +216,11 @@ function ModalForEditList({
       </div>
       <div
         className="exercise-selector__list"
-        style={{ maxHeight: "230px", overflowY: "auto" }}
+        style={{
+          height: responsiveDimensions.listHeight,
+          maxHeight: responsiveDimensions.maxListHeight,
+          overflowY: "auto",
+        }}
       >
         {filteredData.map((d, index) => (
           <div

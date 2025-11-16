@@ -18,6 +18,10 @@ function ExerciseChooseModal({
   const [currentStep, setCurrentStep] = React.useState(1);
   const [selectedDuration, setSelectedDuration] = React.useState("");
   const [selectedBreak, setSelectedBreak] = React.useState("");
+  const [dimensions, setDimensions] = React.useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
 
   React.useEffect(() => {
     if (
@@ -35,12 +39,58 @@ function ExerciseChooseModal({
     }
   }, [exercises, seletedTrainers]);
 
+  // Update dimensions on window resize
+  React.useEffect(() => {
+    const handleResize = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     setCurrentStep(1);
     setSelectedExercise(null);
     setSelectedDuration("");
     setSelectedBreak("");
   }, [open]);
+
+  // Calculate responsive dimensions
+  const getResponsiveDimensions = () => {
+    const { width, height } = dimensions;
+
+    if (width < 600) {
+      return {
+        width: "95vw",
+        listHeight: `${height - 350}px`,
+        maxListHeight: "50vh",
+      };
+    } else if (width < 900) {
+      return {
+        width: "80vw",
+        listHeight: `${height - 380}px`,
+        maxListHeight: "55vh",
+      };
+    } else if (width < 1200) {
+      return {
+        width: "70vw",
+        listHeight: `${height - 400}px`,
+        maxListHeight: "60vh",
+      };
+    } else {
+      return {
+        width: "60vw",
+        listHeight: `${height - 450}px`,
+        maxListHeight: "65vh",
+      };
+    }
+  };
+
+  const responsiveDimensions = getResponsiveDimensions();
 
   const handleExerciseSelect = (exercise) => {
     setSelectedExercise(
@@ -80,10 +130,16 @@ function ExerciseChooseModal({
       footer={null}
       onCancel={() => setOpen(false)}
       title=""
+      width={responsiveDimensions.width}
+      centered
       bodyStyle={{
         backgroundColor: "#171e27",
         border: "1px solid #FF950A",
         textAlign: "center",
+        padding: dimensions.width < 600 ? "12px" : "24px",
+      }}
+      style={{
+        top: dimensions.width < 600 ? 10 : undefined,
       }}
     >
       {currentStep === 1 && (
@@ -110,7 +166,13 @@ function ExerciseChooseModal({
             </div>
           )}
 
-          <div className="exercise-selector__list">
+          <div
+            className="exercise-selector__list"
+            style={{
+              height: responsiveDimensions.listHeight,
+              maxHeight: responsiveDimensions.maxListHeight,
+            }}
+          >
             {filteredExercises.map((exercise, index) => (
               <div
                 key={index}
