@@ -11,7 +11,7 @@ import axios from "axios";
 import "../../../assets/mediaManager.css";
 
 // Maximum file size: 150MB in bytes
-const MAX_FILE_SIZE = 150 * 1024 * 1024; // 150MB
+const MAX_FILE_SIZE = 400 * 1024 * 1024; // 150MB
 
 const allowedMimeTypes = {
   picture: [
@@ -107,9 +107,7 @@ const MediaFileUploader = ({
               The following files exceed the maximum size limit of{" "}
               {formatFileSize(MAX_FILE_SIZE)}:
             </p>
-            <pre style={{ fontSize: "11px", marginTop: "8px" }}>
-              {fileList}
-            </pre>
+            <pre style={{ fontSize: "11px", marginTop: "8px" }}>{fileList}</pre>
           </div>
         ),
         duration: 8,
@@ -734,7 +732,7 @@ const MediaFileUploader = ({
           padding: "8px",
           backgroundColor: isFailed ? "#fff1f0" : "transparent",
           borderRadius: "4px",
-          border: isFailed ? "1px solid #ffa39e" : "none"
+          border: isFailed ? "1px solid #ffa39e" : "none",
         }}
       >
         <div
@@ -763,7 +761,7 @@ const MediaFileUploader = ({
               style={{
                 marginLeft: "10px",
                 cursor: "pointer",
-                color: isFailed ? "#cf1322" : "inherit"
+                color: isFailed ? "#cf1322" : "inherit",
               }}
             />
           )}
@@ -795,7 +793,7 @@ const MediaFileUploader = ({
                   fontSize: "12px",
                   color: "#cf1322",
                   marginTop: "6px",
-                  fontWeight: "500"
+                  fontWeight: "500",
                 }}
               >
                 ❌ Error: {errorMessage}
@@ -811,7 +809,8 @@ const MediaFileUploader = ({
     if (loading) {
       notification.warning({
         message: "Upload In Progress",
-        description: "Please wait for the current upload to complete before closing.",
+        description:
+          "Please wait for the current upload to complete before closing.",
         duration: 5,
       });
       return;
