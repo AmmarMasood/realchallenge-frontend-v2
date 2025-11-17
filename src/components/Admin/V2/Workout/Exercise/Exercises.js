@@ -89,15 +89,17 @@ function Exercises({
     const selectedExercise = workout.exercises[i];
 
     // Validate intro exercise has duration if it has a video
-    if (i === 0 && selectedExercise.videoURL && (!selectedExercise.exerciseLength || selectedExercise.exerciseLength <= 0)) {
+    const hasValidationError = i === 0 && selectedExercise.videoURL && (!selectedExercise.exerciseLength || selectedExercise.exerciseLength <= 0);
+
+    if (hasValidationError) {
       notification.error({
         message: "Duration Required",
         description: "Please enter a duration for the intro exercise before playing it.",
         placement: "topRight",
       });
-      return;
     }
 
+    // Still allow selection, just don't allow playing if there's a validation error
     setCurrentExercise({
       exercise: selectedExercise,
       index: i,

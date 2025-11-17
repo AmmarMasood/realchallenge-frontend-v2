@@ -230,10 +230,15 @@ function Workout() {
       const nextExercise = workoutInfo.exercises[nextIndex];
 
       // Validate intro exercise has duration if it has a video
-      if (nextIndex === 0 && nextExercise.videoURL && (!nextExercise.exerciseLength || nextExercise.exerciseLength <= 0)) {
+      if (
+        nextIndex === 0 &&
+        nextExercise.videoURL &&
+        (!nextExercise.exerciseLength || nextExercise.exerciseLength <= 0)
+      ) {
         notification.error({
           message: "Duration Required",
-          description: "Please enter a duration for the intro exercise before playing it.",
+          description:
+            "Please enter a duration for the intro exercise before playing it.",
           placement: "topRight",
         });
         setPlayerState({ ...playerState, playing: false });
@@ -269,10 +274,15 @@ function Workout() {
       const prevExercise = workoutInfo.exercises[prevIndex];
 
       // Validate intro exercise has duration if it has a video
-      if (prevIndex === 0 && prevExercise.videoURL && (!prevExercise.exerciseLength || prevExercise.exerciseLength <= 0)) {
+      if (
+        prevIndex === 0 &&
+        prevExercise.videoURL &&
+        (!prevExercise.exerciseLength || prevExercise.exerciseLength <= 0)
+      ) {
         notification.error({
           message: "Duration Required",
-          description: "Please enter a duration for the intro exercise before playing it.",
+          description:
+            "Please enter a duration for the intro exercise before playing it.",
           placement: "topRight",
         });
         setPlayerState({ ...playerState, playing: false });
@@ -373,188 +383,189 @@ function Workout() {
         )} */}
       </div>
       <div className="fullplayer-container">
-      <div className="v2challenge-player-container">
-        <div className="v2workout-studio-top">
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <img
-              onClick={() => {
-                const updatedWeeks = weeks?.map((week) => {
-                  if (week.id === selectedWorkoutForStudioId.weekId) {
-                    return {
-                      ...week,
-                      workouts: week.workouts?.map((workout) =>
-                        workout.id === selectedWorkoutForStudioId.workoutId
-                          ? { ...workout, ...workoutInfo } // Update the workout with workoutInfo
-                          : workout
-                      ),
-                    };
-                  }
-                  return week;
-                });
+        <div className="v2challenge-player-container">
+          <div className="v2workout-studio-top">
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <img
+                onClick={() => {
+                  const updatedWeeks = weeks?.map((week) => {
+                    if (week.id === selectedWorkoutForStudioId.weekId) {
+                      return {
+                        ...week,
+                        workouts: week.workouts?.map((workout) =>
+                          workout.id === selectedWorkoutForStudioId.workoutId
+                            ? { ...workout, ...workoutInfo } // Update the workout with workoutInfo
+                            : workout
+                        ),
+                      };
+                    }
+                    return week;
+                  });
 
-                setWeeks(updatedWeeks);
-                setShowVideoCreator(false); // Close the video creator
-              }}
-              src={BackButton}
-              alt="back-button"
-              style={{
-                cursor: "pointer",
-                marginRight: "20px",
-                height: "30px",
-              }}
-            />
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                marginLeft: "10px",
-              }}
-            >
-              <input
-                onChange={updateWorkoutInfo}
-                name="title"
-                className="v2workout-field v2workout-title"
-                value={workoutInfo.title}
-                type="title"
-                placeholder="Type Title"
+                  setWeeks(updatedWeeks);
+                  setShowVideoCreator(false); // Close the video creator
+                }}
+                src={BackButton}
+                alt="back-button"
+                style={{
+                  cursor: "pointer",
+                  marginRight: "20px",
+                  height: "30px",
+                }}
               />
-              <input
-                onChange={updateWorkoutInfo}
-                name="subtitle"
-                className="v2workout-field v2workout-subtitle"
-                value={workoutInfo.subtitle}
-                placeholder="Type more info"
-              />
-            </div>
-          </div>
-          <img src={WorkoutStudio} alt="workout-studio" />
-        </div>
 
-        <div className="v2workout-studio-middle">
-          <button className="music-icon-button" onClick={openMusicAdder}>
-            <span>Add background music</span>
-            <img src={MusicIcon} alt="music-icon" />
-          </button>
-          <Player
-            moveToNextExercise={moveToNextExercise}
-            moveToPrevExercise={moveToPrevExercise}
-            musics={musics}
-            nextExerciseTitle={
-              workoutInfo.exercises &&
-              workoutInfo.exercises[selectedExercise.index + 1]
-                ? workoutInfo.exercises[selectedExercise.index + 1].title
-                : ""
-            }
-            exercise={selectedExercise.exercise}
-            // challengePageAddress={`/challenge/${challengeName}/${challengeId}`}
-            key={selectedExercise.exercise?.id}
-            // for full screen player video browser
-            workout={workoutInfo}
-            setExerciseForHelpModal={setExerciseForHelpModal}
-            setOpenHelpModal={setOpenHelpModal}
-            setCurrentExercise={setSelectedExercise}
-            currentExercise={selectedExercise}
-            inCreation={true}
-          />
-
-          <div className="video-browser-container">
-            {workoutInfo && workoutInfo.exercises && (
-              <Exercises
-                workout={workoutInfo}
-                setWorkout={setWorkoutInfo}
-                setCurrentExercise={setSelectedExercise}
-                currentExercise={selectedExercise}
-                handleUpdateRenderedExercise={handleUpdateRenderedExercise}
-                setExerciseForHelpModal={setExerciseForHelpModal}
-                setOpenHelpModal={setOpenHelpModal}
-              />
-            )}
-          </div>
-        </div>
-
-        <div
-          className="v2workout-studio-bottom player-download-stuff"
-          style={{
-            marginBottom: "50px",
-          }}
-        >
-          <h2
-            className="font-heading-white"
-            style={{
-              color: "#686D73",
-              fontSize: "20px",
-              marginBottom: "0px",
-            }}
-          >
-            EXERCISES
-          </h2>
-          <h3
-            className="font-paragraph-white"
-            style={{
-              fontSize: "15px",
-              color: "#898C91",
-            }}
-          >
-            Navigate to each exercise or hit the personal trainer button for
-            audio explanation
-          </h3>
-          <div className="v2workout-studio-bottom-grid">
-            <Attachment
-              heading={"TODAY’S WORKOUT ATTACHMENT"}
-              logo={AttachIcon}
-              onClick={onWorkoutInfoChange}
-              selectedValue={infoFile}
-              setSelectedValue={setInfoFile}
-            />
-            <div>
-              <Attachment
-                heading={"TODAY’S EQUIPMENTS"}
-                logo={DumbellIcon}
-                onClick={onEquipmentSelect}
-              />
               <div
                 style={{
                   display: "flex",
-                  marginTop: "5px",
+                  flexDirection: "column",
+                  marginLeft: "10px",
                 }}
               >
-                {workoutInfo.equipments?.map((equipment) => (
-                  <p
-                    className="font-paragraph-white"
-                    style={{
-                      border: "1px solid #fff",
-                      opacity: 0.7,
-                      padding: "5px",
-                      borderRadius: "5px",
-                      marginRight: "10px",
-                    }}
-                  >
-                    {equipment.name}
-                    <span
+                <input
+                  onChange={updateWorkoutInfo}
+                  name="title"
+                  className="v2workout-field v2workout-title"
+                  value={workoutInfo.title}
+                  type="title"
+                  placeholder="Type Title"
+                />
+                <input
+                  onChange={updateWorkoutInfo}
+                  name="subtitle"
+                  className="v2workout-field v2workout-subtitle"
+                  value={workoutInfo.subtitle}
+                  placeholder="Type more info"
+                />
+              </div>
+            </div>
+            <img src={WorkoutStudio} alt="workout-studio" />
+          </div>
+
+          <div className="v2workout-studio-middle">
+            <button className="music-icon-button" onClick={openMusicAdder}>
+              <span>Add background music</span>
+              <img src={MusicIcon} alt="music-icon" />
+            </button>
+            <Player
+              moveToNextExercise={moveToNextExercise}
+              moveToPrevExercise={moveToPrevExercise}
+              musics={musics}
+              nextExerciseTitle={
+                workoutInfo.exercises &&
+                workoutInfo.exercises[selectedExercise.index + 1]
+                  ? workoutInfo.exercises[selectedExercise.index + 1].title
+                  : ""
+              }
+              exercise={selectedExercise.exercise}
+              // challengePageAddress={`/challenge/${challengeName}/${challengeId}`}
+              key={selectedExercise.exercise?.id}
+              // for full screen player video browser
+              workout={workoutInfo}
+              setExerciseForHelpModal={setExerciseForHelpModal}
+              setOpenHelpModal={setOpenHelpModal}
+              setCurrentExercise={setSelectedExercise}
+              currentExercise={selectedExercise}
+              inCreation={true}
+            />
+
+            <div className="video-browser-container">
+              {workoutInfo && workoutInfo.exercises && (
+                <Exercises
+                  workout={workoutInfo}
+                  setWorkout={setWorkoutInfo}
+                  setCurrentExercise={setSelectedExercise}
+                  currentExercise={selectedExercise}
+                  handleUpdateRenderedExercise={handleUpdateRenderedExercise}
+                  setExerciseForHelpModal={setExerciseForHelpModal}
+                  setOpenHelpModal={setOpenHelpModal}
+                />
+              )}
+            </div>
+          </div>
+
+          <div
+            className="v2workout-studio-bottom player-download-stuff"
+            style={{
+              marginBottom: "50px",
+            }}
+          >
+            <h2
+              className="font-heading-white"
+              style={{
+                color: "#686D73",
+                fontSize: "20px",
+                marginBottom: "0px",
+              }}
+            >
+              EXERCISES
+            </h2>
+            <h3
+              className="font-paragraph-white"
+              style={{
+                fontSize: "15px",
+                color: "#898C91",
+              }}
+            >
+              Navigate to each exercise or hit the personal trainer button for
+              audio explanation
+            </h3>
+            <div className="v2workout-studio-bottom-grid">
+              <Attachment
+                heading={"TODAY’S WORKOUT ATTACHMENT"}
+                logo={AttachIcon}
+                onClick={onWorkoutInfoChange}
+                selectedValue={infoFile}
+                setSelectedValue={setInfoFile}
+              />
+              <div>
+                <Attachment
+                  heading={"TODAY’S EQUIPMENTS"}
+                  logo={DumbellIcon}
+                  onClick={onEquipmentSelect}
+                />
+                <div
+                  style={{
+                    display: "flex",
+                    marginTop: "5px",
+                  }}
+                >
+                  {workoutInfo.equipments?.map((equipment) => (
+                    <p
+                      className="font-paragraph-white"
                       style={{
-                        marginLeft: "10px",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => {
-                        const updatedEquipments = workoutInfo.equipments.filter(
-                          (item) => item._id !== equipment._id
-                        );
-                        setWorkoutInfo({
-                          ...workoutInfo,
-                          equipments: updatedEquipments,
-                        });
+                        border: "1px solid #fff",
+                        opacity: 0.7,
+                        padding: "5px",
+                        borderRadius: "5px",
+                        marginRight: "10px",
                       }}
                     >
-                      X
-                    </span>
-                  </p>
-                ))}
+                      {equipment.name}
+                      <span
+                        style={{
+                          marginLeft: "10px",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => {
+                          const updatedEquipments =
+                            workoutInfo.equipments.filter(
+                              (item) => item._id !== equipment._id
+                            );
+                          setWorkoutInfo({
+                            ...workoutInfo,
+                            equipments: updatedEquipments,
+                          });
+                        }}
+                      >
+                        X
+                      </span>
+                    </p>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
       </div>
 
       <EquipmentModal

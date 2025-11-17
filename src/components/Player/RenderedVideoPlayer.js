@@ -70,11 +70,15 @@ function RenderedVideoPlayer({
       } else if (playerRef.current && playerRef.current.getDuration) {
         setExerciseSeconds(Math.round(playerRef.current.getDuration()));
       }
-      
+
       // Reset video to beginning when exercise changes
       if (playerRef.current && playerRef.current.seekTo) {
         playerRef.current.seekTo(0);
       }
+
+      // Reset timer visibility when exercise changes
+      setTimerVisible(false);
+      hasHandledEnd.current = false;
     }
   }, [exercise]);
 
@@ -150,7 +154,7 @@ function RenderedVideoPlayer({
     timerVisible &&
     workout?.exercises &&
     currentExercise.index >= 0 &&
-    workout.exercises[currentExercise.index];
+    !!workout.exercises[currentExercise.index];
 
   // Check if current exercise is the last one
   const isLastExercise = workout?.exercises && currentExercise.index === workout.exercises.length - 1;
