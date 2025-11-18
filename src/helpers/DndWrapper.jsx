@@ -16,6 +16,7 @@ export function DraggableArea({
   onDragStateChange,
 }) {
   const childArray = React.Children.toArray(children);
+  const timeoutRef = React.useRef(null);
 
   const moveItem = (dragIndex, hoverIndex) => {
     if (
@@ -33,16 +34,24 @@ export function DraggableArea({
     const [removed] = updatedItems.splice(dragIndex, 1);
     updatedItems.splice(hoverIndex, 0, removed);
 
-    // Call onChange with the new order of data (not React elements)
-    if (onChange) {
-      // If you pass data as a prop (e.g., data-workout), extract it here
-      onChange(
-        updatedItems.map((child) => {
-          if (!child || !child.props) return null;
-          return child.props["data-workout"] || child.props.children;
-        })
-      );
+    // Call onChange with a small delay to allow react-dnd to complete
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
+
+    timeoutRef.current = setTimeout(() => {
+      if (onChange) {
+        onChange(
+          updatedItems.map((child) => {
+            if (!child || !child.props) return null;
+            return {
+              key: child.key,
+              id: child.props.id,
+            };
+          })
+        );
+      }
+    }, 10);
   };
 
   return (

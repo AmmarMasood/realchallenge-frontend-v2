@@ -679,16 +679,17 @@ function BasicInformation(props) {
   };
 
   const handleWeekReorder = (newWeekOrder) => {
-    // new week ordered ids
-    const newOrderIds = newWeekOrder.map((week) => week.key);
-    // console.log("newOrderIds", newOrderIds, newWeekOrder);
+    // new week ordered ids - extract id from the week objects
+    const filteredOrder = newWeekOrder.filter((item) => item && item.id !== undefined);
+    const newOrderIds = filteredOrder.map((week) => week.id);
+
     // now order weeks
     setWeeks((prevWeeks) => {
       const updatedWeeks = [...prevWeeks];
       // Map the new order of ids to the actual week objects
-      return newOrderIds.map((key) =>
-        updatedWeeks.find((w) => (w.id || w._id) === key)
-      );
+      return newOrderIds
+        .map((id) => updatedWeeks.find((w) => (w.id || w._id) === id))
+        .filter(Boolean); // Remove undefined values
     });
   };
 
@@ -1521,7 +1522,7 @@ function BasicInformation(props) {
                 >
                   {weeks &&
                     weeks.map((w, i) => (
-                      <DraggableItem key={w.id || w._id}>
+                      <DraggableItem key={w.id || w._id} id={w.id || w._id}>
                         <Collapse
                           defaultActiveKey={[]}
                           onChange={(e) => setShowChangePanel(e)}

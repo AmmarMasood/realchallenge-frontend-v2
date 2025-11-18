@@ -89,12 +89,17 @@ function Exercises({
     const selectedExercise = workout.exercises[i];
 
     // Validate intro exercise has duration if it has a video
-    const hasValidationError = i === 0 && selectedExercise.videoURL && (!selectedExercise.exerciseLength || selectedExercise.exerciseLength <= 0);
+    const hasValidationError =
+      i === 0 &&
+      selectedExercise.videoURL &&
+      (!selectedExercise.exerciseLength ||
+        selectedExercise.exerciseLength <= 0);
 
     if (hasValidationError) {
       notification.error({
         message: "Duration Required",
-        description: "Please enter a duration for the intro exercise before playing it.",
+        description:
+          "Please enter a duration for the intro exercise before playing it.",
         placement: "topRight",
       });
     }
@@ -174,7 +179,11 @@ function Exercises({
     setWorkout({ ...workout, exercises: updatedExercises });
 
     // if current exercise is the one being updated, update the workout time track
-    if (currentExercise && currentExercise.exercise && currentExercise.exercise.id === id) {
+    if (
+      currentExercise &&
+      currentExercise.exercise &&
+      currentExercise.exercise.id === id
+    ) {
       const allExercisesBeforeTheNextExercise = workout.exercises
         .slice(0, currentExercise.index)
         .reduce((a, b) => a + (parseInt(b["exerciseLength"]) || 0), 0);
@@ -253,7 +262,15 @@ function Exercises({
     e.stopPropagation();
     e.preventDefault();
     const updatedExercises = workout.exercises.map((ex, idx) =>
-      idx === 0 ? { ...ex, videoURL: "", videoThumbnailURL: "", exerciseLength: 0, break: 0 } : ex
+      idx === 0
+        ? {
+            ...ex,
+            videoURL: "",
+            videoThumbnailURL: "",
+            exerciseLength: 0,
+            break: 0,
+          }
+        : ex
     );
     setWorkout({ ...workout, exercises: updatedExercises });
   };
@@ -301,17 +318,31 @@ function Exercises({
   };
 
   const handleExerciseOrder = (newOrder) => {
+    // console.log("handleExerciseOrder called with:", newOrder);
+
     //  remove undefined ids
-    const filteredOrder = newOrder.filter((id) => id !== undefined);
-    const newOrderedKeys = filteredOrder.map((exercise) => exercise.key);
-    const updatedExercises = newOrderedKeys.map((id) => {
-      return workout.exercises.find((exercise) => exercise.id === id);
-    });
+    const filteredOrder = newOrder.filter(
+      (item) => item && item.id !== undefined
+    );
+    // console.log("filteredOrder:", filteredOrder);
+
+    const newOrderedIds = filteredOrder.map((item) => item.id);
+    // console.log("newOrderedIds:", newOrderedIds);
+
+    const updatedExercises = newOrderedIds
+      .map((id) => {
+        return workout.exercises.find((exercise) => exercise.id === id);
+      })
+      .filter(Boolean); // Remove undefined values from the array
+
+    // console.log("updatedExercises:", updatedExercises);
 
     // update the order of all exercises other than the first
     const firstExercise = workout.exercises[0];
 
     const updatedOrderedExercises = [firstExercise, ...updatedExercises];
+    // console.log("updatedOrderedExercises:", updatedOrderedExercises);
+
     setWorkout((prev) => ({
       ...prev,
       exercises: updatedOrderedExercises,
@@ -355,22 +386,21 @@ function Exercises({
                     : "exercise-browser-card"
                 }`}
               >
-                {workout.renderWorkout &&
-                  firstExercise?.videoURL && (
-                    <DeleteFilled
-                      style={{
-                        color: "#fff",
-                        fontSize: "22px",
-                        position: "absolute",
-                        right: "10px",
-                        zIndex: 100,
-                        cursor: "pointer",
-                      }}
-                      onClick={(event) =>
-                        removeIntroExercise(event, firstExercise)
-                      }
-                    />
-                  )}
+                {workout.renderWorkout && firstExercise?.videoURL && (
+                  <DeleteFilled
+                    style={{
+                      color: "#fff",
+                      fontSize: "22px",
+                      position: "absolute",
+                      right: "10px",
+                      zIndex: 100,
+                      cursor: "pointer",
+                    }}
+                    onClick={(event) =>
+                      removeIntroExercise(event, firstExercise)
+                    }
+                  />
+                )}
                 <div>
                   <h4 className="challenge-player-container-exercies-round font-paragraph-white">
                     {firstExercise.exerciseGroupName ? (
