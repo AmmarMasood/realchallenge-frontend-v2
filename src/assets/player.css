@@ -8,10 +8,14 @@
 }
 
 .player-wrapper {
-  max-width: 100%;
   width: 100%;
+  max-width: 100%;
   aspect-ratio: 16 / 9;
+  max-height: 550px;
   margin: 0 auto;
+  box-sizing: border-box;
+  overflow: hidden;
+  background-color: #000;
 }
 .helpPopOut-player-wrapper {
   width: 100%;
@@ -129,6 +133,8 @@
 }
 .react-player > video {
   object-fit: contain !important;
+  max-width: 100% !important;
+  /* height: auto !important; */
 }
 
 /* Fullscreen video handling */
@@ -320,8 +326,27 @@
 
 .player-download-stuff {
   width: 100%;
+  /* border: 1px solid red; */
+  margin-top: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
+.challenge-player-container-exercies-box-imagebox {
+  width: 200px;
+  height: 200px;
+  overflow: hidden;
+}
+
+.challenge-player-container-exercies-box-imagebox img,
+.challenge-player-container-exercies-box-imagebox video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 /* .style={{
 
 }} */
@@ -442,9 +467,7 @@
     padding: 0;
     margin-top: 10px;
   }
-  .player-download-stuff {
-    width: 100%;
-  }
+
   .music-player-modal-container {
     position: absolute;
     width: 100%;
@@ -523,9 +546,10 @@
 
 @media screen and (max-width: 768px) {
   .player-wrapper {
-    width: 100%;
+    width: 100vw;
     aspect-ratio: 16 / 9;
     margin: 0 auto;
+    height: 800px;
   }
   .helpPopOut-player-wrapper {
     max-width: 100%;
@@ -541,11 +565,6 @@
 @media screen and (max-width: 600px) {
   .player-page {
     height: auto;
-  }
-  .player-wrapper {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    margin: 0 auto;
   }
   .helpPopOut-player-wrapper {
     max-width: 100%;
@@ -572,20 +591,18 @@
   .challenge-player-container-exercies {
     width: 100%;
   }
-  .player-download-stuff {
-    width: 100%;
-  }
+
 }
 @media screen and (max-width: 550px) {
   .player-page {
     height: auto;
   }
   .player-wrapper {
-    max-width: 100%;
+    /* max-width: 100%; */
     /* width: 95%; */
     aspect-ratio: 0;
     margin: 0 auto;
-    height: 400px;
+    height: 600px;
   }
   .helpPopOut-player-wrapper {
     max-width: 100%;
@@ -632,9 +649,7 @@
   .challenge-player-container-exercies {
     width: 100%;
   }
-  .player-download-stuff {
-    width: 100%;
-  }
+
   .player-back-button {
     cursor: pointer;
     margin-right: 10px;
@@ -713,10 +728,6 @@
     /* border: 1px solid red; */
     width: 100%;
     height: 100%;
-  }
-  .challenge-player-container-exercies-box-imagebox {
-    height: 200px;
-    width: 213px;
   }
   .challenge-player-container-exercies-box-details p:first-child {
     font-size: 14px;

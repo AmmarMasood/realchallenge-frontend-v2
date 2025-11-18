@@ -538,6 +538,7 @@ function ChallengeProfile(props) {
                           cursor: "pointer",
                           backgroundColor: "#2D3239",
                           position: "relative",
+                          flexWrap: "wrap",
                         }}
                       >
                         {isWorkoutLocked(workout._id, i, j) &&
@@ -568,7 +569,13 @@ function ChallengeProfile(props) {
                             </span>
                           </div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                          }}
+                        >
                           {workout.introVideoLink && (
                             <span
                               className="font-paragraph-white"
@@ -589,6 +596,7 @@ function ChallengeProfile(props) {
                                   backgroundColor: "#354c63",
                                   padding: "5px 10px",
                                   margin: "0 2px",
+                                  whiteSpace: "nowrap",
                                 }}
                               >
                                 {w.name}

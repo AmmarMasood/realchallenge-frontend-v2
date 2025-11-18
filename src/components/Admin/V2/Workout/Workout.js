@@ -328,6 +328,7 @@ function Workout() {
         width: "100%",
         display: "flex",
         justifyContent: "center",
+        // border: "1px solid red",
       }}
     >
       {loading && (
@@ -349,41 +350,23 @@ function Workout() {
         musics={musics}
         setMusics={setMusics}
       />
+
       <div
-        style={{
-          position: "absolute",
-          top: "20px",
-          right: "30px",
-          opacity: 0.7,
-        }}
+        className="fullplayer-container"
+        style={
+          {
+            // border: "1px solid blue",
+          }
+        }
       >
-        {/* {saving ? (
-          <>
-            <Spin size="small" style={{ color: "#fff" }} />
-            <span
-              style={{
-                fontSize: "14px",
-                color: "#fff",
-                marginLeft: "10px",
-              }}
-            >
-              Saving...
-            </span>
-          </>
-        ) : (
-          <Button
-            style={{
-              backgroundColor: "#ff7700",
-              color: "#fff",
-              border: "none",
-            }}
-          >
-            Save
-          </Button>
-        )} */}
-      </div>
-      <div className="fullplayer-container">
-        <div className="v2challenge-player-container">
+        <div
+          className="v2challenge-player-container"
+          style={
+            {
+              // border: "1px solid green",
+            }
+          }
+        >
           <div className="v2workout-studio-top">
             <div style={{ display: "flex", alignItems: "center" }}>
               <img
@@ -481,6 +464,15 @@ function Workout() {
                 />
               )}
             </div>
+
+            <h3 className="challenge-player-container-exercies-heading font-paragraph-white">
+              Exercises
+            </h3>
+
+            <h3 className="challenge-player-container-exercies-subheading font-paragraph-white">
+              Navigate to each exercise or hit the personal trainer button for
+              audio explanation.
+            </h3>
           </div>
 
           <div
@@ -489,79 +481,59 @@ function Workout() {
               marginBottom: "50px",
             }}
           >
-            <h2
-              className="font-heading-white"
-              style={{
-                color: "#686D73",
-                fontSize: "20px",
-                marginBottom: "0px",
-              }}
-            >
-              EXERCISES
-            </h2>
-            <h3
-              className="font-paragraph-white"
-              style={{
-                fontSize: "15px",
-                color: "#898C91",
-              }}
-            >
-              Navigate to each exercise or hit the personal trainer button for
-              audio explanation
-            </h3>
-            <div className="v2workout-studio-bottom-grid">
+            <Attachment
+              heading={"TODAY’S WORKOUT ATTACHMENT"}
+              logo={AttachIcon}
+              onClick={onWorkoutInfoChange}
+              selectedValue={infoFile}
+              setSelectedValue={setInfoFile}
+            />
+            <div>
               <Attachment
-                heading={"TODAY’S WORKOUT ATTACHMENT"}
-                logo={AttachIcon}
-                onClick={onWorkoutInfoChange}
-                selectedValue={infoFile}
-                setSelectedValue={setInfoFile}
+                heading={"TODAY’S EQUIPMENTS"}
+                logo={DumbellIcon}
+                onClick={onEquipmentSelect}
               />
-              <div>
-                <Attachment
-                  heading={"TODAY’S EQUIPMENTS"}
-                  logo={DumbellIcon}
-                  onClick={onEquipmentSelect}
-                />
-                <div
-                  style={{
-                    display: "flex",
-                    marginTop: "5px",
-                  }}
-                >
-                  {workoutInfo.equipments?.map((equipment) => (
-                    <p
-                      className="font-paragraph-white"
+              <div
+                style={{
+                  display: "flex",
+                  marginTop: "10px",
+                  flexWrap: "wrap",
+                  gap: "10px",
+                }}
+              >
+                {workoutInfo.equipments?.map((equipment) => (
+                  <p
+                    className="font-paragraph-white"
+                    style={{
+                      border: "1px solid #fff",
+                      opacity: 0.7,
+                      padding: "5px",
+                      borderRadius: "5px",
+                      margin: "0",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {equipment.name}
+                    <span
                       style={{
-                        border: "1px solid #fff",
-                        opacity: 0.7,
-                        padding: "5px",
-                        borderRadius: "5px",
-                        marginRight: "10px",
+                        marginLeft: "10px",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => {
+                        const updatedEquipments = workoutInfo.equipments.filter(
+                          (item) => item._id !== equipment._id
+                        );
+                        setWorkoutInfo({
+                          ...workoutInfo,
+                          equipments: updatedEquipments,
+                        });
                       }}
                     >
-                      {equipment.name}
-                      <span
-                        style={{
-                          marginLeft: "10px",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => {
-                          const updatedEquipments =
-                            workoutInfo.equipments.filter(
-                              (item) => item._id !== equipment._id
-                            );
-                          setWorkoutInfo({
-                            ...workoutInfo,
-                            equipments: updatedEquipments,
-                          });
-                        }}
-                      >
-                        X
-                      </span>
-                    </p>
-                  ))}
-                </div>
+                      X
+                    </span>
+                  </p>
+                ))}
               </div>
             </div>
           </div>

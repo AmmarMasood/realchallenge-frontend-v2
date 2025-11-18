@@ -302,6 +302,7 @@ function ChallengePlayer(props) {
         width: "100%",
         display: "flex",
         justifyContent: "center",
+        // border: "1px solid red",
       }}
     >
       {/* open help modal */}
@@ -314,7 +315,14 @@ function ChallengePlayer(props) {
         />
       )}
 
-      <div className="fullplayer-container">
+      <div
+        className="fullplayer-container"
+        style={
+          {
+            // border: "1px solid blue",
+          }
+        }
+      >
         {width > 768 && (
           <div
             className="challenge-player-container-exercies challenge-player-container-nav"
@@ -360,7 +368,14 @@ function ChallengePlayer(props) {
             )}
           </div>
         )}
-        <div className="v2challenge-player-container">
+        <div
+          className="v2challenge-player-container"
+          style={
+            {
+              // border: "1px solid green",
+            }
+          }
+        >
           <div className="v2workout-studio-middle">
             <Player
               moveToNextExercise={moveToNextExercise}

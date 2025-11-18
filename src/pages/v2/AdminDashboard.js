@@ -330,7 +330,12 @@ function AdminDashboard(props) {
             </div>
           </div>
 
-          <div className="adminv2-selector-container">
+          <div
+            className="adminv2-selector-container"
+            style={{
+              width: "100%",
+            }}
+          >
             <div
               className="adminv2-selector"
               style={{ cursor: "pointer" }}
@@ -369,7 +374,12 @@ function AdminDashboard(props) {
             />
           </div>
 
-          <div className="adminv2-selector-container">
+          <div
+            className="adminv2-selector-container"
+            style={{
+              width: "100%",
+            }}
+          >
             <div
               className="adminv2-selector"
               style={{ cursor: "pointer" }}

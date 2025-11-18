@@ -18,7 +18,6 @@ function WorkoutCompleteModal({
       onCancel={(e) => setFinishWorkoutPopupVisible(false)}
       footer={false}
       className="finish-workout-popup-container"
-      width={width <= 600 ? "100%" : "50%"}
       bodyStyle={{
         background:
           "linear-gradient(180deg, rgba(0, 0, 0, 0) 10.94%,  rgba(5, 8, 13, 0.78) 100%)",

@@ -65,12 +65,6 @@
   flex-direction: column;
   cursor: pointer;
 }
-.challenge-player-container-exercies-box-imagebox {
-  overflow: hidden;
-  width: clamp(160px, 20vw, 213px);
-  height: clamp(150px, 18vw, 200px);
-  object-fit: cover;
-}
 .challenge-player-container-exercies-box--currentRunning {
   border-bottom: 2px solid var(--color-orange);
   background-color: rgba(255, 255, 255, 0.25);
@@ -104,15 +98,7 @@
   font-size: 13px;
   color: rgba(255, 255, 255, 0.459);
 }
-.player-download-stuff {
-  padding: 0 clamp(5px, 2vw, 20px) clamp(10px, 2vw, 20px);
-  display: flex;
-  flex-direction: column;
-  margin: 0 auto;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
+
 .workout-info {
   padding: clamp(5px, 2vw, 10px);
   width: 100%;
@@ -190,10 +176,6 @@
   .video-browser-container {
     margin: 15px 0 0 0;
   }
-  .challenge-player-container-exercies-box-imagebox {
-    width: 180px;
-    height: 160px;
-  }
 }
 
 @media screen and (max-width: 500px) {
@@ -210,10 +192,7 @@
   .challenge-player-container-exercies {
     padding: 0 5px;
   }
-  .challenge-player-container-exercies-box-imagebox {
-    width: 160px;
-    height: 140px;
-  }
+  
   .workout-info {
     padding: 5px;
   }
