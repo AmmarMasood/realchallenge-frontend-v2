@@ -16,6 +16,8 @@
   outline: none !important;
   padding: 0 !important;
   overflow: hidden !important;
+  width: 90% !important;
+  max-width: 900px !important;
 }
 .ui-video-seek-slider .track .main {
   height: 5px !important;
@@ -23,4 +25,77 @@
 }
 .ui-video-seek-slider .track .main .connect {
   background-color: #ff761a !important;
+}
+
+/* Responsive styles for helpPopupPlayer */
+@media screen and (min-width: 1650px) {
+  .helpPopOut-player-wrapper {
+    max-width: 900px;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    margin: 0 auto;
+  }
+}
+
+@media screen and (max-width: 1650px) {
+  .helpPopOut-player-wrapper {
+    max-width: 800px;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    margin: 0 auto;
+  }
+}
+
+@media screen and (max-width: 1470px) {
+  .helpPopOut-player-wrapper {
+    max-width: 700px;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    margin: 0 auto;
+  }
+}
+
+@media screen and (max-width: 1300px) {
+  .helpPopOut-player-wrapper {
+    max-width: 650px;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    margin: 0 auto;
+  }
+}
+
+@media screen and (max-width: 1100px) {
+  .helpPopOut-player-wrapper {
+    max-width: 600px;
+    width: 95%;
+    aspect-ratio: 16 / 9;
+    margin: 0 auto;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .helpPopOut-player-wrapper {
+    max-width: 500px;
+    width: 95%;
+    aspect-ratio: 16 / 9;
+    margin: 0 auto;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .helpPopOut-player-wrapper {
+    max-width: 100%;
+    width: 95%;
+    aspect-ratio: 16 / 9;
+    margin: 0 auto;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .helpPopOut-player-wrapper {
+    max-width: 100%;
+    aspect-ratio: 0;
+    margin: 0 auto;
+    height: 400px;
+  }
 }

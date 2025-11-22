@@ -7,7 +7,7 @@ import {
   CloseOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
-import { Spin, Slider } from "antd";
+import { Spin } from "antd";
 import Modal from "react-modal";
 import SquarePT from "../../assets/icons/Square-PT.png";
 import PopupPlayIcon from "../../assets/icons/help-pop-out-play-icon.svg";
@@ -31,6 +31,7 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
   });
   const [playing, setPlaying] = useState(false);
   const [buffering, setBuffering] = useState(false);
+  const [audioDuration, setAudioDuration] = useState(0);
 
   // Loader for buffering
   const handleBuffer = () => setBuffering(true);
@@ -52,23 +53,19 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
     }));
   };
 
-  // Seek handler
-  const onSeek = (value) => {
-    if (playerRef.current) {
-      playerRef.current.seekTo(value, "seconds");
-      setProgress((prev) => ({
-        ...prev,
-        playedSeconds: value,
-      }));
-    }
-  };
-
   // Timer values
   const elapsedTime = formatTime(progress.playedSeconds);
   const totalDuration = formatTime(progress.duration);
   const remainingTime = formatTime(progress.duration - progress.playedSeconds);
 
   const onPlayPause = () => setPlaying((p) => !p);
+
+  // Get audio duration
+  const handleAudioLoadedMetadata = () => {
+    if (audioRef.current) {
+      setAudioDuration(audioRef.current.duration || 0);
+    }
+  };
 
   // Sync audio playback with video
   useEffect(() => {
@@ -83,11 +80,50 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
     }
   }, [playing, exercise?.voiceOverLink]);
 
+  // Handle audio end - stop video after 1 second
+  useEffect(() => {
+    if (!audioRef.current || !playerRef.current) return;
+
+    const handleAudioEnd = () => {
+      if (audioDuration > 0) {
+        // Stop video 1 second after audio ends
+        setTimeout(() => {
+          setPlaying(false);
+          if (playerRef.current) {
+            playerRef.current.seekTo(0, "seconds");
+          }
+          if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+          }
+        }, 1000);
+      }
+    };
+
+    const audioElement = audioRef.current;
+    audioElement.addEventListener("ended", handleAudioEnd);
+    return () => audioElement.removeEventListener("ended", handleAudioEnd);
+  }, [audioDuration]);
+
+  // Loop video if shorter than audio
+  useEffect(() => {
+    if (progress.duration > 0 && audioDuration > 0) {
+      if (progress.playedSeconds >= progress.duration && playing) {
+        // Video finished, loop it if audio is still playing
+        if (progress.playedSeconds < audioDuration) {
+          if (playerRef.current) {
+            playerRef.current.seekTo(0, "seconds");
+          }
+        }
+      }
+    }
+  }, [progress.playedSeconds, progress.duration, audioDuration, playing]);
+
   // Reset audio when modal closes
   useEffect(() => {
     if (!open && audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      setPlaying(false);
     }
   }, [open]);
 
@@ -128,7 +164,7 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
       </div>
       <div
         className="helpPopOut-player-wrapper"
-        style={{ position: "relative" }}
+        style={{ position: "relative", backgroundColor: "#000" }}
       >
         {/* Loader */}
         {buffering && (
@@ -207,33 +243,14 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
                 />
               )}
             </div>
-            <div className="helpPopOut-progress-bar-container">
-              <Slider
-                min={0}
-                max={progress.duration || 0}
-                value={progress.playedSeconds || 0}
-                onChange={onSeek}
-                tooltip={{ open: false }}
-                disabled={progress.duration === 0}
-                styles={{
-                  track: {
-                    backgroundColor: "rgba(255, 255, 255, 1)",
-                    height: "5px",
-                  },
-                  tracks: {
-                    backgroundColor: "#FF761A",
-                    height: "5px",
-                  },
-                  rail: {
-                    backgroundColor: "rgba(255, 255, 255, 0.3)",
-                    height: "5px",
-                  },
-                }}
-              />
-            </div>
-            <span className="font-paragraph-white" style={{ fontSize: "16px" }}>
-              {elapsedTime}
-            </span>
+            {/* <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+              <span className="font-paragraph-white" style={{ fontSize: "16px" }}>
+                {elapsedTime}
+              </span>
+              <span className="font-paragraph-white" style={{ fontSize: "12px", opacity: 0.7 }}>
+                / {formatTime(audioDuration || progress.duration)}
+              </span>
+            </div> */}
           </div>
         </div>
       </div>
@@ -253,7 +270,12 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
         </p>
       )}
       {exercise?.voiceOverLink && (
-        <audio ref={audioRef} src={exercise.voiceOverLink} preload="auto" />
+        <audio
+          ref={audioRef}
+          src={exercise.voiceOverLink}
+          preload="auto"
+          onLoadedMetadata={handleAudioLoadedMetadata}
+        />
       )}
     </Modal>
   );
