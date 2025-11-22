@@ -306,10 +306,10 @@ function PlayerControls(
               📺 Casting to TV
             </span>
           )}
-          {exerciseLength && (
+          {(exerciseSeconds || exerciseLength) && (
             <span style={{ marginTop: "10px" }}>
               <span style={{ fontSize: "26px", marginRight: "5px" }}>
-                {exerciseLength || Math.round(exerciseSeconds)}
+                {Math.round(exerciseSeconds)}
               </span>
               Sec
             </span>
