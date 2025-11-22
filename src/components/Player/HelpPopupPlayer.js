@@ -118,6 +118,13 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
     }
   }, [progress.playedSeconds, progress.duration, audioDuration, playing]);
 
+  // Auto-play when modal opens
+  useEffect(() => {
+    if (open) {
+      setPlaying(true);
+    }
+  }, [open]);
+
   // Reset audio when modal closes
   useEffect(() => {
     if (!open && audioRef.current) {

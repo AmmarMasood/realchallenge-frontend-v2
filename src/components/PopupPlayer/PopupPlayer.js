@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactPlayer from "react-player";
 import useWindowDimensions from "../../helpers/useWindowDimensions";
-import { VideoSeekSlider } from "react-video-seek-slider";
 import {
   CaretRightOutlined,
   PauseOutlined,
@@ -33,8 +32,36 @@ const formatTime = (seconds) => {
 function PopupPlayer({ open, setOpen, onCancel, video, exercise }) {
   const playerRef = useRef(null);
   const audioRef = useRef(null);
-  const [progress, setProgress] = useState({});
+  const [progress, setProgress] = useState({
+    playedSeconds: 0,
+    loadedSeconds: 0,
+    duration: 0,
+  });
   const [playing, setPlaying] = useState(false);
+  const [audioDuration, setAudioDuration] = useState(0);
+
+  // Get audio duration
+  const handleAudioLoadedMetadata = () => {
+    if (audioRef.current) {
+      setAudioDuration(audioRef.current.duration || 0);
+    }
+  };
+
+  // Handle progress from video
+  const handleProgress = (changeState) => {
+    setProgress((prev) => ({
+      ...prev,
+      ...changeState,
+    }));
+  };
+
+  // Handle video duration
+  const handleDuration = (duration) => {
+    setProgress((prev) => ({
+      ...prev,
+      duration,
+    }));
+  };
 
   // Sync audio playback with video
   useEffect(() => {
@@ -49,11 +76,57 @@ function PopupPlayer({ open, setOpen, onCancel, video, exercise }) {
     }
   }, [playing, exercise?.voiceOverLink]);
 
+  // Handle audio end - stop video after 1 second
+  useEffect(() => {
+    if (!audioRef.current || !playerRef.current) return;
+
+    const handleAudioEnd = () => {
+      if (audioDuration > 0) {
+        // Stop video 1 second after audio ends
+        setTimeout(() => {
+          setPlaying(false);
+          if (playerRef.current) {
+            playerRef.current.seekTo(0, "seconds");
+          }
+          if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+          }
+        }, 1000);
+      }
+    };
+
+    const audioElement = audioRef.current;
+    audioElement.addEventListener("ended", handleAudioEnd);
+    return () => audioElement.removeEventListener("ended", handleAudioEnd);
+  }, [audioDuration]);
+
+  // Loop video if shorter than audio
+  useEffect(() => {
+    if (progress.duration > 0 && audioDuration > 0) {
+      if (progress.playedSeconds >= progress.duration && playing) {
+        // Video finished, loop it if audio is still playing
+        if (progress.playedSeconds < audioDuration) {
+          if (playerRef.current) {
+            playerRef.current.seekTo(0, "seconds");
+          }
+        }
+      }
+    }
+  }, [progress.playedSeconds, progress.duration, audioDuration, playing]);
+
+  // Auto-play when modal opens
+  useEffect(() => {
+    if (open) {
+      setPlaying(true);
+    }
+  }, [open]);
+
   // Reset audio when modal closes
   useEffect(() => {
     if (!open && audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      setPlaying(false);
     }
   }, [open]);
 
@@ -86,17 +159,19 @@ function PopupPlayer({ open, setOpen, onCancel, video, exercise }) {
       </div>
       <div
         className="helpPopOut-player-wrapper"
-        style={{ position: "relative" }}
+        style={{ position: "relative", backgroundColor: "#000" }}
       >
         <ReactPlayer
+          ref={playerRef}
           width="100%"
           height="100%"
           url={`${video}`}
-          loop={true}
           controls={true}
           muted={false}
           playing={playing}
           stopOnUnmount={false}
+          onProgress={handleProgress}
+          onDuration={handleDuration}
         />
       </div>
       {exercise?.voiceOverLink && (
@@ -104,6 +179,7 @@ function PopupPlayer({ open, setOpen, onCancel, video, exercise }) {
           ref={audioRef}
           src={exercise.voiceOverLink}
           preload="auto"
+          onLoadedMetadata={handleAudioLoadedMetadata}
         />
       )}
     </Modal>
