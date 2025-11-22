@@ -383,7 +383,6 @@ function Exercises({
               display: "flex",
               overflowX: "auto",
               overflowY: "hidden",
-              maxWidth: "90vw",
             }}
           >
             {firstExercise && (
@@ -742,6 +741,7 @@ function Exercises({
                     cursor: "pointer",
                     marginTop: "0px",
                     background: "#171e27",
+                    height: "100%",
                   }}
                 />
               )}

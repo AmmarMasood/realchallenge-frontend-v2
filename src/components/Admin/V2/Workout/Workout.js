@@ -424,11 +424,12 @@ function Workout() {
             <img src={WorkoutStudio} alt="workout-studio" />
           </div>
 
+          <button className="music-icon-button" onClick={openMusicAdder}>
+            <span>Add background music</span>
+            <img src={MusicIcon} alt="music-icon" />
+          </button>
+
           <div className="v2workout-studio-middle">
-            <button className="music-icon-button" onClick={openMusicAdder}>
-              <span>Add background music</span>
-              <img src={MusicIcon} alt="music-icon" />
-            </button>
             <Player
               moveToNextExercise={moveToNextExercise}
               moveToPrevExercise={moveToPrevExercise}
