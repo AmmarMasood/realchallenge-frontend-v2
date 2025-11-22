@@ -75,6 +75,7 @@ function Exercises({
   const [exerciseIdToUpdate, setExerciseIdToUpdate] = React.useState(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [draggedItemId, setDraggedItemId] = React.useState(null);
+  const scrollContainerRef = React.useRef(null);
 
   const handleOpenExerciseForHelp = (e) => {
     const exercise = allExercises.find(
@@ -247,6 +248,14 @@ function Exercises({
       ...prev,
       exercises: [...prev.exercises, newExercise],
     }));
+
+    // Auto-scroll to the newly added exercise
+    setTimeout(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollLeft =
+          scrollContainerRef.current.scrollWidth;
+      }
+    }, 0);
   };
 
   const removeExercise = (e, exercise) => {
@@ -369,6 +378,7 @@ function Exercises({
       >
         <div className="video-browser-container">
           <div
+            ref={scrollContainerRef}
             style={{
               display: "flex",
               overflowX: "auto",
@@ -520,7 +530,7 @@ function Exercises({
                   remainingExercises.map((e, i) => {
                     i += 1; // Adjust index to match the original exercise index
                     return (
-                      <DraggableItem key={e.id} id={e.id}>
+                      <DraggableItem key={e.id} id={e.id} style={{ zIndex: 1 }}>
                         <div
                           className={`${
                             currentExercise.index === i
@@ -706,20 +716,35 @@ function Exercises({
                       </DraggableItem>
                     );
                   })}
-                {!workout.renderWorkout && workout.exercises?.length === 2 ? (
-                  <div></div>
-                ) : (
-                  <img
-                    src={AddNewExercise}
-                    onClick={addNewExercise}
-                    alt="exercise"
-                    style={{
-                      cursor: "pointer",
-                      marginTop: "00px",
-                    }}
-                  />
-                )}
               </DraggableArea>
+            </div>
+
+            <div
+              style={{
+                position: "sticky",
+                right: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minWidth: "fit-content",
+                flexShrink: 0,
+                zIndex: 100,
+              }}
+            >
+              {!workout.renderWorkout && workout.exercises?.length === 2 ? (
+                <div></div>
+              ) : (
+                <img
+                  src={AddNewExercise}
+                  onClick={addNewExercise}
+                  alt="exercise"
+                  style={{
+                    cursor: "pointer",
+                    marginTop: "0px",
+                    background: "#171e27",
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>
