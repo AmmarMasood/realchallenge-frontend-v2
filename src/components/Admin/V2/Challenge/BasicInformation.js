@@ -671,9 +671,11 @@ function BasicInformation(props) {
       const updatedWeeks = [...prevWeeks];
       const week = updatedWeeks[weekIndex];
       // Map the new order of ids to the actual workout objects
-      week.workouts = newOrderIds.map((key) =>
-        week.workouts.find((w) => (w.id || w._id) === key)
-      );
+      week.workouts = newOrderIds
+        .map((key) =>
+          week.workouts.find((w) => (w.id || w._id) === key)
+        )
+        .filter(Boolean); // Remove undefined values
       return updatedWeeks;
     });
   };

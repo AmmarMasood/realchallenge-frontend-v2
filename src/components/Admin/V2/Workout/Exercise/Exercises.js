@@ -394,6 +394,20 @@ function Exercises({
                     ? "exercise-browser-card challenge-player-container-exercies-box--currentRunning"
                     : "exercise-browser-card"
                 }`}
+                style={{
+                  backgroundColor:
+                    draggedItemId === firstExercise.id
+                      ? "rgba(34, 197, 94, 0.15)"
+                      : undefined,
+                  border:
+                    draggedItemId === firstExercise.id
+                      ? "2px solid #22c55e"
+                      : "2px solid transparent",
+                  transition: "all 0.2s ease",
+                  borderRadius:
+                    draggedItemId === firstExercise.id ? "8px" : "0px",
+                  opacity: draggedItemId === firstExercise.id ? "0.8" : "1",
+                }}
               >
                 {workout.renderWorkout && firstExercise?.videoURL && (
                   <DeleteFilled
@@ -545,7 +559,7 @@ function Exercises({
                               draggedItemId === e.id
                                 ? "2px solid #22c55e"
                                 : "2px solid transparent",
-                            transition: "all 0.3s ease",
+                            transition: "all 0.15s ease-out",
                             borderRadius:
                               draggedItemId === e.id ? "8px" : "0px",
                             opacity: draggedItemId === e.id ? "0.8" : "1",
