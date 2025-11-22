@@ -672,9 +672,7 @@ function BasicInformation(props) {
       const week = updatedWeeks[weekIndex];
       // Map the new order of ids to the actual workout objects
       week.workouts = newOrderIds
-        .map((key) =>
-          week.workouts.find((w) => (w.id || w._id) === key)
-        )
+        .map((key) => week.workouts.find((w) => (w.id || w._id) === key))
         .filter(Boolean); // Remove undefined values
       return updatedWeeks;
     });
@@ -682,7 +680,9 @@ function BasicInformation(props) {
 
   const handleWeekReorder = (newWeekOrder) => {
     // new week ordered ids - extract id from the week objects
-    const filteredOrder = newWeekOrder.filter((item) => item && item.id !== undefined);
+    const filteredOrder = newWeekOrder.filter(
+      (item) => item && item.id !== undefined
+    );
     const newOrderIds = filteredOrder.map((week) => week.id);
 
     // now order weeks
@@ -714,12 +714,19 @@ function BasicInformation(props) {
     });
   };
 
+  const getThumbnailLink = (thumbnail) => {
+    if (!thumbnail) return "";
+    if (typeof thumbnail === "string") return thumbnail.replace(/ /g, "%20");
+    if (thumbnail.link) return thumbnail.link.replace(/ /g, "%20");
+    return "";
+  };
+
   return (
     <div>
       {loading && (
         <div
           style={{
-            background: "traceparent",
+            background: "transparent",
             height: "100vh",
             zIndex: "9999",
             position: "fixed",
@@ -1075,7 +1082,9 @@ function BasicInformation(props) {
             className="trainer-profile-container-column1 adminV2-bi-trainer-profile-container-column1"
             onClick={openForThumbnail}
             style={{
-              background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${thumbnail?.link})`,
+              background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${getThumbnailLink(
+                thumbnail
+              )})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",

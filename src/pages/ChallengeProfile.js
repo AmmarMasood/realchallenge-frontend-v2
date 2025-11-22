@@ -212,13 +212,6 @@ function ChallengeProfile(props) {
       }
     }
 
-    console.log(
-      "flagggggggggggg",
-      flag,
-      isPrevWorkoutCompleted,
-      isPrevWeekCompleted
-    );
-
     return flag;
   }
 
@@ -231,7 +224,14 @@ function ChallengeProfile(props) {
     const merged = [].concat.apply([], workouts);
     const relatedEquipments = merged.map((m) => m.relatedEquipments);
     const eg = [].concat.apply([], relatedEquipments);
-    return eg.length > 0 ? (
+
+    // Filter unique equipment based on name
+    const uniqueEquipments = eg.filter(
+      (equipment, index, self) =>
+        index === self.findIndex((e) => e.name === equipment.name)
+    );
+
+    return uniqueEquipments.length > 0 ? (
       <div className="trainer-profile-goals">
         <div
           className="trainer-profile-goals-heading font-paragraph-white"
@@ -241,7 +241,7 @@ function ChallengeProfile(props) {
         </div>
         <div className="trainer-profile-goals-container">
           {/* {getEquipmentsFromWorkouts(challenge.weeks)} */}
-          {eg.map((body) => (
+          {uniqueEquipments.map((body) => (
             <div
               className="trainer-profile-goal font-paragraph-white"
               style={{ marginRight: "1px", background: "#283443" }}
@@ -765,6 +765,13 @@ function ChallengeProfile(props) {
     }
   };
 
+  const getThumbnailLink = (thumbnail) => {
+    if (!thumbnail) return "";
+    if (typeof thumbnail === "string") return thumbnail.replace(/ /g, "%20");
+    if (thumbnail.link) return thumbnail.link.replace(/ /g, "%20");
+    return "";
+  };
+
   return loading ? (
     <div className="center-inpage">
       <LoadingOutlined style={{ fontSize: "50px", color: "#ff7700" }} />
@@ -805,7 +812,9 @@ function ChallengeProfile(props) {
         <div
           className="trainer-profile-container-column1"
           style={{
-            background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${challenge.thumbnailLink})`,
+            background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${getThumbnailLink(
+              challenge?.thumbnailLink
+            )})`,
             backgroundSize: "cover",
             backgroundPosition: "center center",
             backgroundRepeat: "no-repeat",
