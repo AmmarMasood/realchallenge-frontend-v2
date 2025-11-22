@@ -481,7 +481,7 @@ function Exercises({
                     )}
                   </div>
                   <div className="challenge-player-container-exercies-box-details font-paragraph-white">
-                    <p style={{ lineHeight: "10px" }}>{firstExercise.title}</p>
+                    <p style={{ lineHeight: "15px" }}>{firstExercise.title}</p>
 
                     {workout.renderWorkout && (
                       <input

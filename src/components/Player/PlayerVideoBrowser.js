@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useRef, useEffect } from "react";
 
 import Carousel from "react-multi-carousel";
 import VideoThumbnail from "react-video-thumbnail";
@@ -53,6 +53,28 @@ function PlayerVideoBrowser({
   const [exerciseWorkoutTimeTrack, setExerciseWorkoutTimeTrack] = useContext(
     exerciseWorkoutTimeTrackContext
   );
+  const carouselContainerRef = useRef(null);
+
+  // Auto-scroll to currently playing exercise
+  useEffect(() => {
+    if (currentExercise && currentExercise.index >= 0 && carouselContainerRef.current) {
+      setTimeout(() => {
+        // Find the current exercise card element
+        const currentExerciseElement = carouselContainerRef.current?.querySelector(
+          `[data-exercise-index="${currentExercise.index}"]`
+        );
+
+        if (currentExerciseElement) {
+          // Scroll the element into view with smooth behavior
+          currentExerciseElement.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "start",
+          });
+        }
+      }, 50);
+    }
+  }, [currentExercise.index]);
 
   const handleOpenExerciseForHelp = (e) => {
     setPlayerState({ ...playerState, playing: false, muted: true });
@@ -64,10 +86,15 @@ function PlayerVideoBrowser({
     const selectedExercise = workout.exercises[i];
 
     // Validate intro exercise has duration if it has a video
-    if (i === 0 && selectedExercise.videoURL && (!selectedExercise.exerciseLength || selectedExercise.exerciseLength <= 0)) {
+    if (
+      i === 0 &&
+      selectedExercise.videoURL &&
+      (!selectedExercise.exerciseLength || selectedExercise.exerciseLength <= 0)
+    ) {
       notification.error({
         message: "Duration Required",
-        description: "Please enter a duration for the intro exercise before playing it.",
+        description:
+          "Please enter a duration for the intro exercise before playing it.",
         placement: "topRight",
       });
       return;
@@ -107,160 +134,163 @@ function PlayerVideoBrowser({
         width: fromFullScreen && "100%",
       }}
     >
-      <div className="video-browser-container">
+      <div className="video-browser-container" ref={carouselContainerRef}>
         <Carousel responsive={responsive}>
           {workout.exercises &&
             workout.exercises
               .map((e, originalIndex) => ({ e, originalIndex }))
-              .filter(({ e, originalIndex }) =>
-                originalIndex !== 0 || (e.videoURL || e.exerciseLength > 0)
+              .filter(
+                ({ e, originalIndex }) =>
+                  originalIndex !== 0 || e.videoURL || e.exerciseLength > 0
               )
               .map(({ e, originalIndex }) => {
                 const i = originalIndex;
 
                 return i === 0 ? (
-                <div
-                  className={`${
-                    currentExercise.index === i
-                      ? "exercise-browser-card challenge-player-container-exercies-box--currentRunning"
-                      : "exercise-browser-card"
-                  }`}
-                >
-                  <div>
-                    <h4 className="challenge-player-container-exercies-round font-paragraph-white">
-                      {e.exerciseGroupName ? (
-                        e.exerciseGroupName
-                      ) : (
-                        <span style={{ opacity: 0 }}>-</span>
-                      )}
-                    </h4>
-                  </div>
-                  {workout.isRendered && !e?.exerciseId && (
-                    <img
-                      src={SquarePlay}
-                      onClick={() =>
-                        setPlayerState({ ...playerState, playing: true })
-                      }
-                      alt=""
-                      className="challenge-player-container-exercies-box-asktrainerbtn"
-                      style={{ padding: "8px" }}
-                    />
-                  )}
-                  {workout.isRendered && e?.exerciseId && (
-                    <img
-                      src={SquarePT}
-                      alt=""
-                      className="challenge-player-container-exercies-box-asktrainerbtn"
-                      onClick={() => handleOpenExerciseForHelp(e)}
-                    />
-                  )}
                   <div
-                    className="challenge-player-container-exercies-box"
-                    key={e._id}
-                    onClick={() => handleChangeExercise(i)}
+                    data-exercise-index={i}
+                    className={`${
+                      currentExercise.index === i
+                        ? "exercise-browser-card challenge-player-container-exercies-box--currentRunning"
+                        : "exercise-browser-card"
+                    }`}
                   >
-                    <div className="challenge-player-container-exercies-box-imagebox">
-                      {e.videoThumbnailURL ? (
-                        <img
-                          src={e.videoThumbnailURL}
-                          alt="thumbnail"
-                          style={{
-                            width: 250,
-                            height: 200,
-                            objectFit: "cover",
-                          }}
-                        />
-                      ) : (
-                        <VideoThumbnail
-                          videoUrl={e.videoURL ? `${e.videoURL}` : ""}
-                          width={250}
-                          height={200}
-                          cors={true}
-                        />
-                      )}
-                    </div>
-                    <div className="challenge-player-container-exercies-box-details font-paragraph-white">
-                      <p style={{ lineHeight: "10px" }}>{e.title}</p>
-                      <p>
-                        {e.exerciseLength ? (
-                          <>
-                            <span style={{ marginRight: "8px" }}>
-                              {workout.isRendered
-                                ? `${e.exerciseLength} secs`
-                                : ""}
-                            </span>{" "}
-                          </>
+                    <div>
+                      <h4 className="challenge-player-container-exercies-round font-paragraph-white">
+                        {e.exerciseGroupName ? (
+                          e.exerciseGroupName
                         ) : (
-                          <span style={{ marginRight: "8px" }}></span>
+                          <span style={{ opacity: 0 }}>-</span>
                         )}
-                      </p>
+                      </h4>
                     </div>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className={`${
-                    currentExercise.index === i
-                      ? "exercise-browser-card challenge-player-container-exercies-box--currentRunning"
-                      : "exercise-browser-card"
-                  }`}
-                >
-                  <div>
-                    <h4
-                      className="challenge-player-container-exercies-round font-paragraph-white"
-                      style={{ opacity: !e.exerciseGroupName ? "0" : "0.6" }}
+                    {workout.isRendered && !e?.exerciseId && (
+                      <img
+                        src={SquarePlay}
+                        onClick={() =>
+                          setPlayerState({ ...playerState, playing: true })
+                        }
+                        alt=""
+                        className="challenge-player-container-exercies-box-asktrainerbtn"
+                        style={{ padding: "8px" }}
+                      />
+                    )}
+                    {workout.isRendered && e?.exerciseId && (
+                      <img
+                        src={SquarePT}
+                        alt=""
+                        className="challenge-player-container-exercies-box-asktrainerbtn"
+                        onClick={() => handleOpenExerciseForHelp(e)}
+                      />
+                    )}
+                    <div
+                      className="challenge-player-container-exercies-box"
+                      key={e._id}
+                      onClick={() => handleChangeExercise(i)}
                     >
-                      {e.exerciseGroupName ? (
-                        e.exerciseGroupName
-                      ) : (
-                        <span style={{ opacity: 0 }}>-</span>
-                      )}
-                    </h4>
+                      <div className="challenge-player-container-exercies-box-imagebox">
+                        {e.videoThumbnailURL ? (
+                          <img
+                            src={e.videoThumbnailURL}
+                            alt="thumbnail"
+                            style={{
+                              width: 250,
+                              height: 200,
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <VideoThumbnail
+                            videoUrl={e.videoURL ? `${e.videoURL}` : ""}
+                            width={250}
+                            height={200}
+                            cors={true}
+                          />
+                        )}
+                      </div>
+                      <div className="challenge-player-container-exercies-box-details font-paragraph-white">
+                        <p style={{ lineHeight: "15px" }}>{e.title}</p>
+                        <p>
+                          {e.exerciseLength ? (
+                            <>
+                              <span style={{ marginRight: "8px" }}>
+                                {workout.isRendered
+                                  ? `${e.exerciseLength} secs`
+                                  : ""}
+                              </span>{" "}
+                            </>
+                          ) : (
+                            <span style={{ marginRight: "8px" }}></span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  {workout.isRendered && !fullscreen && (
-                    <img
-                      src={SquarePT}
-                      alt=""
-                      className="challenge-player-container-exercies-box-asktrainerbtn"
-                      onClick={() => handleOpenExerciseForHelp(e)}
-                    />
-                  )}
+                ) : (
                   <div
-                    className="challenge-player-container-exercies-box"
-                    key={e._id}
-                    onClick={() => handleChangeExercise(i)}
+                    data-exercise-index={i}
+                    className={`${
+                      currentExercise.index === i
+                        ? "exercise-browser-card challenge-player-container-exercies-box--currentRunning"
+                        : "exercise-browser-card"
+                    }`}
                   >
-                    <div className="challenge-player-container-exercies-box-imagebox">
-                      {e.videoThumbnailURL ? (
-                        <img
-                          src={e.videoThumbnailURL}
-                          alt="thumbnail"
-                          style={{
-                            width: 250,
-                            height: 200,
-                            objectFit: "cover",
-                          }}
-                        />
-                      ) : (
-                        <VideoThumbnail
-                          videoUrl={e.videoURL ? `${e.videoURL}` : ""}
-                          width={250}
-                          height={200}
-                          cors={true}
-                        />
-                      )}
+                    <div>
+                      <h4
+                        className="challenge-player-container-exercies-round font-paragraph-white"
+                        style={{ opacity: !e.exerciseGroupName ? "0" : "0.6" }}
+                      >
+                        {e.exerciseGroupName ? (
+                          e.exerciseGroupName
+                        ) : (
+                          <span style={{ opacity: 0 }}>-</span>
+                        )}
+                      </h4>
                     </div>
-                    <div className="challenge-player-container-exercies-box-details font-paragraph-white">
-                      <p style={{ lineHeight: "10px" }}>{e.title}</p>
-                      <p>
-                        <span style={{ marginRight: "8px" }}>
-                          {e.exerciseLength ? `${e.exerciseLength} secs` : ""}
-                        </span>
-                      </p>
+                    {workout.isRendered && !fullscreen && (
+                      <img
+                        src={SquarePT}
+                        alt=""
+                        className="challenge-player-container-exercies-box-asktrainerbtn"
+                        onClick={() => handleOpenExerciseForHelp(e)}
+                      />
+                    )}
+                    <div
+                      className="challenge-player-container-exercies-box"
+                      key={e._id}
+                      onClick={() => handleChangeExercise(i)}
+                    >
+                      <div className="challenge-player-container-exercies-box-imagebox">
+                        {e.videoThumbnailURL ? (
+                          <img
+                            src={e.videoThumbnailURL}
+                            alt="thumbnail"
+                            style={{
+                              width: 250,
+                              height: 200,
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <VideoThumbnail
+                            videoUrl={e.videoURL ? `${e.videoURL}` : ""}
+                            width={250}
+                            height={200}
+                            cors={true}
+                          />
+                        )}
+                      </div>
+                      <div className="challenge-player-container-exercies-box-details font-paragraph-white">
+                        <p style={{ lineHeight: "15px" }}>{e.title}</p>
+                        <p>
+                          <span style={{ marginRight: "8px" }}>
+                            {e.exerciseLength ? `${e.exerciseLength} secs` : ""}
+                          </span>
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
+                );
               })}
         </Carousel>
       </div>
