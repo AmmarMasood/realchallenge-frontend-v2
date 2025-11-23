@@ -197,6 +197,9 @@ function PlayerVideoBrowser({
                               width: 250,
                               height: 200,
                               objectFit: "cover",
+                              objectPosition: "center",
+                              display: "block",
+                              borderRadius: "4px",
                             }}
                           />
                         ) : (
@@ -269,6 +272,9 @@ function PlayerVideoBrowser({
                               width: 250,
                               height: 200,
                               objectFit: "cover",
+                              objectPosition: "center",
+                              display: "block",
+                              borderRadius: "4px",
                             }}
                           />
                         ) : (
