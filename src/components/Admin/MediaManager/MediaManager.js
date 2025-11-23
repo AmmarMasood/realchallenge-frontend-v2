@@ -154,10 +154,9 @@ const AdminUsersView = ({ onSelectUser, usersData, loading }) => {
         <Space>
           <UserOutlined />
           <div>
-            <div style={{ fontWeight: "bold" }}>{user.name}</div>
-            <Text type="secondary" style={{ fontSize: "12px" }}>
-              {user.email}
-            </Text>
+            <div style={{ fontWeight: "bold" }}>
+              {user.firstName} {user.lastName} <span style={{ color: "#999", fontSize: "12px" }}>({user.email})</span>
+            </div>
           </div>
         </Space>
       ),
