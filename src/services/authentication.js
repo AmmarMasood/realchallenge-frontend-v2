@@ -175,28 +175,54 @@ export function logoutUser(histoy, setUserInfo) {
 
 export function checkUser(userInfo, setUserInfo, token, history) {
   if (token) {
-    //set the token in header
-    setAuthToken(token);
-    //decode the token so that we can call our action
-    const decode = jwtDecode(token);
-    console.log("decode", decode);
-    setUserInfo({
-      ...userInfo,
-      username: decode.username,
-      email: decode.email,
-      role: decode.role,
-      id: decode.id,
-      // IS USER EMAIL IS ACTIVE
-      isActive: decode.isActive,
-      authenticated: true,
-    });
+    try {
+      //set the token in header
+      setAuthToken(token);
+      //decode the token so that we can call our action
+      const decode = jwtDecode(token);
+      console.log("decode", decode);
 
-    //to logout the user once the token expires we do this
-    const currentTime = Date.now() / 1000;
-    if (decode.exp < currentTime) {
-      //logout user
+      //to logout the user once the token expires we do this
+      const currentTime = Date.now() / 1000;
+      if (decode.exp < currentTime) {
+        //logout user
+        logoutUser(history, setUserInfo);
+        //redirect to login screen
+        window.location.href = "./login";
+        return;
+      }
+
+      // NEW: Handle both old and new token formats
+      let roles;
+      if (decode.roles && Array.isArray(decode.roles)) {
+        // New format: roles array
+        roles = decode.roles;
+      } else if (decode.role) {
+        // Old format: single role (backward compatibility)
+        roles = [decode.role];
+        console.warn("Old token format detected - user should re-login");
+      } else {
+        // No role info - force logout
+        console.error("Token missing role information");
+        logoutUser(history, setUserInfo);
+        window.location.href = "./login";
+        return;
+      }
+
+      setUserInfo({
+        ...userInfo,
+        username: decode.username,
+        email: decode.email,
+        roles: roles,
+        role: roles[0],
+        id: decode.id,
+        // IS USER EMAIL IS ACTIVE
+        isActive: decode.isActive,
+        authenticated: true,
+      });
+    } catch (error) {
+      console.error("Error decoding token:", error);
       logoutUser(history, setUserInfo);
-      //redirect to login screen
       window.location.href = "./login";
     }
   }

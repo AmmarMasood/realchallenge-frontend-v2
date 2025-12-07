@@ -22,6 +22,7 @@ import { LanguageContext } from "../contexts/LanguageContext";
 import { T } from "../components/Translate";
 import { getAllBlogs } from "../services/blogs";
 import slug from "elegant-slug";
+import { hasRole } from "../helpers/roleHelpers";
 // import ReactHtmlParser from "react-html-parser";
 
 function Home(props) {
@@ -33,11 +34,15 @@ function Home(props) {
 
   useEffect(() => {
     if (userInfo.authenticated) {
-      if (userInfo.role === "customer") {
-        props.history.push("/user/dashboard");
-      }
-      if (userInfo.role === "admin") {
+      // Check if user has ANY non-customer role for admin dashboard
+      const hasNonCustomerRole = userInfo.roles && userInfo.roles.some(role =>
+        ["admin", "trainer", "nutrist", "blogger", "shopmanager"].includes(role)
+      );
+
+      if (hasNonCustomerRole) {
         props.history.push("/admin/dashboard");
+      } else if (hasRole(userInfo, "customer")) {
+        props.history.push("/user/dashboard");
       }
     }
   }, []);

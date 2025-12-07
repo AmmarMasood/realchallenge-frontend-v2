@@ -4,6 +4,7 @@ import moment from "moment";
 import { deleteUser, getAllUsers } from "../../../services/users";
 import UpdateUser from "./UpdateUser";
 import { getAllChallengeGoals } from "../../../services/createChallenge/goals";
+import { hasRole } from "../../../helpers/roleHelpers";
 
 function AllUsers() {
   const [filterAllUsers, setFilterAllUsers] = useState([]);
@@ -32,28 +33,28 @@ function AllUsers() {
       setFilterAllUsers(allUsers);
     }
     if (filter === "admin") {
-      const admins = allUsers.filter((f) => f.role === "admin");
-      setFilterAllUsers(admins);
+      const filtered = allUsers.filter((f) => hasRole(f, "admin"));
+      setFilterAllUsers(filtered);
     }
     if (filter === "customer") {
-      const admins = allUsers.filter((f) => f.role === "customer");
-      setFilterAllUsers(admins);
+      const filtered = allUsers.filter((f) => hasRole(f, "customer"));
+      setFilterAllUsers(filtered);
     }
     if (filter === "nutrist") {
-      const admins = allUsers.filter((f) => f.role === "nutrist");
-      setFilterAllUsers(admins);
+      const filtered = allUsers.filter((f) => hasRole(f, "nutrist"));
+      setFilterAllUsers(filtered);
     }
     if (filter === "shopmanager") {
-      const admins = allUsers.filter((f) => f.role === "shopmanager");
-      setFilterAllUsers(admins);
+      const filtered = allUsers.filter((f) => hasRole(f, "shopmanager"));
+      setFilterAllUsers(filtered);
     }
     if (filter === "blogger") {
-      const admins = allUsers.filter((f) => f.role === "blogger");
-      setFilterAllUsers(admins);
+      const filtered = allUsers.filter((f) => hasRole(f, "blogger"));
+      setFilterAllUsers(filtered);
     }
     if (filter === "trainer") {
-      const admins = allUsers.filter((f) => f.role === "trainer");
-      setFilterAllUsers(admins);
+      const filtered = allUsers.filter((f) => hasRole(f, "trainer"));
+      setFilterAllUsers(filtered);
     }
   }, [allUsers, filter]);
 

@@ -48,38 +48,37 @@ function Login(props) {
       setUserInfo({
         ...userInfo,
         id: res.res.user_id,
-        role: res.res.role,
+        roles: res.res.roles,
+        role: res.res.roles[0],
         username: res.res.username,
         authenticated: true,
       });
       console.log(res);
       localStorage.setItem("jwtToken", res.res.token);
       setAuthToken(localStorage.getItem("jwtToken"));
-      // localStorage.setItem("role", res.res.role);
-      if (
-        res.res.role === "admin" ||
-        res.res.role === "trainer" ||
-        res.res.role === "nutrist" ||
-        res.res.role === "blogger" ||
-        res.res.role === "shopmanager"
-      ) {
+
+      // NEW: Check if user has ANY non-customer role for admin dashboard
+      const hasNonCustomerRole = res.res.roles.some(role =>
+        ["admin", "trainer", "nutrist", "blogger", "shopmanager"].includes(role)
+      );
+
+      if (hasNonCustomerRole) {
         props.history.push("/admin/dashboard");
         return;
       }
-      // "admin",
-      //   "trainer",
-      //   "nutrist",
-      //   "blogger",
-      //   "shopmanager",
-      if (res.res.role === "customer") {
+
+      // If user only has customer role, go to user dashboard
+      if (res.res.roles.includes("customer") && res.res.roles.length === 1) {
         props.history.push("/user/dashboard");
         return;
       }
+
+      // Default fallback
+      props.history.push("/user/dashboard");
     }
   };
 
   const responseGoogle = async (response) => {
-    return;
     // setLoading(true);
     console.log("response google");
     const res = await loginUserWithGoogle({
@@ -96,7 +95,8 @@ function Login(props) {
       setUserInfo({
         ...userInfo,
         id: res.res.user_id,
-        role: res.res.role,
+        roles: res.res.roles,
+        role: res.res.roles[0],
         username: res.res.username,
         authenticated: true,
       });
@@ -104,14 +104,25 @@ function Login(props) {
       localStorage.setItem("jwtToken", res.res.token);
       setAuthToken(localStorage.getItem("jwtToken"));
       // localStorage.setItem("role", res.res.role);
-      if (res.res.role === "admin") {
+
+      // NEW: Check if user has ANY non-customer role for admin dashboard
+      const hasNonCustomerRole = res.res.roles.some(role =>
+        ["admin", "trainer", "nutrist", "blogger", "shopmanager"].includes(role)
+      );
+
+      if (hasNonCustomerRole) {
         props.history.push("/admin/dashboard");
         return;
       }
-      if (res.res.role === "customer") {
+
+      // If user only has customer role, go to user dashboard
+      if (res.res.roles.includes("customer") && res.res.roles.length === 1) {
         props.history.push("/user/dashboard");
         return;
       }
+
+      // Default fallback
+      props.history.push("/user/dashboard");
     }
   };
 
@@ -133,7 +144,8 @@ function Login(props) {
         id: res.res.user_id,
         email: res.res.email,
         // isActive: ,
-        role: res.res.role,
+        roles: res.res.roles,
+        role: res.res.roles[0],
         username: res.res.username,
         authenticated: true,
       });
@@ -143,20 +155,25 @@ function Login(props) {
       setAuthToken(localStorage.getItem("jwtToken"));
       getUserPoints(userPoints, setUserPoints);
       // localStorage.setItem("role", res.res.role);
-      if (
-        res.res.role === "admin" ||
-        res.res.role === "trainer" ||
-        res.res.role === "nutrist" ||
-        res.res.role === "blogger" ||
-        res.res.role === "shopmanager"
-      ) {
+
+      // NEW: Check if user has ANY non-customer role for admin dashboard
+      const hasNonCustomerRole = res.res.roles.some(role =>
+        ["admin", "trainer", "nutrist", "blogger", "shopmanager"].includes(role)
+      );
+
+      if (hasNonCustomerRole) {
         props.history.push("/admin/dashboard");
         return;
       }
-      if (res.res.role === "customer") {
+
+      // If user only has customer role, go to user dashboard
+      if (res.res.roles.includes("customer") && res.res.roles.length === 1) {
         props.history.push("/user/dashboard");
         return;
       }
+
+      // Default fallback
+      props.history.push("/user/dashboard");
     }
   };
 

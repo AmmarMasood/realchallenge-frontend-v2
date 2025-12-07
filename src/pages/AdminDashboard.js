@@ -25,8 +25,8 @@ import AllExercises from "../components/Admin/ExerciseManager/AllExercises";
 import NewExercise from "../components/Admin/ExerciseManager/NewExercise";
 import NewUser from "../components/Admin/UserManager/NewUser";
 import AllUsers from "../components/Admin/UserManager/AllUsers";
-import AllProducts from "../components/Admin/ShopManager/AllProducts";
-import NewProduct from "../components/Admin/ShopManager/NewProduct";
+// import AllProducts from "../components/Admin/ShopManager/AllProducts";
+// import NewProduct from "../components/Admin/ShopManager/NewProduct";
 import AllRecipes from "../components/Admin/RecipeManager/AllRecipes";
 import NewRecipe from "../components/Admin/RecipeManager/NewRecipe";
 import AllBlogs from "../components/Admin/BlogManager/AllBlogs";
@@ -46,6 +46,7 @@ import NewFaq from "../components/Admin/FaqManager/NewFaq";
 import AllRequests from "../components/Admin/RequestManager/AllRequests";
 import { T } from "../components/Translate";
 import LanguageSelector from "../components/LanguageSelector/LanguageSelector";
+import { hasRole, hasAnyRole } from "../helpers/roleHelpers";
 
 const { Sider } = Layout;
 const { SubMenu } = Menu;
@@ -191,11 +192,11 @@ function AdminDashboard(props) {
               >
                 <T>admin.requests</T>
               </Menu.Item> */}
-              {(adminInfo.role === "admin" || adminInfo.role === "trainer") && (
+              {hasAnyRole(adminInfo, ["admin", "trainer"]) && (
                 <Button onClick={goToNewDashboard}>Go To New Dashboard</Button>
               )}
 
-              {adminInfo.role === "admin" && (
+              {/* {adminInfo.role === "admin" && (
                 <SubMenu key="1" icon={<ShopOutlined />} title="Manage Shop">
                   <Menu.Item
                     key="1.1"
@@ -224,8 +225,8 @@ function AdminDashboard(props) {
                     <T>admin.new_product</T>
                   </Menu.Item>
                 </SubMenu>
-              )}
-              {adminInfo.role === "admin" && (
+              )} */}
+              {hasRole(adminInfo, "admin") && (
                 <Menu.Item
                   key="12"
                   icon={<FolderViewOutlined />}
@@ -286,7 +287,7 @@ function AdminDashboard(props) {
                 <T>admin.media_manager</T>
               </Menu.Item>
 
-              {(adminInfo.role === "admin" || adminInfo.role === "nutrist") && (
+              {hasAnyRole(adminInfo, ["admin", "nutrist"]) && (
                 <SubMenu key="4" icon={<CoffeeOutlined />} title="Recipes">
                   <Menu.Item
                     key="4.1"
@@ -316,7 +317,7 @@ function AdminDashboard(props) {
                   </Menu.Item>
                 </SubMenu>
               )}
-              {(adminInfo.role === "admin" || adminInfo.role === "trainer") && (
+              {hasAnyRole(adminInfo, ["admin", "trainer"]) && (
                 <SubMenu key="5" icon={<ControlOutlined />} title="Exercises">
                   <Menu.Item
                     key="5.1"
@@ -346,7 +347,7 @@ function AdminDashboard(props) {
                   </Menu.Item>
                 </SubMenu>
               )}
-              {(adminInfo.role === "admin" || adminInfo.role === "trainer") && (
+              {hasAnyRole(adminInfo, ["admin", "trainer"]) && (
                 <SubMenu
                   key="6"
                   icon={<VideoCameraAddOutlined />}
@@ -380,7 +381,7 @@ function AdminDashboard(props) {
                   </Menu.Item>
                 </SubMenu>
               )}
-              {adminInfo.role === "admin" && (
+              {hasRole(adminInfo, "admin") && (
                 <SubMenu
                   key="7"
                   icon={<UserAddOutlined />}
@@ -414,7 +415,7 @@ function AdminDashboard(props) {
                   </Menu.Item>
                 </SubMenu>
               )}
-              {adminInfo.role === "admin" && (
+              {hasRole(adminInfo, "admin") && (
                 <SubMenu
                   key="8"
                   icon={<InsertRowBelowOutlined />}
@@ -482,7 +483,7 @@ function AdminDashboard(props) {
                   </Menu.Item>
                 </SubMenu>
               )} */}
-              {adminInfo.role === "admin" && (
+              {hasRole(adminInfo, "admin") && (
                 <SubMenu
                   key="10"
                   icon={<NotificationOutlined />}
@@ -516,7 +517,7 @@ function AdminDashboard(props) {
                   </Menu.Item>
                 </SubMenu>
               )}
-              {adminInfo.role === "admin" && (
+              {hasRole(adminInfo, "admin") && (
                 <SubMenu
                   key="11"
                   icon={<QuestionCircleOutlined />}
@@ -554,8 +555,8 @@ function AdminDashboard(props) {
           </Sider>
           <div className="admin-dashboard-container-main">
             {currentSelection === 3 && <VFSBrowser />}
-            {currentSelection === 1.1 && <AllProducts />}
-            {currentSelection === 1.2 && <NewProduct />}
+            {/* {currentSelection === 1.1 && <AllProducts />} */}
+            {/* {currentSelection === 1.2 && <NewProduct />} */}
             {/* {currentSelection === 2.1 && <AllBlogs />} */}
             {/* {currentSelection === 2.2 && (
               <NewBlog setCurrentSelection={setCurrentSelection} />

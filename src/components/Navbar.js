@@ -16,6 +16,7 @@ import { withRouter } from "react-router-dom";
 import Coins from "../assets/icons/coins.svg";
 import LanguageSelector from "./LanguageSelector/LanguageSelector";
 import { T } from "./Translate";
+import { hasRole } from "../helpers/roleHelpers";
 
 function Navbar({ color, history }) {
   const [click, setClick] = useState(false);
@@ -233,7 +234,7 @@ function Navbar({ color, history }) {
 
               <Popover
                 placement="bottom"
-                content={userInfo.role === "customer" ? content : contentAdmin}
+                content={hasRole(userInfo, "customer") ? content : contentAdmin}
                 trigger="click"
               >
                 <div className="loggedin-nav-name font-paragraph-white">
