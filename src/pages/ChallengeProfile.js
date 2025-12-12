@@ -971,7 +971,64 @@ function ChallengeProfile(props) {
             </div>
           </div>
 
+          <div className="trainer-profile-goals">
+            <div
+              className="trainer-profile-goals-heading font-paragraph-white"
+              style={{ color: "#72777B", textTransform: "uppercase" }}
+            >
+              <T>challenge_profile.goals</T>
+            </div>
+            <div className="trainer-profile-goals-container">
+              {challenge.challengeGoals &&
+                challenge.challengeGoals.map((goal) => (
+                  <div
+                    className="trainer-profile-goal font-paragraph-white"
+                    style={{ marginRight: "1px", background: "#283443" }}
+                  >
+                    {goal}
+                  </div>
+                ))}
+            </div>
+          </div>
+
           {getEquipmentsFromWorkouts(challenge.weeks)}
+
+          {challenge.results && (
+            <div className="trainer-profile-goals">
+              <div
+                className="trainer-profile-goals-heading font-paragraph-white"
+                style={{ color: "#72777B", textTransform: "uppercase" }}
+              >
+                <T>challenge_profile.results</T>
+              </div>
+              <div className="trainer-profile-goals-container font-paragraph-white">
+                {challenge.results}
+              </div>
+            </div>
+          )}
+
+          {challenge.informationList && (
+            <div className="trainer-profile-goals">
+              <div
+                className="trainer-profile-goals-heading font-paragraph-white"
+                style={{ color: "#72777B", textTransform: "uppercase" }}
+              >
+                <T>challenge_profile.info</T>
+              </div>
+              <ul style={{ listStyleType: "disc", paddingLeft: "20px" }}>
+                {challenge.informationList?.map((infoItem, index) => {
+                  return (
+                    <li
+                      key={index}
+                      className="trainer-profile-goals-container font-paragraph-white"
+                    >
+                      {infoItem.info}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
 
           <div
             className="trainer-profile-goals"
