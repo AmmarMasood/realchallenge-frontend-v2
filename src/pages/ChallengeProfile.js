@@ -1022,6 +1022,14 @@ function ChallengeProfile(props) {
                       key={index}
                       className="trainer-profile-goals-container font-paragraph-white"
                     >
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          marginRight: 10,
+                        }}
+                      >
+                        -
+                      </span>{" "}
                       {infoItem.info}
                     </li>
                   );
