@@ -189,6 +189,7 @@
   margin: 5px;
   border-radius: 2px;
   cursor: pointer;
+  width: fit-content;
 }
 
 /* Country selector styling to match other inputs */

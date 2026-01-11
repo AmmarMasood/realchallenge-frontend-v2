@@ -97,7 +97,7 @@
   flex-wrap: wrap;
 }
 
-@media screen and (max-width: 900px) {
+@media screen and (max-width: 1200px) {
   .trainer-profile-container {
     /* border: 1px solid red; */
     min-height: 100vh;
@@ -207,6 +207,10 @@
 }
 
 @media screen and (max-width: 600px) {
+  .profile-box-row1 {
+    display: flex;
+    flex-wrap: wrap;
+  }
   .trainer-profile-container-column2 {
     padding: 10px !important;
   }

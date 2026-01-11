@@ -7,8 +7,7 @@ import Footer from "../../components/Footer";
 import { EditFilled, DeleteFilled, LoadingOutlined } from "@ant-design/icons";
 import { Link, withRouter } from "react-router-dom";
 import { debounce } from "lodash";
-// import ModalVideo from "react-modal-video";
-// import "react-modal-video/scss/modal-video.scss";
+import PopupPlayer from "../../components/PopupPlayer/PopupPlayer";
 import ChallengeCard from "../../components/Cards/ChallengeCard";
 import {
   getAllTrainerGoals,
@@ -276,24 +275,49 @@ function AdminDashboard(props) {
     }
   }, [videoTrailerLink]);
 
+  // Wrapper functions to extract just the link string from VFSBrowser's object response
+  const handleHeroBannerSelect = (mediaObj) => {
+    if (mediaObj && typeof mediaObj === "object" && mediaObj.link) {
+      setHeroBanner(mediaObj.link);
+    } else if (typeof mediaObj === "string") {
+      setHeroBanner(mediaObj);
+    }
+  };
+
+  const handleAvatarSelect = (mediaObj) => {
+    if (mediaObj && typeof mediaObj === "object" && mediaObj.link) {
+      setAvatarLink(mediaObj.link);
+    } else if (typeof mediaObj === "string") {
+      setAvatarLink(mediaObj);
+    }
+  };
+
+  const handleTrailerSelect = (mediaObj) => {
+    if (mediaObj && typeof mediaObj === "object" && mediaObj.link) {
+      setVideoTrailerLink(mediaObj.link);
+    } else if (typeof mediaObj === "string") {
+      setVideoTrailerLink(mediaObj);
+    }
+  };
+
   const openForHeroBanner = () => {
     setMediaManagerVisible(true);
     setMediaManagerType("images");
-    setMediaManagerActions([heroBanner, setHeroBanner]);
+    setMediaManagerActions([heroBanner, handleHeroBannerSelect]);
   };
 
   const openForAvatar = (e) => {
     e.stopPropagation();
     setMediaManagerVisible(true);
     setMediaManagerType("images");
-    setMediaManagerActions([avatarLink, setAvatarLink]);
+    setMediaManagerActions([avatarLink, handleAvatarSelect]);
   };
 
   const openForTrailer = (e) => {
     e.stopPropagation();
     setMediaManagerVisible(true);
     setMediaManagerType("videos");
-    setMediaManagerActions([videoTrailerLink, setVideoTrailerLink]);
+    setMediaManagerActions([videoTrailerLink, handleTrailerSelect]);
   };
 
   const openNewInterestModal = () => {
@@ -375,15 +399,11 @@ function AdminDashboard(props) {
       </Helmet>
       <Navbar />
       {/* video modal */}
-      {/* todo do later */}
-      {/* <ModalVideo
-        channel="custom"
-        autoplay
-        isOpen={open}
-        controlsList="nodownload"
-        videoId={`${trainer.videoTrailerLink}`}
-        onClose={() => setOpen(false)}
-      /> */}
+      <PopupPlayer
+        open={open}
+        onCancel={() => setOpen(false)}
+        video={videoTrailerLink}
+      />
       <GoalCreatorPopup
         open={showTrainerGoalModal}
         setOpen={(isOpen) => {
@@ -405,11 +425,11 @@ function AdminDashboard(props) {
         <div
           className="trainer-profile-container-column1"
           style={{
-            background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${
-              process.env.REACT_APP_SERVER
-            }/uploads/${heroBanner ? heroBanner.replaceAll(" ", "%20") : ""})`,
-            backgroundSize: "100% 100vh",
-            backgroundPosition: "10% 10%",
+            background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39))${
+              heroBanner ? `, url(${heroBanner.replaceAll(" ", "%20")})` : ""
+            }`,
+            backgroundSize: "cover",
+            backgroundPosition: "center center",
             backgroundRepeat: "no-repeat",
             // position: "relative",
           }}
@@ -453,7 +473,11 @@ function AdminDashboard(props) {
               <div className="profile-box-row1-information">
                 <h2
                   className="font-heading-white"
-                  style={{ margin: "0 0 10px 0", padding: "0", fontSize: "31px" }}
+                  style={{
+                    margin: "0 0 10px 0",
+                    padding: "0",
+                    fontSize: "31px",
+                  }}
                 >
                   {trainer.firstName ? trainer.firstName : ""}{" "}
                   {trainer.lastName ? trainer.lastName : ""}
@@ -528,13 +552,41 @@ function AdminDashboard(props) {
                 </div>
               </div>
               <div
-                className="profile-box-row1-playericon new-editable-border"
                 style={{
-                  position: "relative",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
                 }}
-                onClick={openForTrailer}
               >
-                <img src={ChallengeProfileSubtract} alt="play-icon" />
+                <span
+                  className="font-paragraph-white"
+                  style={{ fontSize: "11px", marginBottom: "0px" }}
+                  onClick={openForTrailer}
+                >
+                  {videoTrailerLink ? "Update Trailer" : "Add My Trailer"}
+                </span>
+                <div
+                  className="profile-box-row1-playericon new-editable-border"
+                  style={{
+                    position: "relative",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  onClick={openForTrailer}
+                >
+                  <img
+                    src={ChallengeProfileSubtract}
+                    alt="play-icon"
+                    style={{ cursor: "pointer" }}
+                    onClick={(e) => {
+                      if (videoTrailerLink) {
+                        e.stopPropagation();
+                        setOpen(true);
+                      }
+                    }}
+                  />
+                </div>
               </div>
             </div>
             <div className="profile-box-row2">
