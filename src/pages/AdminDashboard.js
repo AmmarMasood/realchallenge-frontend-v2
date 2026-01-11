@@ -66,12 +66,12 @@ function AdminDashboard(props) {
       <button
         className="font-paragraphw-white hover-orange"
         onClick={() => logoutUser(props.history, setAdminInfo)}
-        style={{ 
-          background: 'none', 
-          border: 'none', 
-          cursor: 'pointer',
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
           padding: 0,
-          textAlign: 'left'
+          textAlign: "left",
         }}
       >
         <T>admin.logout</T>
@@ -128,6 +128,20 @@ function AdminDashboard(props) {
     }
     if (selectedTab && selectedTab === "update-exercise") {
       setCurrentSelection(5.1);
+    }
+    if (selectedTab && selectedTab === "new-recipe") {
+      setCurrentSelection(4.2);
+    }
+    if (selectedTab && selectedTab === "new-blog") {
+      setCurrentSelection(2.2);
+    }
+
+    if (selectedTab && selectedTab === "all-recipe") {
+      setCurrentSelection(4.1);
+    }
+
+    if (selectedTab && selectedTab === "all-blog") {
+      setCurrentSelection(2.1);
     }
   }, []);
 
@@ -242,7 +256,7 @@ function AdminDashboard(props) {
                   Manage Requests
                 </Menu.Item>
               )}
-              {/* {(adminInfo.role === "admin" || adminInfo.role === "blogger") && (
+              {(adminInfo.role === "admin" || adminInfo.role === "blogger") && (
                 <SubMenu key="2" icon={<CoffeeOutlined />} title="Manage Blogs">
                   <Menu.Item
                     key="2.1"
@@ -271,7 +285,7 @@ function AdminDashboard(props) {
                     <T>admin.new_blog</T>
                   </Menu.Item>
                 </SubMenu>
-              )} */}
+              )}
               <Menu.Item
                 key="3"
                 icon={<FolderViewOutlined />}
@@ -557,10 +571,10 @@ function AdminDashboard(props) {
             {currentSelection === 3 && <VFSBrowser />}
             {/* {currentSelection === 1.1 && <AllProducts />} */}
             {/* {currentSelection === 1.2 && <NewProduct />} */}
-            {/* {currentSelection === 2.1 && <AllBlogs />} */}
-            {/* {currentSelection === 2.2 && (
+            {currentSelection === 2.1 && <AllBlogs />}
+            {currentSelection === 2.2 && (
               <NewBlog setCurrentSelection={setCurrentSelection} />
-            )} */}
+            )}
             {currentSelection === 4.1 && <AllRecipes />}
             {currentSelection === 4.2 && (
               <NewRecipe setCurrentSelection={setCurrentSelection} />

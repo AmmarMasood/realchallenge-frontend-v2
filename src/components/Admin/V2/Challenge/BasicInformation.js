@@ -175,6 +175,7 @@ function BasicInformation(props) {
   const [allowComments, setAllowComments] = useState(true);
   const [allowReviews, setAllowReviews] = useState(true);
   const [makePublic, setMakePublic] = useState(true);
+  const [adminApproved, setAdminApproved] = useState(false);
   const [userCreatePost, setUserCreatePost] = useState(false);
   const [isDraggingWorkout, setIsDraggingWorkout] = useState(false);
   const [draggedWorkoutId, setDraggedWorkoutId] = useState(null);
@@ -254,6 +255,21 @@ function BasicInformation(props) {
         );
 
         populateChallengeInfo(challenge);
+
+        // Set additional states from challenge data
+        if (challenge.allowComments !== undefined) {
+          setAllowComments(challenge.allowComments);
+        }
+        if (challenge.allowReviews !== undefined) {
+          setAllowReviews(challenge.allowReviews);
+        }
+        if (challenge.isPublic !== undefined) {
+          setMakePublic(challenge.isPublic);
+        }
+        if (challenge.adminApproved !== undefined) {
+          setAdminApproved(challenge.adminApproved);
+        }
+
         setLoading(false);
         setIsFirstRender(true);
       };
@@ -2214,6 +2230,55 @@ function BasicInformation(props) {
                   Create a post
                 </Checkbox>
               </div>
+
+              {isUpdate && (
+                <div
+                  style={{
+                    marginTop: "20px",
+                    padding: "15px",
+                    backgroundColor: adminApproved ? "#1a472a" : "#4a3626",
+                    border: adminApproved ? "2px solid #22c55e" : "2px solid #f59e0b",
+                    borderRadius: "5px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div>
+                    <p
+                      className="font-paragraph-white"
+                      style={{
+                        margin: 0,
+                        fontWeight: "600",
+                        fontSize: "14px",
+                      }}
+                    >
+                      Admin Approval Status
+                    </p>
+                    <p
+                      style={{
+                        margin: "5px 0 0 0",
+                        fontSize: "12px",
+                        color: "#9ca3af",
+                      }}
+                    >
+                      Only admins can change this from the "Manage Requests" section
+                    </p>
+                  </div>
+                  <div
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor: adminApproved ? "#22c55e" : "#f59e0b",
+                      borderRadius: "4px",
+                      fontWeight: "600",
+                      fontSize: "14px",
+                      color: "#fff",
+                    }}
+                  >
+                    {adminApproved ? "Approved" : "Pending Approval"}
+                  </div>
+                </div>
+              )}
             </>
 
             <button

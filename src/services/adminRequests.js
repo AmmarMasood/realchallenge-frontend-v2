@@ -15,8 +15,8 @@ export async function getAllAdminRequests() {
 
 export async function updateAdminRequest(id, type, value) {
   try {
-    const res = await axios.post(
-      `${process.env.REACT_APP_SERVER}/api/admin/requests/update`,
+    const res = await axios.put(
+      `${process.env.REACT_APP_SERVER}/api/admin/requests`,
       { type, id, value }
     );
     return { success: true, res: res.data };

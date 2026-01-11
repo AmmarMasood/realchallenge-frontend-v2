@@ -28,10 +28,12 @@
   align-items: center;
 }
 .profile-box-row1-avatar {
+  width: 130px;
+  height: 130px;
 }
 .profile-box-row1-avatar > img {
-  height: 108px;
-  width: 108px;
+  height: 130px;
+  width: 130px;
 }
 .profile-box-row1-information {
 }
@@ -133,10 +135,12 @@
     align-items: center;
   }
   .profile-box-row1-avatar {
+    width: 130px;
+    height: 130px;
   }
   .profile-box-row1-avatar > img {
-    height: 108px;
-    width: 108px;
+    height: 130px;
+    width: 130px;
   }
   .profile-box-row1-information {
   }

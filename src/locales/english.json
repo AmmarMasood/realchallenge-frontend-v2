@@ -605,6 +605,13 @@
     "create_challenge": "Create Challenge",
     "my_exercises": "My Exercises",
     "my_challenges": "My Challenges",
-    "new_exercise": "New Exercise"
+    "all_challenges": "All Challenges",
+    "new_exercise": "New Exercise",
+    "create_recipe": "Create Recipe",
+    "create_blog": "Create Blog",
+    "all_recipes": "All Recipes",
+    "all_blogs": "All Blogs",
+    "my_blogs": "My Blogs",
+    "my_recipes": "My Recipes"
   }
 }

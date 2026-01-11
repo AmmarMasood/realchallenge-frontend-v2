@@ -181,3 +181,49 @@
     /* justify-content: flex-start; */
   }
 }
+
+.new-editable-border {
+  border: 2px dashed #fff; /* 1px dotted white border */
+  outline: none; /* Remove any default browser outline */
+  padding: 5px;
+  margin: 5px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+/* Country selector styling to match other inputs */
+.adminV2-country-selector .ant-select-selector {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 2px dashed #fff !important;
+  border-radius: 2px !important;
+  color: #fff !important;
+  padding: 0px 8px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+}
+
+.adminV2-country-selector .ant-select-selector:hover,
+.adminV2-country-selector.ant-select-focused .ant-select-selector {
+  border: 2px dashed #ff950a !important;
+}
+
+.adminV2-country-selector .ant-select-selection-search-input {
+  color: #fff !important;
+}
+
+.adminV2-country-selector .ant-select-selection-placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.adminV2-country-selector .ant-select-selection-item {
+  color: #fff !important;
+}
+
+.adminV2-country-selector .ant-select-arrow {
+  color: #fff !important;
+}
+
+.adminV2-country-selector .ant-select-clear {
+  background: transparent !important;
+  color: #fff !important;
+}

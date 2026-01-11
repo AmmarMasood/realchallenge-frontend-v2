@@ -603,6 +603,13 @@
     "upload_media": "Media uploaden",
     "create_challenge": "Creëer uitdaging",
     "my_exercises": "Mijn oefeningen",
-    "my_challenges": "Mijn uitdagingen"
+    "my_challenges": "Mijn uitdagingen",
+    "all_challenges": "All Challengess",
+    "create_recipe": "Recept maken",
+    "create_blog": "Blog maken",
+    "all_recipes": "All recepten",
+    "all_blogs": "Alle Blogs",
+    "my_blogs": "My Blogs",
+    "my_recipes": "My Recipes"
   }
 }

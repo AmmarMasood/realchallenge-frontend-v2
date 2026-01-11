@@ -42,9 +42,7 @@ export function createTrainerGoal(body) {
 
 export function updateTrainerGoal(body, id) {
   return axios
-    .put(`${process.env.REACT_APP_SERVER}/api/trainers/trainerGoals/${id}`, {
-      name: body,
-    })
+    .put(`${process.env.REACT_APP_SERVER}/api/trainers/trainerGoals/${id}`, body)
     .then((res) => res.data)
     .catch((err) => {
       openNotificationWithIcon("error", "Unable to update trainer goal");
@@ -74,13 +72,15 @@ export function getTrainerById(id) {
 
 export function updateTrainerById(id, data) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/trainers/${id}/update`, data)
+    .put(`${process.env.REACT_APP_SERVER}/api/trainers/${id}`, data)
     .then((res) => {
-      openNotificationWithIcon("success", "Trainer was updated");
+      openNotificationWithIcon("success", "Profile updated successfully");
+      return res.data;
     })
     .catch((err) => {
-      openNotificationWithIcon("error", "Unable to update trainers");
+      openNotificationWithIcon("error", "Unable to update profile");
       console.log(err);
+      throw err;
     });
 }
 

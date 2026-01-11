@@ -561,9 +561,9 @@ function ChallengeProfile(props) {
                               flexDirection: "column",
                             }}
                           >
-                            <span>{workout.title}</span>
+                            <span style={{textTransform: "initial"}}>{workout.title}</span>
                             <span
-                              style={{ color: "#BABCBF", fontSize: "14px" }}
+                              style={{ color: "#BABCBF", fontSize: "14px",textTransform: "initial" }}
                             >
                               {workout.subtitle}
                             </span>

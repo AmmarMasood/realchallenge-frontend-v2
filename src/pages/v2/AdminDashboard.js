@@ -1,37 +1,38 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import "../../assets/trainerprofile.css";
 import "../../assets/adminDashboardV2.css";
 import "../../assets/home.css";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { EditFilled, LoadingOutlined } from "@ant-design/icons";
+import { EditFilled, DeleteFilled, LoadingOutlined } from "@ant-design/icons";
 import { Link, withRouter } from "react-router-dom";
+import { debounce } from "lodash";
 // import ModalVideo from "react-modal-video";
 // import "react-modal-video/scss/modal-video.scss";
 import ChallengeCard from "../../components/Cards/ChallengeCard";
 import {
-  addCommentToTrainer,
-  createTrainerGoal,
-  deleteTrainerGoals,
   getAllTrainerGoals,
-  getTrainerById,
+  deleteTrainerGoals,
 } from "../../services/trainers";
 import QuoteIcon from "../../assets/icons/quote-icon.png";
 import ChallengeProfileSubtract from "../../assets/icons/challenge-profile-subtract.svg";
-import { Avatar, Button, Input } from "antd";
+import ShareIcon from "../../assets/icons/share-icon.svg";
 import StarFilled from "../../assets/icons/star-orange.svg";
-import StartTransparent from "../../assets/icons/star-transparent.svg";
+import StarTransparent from "../../assets/icons/star-transparent.svg";
+import { Avatar, Button, Input, Select } from "antd";
 import slug from "elegant-slug";
 import { Helmet } from "react-helmet";
 import { T } from "../../components/Translate";
 import { userInfoContext } from "../../contexts/UserStore";
-import { getUsersProfile } from "../../services/users";
+import {
+  getUsersProfile,
+  updateUserProfileByAdmin,
+} from "../../services/users";
 import { LanguageContext } from "../../contexts/LanguageContext";
 import HeartIcon from "../../assets/icons/heart-icon.svg";
 import UploadIcon from "../../assets/icons/upload-icon.svg";
 import DumbBellIcon from "../../assets/icons/dumb-bell-icon.svg";
-import CreateGoalsModal from "../../components/Admin/V2/Trainer/CreateGoalsModal";
-import MediaManager from "../../components/Admin/V2/MediaManager/MediaManager";
+import GoalCreatorPopup from "./GoalCreatorPopup";
 import {
   getAllChallenges,
   getAllUserChallenges,
@@ -39,6 +40,10 @@ import {
 } from "../../services/createChallenge/main";
 import ModalForEditList from "../../components/Admin/V2/Common/ModalForEditList";
 import ExerciseCreatorPopup from "./ExerciseCreatorPopup";
+import RemoteMediaManager from "../../components/Admin/MediaManager/RemoteMediaManager";
+import RecipeIcon from "../../assets/icons/create-recipe-icon.svg";
+import BlogIcon from "../../assets/icons/create-blog-icon.svg";
+import ChallengeIcon from "../../assets/icons/challenge-icon-white.svg";
 
 function AdminDashboard(props) {
   const { language } = useContext(LanguageContext);
@@ -46,10 +51,8 @@ function AdminDashboard(props) {
   const [adminInfo, setAdminInfo] = useContext(userInfoContext);
   const [loading, setLoading] = useState(false);
   const [trainer, setTrainer] = useState({});
-  const [calculatedRating, setCalculatedRating] = useState(0);
   const [goals, setGoals] = useState([]);
   const [showTrainerGoalModal, setShowTrainerGoalModal] = useState(false);
-  const [openMediaManager, setOpenMediaManager] = useState(false);
   const [challenges, setAllChallenges] = useState([]);
   const [exercises, setAllExercises] = useState([]);
   const [openExerciseEditListModal, setOpenExerciseEditListModal] =
@@ -59,6 +62,17 @@ function AdminDashboard(props) {
   const [openExerciseCreatorPopup, setOpenExerciseCreatorPopup] =
     useState(false);
   const [selectedExerciseForEdit, setSelectedExerciseForEdit] = useState(null);
+  const [selectedGoalForEdit, setSelectedGoalForEdit] = useState(null);
+  const [motto, setMotto] = useState("");
+  const [bio, setBio] = useState("");
+  const [country, setCountry] = useState("");
+  const [allCountries, setAllCountries] = useState([]);
+  const [heroBanner, setHeroBanner] = useState("");
+  const [avatarLink, setAvatarLink] = useState("");
+  const [videoTrailerLink, setVideoTrailerLink] = useState("");
+  const [mediaManagerVisible, setMediaManagerVisible] = useState(false);
+  const [mediaManagerType, setMediaManagerType] = useState("images");
+  const [mediaManagerActions, setMediaManagerActions] = useState([]);
 
   async function fetchTrainerGoals() {
     const { goals } = await getAllTrainerGoals(language);
@@ -87,24 +101,239 @@ function AdminDashboard(props) {
 
   useEffect(() => {
     fetchData(adminInfo.id);
+    const countries = require("../../assets/data/all-countries.json");
+    setAllCountries(countries);
   }, [language]);
 
-  const createNewTrainerGoal = async (body) => {
-    await createTrainerGoal(body);
-    await fetchTrainerGoals();
+  useEffect(() => {
+    if (trainer.motto !== undefined) {
+      setMotto(trainer.motto || "");
+    }
+  }, [trainer.motto]);
+
+  useEffect(() => {
+    if (trainer.bio !== undefined) {
+      setBio(trainer.bio || "");
+    }
+  }, [trainer.bio]);
+
+  useEffect(() => {
+    if (trainer.country !== undefined) {
+      setCountry(trainer.country || "");
+    }
+  }, [trainer.country]);
+
+  useEffect(() => {
+    if (trainer.heroBanner !== undefined) {
+      setHeroBanner(trainer.heroBanner || "");
+    }
+  }, [trainer.heroBanner]);
+
+  useEffect(() => {
+    if (trainer.avatarLink !== undefined) {
+      setAvatarLink(trainer.avatarLink || "");
+    }
+  }, [trainer.avatarLink]);
+
+  useEffect(() => {
+    if (trainer.videoTrailerLink !== undefined) {
+      setVideoTrailerLink(trainer.videoTrailerLink || "");
+    }
+  }, [trainer.videoTrailerLink]);
+
+  const debouncedUpdateMotto = useCallback(
+    debounce(async (newMotto, trainerId) => {
+      try {
+        await updateUserProfileByAdmin(
+          { motto: newMotto },
+          trainerId,
+          adminInfo.role
+        );
+      } catch (error) {
+        console.error("Failed to update motto:", error);
+      }
+    }, 1000),
+    []
+  );
+
+  const handleMottoChange = (e) => {
+    const newMotto = e.target.value;
+    setMotto(newMotto);
+    if (trainer._id) {
+      debouncedUpdateMotto(newMotto, trainer._id);
+    }
   };
 
-  const deleteMyTrainerGoals = async (id) => {
-    await deleteTrainerGoals(id);
+  const debouncedUpdateBio = useCallback(
+    debounce(async (newBio, trainerId) => {
+      try {
+        await updateUserProfileByAdmin(
+          { bio: newBio },
+          trainerId,
+          adminInfo.role
+        );
+      } catch (error) {
+        console.error("Failed to update bio:", error);
+      }
+    }, 1000),
+    []
+  );
+
+  const handleBioChange = (e) => {
+    const newBio = e.target.value;
+    setBio(newBio);
+    if (trainer._id) {
+      debouncedUpdateBio(newBio, trainer._id);
+    }
+  };
+
+  const debouncedUpdateCountry = useCallback(
+    debounce(async (newCountry, trainerId) => {
+      try {
+        await updateUserProfileByAdmin(
+          { country: newCountry },
+          trainerId,
+          adminInfo.role
+        );
+      } catch (error) {
+        console.error("Failed to update country:", error);
+      }
+    }, 1000),
+    []
+  );
+
+  const handleCountryChange = (value) => {
+    setCountry(value);
+    if (trainer._id) {
+      debouncedUpdateCountry(value, trainer._id);
+    }
+  };
+
+  const debouncedUpdateHeroBanner = useCallback(
+    debounce(async (newHeroBanner, trainerId) => {
+      try {
+        await updateUserProfileByAdmin(
+          { heroBanner: newHeroBanner },
+          trainerId,
+          adminInfo.role
+        );
+      } catch (error) {
+        console.error("Failed to update hero banner:", error);
+      }
+    }, 1000),
+    []
+  );
+
+  const debouncedUpdateAvatar = useCallback(
+    debounce(async (newAvatar, trainerId) => {
+      try {
+        await updateUserProfileByAdmin(
+          { avatarLink: newAvatar },
+          trainerId,
+          adminInfo.role
+        );
+      } catch (error) {
+        console.error("Failed to update avatar:", error);
+      }
+    }, 1000),
+    []
+  );
+
+  const debouncedUpdateTrailer = useCallback(
+    debounce(async (newTrailer, trainerId) => {
+      try {
+        await updateUserProfileByAdmin(
+          { videoTrailerLink: newTrailer },
+          trainerId,
+          adminInfo.role
+        );
+      } catch (error) {
+        console.error("Failed to update trailer:", error);
+      }
+    }, 1000),
+    []
+  );
+
+  useEffect(() => {
+    if (heroBanner && trainer._id && heroBanner !== trainer.heroBanner) {
+      debouncedUpdateHeroBanner(heroBanner, trainer._id);
+    }
+  }, [heroBanner]);
+
+  useEffect(() => {
+    if (avatarLink && trainer._id && avatarLink !== trainer.avatarLink) {
+      debouncedUpdateAvatar(avatarLink, trainer._id);
+    }
+  }, [avatarLink]);
+
+  useEffect(() => {
+    if (
+      videoTrailerLink &&
+      trainer._id &&
+      videoTrailerLink !== trainer.videoTrailerLink
+    ) {
+      debouncedUpdateTrailer(videoTrailerLink, trainer._id);
+    }
+  }, [videoTrailerLink]);
+
+  const openForHeroBanner = () => {
+    setMediaManagerVisible(true);
+    setMediaManagerType("images");
+    setMediaManagerActions([heroBanner, setHeroBanner]);
+  };
+
+  const openForAvatar = (e) => {
+    e.stopPropagation();
+    setMediaManagerVisible(true);
+    setMediaManagerType("images");
+    setMediaManagerActions([avatarLink, setAvatarLink]);
+  };
+
+  const openForTrailer = (e) => {
+    e.stopPropagation();
+    setMediaManagerVisible(true);
+    setMediaManagerType("videos");
+    setMediaManagerActions([videoTrailerLink, setVideoTrailerLink]);
   };
 
   const openNewInterestModal = () => {
+    setSelectedGoalForEdit(null);
     setShowTrainerGoalModal(true);
+  };
+
+  const openEditInterestModal = (goal) => {
+    setSelectedGoalForEdit(goal);
+    setShowTrainerGoalModal(true);
+  };
+
+  const handleDeleteGoal = async (goalId) => {
+    try {
+      await deleteTrainerGoals(goalId);
+      await fetchTrainerGoals();
+    } catch (error) {
+      console.error("Error deleting goal:", error);
+    }
   };
 
   const goToChallengeCreator = () => {
     props.history.push("/admin/v2/challenge-studio");
   };
+  const goToRecipeCreator = () => {
+    props.history.push("/admin/dashboard?tab=new-recipe");
+  };
+
+  const goToBlogCreator = () => {
+    props.history.push("/admin/dashboard?tab=new-blog");
+  };
+
+  const goToAllRecipes = () => {
+    props.history.push("/admin/dashboard?tab=all-recipe");
+  };
+
+  const goToAllBlogs = () => {
+    props.history.push("/admin/dashboard?tab=all-blog");
+  };
+
   const goToNewExercise = () => {
     // props.history.push("/admin/dashboard?tab=new-exercise");
     setSelectedExerciseForEdit(null); // Clear any previously selected exercise
@@ -155,100 +384,175 @@ function AdminDashboard(props) {
         videoId={`${trainer.videoTrailerLink}`}
         onClose={() => setOpen(false)}
       /> */}
-      <CreateGoalsModal
-        showTrainerGoalModal={showTrainerGoalModal}
-        setShowTrainerGoalModal={setShowTrainerGoalModal}
-        createTrainerGoal={createNewTrainerGoal}
-        allTrainerGoals={goals}
-        deleteTrainerGoals={deleteMyTrainerGoals}
-        fetchData={fetchTrainerGoals}
+      <GoalCreatorPopup
+        open={showTrainerGoalModal}
+        setOpen={(isOpen) => {
+          setShowTrainerGoalModal(isOpen);
+          if (!isOpen) {
+            setSelectedGoalForEdit(null);
+          }
+        }}
+        onSuccess={fetchTrainerGoals}
+        selectedGoalForEdit={selectedGoalForEdit}
       />
-      <MediaManager open={openMediaManager} setOpen={setOpenMediaManager} />
+      <RemoteMediaManager
+        visible={mediaManagerVisible}
+        setVisible={setMediaManagerVisible}
+        type={mediaManagerType}
+        actions={mediaManagerActions}
+      />
       <div className="trainer-profile-container">
         <div
           className="trainer-profile-container-column1"
           style={{
             background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${
               process.env.REACT_APP_SERVER
-            }/uploads/${
-              trainer.heroBanner
-                ? trainer.heroBanner.replaceAll(" ", "%20")
-                : ""
-            })`,
+            }/uploads/${heroBanner ? heroBanner.replaceAll(" ", "%20") : ""})`,
             backgroundSize: "100% 100vh",
             backgroundPosition: "10% 10%",
             backgroundRepeat: "no-repeat",
+            // position: "relative",
           }}
         >
           <div className="profile-box">
+            <div
+              onClick={openForHeroBanner}
+              className="new-editable-border adminV2-bi-input"
+              style={{
+                width: "200px",
+              }}
+            >
+              <span
+                className="font-paragraph-white"
+                style={{ fontSize: "14px" }}
+              >
+                {heroBanner ? "Change cover picture" : "Add cover picture"}
+              </span>
+            </div>
             <div className="profile-box-row1">
-              <div className="profile-box-row1-avatar">
+              <div
+                className="profile-box-row1-avatar new-editable-border adminV2-bi-input"
+                onClick={openForAvatar}
+                style={{
+                  position: "relative",
+                  cursor: "pointer",
+                  width: "130px",
+                  height: "130px",
+                }}
+              >
                 <img
-                  src={`${
-                    trainer.avatarLink
-                      ? trainer.avatarLink.replaceAll(" ", "%20")
-                      : ""
-                  }`}
+                  src={`${avatarLink ? avatarLink.replaceAll(" ", "%20") : ""}`}
                   alt="trainer-profile"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
                 />
               </div>
               <div className="profile-box-row1-information">
                 <h2
                   className="font-heading-white"
-                  style={{ margin: "0", padding: "0" }}
+                  style={{ margin: "0 0 10px 0", padding: "0", fontSize: "31px" }}
                 >
                   {trainer.firstName ? trainer.firstName : ""}{" "}
                   {trainer.lastName ? trainer.lastName : ""}
                 </h2>
 
-                <div style={{ paddingTop: "20px" }}>
-                  <p
-                    className="font-paragraph-white"
-                    style={{ margin: "0", padding: "0" }}
+                <div
+                  style={{
+                    paddingTop: "10px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Select
+                    value={country || undefined}
+                    onChange={handleCountryChange}
+                    placeholder="Select your country"
+                    showSearch
+                    allowClear
+                    style={{
+                      width: "200px",
+                    }}
+                    dropdownStyle={{
+                      backgroundColor: "#222935",
+                      border: "1px solid #FF950A",
+                    }}
+                    className="adminV2-country-selector"
+                    filterOption={(input, option) =>
+                      option.children
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
                   >
-                    {trainer.country ? trainer.country : ""}
-                  </p>
-                  {new Array(calculatedRating ? calculatedRating : 0)
-                    .fill(0)
-                    .map(() => (
-                      <img
-                        src={StarFilled}
-                        alt=""
-                        style={{ height: "20px", margin: "2px" }}
-                      />
+                    {allCountries.map((co) => (
+                      <Select.Option key={co.name} value={co.name}>
+                        {co.name}
+                      </Select.Option>
                     ))}
-                  {new Array(calculatedRating ? 5 - calculatedRating : 5)
-                    .fill(0)
-                    .map(() => (
-                      <img
-                        src={StartTransparent}
-                        alt=""
-                        style={{ height: "20px", margin: "2px" }}
-                      />
-                    ))}
+                  </Select>
+                  <img
+                    src={ShareIcon}
+                    alt="share"
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        `${window.location.origin}/trainer/${slug(
+                          trainer.firstName || ""
+                        )}/${trainer._id}`
+                      );
+                    }}
+                    title="Copy profile link"
+                  />
                 </div>
-                <div>
-                  {/* {new Array(trainer.rating).fill(0).map((e) => (
-                    <StarOutlined
-                      style={{ color: "#ff7700", textTransform: "uppercase" }}
-                      className="challenge-carousel-body-textbox-icons"
+                <div style={{ paddingTop: "10px" }}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <img
+                      key={star}
+                      src={
+                        star <= (trainer.rating || 0)
+                          ? StarFilled
+                          : StarTransparent
+                      }
+                      alt=""
+                      style={{ height: "20px", margin: "2px" }}
                     />
-                  ))} */}
+                  ))}
                 </div>
               </div>
-              <div className="profile-box-row1-playericon">
-                <img
-                  src={ChallengeProfileSubtract}
-                  onClick={() => setOpen(true)}
-                />
+              <div
+                className="profile-box-row1-playericon new-editable-border"
+                style={{
+                  position: "relative",
+                }}
+                onClick={openForTrailer}
+              >
+                <img src={ChallengeProfileSubtract} alt="play-icon" />
               </div>
             </div>
             <div className="profile-box-row2">
-              <div className="profile-box-row2-quote font-paragraph-white">
+              <div
+                className="profile-box-row2-quote font-paragraph-white"
+                style={{ alignItems: "center" }}
+              >
                 <img src={QuoteIcon} alt="" />
-                <span style={{ marginLeft: "10px" }}>
-                  {trainer.motto ? trainer.motto : ""}
-                </span>
+                <input
+                  value={motto}
+                  onChange={handleMottoChange}
+                  placeholder="Add your motto"
+                  className="font-paragraph-white adminV2-bi-input"
+                  style={{
+                    marginLeft: "10px",
+                    flex: 1,
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -263,16 +567,31 @@ function AdminDashboard(props) {
             // justifyContent: "center",
           }}
         >
-          <div className="trainer-profile-aboutme">
+          <div
+            className="trainer-profile-aboutme"
+            style={{
+              width: "100%",
+              maxWidth: "650px",
+            }}
+          >
             <div
               className="trainer-profile-aboutme-heading font-paragraph-white"
               style={{ color: "#72777B", textTransform: "uppercase" }}
             >
               <T>trainer_profile.about_me</T>
             </div>
-            <div className="trainer-profile-aboutme-container font-paragraph-white">
-              {trainer.bio ? trainer.bio : ""}
-            </div>
+            <textarea
+              rows={4}
+              value={bio}
+              onChange={handleBioChange}
+              placeholder="Add your bio"
+              className="font-paragraph-white adminV2-bi-input"
+              style={{
+                width: "100%",
+                resize: "vertical",
+                height: "auto",
+              }}
+            />
           </div>
 
           <div className="adminv2-selector-container">
@@ -285,9 +604,13 @@ function AdminDashboard(props) {
               </p>
               <div
                 className="adminv2-select"
-                onClick={() => setOpenMediaManager(true)}
+                onClick={() => {
+                  setMediaManagerVisible(true);
+                  setMediaManagerType("images");
+                  setMediaManagerActions([null, () => {}]);
+                }}
               >
-                <img src={HeartIcon} alt="heart-icon" />
+                <img src={UploadIcon} alt="heart-icon" />
                 <p>
                   <T>adminv2.upload_media</T>
                 </p>
@@ -299,9 +622,21 @@ function AdminDashboard(props) {
                 </p>
               </div>
               <div className="adminv2-select" onClick={goToChallengeCreator}>
-                <img src={UploadIcon} alt="upload-icon" />
+                <img src={ChallengeIcon} alt="upload-icon" />
                 <p>
                   <T>adminv2.create_challenge</T>
+                </p>
+              </div>
+              <div className="adminv2-select" onClick={goToRecipeCreator}>
+                <img src={RecipeIcon} alt="upload-icon" />
+                <p>
+                  <T>adminv2.create_recipe</T>
+                </p>
+              </div>
+              <div className="adminv2-select" onClick={goToBlogCreator}>
+                <img src={BlogIcon} alt="upload-icon" />
+                <p>
+                  <T>adminv2.create_blog</T>
                 </p>
               </div>
             </div>
@@ -316,8 +651,44 @@ function AdminDashboard(props) {
               </h1>
               <div className="adminv2-selector-interests">
                 {goals.map((goal, i) => (
-                  <div className="adminv2-selector-interests-interest" key={i}>
-                    {goal.name}
+                  <div
+                    className="adminv2-selector-interests-interest"
+                    key={i}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    {goal.icon && (
+                      <img
+                        src={goal.icon}
+                        alt=""
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          objectFit: "contain",
+                        }}
+                      />
+                    )}
+                    <span>{goal.name}</span>
+                    <EditFilled
+                      style={{
+                        cursor: "pointer",
+                        color: "#FF950A",
+                        fontSize: "14px",
+                        marginLeft: "4px",
+                      }}
+                      onClick={() => openEditInterestModal(goal)}
+                    />
+                    <DeleteFilled
+                      style={{
+                        cursor: "pointer",
+                        color: "#ff4444",
+                        fontSize: "14px",
+                      }}
+                      onClick={() => handleDeleteGoal(goal._id)}
+                    />
                   </div>
                 ))}
                 <Button
@@ -334,6 +705,7 @@ function AdminDashboard(props) {
             className="adminv2-selector-container"
             style={{
               width: "100%",
+              padding: "10px",
             }}
           >
             <div
@@ -378,6 +750,7 @@ function AdminDashboard(props) {
             className="adminv2-selector-container"
             style={{
               width: "100%",
+              padding: "10px",
             }}
           >
             <div
@@ -416,6 +789,70 @@ function AdminDashboard(props) {
               searchKeys={["challengeName"]}
               type="challenge"
             />
+          </div>
+
+          <div
+            className="adminv2-selector-container"
+            style={{
+              width: "100%",
+              padding: "10px",
+            }}
+          >
+            <div
+              className="adminv2-selector"
+              style={{ cursor: "pointer" }}
+              onClick={goToAllRecipes}
+            >
+              {adminInfo.role === "admin" ? (
+                <h1
+                  style={{
+                    fontSize: "22px",
+                  }}
+                >
+                  All Recipes
+                </h1>
+              ) : (
+                <h1
+                  style={{
+                    fontSize: "22px",
+                  }}
+                >
+                  My Recipes
+                </h1>
+              )}
+            </div>
+          </div>
+
+          <div
+            className="adminv2-selector-container"
+            style={{
+              width: "100%",
+              padding: "10px",
+            }}
+          >
+            <div
+              className="adminv2-selector"
+              style={{ cursor: "pointer" }}
+              onClick={goToAllBlogs}
+            >
+              {adminInfo.role === "admin" ? (
+                <h1
+                  style={{
+                    fontSize: "22px",
+                  }}
+                >
+                  All Blogs
+                </h1>
+              ) : (
+                <h1
+                  style={{
+                    fontSize: "22px",
+                  }}
+                >
+                  My Blogs
+                </h1>
+              )}
+            </div>
           </div>
         </div>
       </div>
