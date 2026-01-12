@@ -1,3 +1,10 @@
+import React from "react";
+import "./App.css";
+import { BrowserRouter as Router, Route } from "react-router-dom";
+import LandingPage from "./pages/LandingPage";
+
+// TEMPORARY: Landing page override - uncomment below and remove LandingPage route to restore normal routing
+/*
 import React, { useEffect, useContext } from "react";
 import "./App.css";
 import {
@@ -51,8 +58,17 @@ import ChoosePlan from "./components/Payment/ChoosePlan";
 import { getUserPoints } from "./services/users";
 import ChallengeCreator from "./pages/v2/ChallengeCreator";
 import Workout from "./components/Admin/V2/Workout/Workout";
+*/
 
 function App() {
+  // TEMPORARY: Landing page override
+  return (
+    <Router>
+      <Route component={LandingPage} path="*" />
+    </Router>
+  );
+
+  /* ORIGINAL APP CODE - Uncomment to restore normal routing
   const [userInfo, setUserInfo] = useContext(userInfoContext);
   const [userPoints, setUserPoints] = useContext(userPointsContext);
 
@@ -93,7 +109,6 @@ function App() {
           exact
         />
         <Route path="/challenge/:challengeName/:id" exact>
-          {/* <ChallengeProfileFigma /> */}
           <ChallengeProfile />
         </Route>
         <Route component={RecipeProfile} path="/recipe/:recipeName/:id" exact />
@@ -104,7 +119,6 @@ function App() {
         />
         <Switch>
           {" "}
-          {/*We use switch so when our PrivateRoute does redirect it wont to propblems* This will also solve the problem so that if our user loggst our of the component where they are authenticated such as dashboard they will quiclky get taken from there to login*/}
           <PrivateRoute
             exact
             role="customer"
@@ -113,10 +127,8 @@ function App() {
             userInfo={userInfo}
           />
         </Switch>
-        {/* <Route component={UserDashboard}  path="/user/dashboard" exact /> */}
         <Switch>
           {" "}
-          {/*We use switch so when our PrivateRoute does redirect it wont to propblems* This will also solve the problem so that if our user loggst our of the component where they are authenticated such as dashboard they will quiclky get taken from there to login*/}
           <PrivateRoute
             exact
             role="customer"
@@ -125,7 +137,6 @@ function App() {
             userInfo={userInfo}
           />
         </Switch>
-        {/* <Route component={UserUpdate} path="/user/update" exact /> */}
         <Switch>
           {" "}
           <PrivateRoute
@@ -136,7 +147,6 @@ function App() {
             userInfo={userInfo}
           />
         </Switch>
-        {/* <Route component={UserSetting} path="/user/settings" exact /> */}
         <Switch>
           {" "}
           <PrivateRoute
@@ -147,7 +157,6 @@ function App() {
             userInfo={userInfo}
           />
         </Switch>
-        {/* <Route component={UserProfile} path="/user/profile" exact /> */}
         <Switch>
           {" "}
           <PrivateRoute
@@ -185,7 +194,6 @@ function App() {
             userInfo={userInfo}
           />
         </Switch>
-        {/* <Route component={AdminDashboard} path="/admin/dashboard" exact /> */}
         <Route component={HelpCenter} path="/help-center" exact />
         <Route component={TermsAndCondition} path="/terms-condition" exact />
         <Route component={PrivacyPolicy} path="/privacy-policy" exact />
@@ -214,6 +222,7 @@ function App() {
       </ScrollToTop>
     </Router>
   );
+  */
 }
 
 export default App;
