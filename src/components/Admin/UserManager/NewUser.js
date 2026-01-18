@@ -23,9 +23,12 @@ import {
 import { getAllChallengeGoals } from "../../../services/createChallenge/goals";
 import EditTypeName from "./EditTypeName";
 import { LanguageContext } from "../../../contexts/LanguageContext";
+import { T } from "../../Translate";
+import { get } from "lodash";
 
 const { Option } = Select;
 function NewUser({ setCurrentSelection, home }) {
+  const { language, strings } = useContext(LanguageContext);
   const [form] = Form.useForm();
   // media manager stuff
   const [mediaManagerVisible, setMediaManagerVisible] = useState(false);
@@ -37,7 +40,7 @@ function NewUser({ setCurrentSelection, home }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("");
+  const [selectedRoles, setSelectedRoles] = useState([]);
   const [avatar, setAvatar] = useState("");
   const [membership, setMembership] = useState("");
   const [hero, setHero] = useState("");
@@ -64,8 +67,6 @@ function NewUser({ setCurrentSelection, home }) {
   const [selectedItemForUpdate, setSelectedItemForUpdate] = useState({});
   const [selectedItemForUpdateTitle, setSelectedItemForUpdateTitle] =
     useState("");
-
-  const { language } = useContext(LanguageContext);
 
   // admin",
   //           "trainer",
@@ -131,13 +132,13 @@ function NewUser({ setCurrentSelection, home }) {
         email,
         gender,
         username,
-        role: role.toLowerCase(),
+        roles: selectedRoles.map(r => r.toLowerCase()),
       };
       const res = await createUserByAdmin(data);
       // await sendEmailVerification(email);
       console.log("yas0", res);
       if (res) {
-        if (role === "ADMIN") {
+        if (selectedRoles.includes("ADMIN")) {
           const data = {
             heroBanner: "",
             videoTrailerLink: "",
@@ -171,7 +172,7 @@ function NewUser({ setCurrentSelection, home }) {
           );
           console.log("ADMIN CREATED");
           setLoading(false);
-        } else if (role === "TRAINER") {
+        } else if (selectedRoles.includes("TRAINER")) {
           const data = {
             heroBanner: typeof hero === "object" ? hero.link : "",
             videoTrailerLink:
@@ -204,7 +205,7 @@ function NewUser({ setCurrentSelection, home }) {
         }
         setCurrentSelection(home);
       } else {
-        window.alert("Unable to create account. Please try again.");
+        window.alert(get(strings, "admin.unable_to_create_account", "Unable to create account. Please try again."));
         setLoading(false);
       }
     }
@@ -234,7 +235,7 @@ function NewUser({ setCurrentSelection, home }) {
         visible={showTrainerGoalModal}
       >
         {/* body focus stuff */}
-        <p className="font-paragraph-white"> Create A New Fitness Interest</p>
+        <p className="font-paragraph-white"> <T>admin.create_fitness_interest</T></p>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Input
             value={newTrainerGoalName}
@@ -256,11 +257,11 @@ function NewUser({ setCurrentSelection, home }) {
               }
             }}
           >
-            Create
+            <T>admin.create</T>
           </Button>
         </div>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-          <span className="font-subheading-white">All Fitness Interests</span>
+          <span className="font-subheading-white"><T>admin.all_fitness_interests</T></span>
           <List
             size="small"
             bordered
@@ -286,17 +287,17 @@ function NewUser({ setCurrentSelection, home }) {
                     type="primary"
                     danger
                   >
-                    Delete
+                    <T>admin.delete</T>
                   </Button>
                   <Button
                     type="primary"
                     onClick={() => {
-                      setSelectedItemForUpdateTitle("Update Fitness Interest");
+                      setSelectedItemForUpdateTitle(get(strings, "admin.update_fitness_interest", "Update Fitness Interest"));
                       setSelectedItemForUpdate(g);
                       setEditItemNameModalVisible(true);
                     }}
                   >
-                    Edit
+                    <T>admin.edit</T>
                   </Button>
                 </span>
               </List.Item>
@@ -305,7 +306,7 @@ function NewUser({ setCurrentSelection, home }) {
         </div>
       </Modal>
       {/* end */}
-      <h2 className="font-heading-black">Create A New User</h2>
+      <h2 className="font-heading-black"><T>admin.create_new_user</T></h2>
       <div
         className="admin-newuser-container"
         style={{ padding: "50px 50px 50px 20px" }}
@@ -319,9 +320,9 @@ function NewUser({ setCurrentSelection, home }) {
           onFinishFailed={onFinishFailed}
         >
           <Form.Item
-            label="Username"
+            label={<T>admin.username</T>}
             name="username"
-            rules={[{ required: true, message: "Please input username!" }]}
+            rules={[{ required: true, message: get(strings, "admin.please_input_username", "Please input username!") }]}
           >
             <Input
               value={username}
@@ -330,22 +331,22 @@ function NewUser({ setCurrentSelection, home }) {
           </Form.Item>
           <Form.Item
             name="email"
-            label="Email Address"
+            label={<T>admin.email_address</T>}
             rules={[
               {
                 type: "email",
-                message: "The input is not valid E-mail!",
+                message: get(strings, "admin.invalid_email", "The input is not valid E-mail!"),
               },
               {
                 required: true,
-                message: "Please input your E-mail!",
+                message: get(strings, "admin.please_input_email", "Please input your E-mail!"),
               },
             ]}
           >
             <Input value={email} onChange={(e) => setEmail(e.target.value)} />
           </Form.Item>
           <Form.Item
-            label="First Name"
+            label={<T>admin.first_name</T>}
             name="firstname"
             rules={[
               {
@@ -359,7 +360,7 @@ function NewUser({ setCurrentSelection, home }) {
             />
           </Form.Item>
           <Form.Item
-            label="Last Name"
+            label={<T>admin.last_name</T>}
             name="lastname"
             rules={[
               {
@@ -372,23 +373,23 @@ function NewUser({ setCurrentSelection, home }) {
               onChange={(e) => setLastName(e.target.value)}
             />
           </Form.Item>
-          <Form.Item name="gender" label="Gender">
+          <Form.Item name="gender" label={<T>admin.gender</T>}>
             <Select
               className="field-focus-orange-border"
-              placeholder="Select A Gender"
+              placeholder={get(strings, "admin.select_gender", "Select A Gender")}
               onChange={(e) => setGender(e)}
               gender={gender}
               allowClear
             >
-              <Option value="male">Male</Option>
-              <Option value="female">Female</Option>
-              <Option value="other">Other</Option>
+              <Option value="male"><T>admin.male</T></Option>
+              <Option value="female"><T>admin.female</T></Option>
+              <Option value="other"><T>admin.other</T></Option>
             </Select>
           </Form.Item>
           <Form.Item
-            label="Password"
+            label={<T>admin.password</T>}
             name="password"
-            rules={[{ required: true, message: "Please input your password!" }]}
+            rules={[{ required: true, message: get(strings, "admin.please_input_password", "Please input your password!") }]}
           >
             <Input.Password
               style={{ color: "black" }}
@@ -405,36 +406,66 @@ function NewUser({ setCurrentSelection, home }) {
                 margin: "10px",
               }}
             >
-              Generate Strong Password
+              <T>admin.generate_strong_password</T>
             </Button>
           </Form.Item>
 
           <Form.Item
-            name="role"
-            label="Role"
+            name="roles"
+            label={<T>admin.roles</T>}
             rules={[
               {
                 required: true,
+                message: get(strings, "admin.please_select_role", "Please select at least one role"),
               },
             ]}
+            extra={
+              <span style={{ color: "#888", fontSize: "12px" }}>
+                <T>admin.role_combination_hint</T>
+              </span>
+            }
           >
             <Select
+              mode="multiple"
               className="field-focus-orange-border"
-              placeholder="Select A Role"
-              onChange={(e) => setRole(e)}
+              placeholder={get(strings, "admin.select_roles", "Select Role(s)")}
+              value={selectedRoles}
+              onChange={(values) => {
+                // Handle role combination rules
+                if (values.includes("ADMIN")) {
+                  // Admin must be alone
+                  setSelectedRoles(["ADMIN"]);
+                } else if (values.includes("CUSTOMER")) {
+                  // Customer must be alone
+                  setSelectedRoles(["CUSTOMER"]);
+                } else {
+                  // Other roles can combine
+                  setSelectedRoles(values);
+                }
+              }}
               allowClear
             >
-              <Option value="ADMIN">Admin</Option>
-              <Option value="TRAINER">Trainer</Option>
-              <Option value="BLOGGER">Blogger</Option>
-              <Option value="NUTRIST">Nutrist</Option>
-              <Option value="SHOPMANAGER">Shop Manager</Option>
+              <Option value="ADMIN" disabled={selectedRoles.length > 0 && !selectedRoles.includes("ADMIN")}>
+                <T>admin.admin_role</T>
+              </Option>
+              <Option value="TRAINER" disabled={selectedRoles.includes("ADMIN") || selectedRoles.includes("CUSTOMER")}>
+                <T>admin.trainer_role</T>
+              </Option>
+              <Option value="BLOGGER" disabled={selectedRoles.includes("ADMIN") || selectedRoles.includes("CUSTOMER")}>
+                <T>admin.blogger_role</T>
+              </Option>
+              <Option value="NUTRIST" disabled={selectedRoles.includes("ADMIN") || selectedRoles.includes("CUSTOMER")}>
+                <T>admin.nutrist_role</T>
+              </Option>
+              <Option value="SHOPMANAGER" disabled={selectedRoles.includes("ADMIN") || selectedRoles.includes("CUSTOMER")}>
+                <T>admin.shopmanager_role</T>
+              </Option>
             </Select>
           </Form.Item>
-          {role.includes("CUSTOMER") ? (
+          {selectedRoles.includes("CUSTOMER") ? (
             <Form.Item
               name="membership"
-              label="Membership"
+              label={<T>admin.membership</T>}
               rules={[
                 {
                   required: true,
@@ -444,7 +475,7 @@ function NewUser({ setCurrentSelection, home }) {
               <Select
                 mode="multiple"
                 className="field-focus-orange-border"
-                placeholder="Select A Membership"
+                placeholder={get(strings, "admin.select_membership", "Select A Membership")}
                 onChange={(e) => setMembership(e)}
                 allowClear
               >
@@ -462,9 +493,9 @@ function NewUser({ setCurrentSelection, home }) {
             ""
           )}
 
-          {!role.includes("ADMIN") && (
+          {!selectedRoles.includes("ADMIN") && (
             <>
-              <Form.Item label="Avatar" name="avatar">
+              <Form.Item label={<T>admin.avatar</T>} name="avatar">
                 <Button
                   onClick={() => {
                     setMediaManagerVisible(true);
@@ -472,7 +503,7 @@ function NewUser({ setCurrentSelection, home }) {
                     setMediaManagerActions([avatar, setAvatar]);
                   }}
                 >
-                  Upload Image
+                  <T>admin.upload_image</T>
                 </Button>
                 {avatar && (
                   <div style={{ margin: "10px" }}>
@@ -500,7 +531,7 @@ function NewUser({ setCurrentSelection, home }) {
                 )}
               </Form.Item>
 
-              <Form.Item label="Hero" name="hero">
+              <Form.Item label={<T>admin.hero</T>} name="hero">
                 <Button
                   onClick={() => {
                     setMediaManagerVisible(true);
@@ -508,7 +539,7 @@ function NewUser({ setCurrentSelection, home }) {
                     setMediaManagerActions([hero, setHero]);
                   }}
                 >
-                  Upload Image
+                  <T>admin.upload_image</T>
                 </Button>
                 {hero && (
                   <div style={{ margin: "10px" }}>
@@ -529,7 +560,7 @@ function NewUser({ setCurrentSelection, home }) {
                 )}
               </Form.Item>
 
-              <Form.Item label="Video Trailer" name="videoTrailer">
+              <Form.Item label={<T>admin.video_trailer</T>} name="videoTrailer">
                 <Button
                   onClick={() => {
                     setMediaManagerVisible(true);
@@ -537,7 +568,7 @@ function NewUser({ setCurrentSelection, home }) {
                     setMediaManagerActions([videoTrailer, setVideoTrailer]);
                   }}
                 >
-                  Upload Video
+                  <T>admin.upload_video</T>
                 </Button>
                 {videoTrailer && (
                   <div style={{ margin: "10px" }}>
@@ -551,20 +582,20 @@ function NewUser({ setCurrentSelection, home }) {
                   </div>
                 )}
               </Form.Item>
-              <Form.Item label="Motto" name="motto">
+              <Form.Item label={<T>admin.motto</T>} name="motto">
                 <Input
                   value={motto}
                   onChange={(e) => setMotto(e.target.value)}
                 />
               </Form.Item>
-              <Form.Item label="Bio" name="bio">
+              <Form.Item label={<T>admin.bio</T>} name="bio">
                 <Input.TextArea
                   rows={8}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                 />
               </Form.Item>
-              <Form.Item label="Country" name="country">
+              <Form.Item label={<T>admin.country</T>} name="country">
                 <Select
                   value={country}
                   style={{ width: "100%" }}
@@ -578,7 +609,7 @@ function NewUser({ setCurrentSelection, home }) {
               </Form.Item>
             </>
           )}
-          {role.includes("TRAINER") && (
+          {selectedRoles.includes("TRAINER") && (
             // <Form.Item label="Goals" name="goals">
             //   <Select
             //     value={goals}
@@ -650,12 +681,12 @@ function NewUser({ setCurrentSelection, home }) {
                 </Select>
               </Form.Item> */}
 
-              <Form.Item label="Fitness Interests" name="fitnessInterest">
+              <Form.Item label={<T>admin.fitness_interests</T>} name="fitnessInterest">
                 <Select
                   mode="multiple"
                   allowClear
                   style={{ width: "100%" }}
-                  placeholder="Please select"
+                  placeholder={get(strings, "admin.please_select", "Please select")}
                   value={
                     selectedFitnessInterest.length <= 0
                       ? []
@@ -677,7 +708,7 @@ function NewUser({ setCurrentSelection, home }) {
                   }}
                   onClick={() => setShowTrainerGoalModal(true)}
                 >
-                  Manage Fitness Interests
+                  <T>admin.manage_fitness_interests</T>
                 </Button>
               </Form.Item>
             </>
@@ -693,7 +724,7 @@ function NewUser({ setCurrentSelection, home }) {
               }}
               onClick={createANewUser}
             >
-              Create
+              <T>admin.create</T>
             </Button>
           </Form.Item>
         </Form>

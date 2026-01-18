@@ -17,7 +17,6 @@ import { getAllChallengeProducts } from "../../../services/createChallenge/produ
 import {
   createChallenge,
   getAllUserChallenges,
-  updateChallenge,
 } from "../../../services/createChallenge/main";
 import setAuthToken from "../../../helpers/setAuthToken";
 import { userInfoContext } from "../../../contexts/UserStore";
@@ -26,6 +25,8 @@ import slug from "elegant-slug";
 import { addChallengeToCustomerDetail } from "../../../services/customer";
 import { LanguageContext } from "../../../contexts/LanguageContext";
 import { T } from "../../Translate";
+import { getTranslationsByKey } from "../../../services/translations";
+import { get } from "lodash";
 
 const { TabPane } = Tabs;
 
@@ -136,9 +137,10 @@ function NewChallenge() {
   const [userCreatePost, setUserCreatePost] = useState(false);
 
   const [userInfo, setUserInfo] = useContext(userInfoContext);
-  const { language } = useContext(LanguageContext);
+  const { language, strings } = useContext(LanguageContext);
   const [allChallenges, setAllChallenges] = useState([]);
   const [selectedChallenge, setSelectedChallenge] = useState("");
+  const [translationKey, setTranslationKey] = useState(null);
 
   async function fethData() {
     const bodyFocus = await getAllBodyFocus(language);
@@ -163,8 +165,26 @@ function NewChallenge() {
 
   useEffect(() => {
     setAuthToken(localStorage.getItem("jwtToken"));
+    // Reset translation state when language changes
+    setSelectedChallenge("");
+    setTranslationKey(null);
     fethData();
   }, [language]);
+
+  // Handle selecting a challenge to translate
+  const handleSelectChallenge = async (challengeId) => {
+    setSelectedChallenge(challengeId);
+    if (challengeId) {
+      const challenge = allChallenges.find((c) => c._id === challengeId);
+      if (challenge && challenge.translationKey) {
+        setTranslationKey(challenge.translationKey);
+      } else {
+        setTranslationKey(null);
+      }
+    } else {
+      setTranslationKey(null);
+    }
+  };
 
   const createChallengeButton = async () => {
     console.log("isRendered", renderWorkout);
@@ -245,8 +265,9 @@ function NewChallenge() {
       isPublic: makePublic,
     };
     console.log("create object", obj);
-    if (selectedChallenge) {
-      obj.alternativeLanguage = selectedChallenge;
+    // Use translationKey to link translations (alternativeLanguage removed)
+    if (translationKey) {
+      obj.translationKey = translationKey;
     }
     // return;
     // return;
@@ -259,7 +280,7 @@ function NewChallenge() {
     if (res && res.weeks) {
       await addChallengeToCustomerDetail(userInfo.id, res.weeks._id);
       userCreatePost && createAPost(res.weeks._id);
-      selectedChallenge && updateSelectedChallenge(res.weeks._id);
+      // alternativeLanguage update removed - using translationKey only
     }
     console.log("create response", res);
     console.log("userCreatePost", userCreatePost);
@@ -279,9 +300,7 @@ function NewChallenge() {
     // console.log(values);
   };
 
-  const updateSelectedChallenge = async (id) => {
-    await updateChallenge({ alternativeLanguage: id }, selectedChallenge);
-  };
+  // updateSelectedChallenge removed - using translationKey only for multi-language support
 
   return (
     <div>
@@ -308,11 +327,11 @@ function NewChallenge() {
       </h2>
       <div className="newchallenge-creator-container">
         <Tabs defaultActiveKey="1" onChange={callback}>
-          <TabPane tab="Main" key="1">
+          <TabPane tab={get(strings, "admin.tab_main", "Main")} key="1">
             <NewChallengeMainTab
               allChallenges={allChallenges}
               selectedChallenge={selectedChallenge}
-              setSelectedChallenge={setSelectedChallenge}
+              setSelectedChallenge={handleSelectChallenge}
               name={name}
               setName={setName}
               access={access}
@@ -379,7 +398,7 @@ function NewChallenge() {
               setShowTagModal={setShowTagModal}
             />
           </TabPane>
-          <TabPane tab="Workouts" key="2">
+          <TabPane tab={get(strings, "admin.tab_workouts", "Workouts")} key="2">
             <NewChallengeWorkoutTab
               weeks={weeks}
               setWeeks={setWeeks}
@@ -425,10 +444,10 @@ function NewChallenge() {
               trainers={trainers}
             />
           </TabPane>
-          <TabPane tab="Music" key="3">
+          <TabPane tab={get(strings, "admin.tab_music", "Music")} key="3">
             <NewChallengeMusicTab musics={musics} setMusics={setMusics} />
           </TabPane>
-          <TabPane tab="Additional" key="4">
+          <TabPane tab={get(strings, "admin.tab_additional", "Additional")} key="4">
             <NewChallengeAdditionalTab
               results={results}
               setResults={setResults}

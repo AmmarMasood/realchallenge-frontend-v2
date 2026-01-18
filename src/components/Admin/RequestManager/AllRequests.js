@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Button, Table, Space, Input, Select, Switch } from "antd";
 import moment from "moment";
 
@@ -9,8 +9,11 @@ import {
 import slug from "elegant-slug";
 import { Link } from "react-router-dom";
 import { T } from "../../Translate";
+import { LanguageContext } from "../../../contexts/LanguageContext";
+import { get } from "lodash";
 
 function AllRequests() {
+  const { strings } = useContext(LanguageContext);
   const [filterAllData, setFilterAllData] = useState([]);
   const [allData, setAllData] = useState([]);
   const [requestsTypeFilter, setRequestsTypeFilter] = useState("challenge");
@@ -65,13 +68,13 @@ function AllRequests() {
 
   const columns = [
     {
-      title: "ID",
+      title: <T>admin.id</T>,
       dataIndex: "_id",
       key: "_id",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Type",
+      title: <T>admin.type</T>,
       dataIndex: "type",
       key: "type",
       render: (text) => (
@@ -79,7 +82,7 @@ function AllRequests() {
       ),
     },
     {
-      title: "Name",
+      title: <T>admin.name</T>,
       key: "bang",
       render: (text, record) =>
         text.name
@@ -91,23 +94,23 @@ function AllRequests() {
           : "",
     },
     {
-      title: "Is Public",
+      title: <T>admin.is_public</T>,
       dataIndex: "isPublic",
       key: "isPublic",
       render: (text) => (
-        <span className="font-paragraph-black">{text ? "True" : "False"}</span>
+        <span className="font-paragraph-black">{text ? get(strings, "admin.true", "True") : get(strings, "admin.false", "False")}</span>
       ),
     },
     {
-      title: "Admin Approved",
+      title: <T>admin.admin_approved</T>,
       dataIndex: "adminApproved",
       key: "adminApproved",
       render: (text) => (
-        <span className="font-paragraph-black">{text ? "True" : "False"}</span>
+        <span className="font-paragraph-black">{text ? get(strings, "admin.true", "True") : get(strings, "admin.false", "False")}</span>
       ),
     },
     {
-      title: "Updated At",
+      title: <T>admin.updated_at</T>,
       key: "updatedAt",
       dataIndex: "updatedAt",
       render: (text) => (
@@ -117,7 +120,7 @@ function AllRequests() {
       ),
     },
     {
-      title: "Action",
+      title: <T>admin.action</T>,
       key: "challengePreviewLink",
       render: (text, record) => (
         <>
@@ -149,10 +152,10 @@ function AllRequests() {
             }
           >
             <Select.Option key={1} value={"approved"}>
-              Approved
+              <T>admin.approved</T>
             </Select.Option>
             <Select.Option key={2} value={"notApproved"}>
-              Not Approved
+              <T>admin.not_approved</T>
             </Select.Option>
           </Select>
         </>
@@ -161,11 +164,11 @@ function AllRequests() {
   ];
   return (
     <div>
-      <h2 className="font-heading-black">Manage Requets</h2>
+      <h2 className="font-heading-black"><T>admin.manage_requests</T></h2>
       <div style={{ display: "flex" }}>
         <div>
           <span className="font-heading-black" style={{ marginLeft: "10px" }}>
-            Filter By Type:
+            <T>admin.filter_by_type</T>
           </span>
           <Select
             defaultValue={requestsTypeFilter}
@@ -173,19 +176,19 @@ function AllRequests() {
             onChange={(e) => setRequestsTypeFilter(e)}
           >
             <Select.Option key={1} value={"challenge"}>
-              Challenges
+              <T>admin.challenges</T>
             </Select.Option>
             <Select.Option key={2} value={"recipe"}>
-              Recipes
+              <T>admin.recipes</T>
             </Select.Option>
             <Select.Option key={3} value={"blog"}>
-              Blogs
+              <T>admin.blogs</T>
             </Select.Option>
           </Select>
         </div>
         <div style={{ marginLeft: "20px" }}>
           <span className="font-heading-black" style={{ marginLeft: "10px" }}>
-            Filter By Status:
+            <T>admin.filter_by_status</T>
           </span>
           <Select
             defaultValue={requestsApprovedFilter}
@@ -193,10 +196,10 @@ function AllRequests() {
             onChange={(e) => setRequestsApprovedFilter(e)}
           >
             <Select.Option key={1} value={"notApproved"}>
-              Not Approved
+              <T>admin.not_approved</T>
             </Select.Option>
             <Select.Option key={2} value={"approved"}>
-              Approved
+              <T>admin.approved</T>
             </Select.Option>
           </Select>
         </div>

@@ -1,17 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Button, Table, Space, Input } from "antd";
 import moment from "moment";
 import { getAllFaqs, removeFaq } from "../../../services/faqs";
 import UpdateFaq from "./UpdateFaq";
+import { LanguageContext } from "../../../contexts/LanguageContext";
+import LanguageSelector from "../../LanguageSelector/LanguageSelector";
+import { T } from "../../Translate";
 
 function AllFaqs() {
   const [filterAllFaqs, setFilterAllFaqs] = useState([]);
   const [allFaqs, setAllFaqs] = useState([]);
   const [updateModal, setUpdateModal] = useState(false);
   const [selectedFaq, setSelectedFaq] = useState({});
+  const { language } = useContext(LanguageContext);
 
   const fetchData = async () => {
-    const d = await getAllFaqs("");
+    const d = await getAllFaqs(language);
     if (d && d.faqs) {
       setAllFaqs(d.faqs);
       setFilterAllFaqs(d.faqs);
@@ -26,7 +30,7 @@ function AllFaqs() {
   };
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [language]);
   const columns = [
     {
       title: "ID",
@@ -35,19 +39,19 @@ function AllFaqs() {
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Question",
+      title: <T>admin.question</T>,
       dataIndex: "question",
       key: "question",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Answer",
+      title: <T>admin.answer</T>,
       dataIndex: "answer",
       key: "answer",
       render: (cat) => <span className="font-paragraph-black">{cat}</span>,
     },
     {
-      title: "Public",
+      title: <T>admin.public</T>,
       dataIndex: "isPublic",
       key: "isPublic",
       render: (cat) => (
@@ -55,7 +59,7 @@ function AllFaqs() {
       ),
     },
     {
-      title: "Updated At",
+      title: <T>admin.updated_at</T>,
       key: "createdAt",
       dataIndex: "createdAt",
       render: (text) => (
@@ -65,7 +69,7 @@ function AllFaqs() {
       ),
     },
     {
-      title: "Action",
+      title: <T>admin.action</T>,
       key: "challengePreviewLink",
       render: (text, record) => (
         <Space size="middle">
@@ -76,10 +80,10 @@ function AllFaqs() {
               setUpdateModal(true);
             }}
           >
-            Edit
+            <T>admin.edit</T>
           </Button>
           <Button type="danger" onClick={() => removeFaqClick(text)}>
-            Delete
+            <T>admin.delete</T>
           </Button>
         </Space>
       ),
@@ -87,7 +91,11 @@ function AllFaqs() {
   ];
   return (
     <div>
-      <h2 className="font-heading-black">All Faqs</h2>
+      <h2 className="font-heading-black"><T>admin.all_faqs</T></h2>
+      <div style={{ marginBottom: "20px" }}>
+        <span style={{ marginRight: "10px" }}><T>admin.select_language</T>:</span>
+        <LanguageSelector notFromNav={true} />
+      </div>
       <UpdateFaq
         visible={updateModal}
         setVisible={setUpdateModal}
@@ -97,7 +105,7 @@ function AllFaqs() {
       />
       <div className="admin-allchallenges-list-container">
         <Input
-          placeholder="Search Faq By Question"
+          placeholder="Search FAQ By Question"
           onChange={(e) =>
             setFilterAllFaqs(
               allFaqs.filter((p) =>
@@ -108,7 +116,7 @@ function AllFaqs() {
         />
         <Input
           style={{ marginTop: "10px" }}
-          placeholder="Search Faq By ID"
+          placeholder="Search FAQ By ID"
           onChange={(e) =>
             setFilterAllFaqs(
               allFaqs.filter((p) =>

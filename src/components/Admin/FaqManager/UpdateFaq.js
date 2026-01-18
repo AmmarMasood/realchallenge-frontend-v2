@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Form, Input, Button, Select, Modal, List, Checkbox } from "antd";
 import { CloseSquareOutlined } from "@ant-design/icons";
 import { createPost } from "../../../services/posts";
@@ -9,6 +9,9 @@ import {
   updateFaq,
 } from "../../../services/faqs";
 import EditTypeName from "./EditTypeName";
+import { LanguageContext } from "../../../contexts/LanguageContext";
+import { T } from "../../Translate";
+
 const { Option } = Select;
 
 function UpdateFaq({ visible, setVisible, selectedFaq, getAllFaqs }) {
@@ -18,6 +21,7 @@ function UpdateFaq({ visible, setVisible, selectedFaq, getAllFaqs }) {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [allCategories, setAllCategories] = useState([]);
   const [isPublic, setIsPublic] = useState(true);
+  const { language } = useContext(LanguageContext);
 
   // update stuff
   const [editItemNameModalVisible, setEditItemNameModalVisible] =
@@ -28,7 +32,7 @@ function UpdateFaq({ visible, setVisible, selectedFaq, getAllFaqs }) {
     useState("");
 
   const fetchData = async () => {
-    const aC = await getAllFaqCategories();
+    const aC = await getAllFaqCategories(language);
     // console.log(aC);
     if (aC) {
       setAllCategories(aC.categories);
@@ -85,7 +89,7 @@ function UpdateFaq({ visible, setVisible, selectedFaq, getAllFaqs }) {
         footer={false}
         visible={categoryModal}
       >
-        <p className="font-paragraph-white">Categories</p>
+        <p className="font-paragraph-white"><T>admin.manage_categories</T></p>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Input
             value={newCategoryName}
@@ -101,17 +105,17 @@ function UpdateFaq({ visible, setVisible, selectedFaq, getAllFaqs }) {
             }}
             onClick={async () => {
               if (newCategoryName.length > 0) {
-                await createFaqCategory(newCategoryName);
+                await createFaqCategory({ name: newCategoryName, language });
                 // setShowGoalModal(false);
                 fetchData();
               }
             }}
           >
-            Create Category
+            <T>admin.create_category</T>
           </Button>
         </div>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-          <span className="font-subheading-white">All Categories</span>
+          <span className="font-subheading-white"><T>admin.all_categories</T></span>
           <List
             size="small"
             bordered
@@ -137,7 +141,7 @@ function UpdateFaq({ visible, setVisible, selectedFaq, getAllFaqs }) {
                     type="primary"
                     danger
                   >
-                    Delete
+                    <T>admin.delete</T>
                   </Button>
                   <Button
                     type="primary"
@@ -147,7 +151,7 @@ function UpdateFaq({ visible, setVisible, selectedFaq, getAllFaqs }) {
                       setEditItemNameModalVisible(true);
                     }}
                   >
-                    Edit
+                    <T>admin.edit</T>
                   </Button>
                 </span>
               </List.Item>
@@ -162,7 +166,7 @@ function UpdateFaq({ visible, setVisible, selectedFaq, getAllFaqs }) {
         footer={false}
         width="70%"
       >
-        <h2 className="font-heading-white">Update FAQ</h2>
+        <h2 className="font-heading-white"><T>admin.update</T> FAQ</h2>
         <div
           className="admin-newuser-container"
           style={{ padding: "50px 50px 50px 20px" }}
@@ -175,21 +179,21 @@ function UpdateFaq({ visible, setVisible, selectedFaq, getAllFaqs }) {
             onFinishFailed={onFinishFailed}
           >
             <Form.Item
-              label="Question"
+              label={<T>admin.question</T>}
               name="question"
               rules={[{ required: true, message: "Please input question!" }]}
             >
               <Input.TextArea rows={3} />
             </Form.Item>
             <Form.Item
-              label="Answer"
+              label={<T>admin.answer</T>}
               name="answer"
               rules={[{ required: true, message: "Please input answer!" }]}
             >
               <Input.TextArea rows={6} />
             </Form.Item>
 
-            <Form.Item label="Category" name="category">
+            <Form.Item label={<T>admin.category</T>} name="category">
               <Select
                 mode="multiple"
                 allowClear
@@ -214,7 +218,7 @@ function UpdateFaq({ visible, setVisible, selectedFaq, getAllFaqs }) {
                 }}
                 onClick={() => setCategoryModal(true)}
               >
-                Manage Category
+                <T>admin.manage_category</T>
               </Button>
             </Form.Item>
 
@@ -223,7 +227,7 @@ function UpdateFaq({ visible, setVisible, selectedFaq, getAllFaqs }) {
                 checked={isPublic}
                 onChange={(e) => setIsPublic(e.target.checked)}
               >
-                Make public
+                <T>admin.make_public</T>
               </Checkbox>
             </Form.Item>
             {/* footer */}
@@ -237,7 +241,7 @@ function UpdateFaq({ visible, setVisible, selectedFaq, getAllFaqs }) {
                   marginTop: "10px",
                 }}
               >
-                Update
+                <T>admin.update</T>
               </Button>
             </Form.Item>
           </Form>

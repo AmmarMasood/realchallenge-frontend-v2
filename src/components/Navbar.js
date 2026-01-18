@@ -7,16 +7,18 @@ import {
   CaretDownOutlined,
   UserOutlined,
   BellOutlined,
+  CheckOutlined,
 } from "@ant-design/icons";
 import Logo from "../images/logo.png";
 import { userInfoContext, userPointsContext } from "../contexts/UserStore";
-import { Avatar, Popover, Badge } from "antd";
+import { Avatar, Popover, Badge, Spin, Button } from "antd";
 import { logoutUser } from "../services/authentication";
 import { withRouter } from "react-router-dom";
 import Coins from "../assets/icons/coins.svg";
 import LanguageSelector from "./LanguageSelector/LanguageSelector";
 import { T } from "./Translate";
 import { hasRole } from "../helpers/roleHelpers";
+import { useNotifications } from "../contexts/NotificationContext";
 
 function Navbar({ color, history }) {
   const [click, setClick] = useState(false);
@@ -24,14 +26,135 @@ function Navbar({ color, history }) {
   const [button, setButton] = useState(true);
   const [userInfo, setUserInfo] = useContext(userInfoContext);
   const userPoints = useContext(userPointsContext)[0];
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    loadingMore,
+    pagination,
+    markAsRead,
+    markAllAsRead,
+    loadMore,
+  } = useNotifications();
 
   const handleClick = () => setClick(!click);
   const closeMobileMenu = () => setClick(false);
+
+  const handleNotificationClick = async (notification) => {
+    if (!notification.read) {
+      await markAsRead(notification._id);
+    }
+    if (notification.onClick) {
+      history.push(notification.onClick);
+    }
+  };
+
+  const handleMarkAllAsRead = async (e) => {
+    e.stopPropagation();
+    await markAllAsRead();
+  };
+
+  const handleLoadMore = (e) => {
+    e.stopPropagation();
+    loadMore();
+  };
+
+  // Helper function to format time ago
+  const formatTimeAgo = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+
+    if (seconds < 60) return "Just now";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString();
+  };
+
+  // Helper function to strip HTML tags from text
+  const stripHtml = (html) => {
+    if (!html) return "";
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+  };
+
   const notificationContent = (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      {userInfo.notifications.map((v) => (
-        <span className="font-paragraph-white">{v.value}</span>
-      ))}
+    <div className="notification-dropdown">
+      {/* Header */}
+      <div className="notification-header">
+        <span className="notification-title">
+          <T>notifications.title</T>
+          {unreadCount > 0 && (
+            <span className="notification-badge">{unreadCount}</span>
+          )}
+        </span>
+        {unreadCount > 0 && (
+          <Button
+            type="link"
+            size="small"
+            className="mark-all-read-btn"
+            onClick={handleMarkAllAsRead}
+            icon={<CheckOutlined />}
+          >
+            <T>notifications.mark_all_read</T>
+          </Button>
+        )}
+      </div>
+
+      {/* Notification List */}
+      <div className="notification-list">
+        {loading && notifications.length === 0 ? (
+          <div className="notification-loading">
+            <Spin size="small" />
+          </div>
+        ) : notifications?.length === 0 ? (
+          <div className="notification-empty">
+            <T>notifications.no_notifications</T>
+          </div>
+        ) : (
+          <>
+            {notifications?.map((v, key) => (
+              <div
+                key={v._id || key}
+                className={`notification-item ${
+                  v.read ? "notification-read" : "notification-unread"
+                }`}
+                onClick={() => handleNotificationClick(v)}
+              >
+                <div className="notification-content">
+                  <span className="notification-item-title">{stripHtml(v.title)}</span>
+                  {v.body && (
+                    <span className="notification-item-body">{stripHtml(v.body)}</span>
+                  )}
+                  <span className="notification-time">
+                    {v.createdAt && formatTimeAgo(v.createdAt)}
+                  </span>
+                </div>
+                {!v.read && <div className="notification-dot" />}
+              </div>
+            ))}
+
+            {/* Load More Button */}
+            {pagination.hasMore && (
+              <div className="notification-load-more">
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={handleLoadMore}
+                  loading={loadingMore}
+                >
+                  <T>notifications.load_more</T>
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
   const content = (
@@ -204,7 +327,7 @@ function Navbar({ color, history }) {
                 trigger="click"
               >
                 <Badge
-                  count={userInfo.notifications.length}
+                  count={unreadCount}
                   style={{
                     backgroundColor: "var(--color-orange)",
                     marginRight: "20px",

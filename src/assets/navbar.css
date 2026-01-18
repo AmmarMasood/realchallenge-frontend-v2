@@ -146,6 +146,172 @@
   border-left-color: var(--color-gray) !important;
 }
 
+/* Notification Dropdown Styles */
+.notification-dropdown {
+  width: 360px;
+  max-width: 90vw;
+  background-color: var(--color-gray);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.notification-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notification-badge {
+  background-color: #ff7700;
+  color: #fff;
+  font-size: 1.2rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.mark-all-read-btn {
+  color: #ff7700 !important;
+  font-size: 1.2rem;
+  padding: 4px 8px;
+}
+
+.mark-all-read-btn:hover {
+  color: #e97006 !important;
+}
+
+.notification-list {
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 119, 0, 0.5) transparent;
+}
+
+.notification-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 119, 0, 0.5);
+  border-radius: 3px;
+}
+
+.notification-list::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 119, 0, 0.7);
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.notification-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-unread {
+  background-color: rgba(255, 119, 0, 0.08);
+}
+
+.notification-read {
+  opacity: 0.7;
+}
+
+.notification-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-item-title {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #fff;
+  line-height: 1.4;
+}
+
+.notification-item-body {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notification-time {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
+}
+
+.notification-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #ff7700;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 6px;
+  margin-left: 12px;
+}
+
+.notification-loading,
+.notification-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px 16px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.4rem;
+}
+
+.notification-load-more {
+  display: flex;
+  justify-content: center;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.notification-load-more .ant-btn-link {
+  color: #ff7700 !important;
+  font-size: 1.3rem;
+}
+
+.notification-load-more .ant-btn-link:hover {
+  color: #e97006 !important;
+}
+
+/* Legacy styles - kept for backward compatibility */
 .notification-container {
   display: "flex";
   flex-direction: column;
@@ -162,18 +328,18 @@
 }
 
 .notification-row-unread {
-  position: relative; /* Ensure the parent element is positioned */
+  position: relative;
 }
 
 .notification-row-unread::before {
-  content: ""; /* No text content, just a dot */
-  display: inline-block; /* Make it an inline block element */
-  width: 8px; /* Width of the dot */
-  height: 8px; /* Height of the dot */
-  background-color: #ff7700; /* Color of the dot */
-  border-radius: 50%; /* Make it a circle */
-  margin-right: 8px; /* Space between the dot and the span */
-  vertical-align: middle; /* Align the dot vertically with the text */
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #ff7700;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
 }
 
 .divider {

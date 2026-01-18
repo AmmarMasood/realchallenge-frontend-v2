@@ -19,6 +19,8 @@ import {
 import { LanguageContext } from "../../../../contexts/LanguageContext";
 import EditTypeName from "../../ChallengeManager/EditTypeName";
 import Exercises from "./Exercise/Exercises";
+import { T } from "../../../Translate";
+import { get } from "lodash";
 import { v4 } from "uuid";
 import Player from "../../../Player/Player";
 import { useChallenge } from "../../../../contexts/ChallengeCreatorV2";
@@ -40,7 +42,7 @@ function Workout() {
     musics,
     setMusics,
   } = useChallenge();
-  const { language } = useContext(LanguageContext);
+  const { language, strings } = useContext(LanguageContext);
   const {
     setMediaManagerVisible,
     setMediaManagerType,
@@ -236,9 +238,8 @@ function Workout() {
         (!nextExercise.exerciseLength || nextExercise.exerciseLength <= 0)
       ) {
         notification.error({
-          message: "Duration Required",
-          description:
-            "Please enter a duration for the intro exercise before playing it.",
+          message: get(strings, "workoutStudio.duration_required", "Duration Required"),
+          description: get(strings, "workoutStudio.enter_duration_intro", "Please enter a duration for the intro exercise before playing it."),
           placement: "topRight",
         });
         setPlayerState({ ...playerState, playing: false });
@@ -280,9 +281,8 @@ function Workout() {
         (!prevExercise.exerciseLength || prevExercise.exerciseLength <= 0)
       ) {
         notification.error({
-          message: "Duration Required",
-          description:
-            "Please enter a duration for the intro exercise before playing it.",
+          message: get(strings, "workoutStudio.duration_required", "Duration Required"),
+          description: get(strings, "workoutStudio.enter_duration_intro", "Please enter a duration for the intro exercise before playing it."),
           placement: "topRight",
         });
         setPlayerState({ ...playerState, playing: false });
@@ -410,14 +410,14 @@ function Workout() {
                   className="v2workout-field v2workout-title"
                   value={workoutInfo.title}
                   type="title"
-                  placeholder="Type Title"
+                  placeholder={get(strings, "workoutStudio.type_title", "Type Title")}
                 />
                 <input
                   onChange={updateWorkoutInfo}
                   name="subtitle"
                   className="v2workout-field v2workout-subtitle"
                   value={workoutInfo.subtitle}
-                  placeholder="Type more info"
+                  placeholder={get(strings, "workoutStudio.type_more_info", "Type more info")}
                 />
               </div>
             </div>
@@ -425,7 +425,7 @@ function Workout() {
           </div>
 
           <button className="music-icon-button" onClick={openMusicAdder}>
-            <span>Add background music</span>
+            <span><T>workoutStudio.add_background_music</T></span>
             <img src={MusicIcon} alt="music-icon" />
           </button>
 
@@ -467,12 +467,11 @@ function Workout() {
             </div>
 
             <h3 className="challenge-player-container-exercies-heading font-paragraph-white">
-              Exercises
+              <T>workoutStudio.exercises</T>
             </h3>
 
             <h3 className="challenge-player-container-exercies-subheading font-paragraph-white">
-              Navigate to each exercise or hit the personal trainer button for
-              audio explanation.
+              <T>workoutStudio.navigate_to_each_exercise</T>
             </h3>
           </div>
 
@@ -483,7 +482,7 @@ function Workout() {
             }}
           >
             <Attachment
-              heading={"TODAY’S WORKOUT ATTACHMENT"}
+              heading={get(strings, "workoutStudio.todays_workout_attachment", "TODAY'S WORKOUT ATTACHMENT")}
               logo={AttachIcon}
               onClick={onWorkoutInfoChange}
               selectedValue={infoFile}
@@ -491,7 +490,7 @@ function Workout() {
             />
             <div>
               <Attachment
-                heading={"TODAY’S EQUIPMENTS"}
+                heading={get(strings, "workoutStudio.todays_equipments", "TODAY'S EQUIPMENTS")}
                 logo={DumbellIcon}
                 onClick={onEquipmentSelect}
               />

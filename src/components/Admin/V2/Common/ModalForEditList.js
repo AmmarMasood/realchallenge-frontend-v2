@@ -1,9 +1,11 @@
 import { useContext, useEffect, useState } from "react";
-import { Modal, Input, Select } from "antd";
+import { Modal, Input, Select, Tag } from "antd";
 import { Link } from "react-router-dom";
 import "../Workout/ExerciseChooseModal/ExerciseChooseModal.css";
 import { EditFilled, EyeOutlined } from "@ant-design/icons";
 import { userInfoContext } from "../../../../contexts/UserStore";
+import { LanguageContext } from "../../../../contexts/LanguageContext";
+import { get } from "lodash";
 import slug from "elegant-slug";
 
 function ModalForEditList({
@@ -13,11 +15,12 @@ function ModalForEditList({
   onClickEdit,
   title,
   subtext,
-  searchPlaceholder = "Search",
+  searchPlaceholder,
   searchKeys = ["challengeName"], // default keys
   type,
 }) {
   const [adminInfo, setAdminInfo] = useContext(userInfoContext);
+  const { strings } = useContext(LanguageContext);
   const [search, setSearch] = useState("");
   const [searchKey, setSearchKey] = useState(searchKeys[0]);
   const [selectedTrainer, setSelectedTrainer] = useState("all");
@@ -189,7 +192,7 @@ function ModalForEditList({
         }}
       >
         <Input
-          placeholder={searchPlaceholder}
+          placeholder={searchPlaceholder || get(strings, "adminv2.search", "Search")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{ minWidth: 180, marginBottom: "10px", width: "100%" }}
@@ -198,14 +201,14 @@ function ModalForEditList({
 
         {showAdminFeatures && uniqueTrainers.length > 0 && (
           <Select
-            placeholder="Filter by Trainer"
+            placeholder={get(strings, "adminv2.filter_by_trainer", "Filter by Trainer")}
             value={selectedTrainer}
             onChange={setSelectedTrainer}
             style={{ width: "150px", marginBottom: "10px" }}
             allowClear
             onClear={() => setSelectedTrainer("all")}
           >
-            <Select.Option value="all">All Trainers</Select.Option>
+            <Select.Option value="all">{get(strings, "adminv2.all_trainers", "All Trainers")}</Select.Option>
             {uniqueTrainers.map((trainer) => (
               <Select.Option key={trainer._id} value={trainer._id}>
                 {trainer.firstName} {trainer.lastName}
@@ -228,7 +231,7 @@ function ModalForEditList({
             className={`exercise-selector__item`}
             style={{ cursor: "default" }}
           >
-            <p>{d.name || d.title || d.challengeName || "Unnamed"}</p>
+            <p>{d.name || d.title || d.challengeName || get(strings, "adminv2.unnamed", "Unnamed")}</p>
             <div
               style={{
                 display: "flex",
@@ -247,7 +250,7 @@ function ModalForEditList({
                     color: "#465060",
                   }}
                 >
-                  {subtext || "ID"}: {d._id}
+                  {subtext || get(strings, "adminv2.id", "ID")}: {d._id}
                 </span>
                 {showMetadata && (d.trainer || d.user) && (
                   <div
@@ -259,7 +262,7 @@ function ModalForEditList({
                       marginTop: "4px",
                     }}
                   >
-                    Created by: {d.user.firstName} {d.user.lastName}
+                    {get(strings, "adminv2.created_by", "Created by")}: {d.user.firstName} {d.user.lastName}
                   </div>
                 )}
                 {showMetadata && d.trainer && (
@@ -272,7 +275,7 @@ function ModalForEditList({
                       marginTop: "4px",
                     }}
                   >
-                    Trainer: {d.trainer.firstName} {d.trainer.lastName}
+                    {get(strings, "adminv2.trainer_label", "Trainer")}: {d.trainer.firstName} {d.trainer.lastName}
                   </div>
                 )}
                 {showMetadata && d.trainers && d.trainers.length > 0 && (
@@ -285,12 +288,21 @@ function ModalForEditList({
                       marginTop: "4px",
                     }}
                   >
-                    Trainers:{" "}
+                    {get(strings, "adminv2.trainers_label", "Trainers")}:{" "}
                     {d.trainers
                       .map(
                         (trainer) => `${trainer.firstName} ${trainer.lastName}`
                       )
                       .join(", ")}
+                  </div>
+                )}
+                {(type === "challenge" || type === "recipe" || type === "blog") && d.adminApproved !== undefined && (
+                  <div style={{ marginTop: "6px" }}>
+                    <Tag color={d.adminApproved ? "green" : "orange"} style={{ fontSize: "10px" }}>
+                      {d.adminApproved
+                        ? get(strings, "admin.approved", "Approved")
+                        : get(strings, "admin.pending_approval", "Pending Approval")}
+                    </Tag>
                   </div>
                 )}
               </div>
@@ -329,7 +341,7 @@ function ModalForEditList({
         ))}
         {filteredData.length === 0 && (
           <div style={{ color: "#fff", marginTop: "20px" }}>
-            No results found.
+            {get(strings, "adminv2.no_results_found", "No results found")}
           </div>
         )}
       </div>

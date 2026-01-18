@@ -1,10 +1,12 @@
 import React, { useState, useContext } from "react";
-import { Select, Input, Button, Checkbox, Upload, List, message } from "antd";
+import { Select, Input, Button, Checkbox, Upload, List, message, Alert } from "antd";
 import { v4 } from "uuid";
 import { UploadOutlined, PlusOutlined } from "@ant-design/icons";
 import RemoteMediaManager from "../MediaManager/RemoteMediaManager";
 import { userInfoContext } from "../../../contexts/UserStore";
+import { LanguageContext } from "../../../contexts/LanguageContext";
 import { T } from "../../Translate";
+import { get } from "lodash";
 
 const Option = Select.Option;
 
@@ -28,12 +30,14 @@ function NewChallengeAdditionalTab({
   updateChallenge,
   userCreatePost,
   setUserCreatePost,
+  adminApproved,
 }) {
   // media manager stuff
   const [mediaManagerVisible, setMediaManagerVisible] = useState(false);
   const [mediaManagerType, setMediaManagerType] = useState("images");
   const [mediaManagerActions, setMediaManagerActions] = useState([]);
   const userInfo = useContext(userInfoContext)[0];
+  const { strings } = useContext(LanguageContext);
 
   const [loading, setLoading] = useState(false);
 
@@ -242,6 +246,14 @@ function NewChallengeAdditionalTab({
             </div>
           )}
         </>
+      )}
+      {update && !adminApproved && (
+        <Alert
+          message={get(strings, "admin.approval_warning", "This content is pending admin approval and is not visible to the public.")}
+          type="warning"
+          showIcon
+          style={{ marginBottom: "15px", marginTop: "10px" }}
+        />
       )}
       {update ? (
         <Button

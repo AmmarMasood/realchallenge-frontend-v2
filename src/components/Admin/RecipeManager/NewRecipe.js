@@ -28,7 +28,6 @@ import {
   createRecipe,
   getAllRecipes,
   getAllUserRecipes,
-  updateRecipe,
 } from "../../../services/recipes";
 import RemoteMediaManager from "../MediaManager/RemoteMediaManager";
 import { createPost } from "../../../services/posts";
@@ -39,12 +38,15 @@ import slug from "elegant-slug";
 import TextEditor from "../../TextEditor";
 import LanguageSelector from "../../LanguageSelector/LanguageSelector";
 import { LanguageContext } from "../../../contexts/LanguageContext";
+import { getTranslationsByKey } from "../../../services/translations";
+import { T } from "../../Translate";
+import { get } from "lodash";
 
 const { Option } = AntdSelect;
 
 function NewRecipe({ setCurrentSelection }) {
   const [userInfo, setUserInfo] = useContext(userInfoContext);
-  const { language } = useContext(LanguageContext);
+  const { language, strings } = useContext(LanguageContext);
   // media manager stuff
   const [mediaManagerVisible, setMediaManagerVisible] = useState(false);
   const [mediaManagerType, setMediaManagerType] = useState("images");
@@ -94,6 +96,7 @@ function NewRecipe({ setCurrentSelection }) {
   // all recipes
   const [allRecipes, setAllRecipes] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState("");
+  const [translationKey, setTranslationKey] = useState(null);
   // --------------
   // const [createPostModalVisible, setCreatePostModalVisible] = useState(false);
   const [userCreatePost, setUserCreatePost] = useState(false);
@@ -131,9 +134,27 @@ function NewRecipe({ setCurrentSelection }) {
     }
   }
   useEffect(() => {
+    // Reset translation state when language changes
+    setSelectedRecipe("");
+    setTranslationKey(null);
     fetchData();
     fetchAllRecipes();
   }, [language]);
+
+  // Handle selecting a recipe to translate
+  const handleSelectRecipe = (recipeId) => {
+    setSelectedRecipe(recipeId);
+    if (recipeId) {
+      const recipe = allRecipes.find((r) => r._id === recipeId);
+      if (recipe && recipe.translationKey) {
+        setTranslationKey(recipe.translationKey);
+      } else {
+        setTranslationKey(null);
+      }
+    } else {
+      setTranslationKey(null);
+    }
+  };
 
   const ing = {
     id: v4(),
@@ -147,7 +168,7 @@ function NewRecipe({ setCurrentSelection }) {
 
   const onFinish = async (values) => {
     if (description.length <= 0) {
-      alert("Please add description");
+      alert(get(strings, "admin.please_add_description", "Please add description"));
       return;
     }
     const d = {
@@ -176,26 +197,22 @@ function NewRecipe({ setCurrentSelection }) {
       sendNotification: sendNotifications,
     };
 
-    if (selectedRecipe) d.alternativeLanguage = selectedRecipe;
+    // alternativeLanguage removed - using translationKey for multi-language support
+    if (translationKey) d.translationKey = translationKey;
     // console.log("Success:", values);
     // console.log(values);
 
     const res = await createRecipe(d);
     if (res) {
       userCreatePost && createAPost(res.newRecipe._id);
-      selectedRecipe && updateSelectedRecipe(res.newRecipe._id);
+      // updateSelectedRecipe removed - using translationKey for multi-language support
       setCurrentSelection(4.1);
     }
 
     console.log("res", res);
   };
 
-  async function updateSelectedRecipe(id) {
-    const v = {
-      alternativeLanguage: id,
-    };
-    await updateRecipe(v, selectedRecipe);
-  }
+  // updateSelectedRecipe removed - using translationKey for multi-language support
 
   const createAPost = async (id) => {
     const values = {
@@ -234,12 +251,12 @@ function NewRecipe({ setCurrentSelection }) {
   const renderIngredientsList = (item) => (
     <List.Item style={{ display: "block", textAlign: "right" }}>
       <Button type="danger" onClick={() => removeIngredientListItem(item)}>
-        Remove
+        <T>admin.remove</T>
       </Button>
 
       <div className="new-recipe-ingredient-listitem">
         <div>
-          <span className="font-paragraph-black">Select Ingredient</span>
+          <span className="font-paragraph-black"><T>admin.select_ingredient</T></span>
           <Select
             onChange={(e) => changeIngredientValue("name", item.id, e.value)}
             options={allIngredients.map((food) => ({
@@ -268,10 +285,10 @@ function NewRecipe({ setCurrentSelection }) {
           </AntdSelect> */}
         </div>
         <div>
-          <span className="font-paragraph-black">Weight (gm)</span>
+          <span className="font-paragraph-black"><T>admin.weight_gm</T></span>
           <Input
             type="number"
-            placeholder="Enter Weight"
+            placeholder={get(strings, "admin.enter_weight", "Enter Weight")}
             value={item.weight}
             onChange={(e) =>
               changeIngredientValue("weight", item.id, e.target.value)
@@ -279,10 +296,10 @@ function NewRecipe({ setCurrentSelection }) {
           />
         </div>
         <div>
-          <span className="font-paragraph-black">Volume (ml)</span>
+          <span className="font-paragraph-black"><T>admin.volume_ml</T></span>
           <Input
             type="number"
-            placeholder="Enter Volume"
+            placeholder={get(strings, "admin.enter_volume", "Enter Volume")}
             value={item.volume}
             onChange={(e) =>
               changeIngredientValue("volume", item.id, e.target.value)
@@ -290,10 +307,10 @@ function NewRecipe({ setCurrentSelection }) {
           />
         </div>
         <div>
-          <span className="font-paragraph-black">Pieces</span>
+          <span className="font-paragraph-black"><T>admin.pieces</T></span>
           <Input
             type="number"
-            placeholder="Enter Pieces"
+            placeholder={get(strings, "admin.enter_pieces", "Enter Pieces")}
             value={item.pieces}
             onChange={(e) =>
               changeIngredientValue("pieces", item.id, e.target.value)
@@ -301,9 +318,9 @@ function NewRecipe({ setCurrentSelection }) {
           />
         </div>
         <div>
-          <span className="font-paragraph-black">Method</span>
+          <span className="font-paragraph-black"><T>admin.method</T></span>
           <Input
-            placeholder="Enter Method"
+            placeholder={get(strings, "admin.enter_method", "Enter Method")}
             value={item.method}
             onChange={(e) =>
               changeIngredientValue("method", item.id, e.target.value)
@@ -311,9 +328,9 @@ function NewRecipe({ setCurrentSelection }) {
           />
         </div>
         <div>
-          <span className="font-paragraph-black">Other</span>
+          <span className="font-paragraph-black"><T>admin.other</T></span>
           <Input
-            placeholder="Enter Other"
+            placeholder={get(strings, "admin.enter_other", "Enter Other")}
             value={item.other}
             onChange={(e) =>
               changeIngredientValue("other", item.id, e.target.value)
@@ -350,7 +367,7 @@ function NewRecipe({ setCurrentSelection }) {
         type="danger"
         onClick={() => removeCookingProcessItem(item, index)}
       >
-        Remove
+        <T>admin.remove</T>
       </Button>
     </List.Item>
   );
@@ -370,7 +387,7 @@ function NewRecipe({ setCurrentSelection }) {
         footer={false}
         visible={mealTypeModalVisible}
       >
-        <p className="font-paragraph-white">Enter Meal Type</p>
+        <p className="font-paragraph-white"><T>admin.enter_meal_type</T></p>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Input
             value={newMealTypeName}
@@ -395,11 +412,11 @@ function NewRecipe({ setCurrentSelection }) {
               marginLeft: "5px",
             }}
           >
-            Create
+            <T>admin.create</T>
           </Button>
         </div>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-          <span className="font-subheading-white">All Meal Types</span>
+          <span className="font-subheading-white"><T>admin.all_meal_types</T></span>
           <List
             size="small"
             bordered
@@ -424,17 +441,17 @@ function NewRecipe({ setCurrentSelection }) {
                     type="primary"
                     danger
                   >
-                    Delete
+                    <T>admin.delete</T>
                   </Button>
                   <Button
                     type="primary"
                     onClick={() => {
-                      setSelectedItemForUpdateTitle("Update Meal Type");
+                      setSelectedItemForUpdateTitle(get(strings, "admin.update_meal_type", "Update Meal Type"));
                       setSelectedItemForUpdate(cat);
                       setEditItemModelVisible(true);
                     }}
                   >
-                    Edit
+                    <T>admin.edit</T>
                   </Button>
                 </span>
               </List.Item>
@@ -449,7 +466,7 @@ function NewRecipe({ setCurrentSelection }) {
         footer={false}
         visible={foodTypeModalVisible}
       >
-        <p className="font-paragraph-white">Enter Food Type</p>
+        <p className="font-paragraph-white"><T>admin.enter_food_type</T></p>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Input
             value={newFoodTypeName}
@@ -474,11 +491,11 @@ function NewRecipe({ setCurrentSelection }) {
               marginLeft: "5px",
             }}
           >
-            Create
+            <T>admin.create</T>
           </Button>
         </div>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-          <span className="font-subheading-white">All Food Types</span>
+          <span className="font-subheading-white"><T>admin.all_food_types</T></span>
           <List
             size="small"
             bordered
@@ -504,17 +521,17 @@ function NewRecipe({ setCurrentSelection }) {
                     type="primary"
                     danger
                   >
-                    Delete
+                    <T>admin.delete</T>
                   </Button>
                   <Button
                     type="primary"
                     onClick={() => {
-                      setSelectedItemForUpdateTitle("Update Food Type");
+                      setSelectedItemForUpdateTitle(get(strings, "admin.update_food_type", "Update Food Type"));
                       setSelectedItemForUpdate(cat);
                       setEditItemModelVisible(true);
                     }}
                   >
-                    Edit
+                    <T>admin.edit</T>
                   </Button>
                 </span>
               </List.Item>
@@ -528,7 +545,7 @@ function NewRecipe({ setCurrentSelection }) {
         footer={false}
         visible={dietModalVisible}
       >
-        <p className="font-paragraph-white">Enter Diet</p>
+        <p className="font-paragraph-white"><T>admin.enter_diet</T></p>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Input
             value={newDietName}
@@ -550,11 +567,11 @@ function NewRecipe({ setCurrentSelection }) {
               marginLeft: "5px",
             }}
           >
-            Create
+            <T>admin.create</T>
           </Button>
         </div>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-          <span className="font-subheading-white">All Diet Types</span>
+          <span className="font-subheading-white"><T>admin.all_diet_types</T></span>
           <List
             size="small"
             bordered
@@ -580,17 +597,17 @@ function NewRecipe({ setCurrentSelection }) {
                     type="primary"
                     danger
                   >
-                    Delete
+                    <T>admin.delete</T>
                   </Button>
                   <Button
                     type="primary"
                     onClick={() => {
-                      setSelectedItemForUpdateTitle("Update Diet Type");
+                      setSelectedItemForUpdateTitle(get(strings, "admin.update_diet_type", "Update Diet Type"));
                       setSelectedItemForUpdate(cat);
                       setEditItemModelVisible(true);
                     }}
                   >
-                    Edit
+                    <T>admin.edit</T>
                   </Button>
                 </span>
               </List.Item>
@@ -604,7 +621,7 @@ function NewRecipe({ setCurrentSelection }) {
         footer={false}
         visible={newIngredientModalVisible}
       >
-        <p className="font-paragraph-white">Enter Ingredient</p>
+        <p className="font-paragraph-white"><T>admin.enter_ingredient</T></p>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Input
             value={newIngredientName}
@@ -626,11 +643,11 @@ function NewRecipe({ setCurrentSelection }) {
               marginLeft: "5px",
             }}
           >
-            Create
+            <T>admin.create</T>
           </Button>
         </div>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-          <span className="font-subheading-white">All Ingredients</span>
+          <span className="font-subheading-white"><T>admin.all_ingredients</T></span>
           <List
             size="small"
             bordered
@@ -656,17 +673,17 @@ function NewRecipe({ setCurrentSelection }) {
                     type="primary"
                     danger
                   >
-                    Delete
+                    <T>admin.delete</T>
                   </Button>
                   <Button
                     type="primary"
                     onClick={() => {
-                      setSelectedItemForUpdateTitle("Update Ingredient");
+                      setSelectedItemForUpdateTitle(get(strings, "admin.update_ingredient", "Update Ingredient"));
                       setSelectedItemForUpdate(cat);
                       setEditItemModelVisible(true);
                     }}
                   >
-                    Edit
+                    <T>admin.edit</T>
                   </Button>
                 </span>
               </List.Item>
@@ -682,26 +699,27 @@ function NewRecipe({ setCurrentSelection }) {
         titleName={selectedItemForUpdateTitle}
       />
 
-      <h2 className="font-heading-black">New Recipe</h2>
+      <h2 className="font-heading-black"><T>admin.new_recipe</T></h2>
 
       <div
         className="admin-newuser-container"
         style={{ padding: "50px 50px 50px 20px" }}
       >
         <div style={{ marginTop: "-40px", marginBottom: "20px" }}>
-          <span style={{ marginRight: "5px" }}>Select Language:</span>
+          <span style={{ marginRight: "5px" }}><T>admin.select_language</T>:</span>
           <LanguageSelector notFromNav={true} />
           <div>
             <span
               style={{ marginRight: "5px" }}
-            >{`Select alternative language version`}</span>
+            ><T>admin.select_alternative_language_version</T></span>
             <AntdSelect
               style={{ width: "500px" }}
-              onChange={(e) => setSelectedRecipe(e)}
+              value={selectedRecipe}
+              onChange={handleSelectRecipe}
             >
               <Option value={""}>-</Option>
-              {allRecipes.map((r, i) => (
-                <Option key={i._id} value={r._id}>
+              {allRecipes.map((r) => (
+                <Option key={r._id} value={r._id}>
                   {r.name}
                 </Option>
               ))}
@@ -716,20 +734,20 @@ function NewRecipe({ setCurrentSelection }) {
           onFinishFailed={onFinishFailed}
         >
           <Form.Item
-            label="Recipe Name"
+            label={<T>admin.recipe_name</T>}
             name="recipeName"
-            rules={[{ required: true, message: "Please input recipe name!" }]}
+            rules={[{ required: true, message: get(strings, "admin.please_input_recipe_name", "Please input recipe name!") }]}
           >
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </Form.Item>
-          <Form.Item label="Recipe Description" name="recipeDescription">
+          <Form.Item label={<T>admin.recipe_description</T>} name="recipeDescription">
             <TextEditor value={description} setValue={setDescription} />
             {/* <Input.TextArea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             /> */}
           </Form.Item>
-          <Form.Item label="Featured Image" name="featuredImage">
+          <Form.Item label={<T>admin.featured_image</T>} name="featuredImage">
             <Button
               onClick={() => {
                 setMediaManagerVisible(true);
@@ -737,7 +755,7 @@ function NewRecipe({ setCurrentSelection }) {
                 setMediaManagerActions([featuredImage, setFeaturedImage]);
               }}
             >
-              Upload File
+              <T>admin.upload_file</T>
             </Button>
             {typeof featuredImage === "object" && (
               <div style={{ display: "flex" }}>
@@ -769,7 +787,7 @@ function NewRecipe({ setCurrentSelection }) {
           <Form layout="vertical">
             <div className="new-recipe-information-inputs-container">
               <Form.Item
-                label="Prepration Time"
+                label={<T>admin.preparation_time</T>}
                 name="preprationTime"
                 // rules={[
                 //   { required: true, message: "Please input prepration time!" },
@@ -783,7 +801,7 @@ function NewRecipe({ setCurrentSelection }) {
                 />
               </Form.Item>
               <Form.Item
-                label="Persons"
+                label={<T>admin.persons</T>}
                 name="persons"
                 // rules={[
                 //   {
@@ -800,7 +818,7 @@ function NewRecipe({ setCurrentSelection }) {
                 />
               </Form.Item>
               <Form.Item
-                label="Kcal per person"
+                label={<T>admin.kcal_per_person</T>}
                 name="kcalPerPerson"
                 // rules={[
                 //   {
@@ -817,7 +835,7 @@ function NewRecipe({ setCurrentSelection }) {
                 />
               </Form.Item>
               <Form.Item
-                label="Saturation Index"
+                label={<T>admin.saturation_index</T>}
                 name="saturationIndex"
                 type="number"
               >
@@ -828,7 +846,7 @@ function NewRecipe({ setCurrentSelection }) {
                 />
               </Form.Item>
               <Form.Item
-                label="Protein"
+                label={<T>admin.protein</T>}
                 name="protein"
                 // rules={[{ required: true, message: "Please input protein!" }]}
                 type="number"
@@ -840,7 +858,7 @@ function NewRecipe({ setCurrentSelection }) {
                 />
               </Form.Item>
               <Form.Item
-                label="Carbohydrates"
+                label={<T>admin.carbohydrates</T>}
                 name="carbohydrates"
                 rules={
                   [
@@ -856,7 +874,7 @@ function NewRecipe({ setCurrentSelection }) {
                 />
               </Form.Item>
               <Form.Item
-                label="Fat"
+                label={<T>admin.fat</T>}
                 name="fat"
                 // rules={[{ required: true, message: "Please input fats!" }]}
                 type="number"
@@ -868,7 +886,7 @@ function NewRecipe({ setCurrentSelection }) {
                 />
               </Form.Item>
               <Form.Item
-                label="Fiber"
+                label={<T>admin.fiber</T>}
                 name="fiber"
                 // rules={[{ required: true, message: "Please input fiber!" }]}
                 type="number"
@@ -881,7 +899,7 @@ function NewRecipe({ setCurrentSelection }) {
               </Form.Item>
             </div>
           </Form>
-          <Form.Item label="Meal Types" name="mealTypes">
+          <Form.Item label={<T>admin.meal_types</T>} name="mealTypes">
             <Select
               isMulti
               onChange={(e) => setMealTypes(e)}
@@ -915,10 +933,10 @@ function NewRecipe({ setCurrentSelection }) {
               }}
               onClick={() => setMealTypeModalVisible(true)}
             >
-              Manage Meal Type
+              <T>admin.manage_meal_type</T>
             </Button>
           </Form.Item>
-          <Form.Item label="Food Types" name="foodTypes">
+          <Form.Item label={<T>admin.food_types</T>} name="foodTypes">
             <Select
               isMulti
               onChange={(e) => setFoodTypes(e)}
@@ -952,10 +970,10 @@ function NewRecipe({ setCurrentSelection }) {
               }}
               onClick={() => setFoodTypeModalVisible(true)}
             >
-              Manage Food Type
+              <T>admin.manage_food_type</T>
             </Button>
           </Form.Item>
-          <Form.Item label="Diet" name="diet">
+          <Form.Item label={<T>admin.diet</T>} name="diet">
             <Select
               isMulti
               onChange={(e) => setDiet(e)}
@@ -989,7 +1007,7 @@ function NewRecipe({ setCurrentSelection }) {
               }}
               onClick={() => setDietModalVisible(true)}
             >
-              Manage Diet
+              <T>admin.manage_diet</T>
             </Button>
           </Form.Item>
           {/* ingredients */}
@@ -999,19 +1017,19 @@ function NewRecipe({ setCurrentSelection }) {
                 size="small"
                 header={
                   <div className="new-recipe-ingredients-list-container-header">
-                    <span className="font-heading-black">Add Ingredients</span>
+                    <span className="font-heading-black"><T>admin.add_ingredients</T></span>
                     <div>
                       <Button
                         className="hover-orange"
                         onClick={() => setIngredients([...ingredients, ing])}
                       >
-                        Add Ingredient
+                        <T>admin.add_ingredient</T>
                       </Button>
                       <Button
                         className="hover-orange"
                         onClick={() => setNewIngredientModlVisible(true)}
                       >
-                        Manage Ingredients
+                        <T>admin.manage_ingredients</T>
                       </Button>
                     </div>
                   </div>
@@ -1032,7 +1050,7 @@ function NewRecipe({ setCurrentSelection }) {
                 size="small"
                 header={
                   <div className="new-recipe-ingredients-list-container-header">
-                    <span className="font-heading-black">Cooking Process</span>
+                    <span className="font-heading-black"><T>admin.cooking_process</T></span>
                     <div>
                       <Button
                         className="hover-orange"
@@ -1040,7 +1058,7 @@ function NewRecipe({ setCurrentSelection }) {
                           setCookingProcess([...cookingProcess, ""])
                         }
                       >
-                        Add Step
+                        <T>admin.add_step</T>
                       </Button>
                     </div>
                   </div>
@@ -1052,14 +1070,14 @@ function NewRecipe({ setCurrentSelection }) {
             </div>
           }
 
-          <Form.Item label="Notes" name="notes" style={{ marginTop: "30px" }}>
+          <Form.Item label={<T>admin.notes</T>} name="notes" style={{ marginTop: "30px" }}>
             {/* <Input.TextArea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             /> */}
             <TextEditor value={notes} setValue={setNotes} />
           </Form.Item>
-          <Form.Item label="Tips" name="tips">
+          <Form.Item label={<T>admin.tips</T>} name="tips">
             {/* <Input.TextArea
               value={tips}
               onChange={(e) => setTips(e.target.value)}
@@ -1073,7 +1091,7 @@ function NewRecipe({ setCurrentSelection }) {
                   checked={userCreatePost}
                   onChange={(e) => setUserCreatePost(e.target.checked)}
                 >
-                  Create a post
+                  <T>admin.create_a_post</T>
                 </Checkbox>
               </Form.Item>
               <Form.Item>
@@ -1081,7 +1099,7 @@ function NewRecipe({ setCurrentSelection }) {
                   checked={isPublic}
                   onChange={(e) => setIsPublic(e.target.checked)}
                 >
-                  Make Public
+                  <T>admin.make_public</T>
                 </Checkbox>
               </Form.Item>
               <Form.Item>
@@ -1089,7 +1107,7 @@ function NewRecipe({ setCurrentSelection }) {
                   checked={allowReviews}
                   onChange={(e) => setAllowReviews(e.target.checked)}
                 >
-                  Allow Reviews
+                  <T>admin.allow_reviews</T>
                 </Checkbox>
               </Form.Item>
 
@@ -1098,7 +1116,7 @@ function NewRecipe({ setCurrentSelection }) {
                   checked={allowComments}
                   onChange={(e) => setAllowComments(e.target.checked)}
                 >
-                  Allow Comments
+                  <T>admin.allow_comments</T>
                 </Checkbox>
               </Form.Item>
               <Form.Item>
@@ -1106,7 +1124,7 @@ function NewRecipe({ setCurrentSelection }) {
                   checked={sendNotifications}
                   onChange={(e) => setSendNotifications(e.target.checked)}
                 >
-                  Create notification
+                  <T>admin.create_notification</T>
                 </Checkbox>
               </Form.Item>
             </>
@@ -1122,7 +1140,7 @@ function NewRecipe({ setCurrentSelection }) {
                 marginTop: "10px",
               }}
             >
-              Create
+              <T>admin.create</T>
             </Button>
           </Form.Item>
         </Form>

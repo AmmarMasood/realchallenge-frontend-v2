@@ -20,6 +20,7 @@ import {
   Collapse,
   Checkbox,
   notification,
+  Alert,
 } from "antd";
 
 import { userInfoContext } from "../../../../contexts/UserStore";
@@ -29,6 +30,7 @@ import HelpIcon from "../../../../assets/icons/Help-icon.png";
 import ChallengeProfileSubtract from "../../../../assets/icons/challenge-profile-subtract.svg";
 import { T } from "../../../../components/Translate";
 import { LanguageContext } from "../../../../contexts/LanguageContext";
+import { get } from "lodash";
 import "../../../../assets/adminDashboardV2.css";
 import RemoteMediaManager from "../../MediaManager/RemoteMediaManager";
 import PopupPlayer from "../../../PopupPlayer/PopupPlayer";
@@ -59,6 +61,7 @@ import {
   getChallengeById,
   updateChallenge,
   updateWorkoutOnBackend,
+  getAllUserChallenges,
 } from "../../../../services/createChallenge/main";
 import { useBrowserEvents } from "../../../../helpers/useBrowserEvents";
 import DragAndDropIcon from "../../../../assets/icons/drag-drop.svg";
@@ -87,7 +90,7 @@ const iconStyle = {
 };
 
 function BasicInformation(props) {
-  const { language, updateLanguage } = useContext(LanguageContext);
+  const { language, updateLanguage, strings } = useContext(LanguageContext);
   const [userInfo, setUserInfo] = useContext(userInfoContext);
   const [isUpdate, setIsUpdate] = useState(false);
   const {
@@ -179,12 +182,18 @@ function BasicInformation(props) {
   const [userCreatePost, setUserCreatePost] = useState(false);
   const [isDraggingWorkout, setIsDraggingWorkout] = useState(false);
   const [draggedWorkoutId, setDraggedWorkoutId] = useState(null);
+  // Translation support - for linking challenges across languages
+  const [allChallengesFromOtherLanguage, setAllChallengesFromOtherLanguage] = useState([]);
+  const [selectedChallengeForTranslation, setSelectedChallengeForTranslation] = useState("");
+  const [translationKey, setTranslationKey] = useState(null);
+  // Store the challenge's original language to prevent global language changes from affecting updates
+  const [challengeLanguage, setChallengeLanguage] = useState(null);
   const { reloadWithoutConfirmation } = useBrowserEvents({
     enableBeforeUnloadConfirm: true,
     hasUnsavedChanges: true,
     backForwardMessage:
-      "You have unsaved changes in this challenge. Are you sure you want to leave?",
-    confirmMessage: "Any unsaved work will be lost. Continue?",
+      get(strings, "challengeStudio.unsaved_changes_warning", "You have unsaved changes in this challenge. Are you sure you want to leave?"),
+    confirmMessage: get(strings, "challengeStudio.unsaved_work_lost", "Any unsaved work will be lost. Continue?"),
     onPopState: (e) => {
       console.log("Navigation detected", e);
     },
@@ -199,9 +208,12 @@ function BasicInformation(props) {
     },
   });
 
-  const fetchDataV2 = async () => {
+  const fetchDataV2 = async (effectiveLanguage) => {
     setLoading(true);
     let currentUserDetails = null;
+    // Use the effective language (challenge's language for updates, global language for new)
+    const langToUse = effectiveLanguage || language;
+
     // Get user info for both trainer and admin
     if (userInfo.role === "trainer" || userInfo.role === "admin") {
       const uInfo = await getUserProfileInfo(userInfo.id);
@@ -214,10 +226,10 @@ function BasicInformation(props) {
       }
       setUserDetails(uInfo.customer);
     }
-    const bodyFocus = await getAllBodyFocus(language);
-    const trainers = await getAllTrainers(language);
-    const res = await getAllTrainerGoals(language);
-    const allExercises = await getAllExercises(language);
+    const bodyFocus = await getAllBodyFocus(langToUse);
+    const trainers = await getAllTrainers(langToUse);
+    const res = await getAllTrainerGoals(langToUse);
+    const allExercises = await getAllExercises(langToUse);
     setAllBodyFocus(bodyFocus.body);
 
     // If user is admin, ensure they appear in the trainers list
@@ -235,9 +247,31 @@ function BasicInformation(props) {
     setAllFitnessInterests(res.goals);
     setAllExercises(allExercises.exercises);
 
+    // Fetch challenges from other language for translation linking (only for new challenges)
+    if (!props.match.params.challengeId) {
+      const otherLanguage = langToUse === "dutch" ? "english" : "dutch";
+      const challengesFromOtherLang = await getAllUserChallenges(otherLanguage, true);
+      setAllChallengesFromOtherLanguage(challengesFromOtherLang?.challenges || []);
+    }
+
     setDataLoaded(true); // Set dataLoaded to true after all setters are done
 
     setLoading(false);
+  };
+
+  // Handle selecting a challenge to translate
+  const handleSelectChallengeForTranslation = (challengeId) => {
+    setSelectedChallengeForTranslation(challengeId);
+    if (challengeId) {
+      const challenge = allChallengesFromOtherLanguage.find((c) => c._id === challengeId);
+      if (challenge && challenge.translationKey) {
+        setTranslationKey(challenge.translationKey);
+      } else {
+        setTranslationKey(null);
+      }
+    } else {
+      setTranslationKey(null);
+    }
   };
 
   useEffect(() => {
@@ -246,13 +280,18 @@ function BasicInformation(props) {
     if (dataLoaded && props.match.params.challengeId) {
       setIsUpdate(true);
     }
+    // Only fetch challenge once on initial load, not when global language changes
     if (dataLoaded && props.match.params.challengeId && !isFirstRender) {
       const fetchChallenge = async () => {
         setLoading(true);
         const challenge = await getChallengeById(
-          props.match.params.challengeId,
-          language
+          props.match.params.challengeId
         );
+
+        // Store the challenge's original language
+        if (challenge && challenge.language) {
+          setChallengeLanguage(challenge.language);
+        }
 
         populateChallengeInfo(challenge);
 
@@ -275,13 +314,31 @@ function BasicInformation(props) {
       };
       fetchChallenge();
     }
-  }, [dataLoaded, props.match.params.challengeId, language]);
+  }, [dataLoaded, props.match.params.challengeId]); // Removed language dependency
 
   useEffect(() => {
     if (userInfo) {
-      fetchDataV2();
+      // For updates, only fetch data once with the challenge's language
+      // For new challenges, fetch data when global language changes
+      if (props.match.params.challengeId) {
+        // Update mode: only fetch once, use challenge's language
+        if (!challengeLanguage) {
+          // Initial load - will be called again after challengeLanguage is set
+          fetchDataV2();
+        }
+      } else {
+        // New challenge mode: respond to global language changes
+        fetchDataV2();
+      }
     }
-  }, [userInfo, language]);
+  }, [userInfo, language, props.match.params.challengeId]);
+
+  // Refetch data with correct language once challengeLanguage is set (for updates)
+  useEffect(() => {
+    if (challengeLanguage && props.match.params.challengeId && userInfo) {
+      fetchDataV2(challengeLanguage);
+    }
+  }, [challengeLanguage]);
 
   const openForThumbnail = () => {
     setErrors((prev) => ({
@@ -370,7 +427,7 @@ function BasicInformation(props) {
             createdAt: "",
             exerciseGroupName: "Introduction",
             exerciseLength: 0,
-            title: "Introduction to workout",
+            title: get(strings, "challengeStudio.introduction_to_workout", "Introduction to workout"),
             videoURL: "",
             voiceOverLink: "",
             videoThumbnailURL: "",
@@ -390,16 +447,16 @@ function BasicInformation(props) {
     const errors = [];
     const errorToShow = {};
     if (!challengeName) {
-      errors.push("Challenge Name is required");
-      errorToShow.challengeName = "Challenge Name is required";
+      errors.push(get(strings, "challengeStudio.challenge_name_required", "Challenge Name is required"));
+      errorToShow.challengeName = get(strings, "challengeStudio.challenge_name_required", "Challenge Name is required");
     }
     // if (!challengeDescription) {
     //   errors.push("Description is required");
     //   errorToShow.challengeDescription = "Description is required";
     // }
     if (!pack) {
-      errors.push("Select a pack");
-      errorToShow.pack = "Select a pack";
+      errors.push(get(strings, "challengeStudio.select_pack", "Select a pack"));
+      errorToShow.pack = get(strings, "challengeStudio.select_pack", "Select a pack");
     }
     if (
       pack === "CHALLENGE_1" &&
@@ -408,8 +465,8 @@ function BasicInformation(props) {
         customPrice === undefined ||
         customPrice < 0)
     ) {
-      errors.push("Price is required");
-      errorToShow.customPrice = "Price is required";
+      errors.push(get(strings, "challengeStudio.price_required", "Price is required"));
+      errorToShow.customPrice = get(strings, "challengeStudio.price_required", "Price is required");
     }
 
     // if (!thumbnail) {
@@ -426,8 +483,8 @@ function BasicInformation(props) {
     // }
     // if (!difficulty) errors.push("Difficulty is required");
     if (!seletedTrainers || seletedTrainers.length === 0) {
-      errors.push("At least one Trainer is required");
-      errorToShow.trainers = "At least one Trainer is required";
+      errors.push(get(strings, "challengeStudio.trainer_required", "At least one Trainer is required"));
+      errorToShow.trainers = get(strings, "challengeStudio.trainer_required", "At least one Trainer is required");
     }
     // if (!selectedGoals || selectedGoals.length === 0) {
     //   errors.push("At least one Goal is required");
@@ -437,7 +494,7 @@ function BasicInformation(props) {
     setErrors(errorToShow);
     if (errors.length > 0) {
       notification.error({
-        message: "Please fill all required fields",
+        message: get(strings, "challengeStudio.fill_required_fields", "Please fill all required fields"),
         description: (
           <ul>
             {errors.map((err, idx) => (
@@ -452,8 +509,10 @@ function BasicInformation(props) {
 
     try {
       setLoading(true);
+      // Use challenge's original language for updates, global language for new challenges
+      const effectiveLanguage = isUpdate && challengeLanguage ? challengeLanguage : language;
       const obj = {
-        language: language,
+        language: effectiveLanguage,
         challengeName: challengeName,
         description: challengeDescription,
         price: customPrice,
@@ -496,6 +555,12 @@ function BasicInformation(props) {
         allowReviews,
         isPublic: makePublic,
       };
+
+      // Add translationKey for linking with other language versions (only for new challenges)
+      if (!isUpdate && translationKey) {
+        obj.translationKey = translationKey;
+      }
+
       console.log("us update", isUpdate);
       if (isUpdate) {
         await updateChallenge(obj, props.match.params.challengeId);
@@ -518,7 +583,7 @@ function BasicInformation(props) {
       ) {
         setErrors((prev) => ({
           ...prev,
-          challengeName: "A challenge with this name already exists",
+          challengeName: get(strings, "challengeStudio.duplicate_name", "A challenge with this name already exists"),
         }));
       }
 
@@ -784,7 +849,7 @@ function BasicInformation(props) {
         visible={fitnessInterestModal}
       >
         {/* body focus stuff */}
-        <p className="font-paragraph-white"> Create A New Fitness Interest</p>
+        <p className="font-paragraph-white"><T>challengeStudio.create_fitness_interest</T></p>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Input
             value={newTrainerFitnessInterest}
@@ -809,11 +874,11 @@ function BasicInformation(props) {
               }
             }}
           >
-            Create
+            <T>admin.create</T>
           </Button>
         </div>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-          <span className="font-subheading-white">All Fitness Interests</span>
+          <span className="font-subheading-white"><T>challengeStudio.all_fitness_interests</T></span>
           <List
             size="small"
             bordered
@@ -845,8 +910,8 @@ function BasicInformation(props) {
                     type="primary"
                   >
                     {selectedFitnessInterest.find((item) => item._id === g._id)
-                      ? "Unselect"
-                      : "Select"}
+                      ? <T>challengeStudio.unselect</T>
+                      : <T>challengeStudio.select</T>}
                   </Button>
 
                   <Button
@@ -861,17 +926,17 @@ function BasicInformation(props) {
                     type="primary"
                     danger
                   >
-                    Delete
+                    <T>admin.delete</T>
                   </Button>
                   <Button
                     type="primary"
                     onClick={() => {
-                      setSelectedItemForUpdateTitle("Update Fitness Interest");
+                      setSelectedItemForUpdateTitle(get(strings, "challengeStudio.update_fitness_interest", "Update Fitness Interest"));
                       setSelectedItemForUpdate(g);
                       setEditItemNameModalVisible(true);
                     }}
                   >
-                    Edit
+                    <T>admin.edit</T>
                   </Button>
                 </span>
               </List.Item>
@@ -886,7 +951,7 @@ function BasicInformation(props) {
         visible={bodyFocusModal}
       >
         {/* body focus stuff */}
-        <p className="font-paragraph-white"> Create A New Body focus</p>
+        <p className="font-paragraph-white"><T>challengeStudio.create_body_focus</T></p>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Input
             value={newBodyFocus}
@@ -908,11 +973,11 @@ function BasicInformation(props) {
               }
             }}
           >
-            Create
+            <T>admin.create</T>
           </Button>
         </div>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-          <span className="font-subheading-white">All Body Focus</span>
+          <span className="font-subheading-white"><T>challengeStudio.all_body_focus</T></span>
           <List
             size="small"
             bordered
@@ -944,8 +1009,8 @@ function BasicInformation(props) {
                     type="primary"
                   >
                     {selectedBodyFocus.find((item) => item._id === g._id)
-                      ? "Unselect"
-                      : "Select"}
+                      ? <T>challengeStudio.unselect</T>
+                      : <T>challengeStudio.select</T>}
                   </Button>
 
                   <Button
@@ -960,17 +1025,17 @@ function BasicInformation(props) {
                     type="primary"
                     danger
                   >
-                    Delete
+                    <T>admin.delete</T>
                   </Button>
                   <Button
                     type="primary"
                     onClick={() => {
-                      setSelectedItemForUpdateTitle("Update Body Focus");
+                      setSelectedItemForUpdateTitle(get(strings, "challengeStudio.update_body_focus", "Update Body Focus"));
                       setSelectedItemForUpdate(g);
                       setEditItemNameModalVisible(true);
                     }}
                   >
-                    Edit
+                    <T>admin.edit</T>
                   </Button>
                 </span>
               </List.Item>
@@ -985,7 +1050,7 @@ function BasicInformation(props) {
         visible={goalsModal}
       >
         {/* body focus stuff */}
-        <p className="font-paragraph-white">All Body Focus</p>
+        <p className="font-paragraph-white"><T>challengeStudio.all_goals</T></p>
         <div style={{ height: "200px", overflow: "auto", marginTop: "10px" }}>
           <List
             size="small"
@@ -1018,8 +1083,8 @@ function BasicInformation(props) {
                     type="primary"
                   >
                     {selectedGoals.find((item) => item._id === g._id)
-                      ? "Unselect"
-                      : "Select"}
+                      ? <T>challengeStudio.unselect</T>
+                      : <T>challengeStudio.select</T>}
                   </Button>
                 </span>
               </List.Item>
@@ -1034,7 +1099,7 @@ function BasicInformation(props) {
         visible={trainerModal}
       >
         {/* body focus stuff */}
-        <p className="font-paragraph-white">All Trainers</p>
+        <p className="font-paragraph-white"><T>challengeStudio.all_trainers</T></p>
         <div style={{ height: "200px", overflow: "auto", marginTop: "10px" }}>
           <List
             size="small"
@@ -1074,8 +1139,8 @@ function BasicInformation(props) {
                       type="primary"
                     >
                       {seletedTrainers.find((item) => item._id === g._id)
-                        ? "Unselect"
-                        : "Select"}
+                        ? <T>challengeStudio.unselect</T>
+                        : <T>challengeStudio.select</T>}
                     </Button>
                   )}
                 </span>
@@ -1128,7 +1193,7 @@ function BasicInformation(props) {
                       cursor: "pointer",
                     }}
                   >
-                    {videoThumbnail ? videoThumbnail.link : "Add Trailer"}
+                    {videoThumbnail ? videoThumbnail.link : <T>challengeStudio.add_trailer</T>}
                   </p>
                   <img
                     src={ChallengeProfileSubtract}
@@ -1138,7 +1203,7 @@ function BasicInformation(props) {
                   />
                 </div>
                 <input
-                  placeholder="Challenge Name"
+                  placeholder={get(strings, "challengeStudio.challenge_name", "Challenge Name")}
                   style={{
                     border: errors.challengeName && "2px solid red",
                   }}
@@ -1160,18 +1225,18 @@ function BasicInformation(props) {
                   <Select
                     defaultValue={difficulty}
                     style={{ width: "100%" }}
-                    placeholder="Please select"
+                    placeholder={get(strings, "challengeStudio.please_select", "Please select")}
                     value={difficulty}
                     onChange={(e) => setDifficulty(e)}
                     className="font-paragraph-white adminV2-bi-input"
                   >
-                    <Select.Option value="high">High</Select.Option>
-                    <Select.Option value="medium">Medium</Select.Option>
-                    <Select.Option value="low">Low</Select.Option>
+                    <Select.Option value="high"><T>challengeStudio.high</T></Select.Option>
+                    <Select.Option value="medium"><T>challengeStudio.medium</T></Select.Option>
+                    <Select.Option value="low"><T>challengeStudio.low</T></Select.Option>
                   </Select>
 
                   <input
-                    placeholder="Duration in minutes"
+                    placeholder={get(strings, "challengeStudio.duration_in_minutes", "Duration in minutes")}
                     className="font-paragraph-white adminV2-bi-input"
                     onChange={(e) => {
                       if (errors.duration) {
@@ -1190,7 +1255,7 @@ function BasicInformation(props) {
                   />
 
                   <input
-                    placeholder="Challenge Points"
+                    placeholder={get(strings, "challengeStudio.challenge_points", "Challenge Points")}
                     className="font-paragraph-white adminV2-bi-input"
                     onChange={(e) => {
                       setPoints(e.target.value);
@@ -1202,7 +1267,7 @@ function BasicInformation(props) {
 
                 <textarea
                   rows={4}
-                  placeholder="Add challenge description"
+                  placeholder={get(strings, "challengeStudio.add_challenge_description", "Add challenge description")}
                   className="font-paragraph-white adminV2-bi-input"
                   onChange={(e) => {
                     if (errors.challengeDescription) {
@@ -1225,6 +1290,37 @@ function BasicInformation(props) {
             </div>
           </div>
           <div className="trainer-profile-container-column2">
+            {/* Translation selector - only shown when creating a new challenge */}
+            {!isUpdate && allChallengesFromOtherLanguage.length > 0 && (
+              <div className="trainer-profile-goals" style={{ marginBottom: "20px" }}>
+                <div
+                  className="trainer-profile-goals-heading font-paragraph-white"
+                  style={{ color: "#72777B", textTransform: "uppercase" }}
+                >
+                  <T>challengeStudio.translate_existing_challenge</T>
+                </div>
+                <Select
+                  style={{ width: "100%", marginTop: "10px" }}
+                  placeholder={get(strings, "challengeStudio.select_challenge_to_translate", "Select a challenge to translate (optional)")}
+                  value={selectedChallengeForTranslation || undefined}
+                  onChange={handleSelectChallengeForTranslation}
+                  allowClear
+                  className="font-paragraph-white"
+                >
+                  {allChallengesFromOtherLanguage.map((c) => (
+                    <Select.Option key={c._id} value={c._id}>
+                      {c.challengeName} ({c.language})
+                    </Select.Option>
+                  ))}
+                </Select>
+                {selectedChallengeForTranslation && (
+                  <p className="font-paragraph-white" style={{ marginTop: "8px", fontSize: "12px", color: "#888" }}>
+                    <T>challengeStudio.translation_linked</T>
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* trainers */}
             <div className="trainer-profile-goals">
               <div
@@ -1408,7 +1504,7 @@ function BasicInformation(props) {
                 className="trainer-profile-goals-heading font-paragraph-white"
                 style={{ color: "#72777B", textTransform: "uppercase" }}
               >
-                GOALS
+                <T>challengeStudio.goals</T>
               </div>
               <div className="trainer-profile-goals-container">
                 {selectedGoals.map((interest) => (
@@ -1460,12 +1556,12 @@ function BasicInformation(props) {
                 className="trainer-profile-goals-heading font-paragraph-white"
                 style={{ color: "#72777B", textTransform: "uppercase" }}
               >
-                RESULTS
+                <T>challengeStudio.results</T>
               </div>
               <div>
                 <textarea
                   rows={3}
-                  placeholder="Enter challenge result"
+                  placeholder={get(strings, "challengeStudio.enter_challenge_result", "Enter challenge result")}
                   className="font-paragraph-white adminV2-bi-input"
                   onChange={(e) => setResult(e.target.value)}
                   value={result}
@@ -1479,7 +1575,7 @@ function BasicInformation(props) {
                 className="trainer-profile-goals-heading font-paragraph-white"
                 style={{ color: "#72777B", textTransform: "uppercase" }}
               >
-                INFO
+                <T>challengeStudio.info</T>
               </div>
 
               {challengeInfo &&
@@ -1499,7 +1595,7 @@ function BasicInformation(props) {
                           marginTop: "10px",
                         }}
                         className="font-paragraph-white adminV2-bi-input"
-                        placeholder="Add info"
+                        placeholder={get(strings, "challengeStudio.add_info", "Add info")}
                         onChange={(e) => {
                           const newChallengeInfo = [...challengeInfo];
                           newChallengeInfo[index] = e.target.value;
@@ -1539,7 +1635,7 @@ function BasicInformation(props) {
                 className="trainer-profile-goals-heading font-paragraph-white"
                 style={{ color: "#72777B", textTransform: "uppercase" }}
               >
-                YOUR PERSONAL JOURNEY
+                <T>challengeStudio.your_personal_journey</T>
               </div>
               <div style={{ marginTop: "10px" }}>
                 <DraggableArea
@@ -1577,7 +1673,7 @@ function BasicInformation(props) {
                                   }}
                                   className="adminV2-bi-input font-paragraph-white"
                                   value={w.weekName}
-                                  placeholder="Name Group"
+                                  placeholder={get(strings, "challengeStudio.name_group", "Name Group")}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                   }}
@@ -1608,7 +1704,7 @@ function BasicInformation(props) {
                                     }}
                                     className="adminV2-bi-input font-paragraph-white"
                                     value={w.weekSubtitle}
-                                    placeholder="Add Description"
+                                    placeholder={get(strings, "challengeStudio.add_description", "Add Description")}
                                     onChange={(e) => {
                                       const newWeeks = [...weeks];
                                       newWeeks[i].weekSubtitle = e.target.value;
@@ -1837,9 +1933,9 @@ function BasicInformation(props) {
                                                   ) {
                                                     notification.error({
                                                       message:
-                                                        "Workout Type is Locked",
+                                                        get(strings, "challengeStudio.workout_type_locked", "Workout Type is Locked"),
                                                       description:
-                                                        "Workout type is locked after adding content. Please create a new workout to change the type.",
+                                                        get(strings, "challengeStudio.workout_type_locked_desc", "Workout type is locked after adding content. Please create a new workout to change the type."),
                                                       placement: "topRight",
                                                       duration: 5,
                                                     });
@@ -1872,11 +1968,10 @@ function BasicInformation(props) {
                                                   }
                                                 }}
                                               >
-                                                This workout contains no
-                                                exercises
+                                                <T>challengeStudio.workout_no_exercises</T>
                                               </Checkbox>
                                               <Tooltip
-                                                title="Workouts are 'with exercises' by default. Turn this on to create a workout without exercises"
+                                                title={get(strings, "challengeStudio.workout_type_tooltip", "Workouts are 'with exercises' by default. Turn this on to create a workout without exercises")}
                                                 placement="top"
                                               >
                                                 <img
@@ -2009,7 +2104,7 @@ function BasicInformation(props) {
                   <img src={HelpIcon} alt="" style={{ marginLeft: "5px" }} />
                 </Tooltip>
               </div>
-              <div className="font-paragraph-white">Choose your prices</div>
+              <div className="font-paragraph-white"><T>challengeStudio.choose_your_prices</T></div>
               <div className="unlock-challenge-packages">
                 <div
                   className="unlock-challenge-pack font-paragraph-white"
@@ -2076,9 +2171,9 @@ function BasicInformation(props) {
                       }}
                     />
                   </span>
-                  <span style={{ margin: "15px 0" }}>No subscription</span>
+                  <span style={{ margin: "15px 0" }}><T>challengeStudio.no_subscription</T></span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
-                    Billed Once
+                    <T>challengeStudio.billed_once</T>
                   </span>
                 </div>
                 <div
@@ -2123,14 +2218,14 @@ function BasicInformation(props) {
                       marginBottom: "10px",
                     }}
                   >
-                    Save up to 60%
+                    <T>challengeStudio.save_60</T>
                   </span>
                   <span style={{ fontSize: "26px", fontWeight: "600" }}>
-                    €4.5 <span style={{ fontSize: "14px" }}>/Week</span>
+                    €4.5 <span style={{ fontSize: "14px" }}>/<T>challengeStudio.week</T></span>
                   </span>
-                  <span style={{ margin: "15px 0" }}>12 months plan</span>
+                  <span style={{ margin: "15px 0" }}><T>challengeStudio.twelve_months_plan</T></span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
-                    Billed Monthly
+                    <T>challengeStudio.billed_monthly</T>
                   </span>
                 </div>
                 <div
@@ -2175,14 +2270,14 @@ function BasicInformation(props) {
                       marginBottom: "10px",
                     }}
                   >
-                    Save up to 30%
+                    <T>challengeStudio.save_30</T>
                   </span>
                   <span style={{ fontSize: "26px", fontWeight: "600" }}>
-                    €6 <span style={{ fontSize: "14px" }}>/Week</span>
+                    €6 <span style={{ fontSize: "14px" }}>/<T>challengeStudio.week</T></span>
                   </span>
-                  <span style={{ margin: "15px 0" }}>3 months plan</span>
+                  <span style={{ margin: "15px 0" }}><T>challengeStudio.three_months_plan</T></span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
-                    Billed Monthly
+                    <T>challengeStudio.billed_monthly</T>
                   </span>
                 </div>
               </div>
@@ -2227,7 +2322,7 @@ function BasicInformation(props) {
                   className="font-paragraph-white"
                   style={{ marginTop: "10px" }}
                 >
-                  Create a post
+                  <T>challengeStudio.create_post</T>
                 </Checkbox>
               </div>
 
@@ -2262,7 +2357,7 @@ function BasicInformation(props) {
                         color: "#9ca3af",
                       }}
                     >
-                      Only admins can change this from the "Manage Requests" section
+                      <T>challengeStudio.only_admins_manage_requests</T>
                     </p>
                   </div>
                   <div
@@ -2281,6 +2376,14 @@ function BasicInformation(props) {
               )}
             </>
 
+            {isUpdate && !adminApproved && (
+              <Alert
+                message={get(strings, "admin.approval_warning", "This content is pending admin approval and is not visible to the public.")}
+                type="warning"
+                showIcon
+                style={{ margin: "10px" }}
+              />
+            )}
             <button
               style={{
                 background: "#f37720",

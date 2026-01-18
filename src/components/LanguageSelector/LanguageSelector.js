@@ -2,6 +2,10 @@ import { CaretDownOutlined } from "@ant-design/icons";
 import { Popover } from "antd";
 import React, { useContext } from "react";
 import { LanguageContext } from "../../contexts/LanguageContext";
+import {
+  SUPPORTED_LANGUAGES,
+  getLanguageLabel,
+} from "../../config/languages";
 
 function LanguageSelector({ notFromNav }) {
   const { language, updateLanguage } = useContext(LanguageContext);
@@ -10,22 +14,21 @@ function LanguageSelector({ notFromNav }) {
     <div
       style={{ display: "flex", flexDirection: "column", cursor: "pointer" }}
     >
-      <span
-        onClick={() => {
-          updateLanguage("english");
-        }}
-        className="font-paragraph-white nav-links"
-      >
-        English
-      </span>
-      <span
-        onClick={() => {
-          updateLanguage("dutch");
-        }}
-        className="font-paragraph-white nav-links"
-      >
-        Dutch
-      </span>
+      {SUPPORTED_LANGUAGES.map((lang) => (
+        <span
+          key={lang.code}
+          onClick={() => {
+            updateLanguage(lang.code);
+          }}
+          className="font-paragraph-white nav-links"
+          style={{
+            fontWeight: language === lang.code ? "bold" : "normal",
+            marginBottom: "5px",
+          }}
+        >
+          {lang.flag} {lang.label}
+        </span>
+      ))}
     </div>
   );
 
@@ -35,7 +38,7 @@ function LanguageSelector({ notFromNav }) {
         className="font-paragraph-white"
         style={{ cursor: "pointer", color: notFromNav ? "black" : "#fff" }}
       >
-        {language} <CaretDownOutlined />
+        {getLanguageLabel(language)} <CaretDownOutlined />
       </span>
     </Popover>
   );

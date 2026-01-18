@@ -409,6 +409,29 @@ export function removeIngredient(id) {
     });
 }
 
+// Translation-related functions for multi-language support
+export function getRecipeTranslationsByKey(translationKey, excludeLanguage = null) {
+  const params = new URLSearchParams();
+  if (excludeLanguage) params.append('excludeLanguage', excludeLanguage);
+  return axios
+    .get(`${process.env.REACT_APP_SERVER}/api/recipes/recipe/translations/${translationKey}?${params.toString()}`)
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+      return { translations: [], count: 0 };
+    });
+}
+
+export function getRecipeByTranslationKey(translationKey, language) {
+  return axios
+    .get(`${process.env.REACT_APP_SERVER}/api/recipes/recipe/translation/${translationKey}/${language}`)
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+      return null;
+    });
+}
+
 export function getRecipeById(id) {
   return axios
     .get(`${process.env.REACT_APP_SERVER}/api/recipes/recipe/${id}`)

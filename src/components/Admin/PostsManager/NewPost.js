@@ -1,10 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Form, Input, Button, Select } from "antd";
 import RemoteMediaManager from "../MediaManager/RemoteMediaManager";
 import { createPost } from "../../../services/posts";
+import { LanguageContext } from "../../../contexts/LanguageContext";
+import { T } from "../../Translate";
+import { get } from "lodash";
 const { Option } = Select;
 
 function NewPost() {
+  const { strings } = useContext(LanguageContext);
   // media manager stuff
   const [mediaManagerVisible, setMediaManagerVisible] = useState(false);
   const [mediaManagerType, setMediaManagerType] = useState("images");
@@ -22,7 +26,7 @@ function NewPost() {
       };
       await createPost(data);
     } else {
-      window.alert("All values are requeired to create a post");
+      window.alert(get(strings, "admin.all_values_required", "All values are required to create a post"));
     }
   };
 
@@ -38,7 +42,7 @@ function NewPost() {
         type={mediaManagerType}
         actions={mediaManagerActions}
       />
-      <h2 className="font-heading-black">New Post</h2>
+      <h2 className="font-heading-black"><T>admin.new_post</T></h2>
       <div
         className="admin-newuser-container"
         style={{ padding: "50px 50px 50px 20px" }}
@@ -50,23 +54,23 @@ function NewPost() {
           onFinishFailed={onFinishFailed}
         >
           <Form.Item
-            label="Post Title"
+            label={<T>admin.post_title</T>}
             name="name"
-            rules={[{ required: true, message: "Please input post title!" }]}
+            rules={[{ required: true, message: get(strings, "admin.please_input_post_title", "Please input post title!") }]}
           >
             <Input />
           </Form.Item>
           <Form.Item
-            label="Post Description"
+            label={<T>admin.post_description</T>}
             name="description"
             rules={[
-              { required: true, message: "Please input post description!" },
+              { required: true, message: get(strings, "admin.please_input_post_description", "Please input post description!") },
             ]}
           >
             <Input />
           </Form.Item>
 
-          <Form.Item label="Post Image" name="image">
+          <Form.Item label={<T>admin.post_image</T>} name="image">
             <Button
               onClick={() => {
                 setMediaManagerVisible(true);
@@ -74,7 +78,7 @@ function NewPost() {
                 setMediaManagerActions([image, setImage]);
               }}
             >
-              Upload Image
+              <T>admin.upload_image</T>
             </Button>
             <div
               className="font-paragraph-white"
@@ -83,12 +87,12 @@ function NewPost() {
               {image && image.name}
             </div>
           </Form.Item>
-          <Form.Item label="Post Category" name="category" required={true}>
+          <Form.Item label={<T>admin.post_category</T>} name="category" required={true}>
             <Select
               allowClear
               style={{ width: "100%" }}
               value={type}
-              placeholder="Please select"
+              placeholder={get(strings, "admin.please_select", "Please select")}
               onChange={(e) => setType(e)}
             >
               {["Challenge", "Magazine", "Recipe", "News Updates"].map(
@@ -111,7 +115,7 @@ function NewPost() {
                 marginTop: "10px",
               }}
             >
-              Create
+              <T>admin.create</T>
             </Button>
           </Form.Item>
         </Form>

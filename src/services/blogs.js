@@ -125,6 +125,29 @@ export function removeBlogCategory(id) {
     });
 }
 
+// Translation-related functions for multi-language support
+export function getBlogTranslationsByKey(translationKey, excludeLanguage = null) {
+  const params = new URLSearchParams();
+  if (excludeLanguage) params.append('excludeLanguage', excludeLanguage);
+  return axios
+    .get(`${process.env.REACT_APP_SERVER}/api/blog/translations/${translationKey}?${params.toString()}`)
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+      return { translations: [], count: 0 };
+    });
+}
+
+export function getBlogByTranslationKey(translationKey, language) {
+  return axios
+    .get(`${process.env.REACT_APP_SERVER}/api/blog/translation/${translationKey}/${language}`)
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+      return null;
+    });
+}
+
 // http://localhost:3000/api/blog/609c2047f5d3a81314d3c966
 export function getBlogById(id) {
   return axios

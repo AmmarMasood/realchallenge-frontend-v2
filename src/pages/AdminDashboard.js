@@ -47,6 +47,8 @@ import AllRequests from "../components/Admin/RequestManager/AllRequests";
 import { T } from "../components/Translate";
 import LanguageSelector from "../components/LanguageSelector/LanguageSelector";
 import { hasRole, hasAnyRole } from "../helpers/roleHelpers";
+import { LanguageContext } from "../contexts/LanguageContext";
+import { get } from "lodash";
 
 const { Sider } = Layout;
 const { SubMenu } = Menu;
@@ -54,6 +56,7 @@ const { SubMenu } = Menu;
 function AdminDashboard(props) {
   // eslint-disable-next-line
   const [adminInfo, setAdminInfo] = useContext(userInfoContext);
+  const { language, strings } = useContext(LanguageContext);
   const [currentSelection, setCurrentSelection] = useState(1);
   const [selectedChallengeForUpdate, setSelectedChallengeForUpdate] = useState(
     {}
@@ -81,12 +84,7 @@ function AdminDashboard(props) {
 
   function showConfirm(newPath) {
     Modal.confirm({
-      title: (
-        <p className="font-paragraph-white">
-          Are you sure, you want to leave before saving? All your progress will
-          be lost
-        </p>
-      ),
+      title: get(strings, "admin.confirm_leave", "Are you sure you want to leave before saving? All your progress will be lost."),
       icon: null,
       onOk() {
         // console.log("OK");
@@ -206,8 +204,8 @@ function AdminDashboard(props) {
               >
                 <T>admin.requests</T>
               </Menu.Item> */}
-              {hasAnyRole(adminInfo, ["admin", "trainer"]) && (
-                <Button onClick={goToNewDashboard}>Go To New Dashboard</Button>
+              {hasAnyRole(adminInfo, ["admin", "trainer", "blogger", "nutrist"]) && (
+                <Button onClick={goToNewDashboard}><T>admin.go_to_new_dashboard</T></Button>
               )}
 
               {/* {adminInfo.role === "admin" && (
@@ -253,11 +251,11 @@ function AdminDashboard(props) {
                   }}
                   onClick={() => checkBeforeMoving(12)}
                 >
-                  Manage Requests
+                  <T>admin.manage_requests</T>
                 </Menu.Item>
               )}
-              {(adminInfo.role === "admin" || adminInfo.role === "blogger") && (
-                <SubMenu key="2" icon={<CoffeeOutlined />} title="Manage Blogs">
+              {hasAnyRole(adminInfo, ["admin", "blogger"]) && (
+                <SubMenu key="2" icon={<CoffeeOutlined />} title={<T>admin.manage_blogs</T>}>
                   <Menu.Item
                     key="2.1"
                     style={{
@@ -269,7 +267,7 @@ function AdminDashboard(props) {
                     }}
                     onClick={() => checkBeforeMoving(2.1)}
                   >
-                    <T>admin.all_blogs</T>
+                    {hasRole(adminInfo, "admin") ? <T>admin.all_blogs</T> : <T>admin.my_blogs</T>}
                   </Menu.Item>
                   <Menu.Item
                     key="2.2"
@@ -302,7 +300,7 @@ function AdminDashboard(props) {
               </Menu.Item>
 
               {hasAnyRole(adminInfo, ["admin", "nutrist"]) && (
-                <SubMenu key="4" icon={<CoffeeOutlined />} title="Recipes">
+                <SubMenu key="4" icon={<CoffeeOutlined />} title={<T>admin.manage_recipes</T>}>
                   <Menu.Item
                     key="4.1"
                     style={{
@@ -314,7 +312,7 @@ function AdminDashboard(props) {
                     }}
                     onClick={() => checkBeforeMoving(4.1)}
                   >
-                    <T>admin.all_recipes</T>
+                    {hasRole(adminInfo, "admin") ? <T>admin.all_recipes</T> : <T>admin.my_recipes</T>}
                   </Menu.Item>
                   <Menu.Item
                     style={{
@@ -332,7 +330,7 @@ function AdminDashboard(props) {
                 </SubMenu>
               )}
               {hasAnyRole(adminInfo, ["admin", "trainer"]) && (
-                <SubMenu key="5" icon={<ControlOutlined />} title="Exercises">
+                <SubMenu key="5" icon={<ControlOutlined />} title={<T>admin.manage_exercises</T>}>
                   <Menu.Item
                     key="5.1"
                     style={{
@@ -344,7 +342,7 @@ function AdminDashboard(props) {
                     }}
                     onClick={() => checkBeforeMoving(5.1)}
                   >
-                    All Exercises
+                    {hasRole(adminInfo, "admin") ? <T>admin.all_exercises</T> : <T>admin.my_exercises</T>}
                   </Menu.Item>
                   <Menu.Item
                     key="5.2"
@@ -357,7 +355,7 @@ function AdminDashboard(props) {
                     }}
                     onClick={() => checkBeforeMoving(5.2)}
                   >
-                    New Exercise
+                    <T>admin.new_exercise</T>
                   </Menu.Item>
                 </SubMenu>
               )}
@@ -365,7 +363,7 @@ function AdminDashboard(props) {
                 <SubMenu
                   key="6"
                   icon={<VideoCameraAddOutlined />}
-                  title="Challenges"
+                  title={<T>admin.manage_challenges</T>}
                 >
                   <Menu.Item
                     key="6.1"
@@ -378,7 +376,7 @@ function AdminDashboard(props) {
                     }}
                     onClick={() => checkBeforeMoving(6.1)}
                   >
-                    <T>admin.all_challenges</T>
+                    {hasRole(adminInfo, "admin") ? <T>admin.all_challenges</T> : <T>admin.my_challenges</T>}
                   </Menu.Item>
                   <Menu.Item
                     key="6.2"
@@ -399,7 +397,7 @@ function AdminDashboard(props) {
                 <SubMenu
                   key="7"
                   icon={<UserAddOutlined />}
-                  title="Manage Users"
+                  title={<T>admin.manage_users</T>}
                 >
                   <Menu.Item
                     key="7.1"
@@ -433,7 +431,7 @@ function AdminDashboard(props) {
                 <SubMenu
                   key="8"
                   icon={<InsertRowBelowOutlined />}
-                  title="Manage Posts"
+                  title={<T>admin.manage_posts</T>}
                 >
                   <Menu.Item
                     key="8.1"
@@ -446,7 +444,7 @@ function AdminDashboard(props) {
                     }}
                     onClick={() => checkBeforeMoving(8.1)}
                   >
-                    All Posts
+                    <T>admin.all_posts</T>
                   </Menu.Item>
                   <Menu.Item
                     key="8.2"
@@ -459,7 +457,7 @@ function AdminDashboard(props) {
                     }}
                     onClick={() => checkBeforeMoving(8.2)}
                   >
-                    New Post
+                    <T>admin.new_post</T>
                   </Menu.Item>
                 </SubMenu>
               )}
@@ -501,7 +499,7 @@ function AdminDashboard(props) {
                 <SubMenu
                   key="10"
                   icon={<NotificationOutlined />}
-                  title="Manage Coupons"
+                  title={<T>admin.manage_coupons</T>}
                 >
                   <Menu.Item
                     key="10.1"
@@ -535,7 +533,7 @@ function AdminDashboard(props) {
                 <SubMenu
                   key="11"
                   icon={<QuestionCircleOutlined />}
-                  title="Help Center"
+                  title={<T>admin.help_center</T>}
                 >
                   <Menu.Item
                     key="11.1"
@@ -548,7 +546,7 @@ function AdminDashboard(props) {
                     }}
                     onClick={() => checkBeforeMoving(11.1)}
                   >
-                    All Faqs
+                    <T>admin.all_faqs</T>
                   </Menu.Item>
                   <Menu.Item
                     key="11.2"
@@ -561,7 +559,7 @@ function AdminDashboard(props) {
                     }}
                     onClick={() => checkBeforeMoving(11.2)}
                   >
-                    New Faq
+                    <T>admin.new_faq</T>
                   </Menu.Item>
                 </SubMenu>
               )}
@@ -571,17 +569,18 @@ function AdminDashboard(props) {
             {currentSelection === 3 && <VFSBrowser />}
             {/* {currentSelection === 1.1 && <AllProducts />} */}
             {/* {currentSelection === 1.2 && <NewProduct />} */}
-            {currentSelection === 2.1 && <AllBlogs />}
+            {currentSelection === 2.1 && <AllBlogs key={`blogs-${language}`} />}
             {currentSelection === 2.2 && (
-              <NewBlog setCurrentSelection={setCurrentSelection} />
+              <NewBlog key={`new-blog-${language}`} setCurrentSelection={setCurrentSelection} />
             )}
-            {currentSelection === 4.1 && <AllRecipes />}
+            {currentSelection === 4.1 && <AllRecipes key={`recipes-${language}`} />}
             {currentSelection === 4.2 && (
-              <NewRecipe setCurrentSelection={setCurrentSelection} />
+              <NewRecipe key={`new-recipe-${language}`} setCurrentSelection={setCurrentSelection} />
             )}
-            {currentSelection === 5.1 && <AllExercises />}
+            {currentSelection === 5.1 && <AllExercises key={`exercises-${language}`} />}
             {currentSelection === 5.2 && (
               <NewExercise
+                key={`new-exercise-${language}`}
                 setCurrentSelection={setCurrentSelection}
                 home={5.1}
               />
@@ -589,13 +588,14 @@ function AdminDashboard(props) {
 
             {currentSelection === 6.1 && (
               <AllChallenges
+                key={`challenges-${language}`}
                 setSelectedChallengeForUpdate={setSelectedChallengeForUpdate}
                 selectedChallengeForUpdate={selectedChallengeForUpdate}
                 setCurrentSelection={setCurrentSelection}
                 currentSelection={currentSelection}
               />
             )}
-            {currentSelection === 6.2 && <NewChallenge />}
+            {currentSelection === 6.2 && <NewChallenge key={`new-challenge-${language}`} />}
             {currentSelection === 5.3 && (
               <UpdateChallenge
                 key={
@@ -627,9 +627,9 @@ function AdminDashboard(props) {
                 home={10.1}
               />
             )}
-            {currentSelection === 11.1 && <AllFaqs />}
+            {currentSelection === 11.1 && <AllFaqs key={`faqs-${language}`} />}
             {currentSelection === 11.2 && (
-              <NewFaq setCurrentSelection={setCurrentSelection} home={11.1} />
+              <NewFaq key={`new-faq-${language}`} setCurrentSelection={setCurrentSelection} home={11.1} />
             )}
             {currentSelection === 12 && <AllRequests />}
           </div>

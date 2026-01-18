@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Button, Table, Space, Input, Select } from "antd";
 import moment from "moment";
 import { deleteUser, getAllUsers } from "../../../services/users";
 import UpdateUser from "./UpdateUser";
 import { getAllChallengeGoals } from "../../../services/createChallenge/goals";
 import { hasRole } from "../../../helpers/roleHelpers";
+import { LanguageContext } from "../../../contexts/LanguageContext";
+import { T } from "../../Translate";
+import { get } from "lodash";
 
 function AllUsers() {
+  const { strings } = useContext(LanguageContext);
   const [filterAllUsers, setFilterAllUsers] = useState([]);
   const [allChallengeGoals, setAllChallengeGoals] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
@@ -72,13 +76,13 @@ function AllUsers() {
 
   const columns = [
     {
-      title: "ID",
+      title: <T>admin.id</T>,
       dataIndex: "_id",
       key: "_id",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Username",
+      title: <T>admin.username</T>,
       dataIndex: "username",
       key: "username",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
@@ -96,24 +100,28 @@ function AllUsers() {
     //   render: (text) => <span className="font-paragraph-black">{text}</span>,
     // },
     {
-      title: "Email",
+      title: <T>admin.email</T>,
       dataIndex: "email",
       key: "email",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
 
     {
-      title: "Role",
-      key: "role",
-      dataIndex: "role",
-      render: (text) => (
-        <span className="font-paragraph-black" style={{ color: "#ff7700" }}>
-          {text}
-        </span>
-      ),
+      title: <T>admin.roles</T>,
+      key: "roles",
+      dataIndex: "roles",
+      render: (roles, record) => {
+        // Support both roles array and legacy role field
+        const displayRoles = roles && roles.length > 0 ? roles : (record.role ? [record.role] : []);
+        return (
+          <span className="font-paragraph-black" style={{ color: "#ff7700" }}>
+            {displayRoles.join(", ")}
+          </span>
+        );
+      },
     },
     {
-      title: "Created At",
+      title: <T>admin.created_at</T>,
       key: "updatedAt",
       dataIndex: "updatedAt",
       render: (text) => (
@@ -123,7 +131,7 @@ function AllUsers() {
       ),
     },
     {
-      title: "Action",
+      title: <T>admin.action</T>,
       key: "challengePreviewLink",
       render: (text, record) => (
         <Space size="middle">
@@ -134,10 +142,10 @@ function AllUsers() {
               setShow(true);
             }}
           >
-            Edit
+            <T>admin.edit</T>
           </Button>
           <Button type="danger" onClick={() => removeUser(record)}>
-            Delete
+            <T>admin.delete</T>
           </Button>
         </Space>
       ),
@@ -155,10 +163,10 @@ function AllUsers() {
         fetchUsers={fetchUsers}
         key={selectedUser ? selectedUser._id : ""}
       />
-      <h2 className="font-heading-black">All Users</h2>
+      <h2 className="font-heading-black"><T>admin.all_users</T></h2>
       <div>
         <span className="font-heading-black" style={{ marginLeft: "10px" }}>
-          Filter By Role:
+          <T>admin.filter_by_role</T>
         </span>
         <Select
           defaultValue=""
@@ -180,7 +188,7 @@ function AllUsers() {
       </div>
       <div className="admin-allchallenges-list-container">
         <Input
-          placeholder="Search Users By Username"
+          placeholder={get(strings, "admin.search_users_by_username", "Search Users By Username")}
           onChange={(e) =>
             setFilterAllUsers(
               allUsers.filter((user) =>
@@ -192,7 +200,7 @@ function AllUsers() {
           }
         />
         <Input
-          placeholder="Search User By ID"
+          placeholder={get(strings, "admin.search_user_by_id", "Search User By ID")}
           style={{ marginTop: "10px" }}
           onChange={(e) =>
             setFilterAllUsers(

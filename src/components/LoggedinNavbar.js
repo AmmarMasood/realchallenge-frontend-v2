@@ -5,8 +5,10 @@ import {
   UserOutlined,
   BellOutlined,
   CaretDownOutlined,
+  CheckOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
-import { Badge, Avatar, Popover, Divider } from "antd";
+import { Badge, Avatar, Popover, Spin, Button } from "antd";
 import { userInfoContext, userPointsContext } from "../contexts/UserStore";
 import Logo from "../images/logo_orange.png";
 
@@ -15,21 +17,39 @@ import { logoutUser } from "../services/authentication";
 
 import { withRouter } from "react-router-dom";
 import { T } from "./Translate";
-import { markNotificationsAsRead } from "../services/users";
+import { useNotifications } from "../contexts/NotificationContext";
 
 function LoggedinNavbar(props) {
-  const { notifications, unreadNotifications } = props.notifications || {};
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    loadingMore,
+    pagination,
+    markAsRead,
+    markAllAsRead,
+    loadMore,
+  } = useNotifications();
   // eslint-disable-next-line
   const [userInfo, setUserInfo] = useContext(userInfoContext);
   const userPoints = useContext(userPointsContext)[0];
 
   const readNotification = async (id, notification) => {
-    try {
-      await markNotificationsAsRead(id);
-      props.markNotificationAsRead(id, notification);
-    } catch (error) {
-      console.error("Failed to mark notifications as read:", error);
+    await markAsRead(id);
+    // Navigate if onClick is specified
+    if (notification.onClick && props.history) {
+      props.history.push(notification.onClick);
     }
+  };
+
+  const handleMarkAllAsRead = async (e) => {
+    e.stopPropagation();
+    await markAllAsRead();
+  };
+
+  const handleLoadMore = (e) => {
+    e.stopPropagation();
+    loadMore();
   };
 
   const content = (
@@ -53,22 +73,104 @@ function LoggedinNavbar(props) {
   );
 
   const notificationContent = (
-    <div className="notification-container">
-      {notifications?.map((v, key) => (
-        <>
-          <span
-            className={`font-paragraph-white notification-row ${
-              v.read ? "notification-row-read" : "notification-row-unread"
-            }`}
-            onClick={() => readNotification(v._id, v)}
+    <div className="notification-dropdown">
+      {/* Header */}
+      <div className="notification-header">
+        <span className="notification-title">
+          <T>notifications.title</T>
+          {unreadCount > 0 && (
+            <span className="notification-badge">{unreadCount}</span>
+          )}
+        </span>
+        {unreadCount > 0 && (
+          <Button
+            type="link"
+            size="small"
+            className="mark-all-read-btn"
+            onClick={handleMarkAllAsRead}
+            icon={<CheckOutlined />}
           >
-            {v.title}
-          </span>
-          {key !== notifications.length - 1 && <div className="divider"></div>}
-        </>
-      ))}
+            <T>notifications.mark_all_read</T>
+          </Button>
+        )}
+      </div>
+
+      {/* Notification List */}
+      <div className="notification-list">
+        {loading && notifications.length === 0 ? (
+          <div className="notification-loading">
+            <Spin size="small" />
+          </div>
+        ) : notifications?.length === 0 ? (
+          <div className="notification-empty">
+            <T>notifications.no_notifications</T>
+          </div>
+        ) : (
+          <>
+            {notifications?.map((v, key) => (
+              <div
+                key={v._id || key}
+                className={`notification-item ${
+                  v.read ? "notification-read" : "notification-unread"
+                }`}
+                onClick={() => readNotification(v._id, v)}
+              >
+                <div className="notification-content">
+                  <span className="notification-item-title">{stripHtml(v.title)}</span>
+                  {v.body && (
+                    <span className="notification-item-body">{stripHtml(v.body)}</span>
+                  )}
+                  <span className="notification-time">
+                    {v.createdAt && formatTimeAgo(v.createdAt)}
+                  </span>
+                </div>
+                {!v.read && <div className="notification-dot" />}
+              </div>
+            ))}
+
+            {/* Load More Button */}
+            {pagination.hasMore && (
+              <div className="notification-load-more">
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={handleLoadMore}
+                  loading={loadingMore}
+                >
+                  <T>notifications.load_more</T>
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
+
+// Helper function to format time ago
+function formatTimeAgo(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+
+  if (seconds < 60) return "Just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString();
+}
+
+// Helper function to strip HTML tags from text
+function stripHtml(html) {
+  if (!html) return "";
+  // Create a temporary div to parse HTML and extract text
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || "";
+}
 
   return (
     <>
@@ -85,7 +187,7 @@ function LoggedinNavbar(props) {
             trigger="click"
           >
             <Badge
-              count={unreadNotifications}
+              count={unreadCount}
               style={{
                 backgroundColor: "var(--color-orange)",
                 marginRight: "20px",

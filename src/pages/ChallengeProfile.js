@@ -12,7 +12,7 @@ import {
 } from "@ant-design/icons";
 import Attachment from "../assets/icons/attachement-symbol.png";
 import Ellipse from "../assets/icons/ellipse.svg";
-import { addComment, getChallengeById } from "../services/createChallenge/main";
+import { addComment, getChallengeById, getChallengeByTranslationKey } from "../services/createChallenge/main";
 import { Link, withRouter } from "react-router-dom";
 // import ModalVideo from "react-modal-video";
 import { Tooltip, Collapse, Input, Avatar, Progress } from "antd";
@@ -139,13 +139,21 @@ function ChallengeProfile(props) {
   const fetchData = async () => {
     if (challenge && Object.keys(challenge).length > 0) {
       if (challenge.language === language) {
+        // Language matches, no need to redirect
       } else {
-        if (challenge.alternativeLanguage) {
-          window.location.href = `${
-            process.env.REACT_APP_FRONTEND_SERVER
-          }/challenge/${slug(challenge.alternativeLanguage.challengeName)}/${
-            challenge.alternativeLanguage._id
-          }`;
+        // Try to find the challenge in the current language using translationKey
+        if (challenge.translationKey) {
+          const translatedChallenge = await getChallengeByTranslationKey(
+            challenge.translationKey,
+            language
+          );
+          if (translatedChallenge) {
+            window.location.href = `${
+              process.env.REACT_APP_FRONTEND_SERVER
+            }/challenge/${slug(translatedChallenge.challengeName)}/${
+              translatedChallenge._id
+            }`;
+          }
         }
       }
     } else {
@@ -1088,74 +1096,76 @@ function ChallengeProfile(props) {
             )}
           </div>
 
-          <div
-            className="trainer-profile-goals"
-            style={{ borderBottom: "1px solid transparent" }}
-          >
+          {challenge.allowComments && (
             <div
-              className="trainer-profile-goals-heading font-paragraph-white"
-              style={{
-                color: "#72777B",
-                textTransform: "uppercase",
-              }}
+              className="trainer-profile-goals"
+              style={{ borderBottom: "1px solid transparent" }}
             >
-              <T>challenge_profile.comments</T>
-            </div>
-            {allComments.map((c) => (
-              <div className="comment-container">
-                <div className="comment-container-c1 font-paragraph-white">
-                  <Avatar src={c.user.avatarLink} shape="square" />{" "}
-                  <span style={{ marginLeft: "5px" }}>{c.user.username}</span>
-                  <div className="comment-container-c2 font-paragraph-white">
-                    {c.text}
+              <div
+                className="trainer-profile-goals-heading font-paragraph-white"
+                style={{
+                  color: "#72777B",
+                  textTransform: "uppercase",
+                }}
+              >
+                <T>challenge_profile.comments</T>
+              </div>
+              {allComments.map((c) => (
+                <div className="comment-container" key={c._id}>
+                  <div className="comment-container-c1 font-paragraph-white">
+                    <Avatar src={c.user.avatarLink} shape="square" />{" "}
+                    <span style={{ marginLeft: "5px" }}>{c.user.username}</span>
+                    <div className="comment-container-c2 font-paragraph-white">
+                      {c.text}
+                    </div>
+                  </div>
+
+                  <div
+                    className="font-paragraph-white comment-container-c3"
+                    style={{ color: "#82868b" }}
+                  >
+                    {moment(c.createdAt).format("MMM, Do YY")}
                   </div>
                 </div>
-
-                <div
-                  className="font-paragraph-white comment-container-c3"
-                  style={{ color: "#82868b" }}
-                >
-                  {moment(c.createdAt).format("MMM, Do YY")}
-                </div>
-              </div>
-            ))}
-            {localStorage.getItem("jwtToken") && (
-              <>
-                <div
-                  className="trainer-profile-goals-container"
-                  style={{ marginTop: "10px" }}
-                >
-                  <Input.TextArea
-                    rows={4}
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                  />
-                </div>
-                {commentButtonLoading ? (
-                  <LoadingOutlined
-                    style={{
-                      color: "#ff7700",
-                      fontSize: "30px",
-                      marginTop: "10px",
-                    }}
-                  />
-                ) : (
-                  <button
-                    className="common-transparent-button font-paragraph-white"
-                    onClick={postCommentToBackend}
-                    style={{
-                      color: "#ff7700",
-                      borderColor: "#ff7700",
-                      marginTop: "10px",
-                      cursor: "pointer",
-                    }}
+              ))}
+              {localStorage.getItem("jwtToken") && (
+                <>
+                  <div
+                    className="trainer-profile-goals-container"
+                    style={{ marginTop: "10px" }}
                   >
-                    <T>common.postComment</T>
-                  </button>
-                )}
-              </>
-            )}
-          </div>
+                    <Input.TextArea
+                      rows={4}
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                    />
+                  </div>
+                  {commentButtonLoading ? (
+                    <LoadingOutlined
+                      style={{
+                        color: "#ff7700",
+                        fontSize: "30px",
+                        marginTop: "10px",
+                      }}
+                    />
+                  ) : (
+                    <button
+                      className="common-transparent-button font-paragraph-white"
+                      onClick={postCommentToBackend}
+                      style={{
+                        color: "#ff7700",
+                        borderColor: "#ff7700",
+                        marginTop: "10px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <T>common.postComment</T>
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <ChallengeCompleteModal

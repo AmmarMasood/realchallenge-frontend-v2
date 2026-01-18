@@ -10,7 +10,7 @@ import { Avatar, Input } from "antd";
 import { UserOutlined, LoadingOutlined } from "@ant-design/icons";
 import moment from "moment";
 import { withRouter } from "react-router-dom";
-import { addBlogComment, getBlogById } from "../services/blogs";
+import { addBlogComment, getBlogById, getBlogByTranslationKey } from "../services/blogs";
 import {
   FacebookShareButton,
   LinkedinShareButton,
@@ -59,13 +59,21 @@ function MagazineArticle(props) {
   const fetchInfo = async () => {
     if (Object.keys(blogInfo).length > 0) {
       if (blogInfo.language === language) {
+        // Language matches, no need to redirect
       } else {
-        if (blogInfo.alternativeLanguage) {
-          window.location.href = `${
-            process.env.REACT_APP_FRONTEND_SERVER
-          }/magazine/${slug(blogInfo.alternativeLanguage.title)}/${
-            blogInfo.alternativeLanguage._id
-          }`;
+        // Use translationKey to find the blog in the selected language
+        if (blogInfo.translationKey) {
+          const translatedBlog = await getBlogByTranslationKey(
+            blogInfo.translationKey,
+            language
+          );
+          if (translatedBlog && translatedBlog.blog) {
+            window.location.href = `${
+              process.env.REACT_APP_FRONTEND_SERVER
+            }/magazine/${slug(translatedBlog.blog.title)}/${
+              translatedBlog.blog._id
+            }`;
+          }
         }
       }
     } else {
@@ -233,78 +241,80 @@ function MagazineArticle(props) {
           </p>
 
           {/* comments */}
-          <div
-            className="trainer-profile-goals"
-            style={{
-              borderBottom: "1px solid transparent",
-              backgroundColor: "#e1e9f2",
-              padding: "10px",
-            }}
-          >
+          {blogInfo.allowComments && (
             <div
-              className="trainer-profile-goals-heading font-paragraph-white"
+              className="trainer-profile-goals"
               style={{
-                color: "#72777B",
-                textTransform: "uppercase",
+                borderBottom: "1px solid transparent",
+                backgroundColor: "#e1e9f2",
+                padding: "10px",
               }}
             >
-              <T>challenge_profile.comments</T>
-            </div>
-            {allComments.map((c) => (
-              <div className="comment-container">
-                <div className="comment-container-c1 font-paragraph-black">
-                  <Avatar src={c.user.avatarLink} shape="square" />{" "}
-                  <span style={{ marginLeft: "5px" }}>{c.user.username}</span>
-                  <div className="comment-container-c2 font-paragraph-black">
-                    {c.text}
+              <div
+                className="trainer-profile-goals-heading font-paragraph-white"
+                style={{
+                  color: "#72777B",
+                  textTransform: "uppercase",
+                }}
+              >
+                <T>challenge_profile.comments</T>
+              </div>
+              {allComments.map((c) => (
+                <div className="comment-container" key={c._id}>
+                  <div className="comment-container-c1 font-paragraph-black">
+                    <Avatar src={c.user.avatarLink} shape="square" />{" "}
+                    <span style={{ marginLeft: "5px" }}>{c.user.username}</span>
+                    <div className="comment-container-c2 font-paragraph-black">
+                      {c.text}
+                    </div>
+                  </div>
+
+                  <div
+                    className="font-paragraph-white comment-container-c3"
+                    style={{ color: "#82868b" }}
+                  >
+                    {moment(c.createdAt).format("MMM, Do YYYY")}
                   </div>
                 </div>
-
-                <div
-                  className="font-paragraph-white comment-container-c3"
-                  style={{ color: "#82868b" }}
-                >
-                  {moment(c.createdAt).format("MMM, Do YYYY")}
-                </div>
-              </div>
-            ))}
-            {localStorage.getItem("jwtToken") && (
-              <>
-                <div
-                  className="trainer-profile-goals-container"
-                  style={{ marginTop: "10px" }}
-                >
-                  <Input.TextArea
-                    rows={4}
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                  />
-                </div>
-                {commentButtonLoading ? (
-                  <LoadingOutlined
-                    style={{
-                      color: "#ff7700",
-                      fontSize: "30px",
-                      marginTop: "10px",
-                    }}
-                  />
-                ) : (
-                  <button
-                    className="common-transparent-button font-paragraph-white"
-                    onClick={postCommentToBackend}
-                    style={{
-                      color: "#ff7700",
-                      borderColor: "#ff7700",
-                      marginTop: "10px",
-                      cursor: "pointer",
-                    }}
+              ))}
+              {localStorage.getItem("jwtToken") && (
+                <>
+                  <div
+                    className="trainer-profile-goals-container"
+                    style={{ marginTop: "10px" }}
                   >
-                    <T>common.postComment</T>
-                  </button>
-                )}
-              </>
-            )}
-          </div>
+                    <Input.TextArea
+                      rows={4}
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                    />
+                  </div>
+                  {commentButtonLoading ? (
+                    <LoadingOutlined
+                      style={{
+                        color: "#ff7700",
+                        fontSize: "30px",
+                        marginTop: "10px",
+                      }}
+                    />
+                  ) : (
+                    <button
+                      className="common-transparent-button font-paragraph-white"
+                      onClick={postCommentToBackend}
+                      style={{
+                        color: "#ff7700",
+                        borderColor: "#ff7700",
+                        marginTop: "10px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <T>common.postComment</T>
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
           {/* comments */}
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Button, Table, Space, Input, Select } from "antd";
+import { Button, Table, Space, Input, Select, Tag } from "antd";
 import moment from "moment";
 import UpdateBlog from "./UpdateBlog";
 import {
@@ -9,9 +9,10 @@ import {
 } from "../../../services/blogs";
 import { T } from "../../Translate";
 import { LanguageContext } from "../../../contexts/LanguageContext";
+import { get } from "lodash";
 
 function AllBlogs() {
-  const { language } = useContext(LanguageContext);
+  const { language, strings } = useContext(LanguageContext);
   const [filterAllBlogs, setFilterAllBlogs] = useState([]);
   const [allBlogs, setAllBlogs] = useState([]);
   const [selectedBlog, setSelectedBlog] = useState({});
@@ -41,19 +42,19 @@ function AllBlogs() {
   };
   const columns = [
     {
-      title: "ID",
+      title: <T>admin.id</T>,
       dataIndex: "_id",
       key: "_id",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Title",
+      title: <T>admin.title_column</T>,
       dataIndex: "title",
       key: "title",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Author",
+      title: <T>admin.author</T>,
       dataIndex: "user",
       key: "user",
       render: (text) => (
@@ -61,7 +62,7 @@ function AllBlogs() {
       ),
     },
     {
-      title: "Category",
+      title: <T>admin.category</T>,
       dataIndex: "category",
       key: "category",
       render: (text) => (
@@ -69,13 +70,13 @@ function AllBlogs() {
       ),
     },
     {
-      title: "Language",
+      title: <T>admin.language</T>,
       dataIndex: "language",
       key: "language",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Updated At",
+      title: <T>admin.updated_at</T>,
       key: "updatedAt",
       dataIndex: "updatedAt",
       render: (text) => (
@@ -85,7 +86,17 @@ function AllBlogs() {
       ),
     },
     {
-      title: "Action",
+      title: <T>admin.status</T>,
+      key: "adminApproved",
+      dataIndex: "adminApproved",
+      render: (approved) => (
+        <Tag color={approved ? "green" : "orange"}>
+          {approved ? <T>admin.approved</T> : <T>admin.pending_approval</T>}
+        </Tag>
+      ),
+    },
+    {
+      title: <T>admin.action</T>,
       key: "challengePreviewLink",
       render: (text, record) => (
         <Space size="middle">
@@ -116,12 +127,12 @@ function AllBlogs() {
       />
       <h2 className="font-heading-black">
         {" "}
-        <T>adminDashboard.blogs.alL</T>
+        <T>adminDashboard.blogs.all</T>
       </h2>
 
       <div className="admin-allchallenges-list-container">
         <Input
-          placeholder="Search Blogs By Name"
+          placeholder={get(strings, "admin.search_blogs_by_name", "Search Blogs By Name")}
           onChange={(e) =>
             setFilterAllBlogs(
               allBlogs.filter((blog) =>
@@ -132,7 +143,7 @@ function AllBlogs() {
         />
         <Input
           style={{ marginTop: "10px" }}
-          placeholder="Search Blogs By ID"
+          placeholder={get(strings, "admin.search_blogs_by_id", "Search Blogs By ID")}
           onChange={(e) =>
             setFilterAllBlogs(
               allBlogs.filter((blog) =>

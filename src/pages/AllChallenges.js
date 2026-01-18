@@ -17,6 +17,7 @@ import slug from "elegant-slug";
 import { T } from "../components/Translate";
 import { LanguageContext } from "../contexts/LanguageContext";
 import { LoadingOutlined } from "@ant-design/icons";
+import { get } from "lodash";
 
 const { Panel } = Collapse;
 
@@ -32,7 +33,7 @@ const filterTextStyle = {
 
 function AllChallenges() {
   const [loading, setLoading] = useState(false);
-  const { language } = useContext(LanguageContext);
+  const { language, strings } = useContext(LanguageContext);
   const [name, setName] = useState("");
   const [filterChallenges, setFilterChallenges] = useState([]);
   // eslint-disable-next-line
@@ -125,7 +126,7 @@ function AllChallenges() {
       <div className="trainers-3-row">
         <Input
           size="large"
-          placeholder="Search Challenges"
+          placeholder={get(strings, "admin.search_challenges", "Search Challenges")}
           style={{
             padding: "20px",
             color: "#fff",

@@ -15,6 +15,7 @@ import {
 } from "../../services/createChallenge/main";
 import { getAllTrainers } from "../../services/trainers";
 import { getUserProfileInfo } from "../../services/users";
+import { get } from "lodash";
 
 function ExerciseCreatorPopup({
   open,
@@ -22,7 +23,7 @@ function ExerciseCreatorPopup({
   onSuccess,
   selectedExerciseForEdit,
 }) {
-  const { language } = useContext(LanguageContext);
+  const { language, strings } = useContext(LanguageContext);
   const userInfo = useContext(userInfoContext)[0];
   const [exerciseTitle, setExerciseTitle] = useState("");
   const [exerciseDescription, setExerciseDescription] = useState("");
@@ -158,13 +159,13 @@ function ExerciseCreatorPopup({
       if (error.response && error.response.status === 409) {
         openNotificationWithIcon(
           "error",
-          "An exercise with this name already exists for this trainer. Please choose a different name.",
+          get(strings, "adminv2.duplicate_exercise_error", "An exercise with this name already exists for this trainer. Please choose a different name."),
           ""
         );
       } else {
         openNotificationWithIcon(
           "error",
-          "Failed to save exercise. Please try again.",
+          get(strings, "adminv2.save_exercise_error", "Failed to save exercise. Please try again."),
           ""
         );
       }
@@ -193,14 +194,16 @@ function ExerciseCreatorPopup({
         <h2 className="music-selector__title">
           <span>
             {" "}
-            {selectedExerciseForEdit ? "Edit Exercise" : "Create Exercise"}
+            {selectedExerciseForEdit
+              ? get(strings, "adminv2.edit_exercise", "Edit Exercise")
+              : get(strings, "adminv2.create_exercise", "Create Exercise")}
           </span>
         </h2>
       </div>
 
       <input
         type="text"
-        placeholder="Exercise Title"
+        placeholder={get(strings, "adminv2.exercise_title", "Exercise Title")}
         value={exerciseTitle}
         onChange={(e) => setExerciseTitle(e.target.value)}
         style={{
@@ -218,7 +221,7 @@ function ExerciseCreatorPopup({
       {/* Trainer Selector - Only for Admins */}
       {userInfo.role === "admin" && (
         <Select
-          placeholder="Select Trainer"
+          placeholder={get(strings, "adminv2.select_trainer", "Select Trainer")}
           value={selectedTrainer}
           onChange={(value) => setSelectedTrainer(value)}
           style={{
@@ -312,7 +315,7 @@ function ExerciseCreatorPopup({
                     e.stopPropagation();
                     setVideoFile(null);
                   }}
-                  title="Remove"
+                  title={get(strings, "adminv2.remove", "Remove")}
                 >
                   ×
                 </span>
@@ -327,7 +330,7 @@ function ExerciseCreatorPopup({
               fontSize: "16px",
             }}
           >
-            Select Video
+            {get(strings, "adminv2.select_video", "Select Video")}
           </h2>
         </div>
         <div
@@ -388,7 +391,7 @@ function ExerciseCreatorPopup({
                     e.stopPropagation();
                     setAudioFile(null);
                   }}
-                  title="Remove"
+                  title={get(strings, "adminv2.remove", "Remove")}
                 >
                   ×
                 </span>
@@ -403,13 +406,13 @@ function ExerciseCreatorPopup({
               fontSize: "16px",
             }}
           >
-            Select Audio
-            <br /> (Optional)
+            {get(strings, "adminv2.select_audio", "Select Audio")}
+            <br /> {get(strings, "adminv2.optional", "(Optional)")}
           </h2>
         </div>
       </div>
       <textarea
-        placeholder="Exercise Description (Optional)"
+        placeholder={get(strings, "adminv2.exercise_description_optional", "Exercise Description (Optional)")}
         value={exerciseDescription}
         onChange={(e) => setExerciseDescription(e.target.value)}
         style={{
@@ -432,7 +435,7 @@ function ExerciseCreatorPopup({
         style={{ marginTop: "10px" }}
         disabled={!exerciseTitle || !videoFile || !selectedTrainer || loading}
       >
-        Save
+        {get(strings, "adminv2.save", "Save")}
       </button>
       <PreviewModal
         visible={previewModalVisible}

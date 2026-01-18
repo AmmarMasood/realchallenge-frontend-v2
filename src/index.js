@@ -4,6 +4,7 @@ import "antd/dist/antd.css"; // or 'antd/dist/antd.less'
 import "./index.css";
 import App from "./App";
 import UserStore from "./contexts/UserStore";
+import NotificationProvider from "./contexts/NotificationContext";
 import LanguageStore, { LanguageProvider } from "./contexts/LanguageContext";
 import reportWebVitals from "./reportWebVitals";
 import "./App.css";
@@ -21,15 +22,17 @@ setChonkyDefaults({ iconComponent: ChonkyIconFA, disableDragAndDrop: true });
 ReactDOM.render(
   <React.StrictMode>
     <UserStore>
-      <PaymentProcessStore>
-        <LanguageProvider fetchTranslations={fetchTranslations}>
-          <RemoteMediaManagerProvider>
-            <MediaManagerProvider>
-              <App />
-            </MediaManagerProvider>
-          </RemoteMediaManagerProvider>
-        </LanguageProvider>
-      </PaymentProcessStore>
+      <NotificationProvider>
+        <PaymentProcessStore>
+          <LanguageProvider fetchTranslations={fetchTranslations}>
+            <RemoteMediaManagerProvider>
+              <MediaManagerProvider>
+                <App />
+              </MediaManagerProvider>
+            </RemoteMediaManagerProvider>
+          </LanguageProvider>
+        </PaymentProcessStore>
+      </NotificationProvider>
     </UserStore>
   </React.StrictMode>,
   document.getElementById("root")

@@ -23,6 +23,8 @@ import {
 import DragAndDropIcon from "../../../../../assets/icons/drag-drop-icon-white.svg";
 import SquarePT from "../../../../../assets/icons/Square-PT.png";
 import SquarePlay from "../../../../../assets/icons/player-video-browser-play-icon.svg";
+import { LanguageContext } from "../../../../../contexts/LanguageContext";
+import { get } from "lodash";
 const responsive = {
   superLargeDesktop: {
     // the naming can be any, depends on you.
@@ -66,6 +68,7 @@ function Exercises({
   fromFullScreen = true,
 }) {
   const { allExercises, seletedTrainers } = useChallenge();
+  const { strings } = useContext(LanguageContext);
   const [showExerciseModal, setShowExerciseModal] = React.useState(false);
   const [playerState, setPlayerState] = useContext(playerStateContext);
   const [fullscreen, setFullscreen] = useContext(playerFullscreenContext);
@@ -98,9 +101,8 @@ function Exercises({
 
     if (hasValidationError) {
       notification.error({
-        message: "Duration Required",
-        description:
-          "Please enter a duration for the intro exercise before playing it.",
+        message: get(strings, "workoutStudio.duration_required", "Duration Required"),
+        description: get(strings, "workoutStudio.enter_duration_intro", "Please enter a duration for the intro exercise before playing it."),
         placement: "topRight",
       });
     }

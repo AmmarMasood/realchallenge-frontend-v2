@@ -9,7 +9,6 @@ import {
   getAllBlogs,
   getAllUserBlogs,
   removeBlogCategory,
-  updateBlog,
 } from "../../../services/blogs";
 import { userInfoContext } from "../../../contexts/UserStore";
 import EditCategoryName from "./EditCategoryName";
@@ -21,12 +20,14 @@ import slug from "elegant-slug";
 import { LanguageContext } from "../../../contexts/LanguageContext";
 import LanguageSelector from "../../LanguageSelector/LanguageSelector";
 import { T } from "../../Translate";
+import { get } from "lodash";
+
 const { Option } = Select;
 
 function NewBlog({ setCurrentSelection }) {
   // user context
   const [userInfo, setUserInfo] = useContext(userInfoContext);
-  const { language } = useContext(LanguageContext);
+  const { language, strings } = useContext(LanguageContext);
 
   // media manager stuff
   const [mediaManagerVisible, setMediaManagerVisible] = useState(false);
@@ -55,6 +56,22 @@ function NewBlog({ setCurrentSelection }) {
   // ----
   const [selectedBlog, setSelectedBlog] = useState("");
   const [allBlogs, setAllBlogs] = useState([]);
+  const [translationKey, setTranslationKey] = useState(null);
+
+  // Handle selecting a blog to translate
+  const handleSelectBlog = (blogId) => {
+    setSelectedBlog(blogId);
+    if (blogId) {
+      const blog = allBlogs.find((b) => b._id === blogId);
+      if (blog && blog.translationKey) {
+        setTranslationKey(blog.translationKey);
+      } else {
+        setTranslationKey(null);
+      }
+    } else {
+      setTranslationKey(null);
+    }
+  };
 
   // useEffect(() => {
   //   fethData();
@@ -77,21 +94,14 @@ function NewBlog({ setCurrentSelection }) {
     }
   }
 
-  async function updateSelectedBlog(id) {
-    await updateBlog(
-      {
-        alternativeLanguage: id,
-      },
-      selectedBlog
-    );
-  }
+  // updateSelectedBlog removed - using translationKey for multi-language support
   const createNewBlog = async () => {
     let flag = false;
     if (title && paragraph && featuredImage && videoLink && category) {
       flag = true;
     }
     if (!flag) {
-      alert("Please fill all the information");
+      alert(get(strings, "admin.please_fill_all_information", "Please fill all the information"));
     } else {
       setLoading(true);
       const vals = {
@@ -106,14 +116,14 @@ function NewBlog({ setCurrentSelection }) {
         allowComments: allowComments,
         allowReviews: allowReviews,
       };
-      if (selectedBlog) vals.alternativeLanguage = selectedBlog;
+      // alternativeLanguage removed - using translationKey for multi-language support
+      if (translationKey) vals.translationKey = translationKey;
 
       const res = await createBlog(vals);
       setLoading(false);
       if (res) {
         // return;
         userCreatePost && createAPost(res.newBlog._id);
-        selectedBlog && updateSelectedBlog(res.newBlog._id);
         setCurrentSelection(2.1);
       }
     }
@@ -164,7 +174,7 @@ function NewBlog({ setCurrentSelection }) {
         footer={false}
         visible={categoryModalVisible}
       >
-        <p className="font-paragraph-white">Manage Blog Category</p>
+        <p className="font-paragraph-white"><T>admin.manage_blog_category</T></p>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Input
             value={newCategoryName}
@@ -189,11 +199,11 @@ function NewBlog({ setCurrentSelection }) {
               marginLeft: "5px",
             }}
           >
-            Create
+            <T>admin.create</T>
           </Button>
         </div>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-          <span className="font-subheading-white">All Categories</span>
+          <span className="font-subheading-white"><T>admin.all_categories</T></span>
           <List
             size="small"
             bordered
@@ -218,7 +228,7 @@ function NewBlog({ setCurrentSelection }) {
                     type="primary"
                     danger
                   >
-                    Delete
+                    <T>admin.delete</T>
                   </Button>
                   <Button
                     type="primary"
@@ -227,7 +237,7 @@ function NewBlog({ setCurrentSelection }) {
                       setEditCategoryModelVisible(true);
                     }}
                   >
-                    Edit
+                    <T>admin.edit</T>
                   </Button>
                 </span>
               </List.Item>
@@ -235,25 +245,26 @@ function NewBlog({ setCurrentSelection }) {
           />
         </div>
       </Modal>
-      <h2 className="font-heading-black">New Blog</h2>
+      <h2 className="font-heading-black"><T>admin.new_blog</T></h2>
       <div
         className="admin-newuser-container"
         style={{ padding: "50px 50px 50px 20px" }}
       >
         <div style={{ marginTop: "-40px", marginBottom: "20px" }}>
-          <span style={{ marginRight: "5px" }}>Select Language:</span>
+          <span style={{ marginRight: "5px" }}><T>admin.select_language</T>:</span>
           <LanguageSelector notFromNav={true} />
           <div>
             <span
               style={{ marginRight: "5px" }}
-            >{`Select alternative language version`}</span>
+            ><T>admin.select_alt_language</T></span>
             <Select
               style={{ width: "500px" }}
-              onChange={(e) => setSelectedBlog(e)}
+              value={selectedBlog}
+              onChange={handleSelectBlog}
             >
               <Option value={""}>-</Option>
-              {allBlogs.map((r, i) => (
-                <Option key={i} value={r._id}>
+              {allBlogs.map((r) => (
+                <Option key={r._id} value={r._id}>
                   {r.title}
                 </Option>
               ))}
@@ -268,14 +279,14 @@ function NewBlog({ setCurrentSelection }) {
           onFinishFailed={onFinishFailed}
         >
           <Form.Item
-            label="Title"
+            label={<T>admin.title</T>}
             name="recipeName"
             rules={[{ required: true, message: "Please input title!" }]}
           >
             <Input value={title} onChange={(e) => setTitle(e.target.value)} />
           </Form.Item>
           <Form.Item
-            label="Featured Image"
+            label={<T>admin.featured_image</T>}
             name="featuredImage"
             rules={[
               { required: true, message: "Please input featured image!" },
@@ -288,7 +299,7 @@ function NewBlog({ setCurrentSelection }) {
                 setMediaManagerActions([featuredImage, setFeaturedImage]);
               }}
             >
-              Upload File
+              <T>admin.upload_file</T>
             </Button>
             {featuredImage && (
               <div
@@ -316,7 +327,7 @@ function NewBlog({ setCurrentSelection }) {
             )}
           </Form.Item>
           <Form.Item
-            label="Paragraph"
+            label={<T>admin.paragraph</T>}
             name="paragraph"
             rules={[{ required: true }]}
           >
@@ -327,7 +338,7 @@ function NewBlog({ setCurrentSelection }) {
             /> */}
             <TextEditor value={paragraph} setValue={setParagraph} />
           </Form.Item>
-          <Form.Item label="Video Link" name="videoLink">
+          <Form.Item label={<T>admin.video_link</T>} name="videoLink">
             <Button
               onClick={() => {
                 setMediaManagerVisible(true);
@@ -335,7 +346,7 @@ function NewBlog({ setCurrentSelection }) {
                 setMediaManagerActions([videoLink, setVideLink]);
               }}
             >
-              Upload File
+              <T>admin.upload_file</T>
             </Button>
             {videoLink && (
               <div className="font-paragraph-black">
@@ -347,7 +358,7 @@ function NewBlog({ setCurrentSelection }) {
               </div>
             )}
           </Form.Item>
-          <Form.Item label="Category" name="category">
+          <Form.Item label={<T>admin.category</T>} name="category">
             <Select
               allowClear
               style={{ width: "100%" }}
@@ -369,7 +380,7 @@ function NewBlog({ setCurrentSelection }) {
               }}
               onClick={() => setCategoryModalVisible(true)}
             >
-              Manage Blog Categories
+              <T>admin.manage_categories</T>
             </Button>
           </Form.Item>
           {userInfo.role === "admin" && (
@@ -380,7 +391,7 @@ function NewBlog({ setCurrentSelection }) {
                   checked={userCreatePost}
                   onChange={(e) => setUserCreatePost(e.target.checked)}
                 >
-                  Create a post
+                  <T>admin.create_post</T>
                 </Checkbox>
               </Form.Item>
               <Form.Item>
@@ -388,7 +399,7 @@ function NewBlog({ setCurrentSelection }) {
                   checked={isPublic}
                   onChange={(e) => setIsPublic(e.target.checked)}
                 >
-                  Make Public
+                  <T>admin.make_public</T>
                 </Checkbox>
               </Form.Item>
               <Form.Item>
@@ -396,7 +407,7 @@ function NewBlog({ setCurrentSelection }) {
                   checked={allowReviews}
                   onChange={(e) => setAllowReviews(e.target.checked)}
                 >
-                  Allow Reviews
+                  <T>admin.allow_reviews</T>
                 </Checkbox>
               </Form.Item>
               <Form.Item>
@@ -404,7 +415,7 @@ function NewBlog({ setCurrentSelection }) {
                   checked={allowComments}
                   onChange={(e) => setAllowComments(e.target.checked)}
                 >
-                  Allow Comments
+                  <T>admin.allow_comments</T>
                 </Checkbox>
               </Form.Item>
             </>

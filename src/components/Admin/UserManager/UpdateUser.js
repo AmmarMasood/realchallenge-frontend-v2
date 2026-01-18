@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Form, Input, Button, Select, Modal } from "antd";
 import {
   LoadingOutlined,
@@ -7,11 +7,14 @@ import {
 } from "@ant-design/icons";
 import { registerUser } from "../../../services/authentication";
 import RemoteMediaManager from "../MediaManager/RemoteMediaManager";
-import { updateUserProfileByAdmin } from "../../../services/users";
+import { updateUserProfileByAdmin, updateUserRoles } from "../../../services/users";
 import {
   getAllTrainerGoals,
   updateTrainerById,
 } from "../../../services/trainers";
+import { LanguageContext } from "../../../contexts/LanguageContext";
+import { T } from "../../Translate";
+import { get } from "lodash";
 
 const { Option } = Select;
 function UpdateUser({
@@ -22,6 +25,7 @@ function UpdateUser({
   fetchUsers,
   allChallengeGoals,
 }) {
+  const { strings } = useContext(LanguageContext);
   const [form] = Form.useForm();
   // media manager stuff
   const [mediaManagerVisible, setMediaManagerVisible] = useState(false);
@@ -33,7 +37,8 @@ function UpdateUser({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("");
+  const [selectedRoles, setSelectedRoles] = useState([]);
+  const [rolesChanged, setRolesChanged] = useState(false);
   const [avatar, setAvatar] = useState("");
   const [membership, setMembership] = useState("");
   const [hero, setHero] = useState("");
@@ -53,12 +58,17 @@ function UpdateUser({
     setAllCountries(allCountries);
     fetchData();
     console.log("user info", userInfo);
+    // Initialize roles from roles array or single role field
+    const initialRoles = userInfo.roles && userInfo.roles.length > 0
+      ? userInfo.roles.map(r => r.toUpperCase())
+      : userInfo.role ? [userInfo.role.toUpperCase()] : [];
+
     form.setFieldsValue({
       username: userInfo.username,
       firstName: userInfo.firstName,
       lastName: userInfo.lastName,
       email: userInfo.email,
-      role: userInfo.role ? userInfo.role.toUpperCase() : "",
+      roles: initialRoles,
       bio: userInfo.bio,
       country: userInfo.country,
       avatarLink: userInfo.avatarLink,
@@ -87,7 +97,8 @@ function UpdateUser({
         link: userInfo.videoTrailerLink,
       });
 
-    userInfo.role && setRole(userInfo.role.toUpperCase());
+    setSelectedRoles(initialRoles);
+    setRolesChanged(false);
   }, []);
 
   const onFinish = (values) => {
@@ -121,6 +132,19 @@ function UpdateUser({
   //   return retVal;
   // }
 
+  const saveRoles = async () => {
+    if (rolesChanged && selectedRoles.length > 0) {
+      setLoading(true);
+      const rolesLowerCase = selectedRoles.map(r => r.toLowerCase());
+      const result = await updateUserRoles(userInfo._id, rolesLowerCase);
+      if (result) {
+        setRolesChanged(false);
+        fetchUsers();
+      }
+      setLoading(false);
+    }
+  };
+
   const createANewUser = async () => {
     let flag = false;
     console.log("here", flag);
@@ -129,27 +153,34 @@ function UpdateUser({
     }
     console.log("here", flag);
     if (flag) {
-      if (role === "ADMIN") {
+      setLoading(true);
+
+      // Save roles if changed
+      if (rolesChanged && selectedRoles.length > 0) {
+        const rolesLowerCase = selectedRoles.map(r => r.toLowerCase());
+        await updateUserRoles(userInfo._id, rolesLowerCase);
+        setRolesChanged(false);
+      }
+
+      if (selectedRoles.includes("ADMIN")) {
         const data = {
           firstName,
           lastName,
           email,
           username,
           gender,
-          role: role.toLowerCase(),
         };
         const res = await updateUserProfileByAdmin(data, userInfo._id);
         fetchUsers();
-        console.log("ADMIN CREATED", res);
+        console.log("ADMIN UPDATED", res);
         setLoading(false);
-      } else if (role === "TRAINER") {
+      } else if (selectedRoles.includes("TRAINER")) {
         const data = {
           firstName,
           lastName,
           password,
           email,
           username,
-          role: role.toLowerCase(),
           heroBanner: typeof hero === "object" ? hero.link : hero,
           videoTrailerLink:
             typeof videoTrailer === "object" ? videoTrailer.link : videoTrailer,
@@ -163,7 +194,7 @@ function UpdateUser({
         };
         const res = await updateTrainerById(userInfo._id, data);
         fetchUsers();
-        console.log("TRAINER CREATED", res);
+        console.log("TRAINER UPDATED", res);
         setLoading(false);
       } else {
         const data = {
@@ -173,7 +204,6 @@ function UpdateUser({
           email,
           username,
           gender,
-          role: role.toLowerCase(),
           hero: typeof hero === "object" ? hero.link : hero,
           videoTrailer:
             typeof videoTrailer === "object" ? videoTrailer.link : videoTrailer,
@@ -184,7 +214,7 @@ function UpdateUser({
         };
         const res = await updateUserProfileByAdmin(data, userInfo._id);
 
-        console.log("AUTHOR NUTRIENT SHOP MANAGER CREATED", res);
+        console.log("USER UPDATED", res);
         fetchUsers();
         setLoading(false);
       }
@@ -206,7 +236,7 @@ function UpdateUser({
         type={mediaManagerType}
         actions={mediaManagerActions}
       />
-      <h2 className="font-heading-white">Update User</h2>
+      <h2 className="font-heading-white"><T>admin.update_user</T></h2>
       <div
         className="admin-newuser-container"
         style={{ padding: "50px 50px 50px 20px" }}
@@ -220,9 +250,9 @@ function UpdateUser({
           onFinishFailed={onFinishFailed}
         >
           <Form.Item
-            label="Username"
+            label={<T>admin.username</T>}
             name="username"
-            rules={[{ required: true, message: "Please input username!" }]}
+            rules={[{ required: true, message: get(strings, "admin.please_input_username", "Please input username!") }]}
           >
             <Input
               value={username}
@@ -231,15 +261,15 @@ function UpdateUser({
           </Form.Item>
           <Form.Item
             name="email"
-            label="Email Address"
+            label={<T>admin.email_address</T>}
             rules={[
               {
                 type: "email",
-                message: "The input is not valid E-mail!",
+                message: get(strings, "admin.invalid_email", "The input is not valid E-mail!"),
               },
               {
                 required: true,
-                message: "Please input your E-mail!",
+                message: get(strings, "admin.please_input_email", "Please input your E-mail!"),
               },
             ]}
           >
@@ -250,7 +280,7 @@ function UpdateUser({
             />
           </Form.Item>
           <Form.Item
-            label="First Name"
+            label={<T>admin.first_name</T>}
             name="firstName"
             rules={[
               {
@@ -264,7 +294,7 @@ function UpdateUser({
             />
           </Form.Item>
           <Form.Item
-            label="Last Name"
+            label={<T>admin.last_name</T>}
             name="lastName"
             rules={[
               {
@@ -278,17 +308,17 @@ function UpdateUser({
             />
           </Form.Item>
 
-          <Form.Item name="gender" label="Gender">
+          <Form.Item name="gender" label={<T>admin.gender</T>}>
             <Select
               className="field-focus-orange-border"
-              placeholder="Select A Gender"
+              placeholder={get(strings, "admin.select_gender", "Select A Gender")}
               value={gender}
               onChange={(e) => setGender(e)}
               allowClear
             >
-              <Option value="male">Male</Option>
-              <Option value="female">Female</Option>
-              <Option value="other">Other</Option>
+              <Option value="male"><T>admin.male</T></Option>
+              <Option value="female"><T>admin.female</T></Option>
+              <Option value="other"><T>admin.other</T></Option>
             </Select>
           </Form.Item>
 
@@ -317,32 +347,59 @@ function UpdateUser({
           </Form.Item> */}
 
           <Form.Item
-            name="role"
-            label="Role"
+            name="roles"
+            label={<T>admin.roles</T>}
             rules={[
               {
                 required: true,
+                message: get(strings, "admin.please_select_role", "Please select at least one role"),
               },
             ]}
+            extra={
+              <span style={{ color: "#888", fontSize: "12px" }}>
+                <T>admin.role_combination_hint</T>
+              </span>
+            }
           >
             <Select
-              disabled={true}
+              mode="multiple"
               className="field-focus-orange-border"
-              placeholder="Select A Role"
-              onChange={(e) => setRole(e)}
+              placeholder={get(strings, "admin.select_roles", "Select Role(s)")}
+              value={selectedRoles}
+              onChange={(values) => {
+                // Handle role combination rules
+                if (values.includes("ADMIN")) {
+                  setSelectedRoles(["ADMIN"]);
+                } else if (values.includes("CUSTOMER")) {
+                  setSelectedRoles(["CUSTOMER"]);
+                } else {
+                  setSelectedRoles(values);
+                }
+                setRolesChanged(true);
+              }}
               allowClear
             >
-              <Option value="ADMIN">Admin</Option>
-              <Option value="TRAINER">Trainer</Option>
-              <Option value="AUTHOR">Author</Option>
-              <Option value="NUTRITIONIST">Nutritionist</Option>
-              <Option value="SHOP-MANAGER">Shop Manager</Option>
+              <Option value="ADMIN" disabled={selectedRoles.length > 0 && !selectedRoles.includes("ADMIN")}>
+                <T>admin.admin_role</T>
+              </Option>
+              <Option value="TRAINER" disabled={selectedRoles.includes("ADMIN") || selectedRoles.includes("CUSTOMER")}>
+                <T>admin.trainer_role</T>
+              </Option>
+              <Option value="BLOGGER" disabled={selectedRoles.includes("ADMIN") || selectedRoles.includes("CUSTOMER")}>
+                <T>admin.blogger_role</T>
+              </Option>
+              <Option value="NUTRIST" disabled={selectedRoles.includes("ADMIN") || selectedRoles.includes("CUSTOMER")}>
+                <T>admin.nutrist_role</T>
+              </Option>
+              <Option value="SHOPMANAGER" disabled={selectedRoles.includes("ADMIN") || selectedRoles.includes("CUSTOMER")}>
+                <T>admin.shopmanager_role</T>
+              </Option>
             </Select>
           </Form.Item>
-          {role.includes("CUSTOMER") ? (
+          {selectedRoles.includes("CUSTOMER") ? (
             <Form.Item
               name="membership"
-              label="Membership"
+              label={<T>admin.membership</T>}
               rules={[
                 {
                   required: true,
@@ -352,7 +409,7 @@ function UpdateUser({
               <Select
                 mode="multiple"
                 className="field-focus-orange-border"
-                placeholder="Select A Membership"
+                placeholder={get(strings, "admin.select_membership", "Select A Membership")}
                 onChange={(e) => setMembership(e)}
                 allowClear
               >
@@ -370,9 +427,9 @@ function UpdateUser({
             ""
           )}
 
-          {!role.includes("ADMIN") && (
+          {!selectedRoles.includes("ADMIN") && (
             <>
-              <Form.Item label="Avatar" name="avatar">
+              <Form.Item label={<T>admin.avatar</T>} name="avatar">
                 <Button
                   onClick={() => {
                     setMediaManagerVisible(true);
@@ -380,7 +437,7 @@ function UpdateUser({
                     setMediaManagerActions([avatar, setAvatar]);
                   }}
                 >
-                  Upload Image
+                  <T>admin.upload_image</T>
                 </Button>
                 {avatar && (
                   <div style={{ margin: "10px" }}>
@@ -406,7 +463,7 @@ function UpdateUser({
                 )}
               </Form.Item>
 
-              <Form.Item label="Hero" name="hero">
+              <Form.Item label={<T>admin.hero</T>} name="hero">
                 <Button
                   onClick={() => {
                     setMediaManagerVisible(true);
@@ -414,7 +471,7 @@ function UpdateUser({
                     setMediaManagerActions([hero, setHero]);
                   }}
                 >
-                  Upload Image
+                  <T>admin.upload_image</T>
                 </Button>
                 {hero && (
                   <div style={{ margin: "10px" }}>
@@ -435,7 +492,7 @@ function UpdateUser({
                 )}
               </Form.Item>
 
-              <Form.Item label="Video Trailer" name="videoTrailer">
+              <Form.Item label={<T>admin.video_trailer</T>} name="videoTrailer">
                 <Button
                   onClick={() => {
                     setMediaManagerVisible(true);
@@ -443,7 +500,7 @@ function UpdateUser({
                     setMediaManagerActions([videoTrailer, setVideoTrailer]);
                   }}
                 >
-                  Upload Video
+                  <T>admin.upload_video</T>
                 </Button>
                 {videoTrailer && (
                   <div style={{ margin: "10px" }}>
@@ -457,20 +514,20 @@ function UpdateUser({
                   </div>
                 )}
               </Form.Item>
-              <Form.Item label="Motto" name="motto">
+              <Form.Item label={<T>admin.motto</T>} name="motto">
                 <Input
                   value={motto}
                   onChange={(e) => setMotto(e.target.value)}
                 />
               </Form.Item>
-              <Form.Item label="Bio" name="bio">
+              <Form.Item label={<T>admin.bio</T>} name="bio">
                 <Input.TextArea
                   rows={8}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                 />
               </Form.Item>
-              <Form.Item label="Country" name="country">
+              <Form.Item label={<T>admin.country</T>} name="country">
                 <Select
                   value={country}
                   style={{ width: "100%" }}
@@ -484,8 +541,8 @@ function UpdateUser({
               </Form.Item>
             </>
           )}
-          {role.includes("TRAINER") && (
-            <Form.Item label="Goals" name="goals">
+          {selectedRoles.includes("TRAINER") && (
+            <Form.Item label={<T>admin.goals</T>} name="goals">
               <Select
                 value={goals}
                 style={{ width: "100%" }}
@@ -498,13 +555,13 @@ function UpdateUser({
               </Select>
             </Form.Item>
           )}
-          {role.includes("TRAINER") && (
-            <Form.Item label="Fitness Interests" name="fitnessInterest">
+          {selectedRoles.includes("TRAINER") && (
+            <Form.Item label={<T>admin.fitness_interests</T>} name="fitnessInterest">
               <Select
                 mode="multiple"
                 allowClear
                 style={{ width: "100%" }}
-                placeholder="Please select"
+                placeholder={get(strings, "admin.please_select", "Please select")}
                 value={
                   selectedFitnessInterest.length <= 0
                     ? []
@@ -529,7 +586,7 @@ function UpdateUser({
               }}
               onClick={createANewUser}
             >
-              Update
+              <T>admin.update</T>
             </Button>
           </Form.Item>
         </Form>

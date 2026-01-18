@@ -5,8 +5,13 @@ import ChalleengeProfileFether from "../../images/challenge-profile-cover-feathe
 import StarFilled from "../../assets/icons/star-orange.svg";
 import StartTransparent from "../../assets/icons/star-transparent.svg";
 import DownArrow from "../../assets/icons/down-orange-arrow.svg";
+import { T } from "../Translate";
+import { LanguageContext } from "../../contexts/LanguageContext";
+import { useContext } from "react";
+import { get } from "lodash";
 
 function ChallengeProfileWeb(props) {
+  const { language, strings } = useContext(LanguageContext);
   const {
     challengeName,
     reviews,
@@ -82,7 +87,7 @@ function ChallengeProfileWeb(props) {
                   <div className="flex-row">
                     <img className="stars" src={StarFilled} />
                     <div className="address valign-text-middle poppins-medium-sandy-brown-14px">
-                      {reviews.length} REVIEWS
+                      {reviews.length} <T>challenge_profile.reviews</T>
                     </div>
                   </div>
                 )}
@@ -93,12 +98,12 @@ function ChallengeProfileWeb(props) {
                       <img className="group-9892" src={"group9892"} />
                     </div>
                     <div className="gemiddeld valign-text-middle poppins-normal-white-16px">
-                      gemiddeld
+                      <T>challenge_profile.medium_difficulty</T>
                     </div>
                   </div>
                   <div className="overlap-group10">
                     <div className="kort valign-text-middle poppins-normal-white-16px">
-                      kort
+                      <T>challenge_profile.short_duration</T>
                     </div>
                   </div>
                 </div>
@@ -116,7 +121,7 @@ function ChallengeProfileWeb(props) {
             <div className="subscription" style={{ border: "3px solid red" }}>
               <div className="flex-row-2">
                 <div className="subscription-1 poppins-light-sonic-silver-14px">
-                  SUBSCRIPTION
+                  <T>challenge_profile.subscription</T>
                 </div>
                 <img className="help-icon" src={"helpIcon"} />
                 <img className="vector-2" src={"vector2"} />
@@ -126,28 +131,28 @@ function ChallengeProfileWeb(props) {
                 style={{ border: "3px solid yellow" }}
               >
                 <div className="flex-col">
-                  <p className="text-1">Get access to all features</p>
+                  <p className="text-1"><T>challenge_profile.get_access_all_features</T></p>
                   <div className="overlap-group14">
                     <div className="one-time-challenge poppins-medium-white-20px">
-                      One-Time Challenge
+                      <T>challenge_profile.one_time_challenge</T>
                     </div>
                     <div className="price poppins-medium-white-28px">€35</div>
                     <div className="no-subscription poppins-light-white-14px">
-                      No subscription
+                      <T>challenge_profile.no_subscription</T>
                     </div>
                     <div className="billed-once poppins-light-star-dust-10px">
-                      Billed once
+                      <T>challenge_profile.billed_once</T>
                     </div>
                   </div>
                 </div>
                 <div className="overlap-group13 border-2px-tango">
                   <div className="repeat-save poppins-medium-white-20px">
-                    Repeat & Save
+                    <T>challenge_profile.repeat_save</T>
                   </div>
                   <div className="overlap-group8-1">
                     <div className="save-up-to poppins-medium-white-10px">
                       <span className="poppins-medium-white-10px">
-                        Save up to
+                        <T>challenge_profile.save_up_to</T>
                       </span>
                       <span className="span1 poppins-medium-white-16px">
                         60%
@@ -158,23 +163,23 @@ function ChallengeProfileWeb(props) {
                     <div className="price-1 poppins-medium-white-29px">
                       €4.5
                     </div>
-                    <div className="week poppins-light-white-10px">/Week</div>
+                    <div className="week poppins-light-white-10px"><T>challenge_profile.per_week</T></div>
                   </div>
                   <div className="address-1 poppins-light-white-14px">
-                    12 months plan
+                    <T>challenge_profile.twelve_months_plan</T>
                   </div>
                   <div className="billed-monthly poppins-light-star-dust-10px">
-                    Billed monthly
+                    <T>challenge_profile.billed_monthly</T>
                   </div>
                 </div>
                 <div className="overlap-group16">
                   <div className="repeat-save-1 poppins-medium-white-21px">
-                    Repeat & Save
+                    <T>challenge_profile.repeat_save</T>
                   </div>
                   <div className="overlap-group7-2">
                     <div className="save-up-to poppins-medium-white-10px">
                       <span className="poppins-medium-white-10px">
-                        Save up to
+                        <T>challenge_profile.save_up_to</T>
                       </span>
                       <span className="span1 poppins-medium-white-16px">
                         30%
@@ -183,13 +188,13 @@ function ChallengeProfileWeb(props) {
                   </div>
                   <div className="flex-row-5">
                     <div className="price-2 poppins-medium-white-29px">€6</div>
-                    <div className="week-1 poppins-light-white-10px">/Week</div>
+                    <div className="week-1 poppins-light-white-10px"><T>challenge_profile.per_week</T></div>
                   </div>
                   <div className="address-2 poppins-light-white-14px">
-                    3 months plan
+                    <T>challenge_profile.three_months_plan</T>
                   </div>
                   <div className="billed-monthly-1 poppins-light-star-dust-10px-2">
-                    Billed monthly
+                    <T>challenge_profile.billed_monthly</T>
                   </div>
                 </div>
               </div>

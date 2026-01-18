@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Button, Input, Modal, Form, InputNumber, Switch, Select } from "antd";
 import { updateCoupon } from "../../../services/coupons";
+import { LanguageContext } from "../../../contexts/LanguageContext";
+import { T } from "../../Translate";
+import { get } from "lodash";
 
 function UpdateCoupon({
   visible,
@@ -9,6 +12,7 @@ function UpdateCoupon({
   fetchData,
   allChallenges,
 }) {
+  const { strings } = useContext(LanguageContext);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState();
   const [code, setCode] = useState("");
@@ -50,7 +54,7 @@ function UpdateCoupon({
       fetchData();
       console.log(res);
     } else {
-      alert("Please enter coupon code");
+      alert(get(strings, "admin.please_enter_coupon_code", "Please enter coupon code"));
     }
     setLoading(false);
   };
@@ -66,7 +70,7 @@ function UpdateCoupon({
       footer={false}
       onCancel={() => setVisible(false)}
     >
-      <h2 className="font-heading-white">Update Coupon</h2>
+      <h2 className="font-heading-white"><T>admin.update_coupon</T></h2>
       <div
         className="admin-newuser-container"
         style={{ padding: "50px 50px 50px 20px" }}
@@ -80,58 +84,58 @@ function UpdateCoupon({
           form={form}
         >
           <Form.Item
-            label="Name"
+            label={<T>admin.coupon_name</T>}
             name="name"
-            rules={[{ required: true, message: "Please input coupon name!" }]}
+            rules={[{ required: true, message: get(strings, "admin.please_input_coupon_name", "Please input coupon name!") }]}
             type="number"
           >
             <Input style={{ width: "100%" }} />
           </Form.Item>
 
-          <Form.Item label="Coupon Code" name="couponCode">
+          <Form.Item label={<T>admin.coupon_code</T>} name="couponCode">
             <Input value={code} onChange={(e) => setCode(e.target.value)} />
           </Form.Item>
 
           <Form.Item
-            label="Discount"
+            label={<T>admin.discount</T>}
             name="discount"
-            rules={[{ required: true, message: "Please input discount!" }]}
+            rules={[{ required: true, message: get(strings, "admin.please_input_discount", "Please input discount!") }]}
             type="number"
           >
             <Input
-              placeholder="Must be in percentage eg 10"
+              placeholder={get(strings, "admin.discount_placeholder", "Must be in percentage eg 10")}
               type="number"
               style={{ width: "100%" }}
             />
           </Form.Item>
           <Form.Item
-            label="Usage Count"
+            label={<T>admin.usage_count</T>}
             name="usageCount"
             rules={[
               {
                 required: true,
-                message: "Please input number of times the code can be used!",
+                message: get(strings, "admin.please_input_usage_count", "Please input number of times the code can be used!"),
               },
             ]}
             type="number"
           >
             <InputNumber style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item label="Active" name="active">
+          <Form.Item label={<T>admin.active_label</T>} name="active">
             <Switch
-              checkedChildren="is active"
-              unCheckedChildren="not active"
+              checkedChildren={get(strings, "admin.is_active", "is active")}
+              unCheckedChildren={get(strings, "admin.not_active", "not active")}
               checked={active}
               onChange={(e) => setActive(e)}
             />
           </Form.Item>
-          <Form.Item label="Applicable On Specific Plan" name="applicableOn">
+          <Form.Item label={<T>admin.applicable_on_plan</T>} name="applicableOn">
             <Select
               mode="multiple"
               allowClear
               style={{ width: "100%" }}
               value={applicableOn}
-              placeholder="Please select"
+              placeholder={get(strings, "admin.please_select", "Please select")}
               onChange={(e) => setApplicableOn(e)}
             >
               {[
@@ -147,7 +151,7 @@ function UpdateCoupon({
             </Select>
           </Form.Item>
           <Form.Item
-            label="Applicable On Specific Challenge"
+            label={<T>admin.applicable_on_challenge</T>}
             name="challengesApplicableOn"
           >
             <Select
@@ -155,7 +159,7 @@ function UpdateCoupon({
               allowClear
               style={{ width: "100%" }}
               value={challengesApplicableOn}
-              placeholder="Please select"
+              placeholder={get(strings, "admin.please_select", "Please select")}
               onChange={(e) => setChallengesApplicableOn(e)}
             >
               {allChallenges.map((e, i) => (
@@ -176,7 +180,7 @@ function UpdateCoupon({
                 marginTop: "10px",
               }}
             >
-              Update
+              <T>admin.update</T>
             </Button>
           </Form.Item>
         </Form>

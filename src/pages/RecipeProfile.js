@@ -22,6 +22,7 @@ import {
   getRecipeById,
   favouriteRecipeById,
   addRecipeComment,
+  getRecipeByTranslationKey,
 } from "../services/recipes";
 import { userInfoContext } from "../contexts/UserStore";
 import ChallengeReviewModal from "../components/Challenge/ChallengeReviewModal";
@@ -55,13 +56,21 @@ function RecipeProfile(props) {
   const fetchData = async () => {
     if (Object.keys(recipe).length > 0) {
       if (recipe.language === language) {
+        // Language matches, no need to redirect
       } else {
-        if (recipe.alternativeLanguage) {
-          window.location.href = `${
-            process.env.REACT_APP_FRONTEND_SERVER
-          }/recipe/${slug(recipe.alternativeLanguage.name)}/${
-            recipe.alternativeLanguage._id
-          }`;
+        // Use translationKey to find the recipe in the selected language
+        if (recipe.translationKey) {
+          const translatedRecipe = await getRecipeByTranslationKey(
+            recipe.translationKey,
+            language
+          );
+          if (translatedRecipe && translatedRecipe.recipe) {
+            window.location.href = `${
+              process.env.REACT_APP_FRONTEND_SERVER
+            }/recipe/${slug(translatedRecipe.recipe.name)}/${
+              translatedRecipe.recipe._id
+            }`;
+          }
         }
       }
     } else {
@@ -361,78 +370,80 @@ function RecipeProfile(props) {
                   <span style={{ color: "black" }}>{comment.comment}</span>
                 </div>
               ))} */}
-          <div
-            className="trainer-profile-goals"
-            style={{
-              borderBottom: "1px solid transparent",
-              backgroundColor: "#e1e9f2",
-              padding: "10px",
-            }}
-          >
+          {recipe.allowComments && (
             <div
-              className="trainer-profile-goals-heading font-paragraph-white"
+              className="trainer-profile-goals"
               style={{
-                color: "#72777B",
-                textTransform: "uppercase",
+                borderBottom: "1px solid transparent",
+                backgroundColor: "#e1e9f2",
+                padding: "10px",
               }}
             >
-              <T>challenge_profile.comments</T>
-            </div>
-            {allComments.map((c) => (
-              <div className="comment-container">
-                <div className="comment-container-c1 font-paragraph-black">
-                  <Avatar src={c.user.avatarLink} shape="square" />{" "}
-                  <span style={{ marginLeft: "5px" }}>{c.user.username}</span>
-                  <div className="comment-container-c2 font-paragraph-black">
-                    {c.text}
+              <div
+                className="trainer-profile-goals-heading font-paragraph-white"
+                style={{
+                  color: "#72777B",
+                  textTransform: "uppercase",
+                }}
+              >
+                <T>challenge_profile.comments</T>
+              </div>
+              {allComments.map((c) => (
+                <div className="comment-container" key={c._id}>
+                  <div className="comment-container-c1 font-paragraph-black">
+                    <Avatar src={c.user.avatarLink} shape="square" />{" "}
+                    <span style={{ marginLeft: "5px" }}>{c.user.username}</span>
+                    <div className="comment-container-c2 font-paragraph-black">
+                      {c.text}
+                    </div>
+                  </div>
+
+                  <div
+                    className="font-paragraph-white comment-container-c3"
+                    style={{ color: "#82868b" }}
+                  >
+                    {moment(c.createdAt).format("MMM, Do YYYY")}
                   </div>
                 </div>
-
-                <div
-                  className="font-paragraph-white comment-container-c3"
-                  style={{ color: "#82868b" }}
-                >
-                  {moment(c.createdAt).format("MMM, Do YYYY")}
-                </div>
-              </div>
-            ))}
-            {localStorage.getItem("jwtToken") && (
-              <>
-                <div
-                  className="trainer-profile-goals-container"
-                  style={{ marginTop: "10px" }}
-                >
-                  <Input.TextArea
-                    rows={4}
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                  />
-                </div>
-                {commentButtonLoading ? (
-                  <LoadingOutlined
-                    style={{
-                      color: "#ff7700",
-                      fontSize: "30px",
-                      marginTop: "10px",
-                    }}
-                  />
-                ) : (
-                  <button
-                    className="common-transparent-button font-paragraph-white"
-                    onClick={postCommentToBackend}
-                    style={{
-                      color: "#ff7700",
-                      borderColor: "#ff7700",
-                      marginTop: "10px",
-                      cursor: "pointer",
-                    }}
+              ))}
+              {localStorage.getItem("jwtToken") && (
+                <>
+                  <div
+                    className="trainer-profile-goals-container"
+                    style={{ marginTop: "10px" }}
                   >
-                    <T>common.postComment</T>
-                  </button>
-                )}
-              </>
-            )}
-          </div>
+                    <Input.TextArea
+                      rows={4}
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                    />
+                  </div>
+                  {commentButtonLoading ? (
+                    <LoadingOutlined
+                      style={{
+                        color: "#ff7700",
+                        fontSize: "30px",
+                        marginTop: "10px",
+                      }}
+                    />
+                  ) : (
+                    <button
+                      className="common-transparent-button font-paragraph-white"
+                      onClick={postCommentToBackend}
+                      style={{
+                        color: "#ff7700",
+                        borderColor: "#ff7700",
+                        marginTop: "10px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <T>common.postComment</T>
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
           {/* </div>
           </div> */}
           {!localStorage.getItem("jwtToken") && (

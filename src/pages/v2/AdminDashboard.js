@@ -6,7 +6,7 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { EditFilled, DeleteFilled, LoadingOutlined } from "@ant-design/icons";
 import { Link, withRouter } from "react-router-dom";
-import { debounce } from "lodash";
+import { debounce, get } from "lodash";
 import PopupPlayer from "../../components/PopupPlayer/PopupPlayer";
 import ChallengeCard from "../../components/Cards/ChallengeCard";
 import {
@@ -23,6 +23,7 @@ import slug from "elegant-slug";
 import { Helmet } from "react-helmet";
 import { T } from "../../components/Translate";
 import { userInfoContext } from "../../contexts/UserStore";
+import { hasRole, hasAnyRole } from "../../helpers/roleHelpers";
 import {
   getUsersProfile,
   updateUserProfileByAdmin,
@@ -45,7 +46,7 @@ import BlogIcon from "../../assets/icons/create-blog-icon.svg";
 import ChallengeIcon from "../../assets/icons/challenge-icon-white.svg";
 
 function AdminDashboard(props) {
-  const { language } = useContext(LanguageContext);
+  const { language, strings } = useContext(LanguageContext);
   const [open, setOpen] = useState(false);
   const [adminInfo, setAdminInfo] = useContext(userInfoContext);
   const [loading, setLoading] = useState(false);
@@ -425,7 +426,7 @@ function AdminDashboard(props) {
         <div
           className="trainer-profile-container-column1"
           style={{
-            background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39))${
+            backgroundImage: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39))${
               heroBanner ? `, url(${heroBanner.replaceAll(" ", "%20")})` : ""
             }`,
             backgroundSize: "cover",
@@ -446,7 +447,11 @@ function AdminDashboard(props) {
                 className="font-paragraph-white"
                 style={{ fontSize: "14px" }}
               >
-                {heroBanner ? "Change cover picture" : "Add cover picture"}
+                {heroBanner ? (
+                  <T>adminv2.change_cover</T>
+                ) : (
+                  <T>adminv2.add_cover</T>
+                )}
               </span>
             </div>
             <div className="profile-box-row1">
@@ -533,7 +538,11 @@ function AdminDashboard(props) {
                         )}/${trainer._id}`
                       );
                     }}
-                    title="Copy profile link"
+                    title={get(
+                      strings,
+                      "adminv2.copy_profile_link",
+                      "Copy profile link"
+                    )}
                   />
                 </div>
                 <div style={{ paddingTop: "10px" }}>
@@ -563,7 +572,11 @@ function AdminDashboard(props) {
                   style={{ fontSize: "11px", marginBottom: "0px" }}
                   onClick={openForTrailer}
                 >
-                  {videoTrailerLink ? "Update Trailer" : "Add My Trailer"}
+                  {videoTrailerLink ? (
+                    <T>adminv2.update_trailer</T>
+                  ) : (
+                    <T>adminv2.add_trailer</T>
+                  )}
                 </span>
                 <div
                   className="profile-box-row1-playericon new-editable-border"
@@ -667,30 +680,38 @@ function AdminDashboard(props) {
                   <T>adminv2.upload_media</T>
                 </p>
               </div>
-              <div className="adminv2-select" onClick={goToNewExercise}>
-                <img src={DumbBellIcon} alt="upload-icon" />
-                <p>
-                  <T>adminv2.new_exercise</T>
-                </p>
-              </div>
-              <div className="adminv2-select" onClick={goToChallengeCreator}>
-                <img src={ChallengeIcon} alt="upload-icon" />
-                <p>
-                  <T>adminv2.create_challenge</T>
-                </p>
-              </div>
-              <div className="adminv2-select" onClick={goToRecipeCreator}>
-                <img src={RecipeIcon} alt="upload-icon" />
-                <p>
-                  <T>adminv2.create_recipe</T>
-                </p>
-              </div>
-              <div className="adminv2-select" onClick={goToBlogCreator}>
-                <img src={BlogIcon} alt="upload-icon" />
-                <p>
-                  <T>adminv2.create_blog</T>
-                </p>
-              </div>
+              {hasAnyRole(adminInfo, ["admin", "trainer"]) && (
+                <div className="adminv2-select" onClick={goToNewExercise}>
+                  <img src={DumbBellIcon} alt="upload-icon" />
+                  <p>
+                    <T>adminv2.new_exercise</T>
+                  </p>
+                </div>
+              )}
+              {hasAnyRole(adminInfo, ["admin", "trainer"]) && (
+                <div className="adminv2-select" onClick={goToChallengeCreator}>
+                  <img src={ChallengeIcon} alt="upload-icon" />
+                  <p>
+                    <T>adminv2.create_challenge</T>
+                  </p>
+                </div>
+              )}
+              {hasAnyRole(adminInfo, ["admin", "nutrist"]) && (
+                <div className="adminv2-select" onClick={goToRecipeCreator}>
+                  <img src={RecipeIcon} alt="upload-icon" />
+                  <p>
+                    <T>adminv2.create_recipe</T>
+                  </p>
+                </div>
+              )}
+              {hasAnyRole(adminInfo, ["admin", "blogger"]) && (
+                <div className="adminv2-select" onClick={goToBlogCreator}>
+                  <img src={BlogIcon} alt="upload-icon" />
+                  <p>
+                    <T>adminv2.create_blog</T>
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="adminv2-selector">
@@ -747,165 +768,185 @@ function AdminDashboard(props) {
                   className="adminv2-interest-button"
                   onClick={openNewInterestModal}
                 >
-                  + Add New
+                  <T>adminv2.add_new</T>
                 </Button>
               </div>
             </div>
           </div>
 
-          <div
-            className="adminv2-selector-container"
-            style={{
-              width: "100%",
-              padding: "10px",
-            }}
-          >
+          {hasAnyRole(adminInfo, ["admin", "trainer"]) && (
             <div
-              className="adminv2-selector"
-              style={{ cursor: "pointer" }}
-              onClick={() => setOpenExerciseEditListModal(true)}
+              className="adminv2-selector-container"
+              style={{
+                width: "100%",
+                padding: "10px",
+              }}
             >
-              {adminInfo.role === "admin" ? (
-                <h1
-                  style={{
-                    fontSize: "22px",
-                  }}
-                >
-                  All Exercises
-                </h1>
-              ) : (
-                <h1
-                  style={{
-                    fontSize: "22px",
-                  }}
-                >
-                  <T>adminv2.my_exercises</T>
-                </h1>
-              )}
+              <div
+                className="adminv2-selector"
+                style={{ cursor: "pointer" }}
+                onClick={() => setOpenExerciseEditListModal(true)}
+              >
+                {hasRole(adminInfo, "admin") ? (
+                  <h1
+                    style={{
+                      fontSize: "22px",
+                    }}
+                  >
+                    <T>adminv2.all_exercises</T>
+                  </h1>
+                ) : (
+                  <h1
+                    style={{
+                      fontSize: "22px",
+                    }}
+                  >
+                    <T>adminv2.my_exercises</T>
+                  </h1>
+                )}
+              </div>
+              <ModalForEditList
+                data={exercises}
+                open={openExerciseEditListModal}
+                setOpen={setOpenExerciseEditListModal}
+                onClickEdit={goToEditExercise}
+                title={
+                  hasRole(adminInfo, "admin")
+                    ? get(strings, "adminv2.all_exercises", "All Exercises")
+                    : get(strings, "adminv2.my_exercises", "My Exercises")
+                }
+                subtext={get(strings, "adminv2.exercise_id", "Exercise ID")}
+                searchPlaceholder={get(
+                  strings,
+                  "adminv2.search_exercise",
+                  "Search by exercise name"
+                )}
+                searchKeys={["title"]}
+                type={"exercise"}
+              />
             </div>
-            <ModalForEditList
-              data={exercises}
-              open={openExerciseEditListModal}
-              setOpen={setOpenExerciseEditListModal}
-              onClickEdit={goToEditExercise}
-              title={
-                adminInfo.role === "admin" ? "All Exercises" : "My Exercises"
-              }
-              subtext="Exercise ID"
-              searchPlaceholder="Search by exercise name"
-              searchKeys={["title"]}
-              type={"exercise"}
-            />
-          </div>
+          )}
 
-          <div
-            className="adminv2-selector-container"
-            style={{
-              width: "100%",
-              padding: "10px",
-            }}
-          >
+          {hasAnyRole(adminInfo, ["admin", "trainer"]) && (
             <div
-              className="adminv2-selector"
-              style={{ cursor: "pointer" }}
-              onClick={() => setOpenChallengeEditListModal(true)}
+              className="adminv2-selector-container"
+              style={{
+                width: "100%",
+                padding: "10px",
+              }}
             >
-              {adminInfo.role === "admin" ? (
-                <h1
-                  style={{
-                    fontSize: "22px",
-                  }}
-                >
-                  All Challenges
-                </h1>
-              ) : (
-                <h1
-                  style={{
-                    fontSize: "22px",
-                  }}
-                >
-                  <T>adminv2.my_challenges</T>
-                </h1>
-              )}
+              <div
+                className="adminv2-selector"
+                style={{ cursor: "pointer" }}
+                onClick={() => setOpenChallengeEditListModal(true)}
+              >
+                {hasRole(adminInfo, "admin") ? (
+                  <h1
+                    style={{
+                      fontSize: "22px",
+                    }}
+                  >
+                    <T>adminv2.all_challenges</T>
+                  </h1>
+                ) : (
+                  <h1
+                    style={{
+                      fontSize: "22px",
+                    }}
+                  >
+                    <T>adminv2.my_challenges</T>
+                  </h1>
+                )}
+              </div>
+              <ModalForEditList
+                data={challenges}
+                open={openChallengeEditListModal}
+                setOpen={setOpenChallengeEditListModal}
+                onClickEdit={goToEditChallenge}
+                title={
+                  hasRole(adminInfo, "admin")
+                    ? get(strings, "adminv2.all_challenges", "All Challenges")
+                    : get(strings, "adminv2.my_challenges", "My Challenges")
+                }
+                subtext={get(strings, "adminv2.challenge_id", "Challenge ID")}
+                searchPlaceholder={get(
+                  strings,
+                  "adminv2.search_challenge",
+                  "Search by challenge name"
+                )}
+                searchKeys={["challengeName"]}
+                type="challenge"
+              />
             </div>
-            <ModalForEditList
-              data={challenges}
-              open={openChallengeEditListModal}
-              setOpen={setOpenChallengeEditListModal}
-              onClickEdit={goToEditChallenge}
-              title={
-                adminInfo.role === "admin" ? "All Challenges" : "My Challenges"
-              }
-              subtext="Challenge ID"
-              searchPlaceholder="Search by challenge name"
-              searchKeys={["challengeName"]}
-              type="challenge"
-            />
-          </div>
+          )}
 
-          <div
-            className="adminv2-selector-container"
-            style={{
-              width: "100%",
-              padding: "10px",
-            }}
-          >
+          {hasAnyRole(adminInfo, ["admin", "nutrist"]) && (
             <div
-              className="adminv2-selector"
-              style={{ cursor: "pointer" }}
-              onClick={goToAllRecipes}
+              className="adminv2-selector-container"
+              style={{
+                width: "100%",
+                padding: "10px",
+              }}
             >
-              {adminInfo.role === "admin" ? (
-                <h1
-                  style={{
-                    fontSize: "22px",
-                  }}
-                >
-                  All Recipes
-                </h1>
-              ) : (
-                <h1
-                  style={{
-                    fontSize: "22px",
-                  }}
-                >
-                  My Recipes
-                </h1>
-              )}
+              <div
+                className="adminv2-selector"
+                style={{ cursor: "pointer" }}
+                onClick={goToAllRecipes}
+              >
+                {hasRole(adminInfo, "admin") ? (
+                  <h1
+                    style={{
+                      fontSize: "22px",
+                    }}
+                  >
+                    <T>adminv2.all_recipes</T>
+                  </h1>
+                ) : (
+                  <h1
+                    style={{
+                      fontSize: "22px",
+                    }}
+                  >
+                    <T>adminv2.my_recipes</T>
+                  </h1>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div
-            className="adminv2-selector-container"
-            style={{
-              width: "100%",
-              padding: "10px",
-            }}
-          >
+          {hasAnyRole(adminInfo, ["admin", "blogger"]) && (
             <div
-              className="adminv2-selector"
-              style={{ cursor: "pointer" }}
-              onClick={goToAllBlogs}
+              className="adminv2-selector-container"
+              style={{
+                width: "100%",
+                padding: "10px",
+              }}
             >
-              {adminInfo.role === "admin" ? (
-                <h1
-                  style={{
-                    fontSize: "22px",
-                  }}
-                >
-                  All Blogs
-                </h1>
-              ) : (
-                <h1
-                  style={{
-                    fontSize: "22px",
-                  }}
-                >
-                  My Blogs
-                </h1>
-              )}
+              <div
+                className="adminv2-selector"
+                style={{ cursor: "pointer" }}
+                onClick={goToAllBlogs}
+              >
+                {hasRole(adminInfo, "admin") ? (
+                  <h1
+                    style={{
+                      fontSize: "22px",
+                    }}
+                  >
+                    <T>adminv2.all_blogs</T>
+                  </h1>
+                ) : (
+                  <h1
+                    style={{
+                      fontSize: "22px",
+                    }}
+                  >
+                    <T>adminv2.my_blogs</T>
+                  </h1>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
       {/* modaks */}

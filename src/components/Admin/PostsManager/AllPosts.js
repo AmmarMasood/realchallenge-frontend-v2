@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Button, Table, Space, Input } from "antd";
 import {
   getAllPosts,
@@ -7,8 +7,12 @@ import {
 } from "../../../services/posts";
 import moment from "moment";
 import UpdatePost from "./UpdatePost";
+import { LanguageContext } from "../../../contexts/LanguageContext";
+import { T } from "../../Translate";
+import { get } from "lodash";
 
 function AllPosts() {
+  const { strings } = useContext(LanguageContext);
   const [filterAllPosts, setFilterAllPosts] = useState([]);
   const [allPosts, setAllPosts] = useState([]);
   const [show, setShow] = useState("");
@@ -36,31 +40,31 @@ function AllPosts() {
   }, []);
   const columns = [
     {
-      title: "ID",
+      title: <T>admin.id</T>,
       dataIndex: "_id",
       key: "_id",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "User",
+      title: <T>admin.user</T>,
       dataIndex: "username",
       key: "username",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Title",
+      title: <T>admin.title_column</T>,
       dataIndex: "title",
       key: "title",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Type",
+      title: <T>admin.type</T>,
       dataIndex: "type",
       key: "type",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Likes",
+      title: <T>admin.likes</T>,
       key: "likes",
       dataIndex: "likes",
       render: (text) => {
@@ -69,7 +73,7 @@ function AllPosts() {
       },
     },
     {
-      title: "Comments",
+      title: <T>admin.comments</T>,
       key: "comments",
       dataIndex: "comments",
       render: (text) => {
@@ -78,7 +82,7 @@ function AllPosts() {
       },
     },
     {
-      title: "Updated At",
+      title: <T>admin.updated_at</T>,
       key: "date",
       dataIndex: "date",
       render: (text) => (
@@ -88,7 +92,7 @@ function AllPosts() {
       ),
     },
     {
-      title: "Action",
+      title: <T>admin.action</T>,
       key: "challengePreviewLink",
       render: (text, record) => (
         <Space size="middle">
@@ -99,10 +103,10 @@ function AllPosts() {
               setShow(true);
             }}
           >
-            Edit
+            <T>admin.edit</T>
           </Button>
           <Button type="danger" onClick={() => deletePost(text._id)}>
-            Delete
+            <T>admin.delete</T>
           </Button>
         </Space>
       ),
@@ -117,10 +121,10 @@ function AllPosts() {
         onUpdateComplete={onUpdateComplete}
         key={selectedPost ? selectedPost._id : ""}
       />
-      <h2 className="font-heading-black">All Posts</h2>
+      <h2 className="font-heading-black"><T>admin.all_posts</T></h2>
       <div className="admin-allchallenges-list-container">
         <Input
-          placeholder="Search Post By Title"
+          placeholder={get(strings, "admin.search_post_by_title", "Search Post By Title")}
           onChange={(e) =>
             setFilterAllPosts(
               allPosts.filter((post) =>
@@ -130,7 +134,7 @@ function AllPosts() {
           }
         />
         <Input
-          placeholder="Search Post By ID"
+          placeholder={get(strings, "admin.search_post_by_id", "Search Post By ID")}
           style={{ marginTop: "10px" }}
           onChange={(e) =>
             setFilterAllPosts(

@@ -11,9 +11,12 @@ import { getAllTrainers } from "../../../services/trainers";
 import { userInfoContext } from "../../../contexts/UserStore";
 import { T } from "../../Translate";
 import { withRouter } from "react-router-dom";
+import { LanguageContext } from "../../../contexts/LanguageContext";
+import { get } from "lodash";
 // import UpdateExercises from "./UpdateExercises";
 
 function AllExercises(props) {
+  const { strings } = useContext(LanguageContext);
   const [filterAllExercises, setFilterAllExercises] = useState([]);
   const [allExercises, setAllExercises] = useState([]);
   const [selectedExercisesForUpdate, setSelectedExercisesForUpdate] = useState(
@@ -76,19 +79,19 @@ function AllExercises(props) {
   };
   const columns = [
     {
-      title: "Exercise ID",
+      title: <T>admin.exercise_id</T>,
       dataIndex: "_id",
       key: "_id",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Exercise Name",
+      title: <T>admin.exercise_name</T>,
       dataIndex: "title",
       key: "title",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Trainer",
+      title: <T>admin.trainer</T>,
       dataIndex: "trainer",
       key: "trainer",
       render: (text) => (
@@ -96,7 +99,7 @@ function AllExercises(props) {
       ),
     },
     {
-      title: "Updated At",
+      title: <T>admin.updated_at</T>,
       dataIndex: "updatedAt",
       key: "updatedAt",
       render: (text) => (
@@ -106,7 +109,7 @@ function AllExercises(props) {
       ),
     },
     {
-      title: "Created By",
+      title: <T>admin.created_by</T>,
       dataIndex: "user",
       key: "user",
       render: (text) => (
@@ -114,7 +117,7 @@ function AllExercises(props) {
       ),
     },
     {
-      title: "Action",
+      title: <T>admin.action</T>,
       key: "challengePreviewLink",
       render: (text, record) => (
         <Space size="middle">
@@ -142,12 +145,12 @@ function AllExercises(props) {
         fetchExercises={fetchExercises}
         allTrainers={allTrainers}
       />
-      <h2 className="font-heading-black">All Exercises</h2>
+      <h2 className="font-heading-black"><T>admin.all_exercises</T></h2>
       <div className="admin-allchallenges-list-container">
         {userInfo.role === "admin" && (
           <div>
             <span className="font-heading-black" style={{ marginLeft: "10px" }}>
-              Filter By Trainer:
+              <T>admin.filter_by_trainer</T>
             </span>
 
             <Select
@@ -156,7 +159,7 @@ function AllExercises(props) {
               onChange={(e) => setFilter(e)}
             >
               <Select.Option key={1} value={"all"}>
-                All
+                <T>admin.all</T>
               </Select.Option>
               {allTrainers &&
                 allTrainers.map((t, i) => (
@@ -169,7 +172,7 @@ function AllExercises(props) {
         )}
 
         <Input
-          placeholder="Search Exercises By Title"
+          placeholder={get(strings, "admin.search_exercises_by_title", "Search Exercises By Title")}
           onChange={(e) =>
             setFilterAllExercises(
               allExercises.filter((exercise) =>
@@ -183,7 +186,7 @@ function AllExercises(props) {
 
         <Input
           style={{ marginTop: "10px" }}
-          placeholder="Search Exercises By ID"
+          placeholder={get(strings, "admin.search_exercises_by_id", "Search Exercises By ID")}
           onChange={(e) =>
             setFilterAllExercises(
               allExercises.filter((exercise) =>

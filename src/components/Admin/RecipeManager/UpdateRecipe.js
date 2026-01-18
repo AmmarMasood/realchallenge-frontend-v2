@@ -8,6 +8,7 @@ import {
   InputNumber,
   List,
   Checkbox,
+  Alert,
 } from "antd";
 import { PlusOutlined, CloseSquareOutlined } from "@ant-design/icons";
 import { v4 } from "uuid";
@@ -32,6 +33,7 @@ import EditTypeName from "./EditTypeName";
 import TextEditor from "../../TextEditor";
 import { userInfoContext } from "../../../contexts/UserStore";
 import { LanguageContext } from "../../../contexts/LanguageContext";
+import { get } from "lodash";
 const { Option } = Select;
 
 function UpdateRecipe(props) {
@@ -94,7 +96,7 @@ function UpdateRecipe(props) {
   const [selectedItemForUpdateTitle, setSelectedItemForUpdateTitle] =
     useState("");
   const userInfo = useContext(userInfoContext)[0];
-  const { language } = useContext(LanguageContext);
+  const { language, strings } = useContext(LanguageContext);
 
   async function fetchData() {
     const diets = await getAllDietTypes(language);
@@ -176,8 +178,7 @@ function UpdateRecipe(props) {
     setIsPublic(props.selectedProduct.isPublic);
     setAllowComments(props.selectedProduct.allowComments);
     setAllowReviews(props.selectedProduct.allowReviews);
-    props.selectedProduct.alternativeLanguage &&
-      setSelectedRecipe(props.selectedProduct.alternativeLanguage._id);
+    // alternativeLanguage removed - using translationKey for multi-language support
     fetchData();
     fetchAllRecipes();
   }, []);
@@ -216,14 +217,7 @@ function UpdateRecipe(props) {
       isPublic: isPublic,
       allowComments: allowComments,
     };
-    if (selectedRecipe) {
-      d.alternativeLanguage = selectedRecipe;
-
-      await updateRecipe(
-        { alternativeLanguage: props.selectedProduct._id },
-        selectedRecipe
-      );
-    }
+    // alternativeLanguage removed - using translationKey for multi-language support
     await updateRecipe(d, props.selectedProduct._id);
   };
 
@@ -717,23 +711,7 @@ function UpdateRecipe(props) {
           style={{ padding: "50px 50px 50px 20px" }}
         >
           <p>Language: {props.selectedProduct?.language}</p>
-          <div>
-            <span
-              style={{ marginRight: "5px" }}
-            >{`Select alternative language version`}</span>
-            <Select
-              style={{ width: "500px" }}
-              value={selectedRecipe}
-              onChange={(e) => setSelectedRecipe(e)}
-            >
-              <Option value={""}>-</Option>
-              {allRecipes.map((r, i) => (
-                <Option key={i} value={r._id}>
-                  {r.name}
-                </Option>
-              ))}
-            </Select>
-          </div>
+          {/* Alternative language selector removed - using translationKey for multi-language support */}
           <Form
             layout="vertical"
             name="basic"
@@ -1143,6 +1121,14 @@ function UpdateRecipe(props) {
                   </Checkbox>
                 </Form.Item>
               </>
+            )}
+            {!props.selectedProduct.adminApproved && (
+              <Alert
+                message={get(strings, "admin.approval_warning", "This content is pending admin approval and is not visible to the public.")}
+                type="warning"
+                showIcon
+                style={{ marginBottom: "15px", marginTop: "10px" }}
+              />
             )}
             {/* footer */}
             <Form.Item>

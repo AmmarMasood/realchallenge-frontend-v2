@@ -25,6 +25,8 @@ import setAuthToken from "../../../helpers/setAuthToken";
 import { userInfoContext } from "../../../contexts/UserStore";
 import { createPost } from "../../../services/posts";
 import { LanguageContext } from "../../../contexts/LanguageContext";
+import { T } from "../../Translate";
+import { get } from "lodash";
 
 const { TabPane } = Tabs;
 
@@ -142,7 +144,7 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
   //
   const [selectedChallenge, setSelectedChallenge] = useState("");
   const [allChallenges, setAllChallenges] = useState([]);
-  const { language } = useContext(LanguageContext);
+  const { language, strings } = useContext(LanguageContext);
 
   useEffect(() => {
     setAuthToken(localStorage.getItem("jwtToken"));
@@ -179,12 +181,11 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
       informationList,
       weeks,
       trainersFitnessInterest,
-      alternativeLanguage,
+      // alternativeLanguage removed - using translationKey for multi-language support
     } = selectedChallengeForUpdate;
 
     console.log(selectedChallengeForUpdate);
-    // return;
-    alternativeLanguage && setSelectedChallenge(alternativeLanguage._id);
+    // translationKey is preserved automatically during updates
     setName(challengeName);
     setAccess(access);
     setPrice(price);
@@ -382,16 +383,12 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
       allowComments,
       allowReviews,
       isPublic: makePublic,
-      alternativeLanguage: selectedChallenge ? selectedChallenge : null,
+      // alternativeLanguage removed - using translationKey for multi-language support
     };
     console.log("JASON", obj, selectedChallengeForUpdate._id);
     // return;
     const res = await updateChallenge(obj, selectedChallengeForUpdate._id);
-    selectedChallenge &&
-      (await updateChallenge(
-        { alternativeLanguage: selectedChallengeForUpdate._id },
-        selectedChallenge
-      ));
+    // alternativeLanguage update removed - translationKey handles multi-language linking
     console.log("response", res);
     console.log("weeks", workoutIdsThatNeedToBeUpdated);
     // updateWorkouts(obj.weeks);
@@ -423,14 +420,14 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
         style={{ textAlign: "center" }}
       >
         <h1 className="font-heading-white">
-          Create a post about your challenge?
+          <T>admin.create_post_about_challenge</T>
         </h1>
         <Button
           className="common-orange-button font-paragraph-white"
           onClick={() => createAPost()}
           style={{ padding: "5px 10px" }}
         >
-          Create a Post
+          <T>admin.create_a_post</T>
         </Button>
       </Modal>
       <h2 className="font-heading-black">
@@ -438,7 +435,7 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
           onClick={() => setCurrentSelection(6.1)}
           style={{ fontSize: "30px", cursor: "pointer", marginRight: "10px" }}
         />
-        Update Challenge
+        <T>admin.update_challenge</T>
         <Button
           className="font-paragraph-white"
           style={{
@@ -450,14 +447,14 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
           }}
           onClick={updateChallengeButton}
         >
-          Update Challenge
+          <T>admin.update_challenge</T>
         </Button>
       </h2>
 
       <div className="newchallenge-creator-container">
-        <p>Language: {selectedChallengeForUpdate?.language}</p>
+        <p><T>admin.language</T>: {selectedChallengeForUpdate?.language}</p>
         <Tabs defaultActiveKey="1" onChange={callback}>
-          <TabPane tab="Main" key="1">
+          <TabPane tab={get(strings, "admin.tab_main", "Main")} key="1">
             <NewChallengeMainTab
               allChallenges={allChallenges}
               selectedChallenge={selectedChallenge}
@@ -531,7 +528,7 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
               update={true}
             />
           </TabPane>
-          <TabPane tab="Workouts" key="2">
+          <TabPane tab={get(strings, "admin.tab_workouts", "Workouts")} key="2">
             <NewChallengeWorkoutTab
               weeksToBeUpdated={weeksToBeUpdated}
               update={true}
@@ -583,14 +580,14 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
               // updateWorkouts={updateWorkouts}
             />
           </TabPane>
-          <TabPane tab="Music" key="3">
+          <TabPane tab={get(strings, "admin.tab_music", "Music")} key="3">
             <NewChallengeMusicTab
               musics={musics}
               setMusics={setMusics}
               update={true}
             />
           </TabPane>
-          <TabPane tab="Additional" key="4">
+          <TabPane tab={get(strings, "admin.tab_additional", "Additional")} key="4">
             <NewChallengeAdditionalTab
               results={results}
               setResults={setResults}
@@ -609,6 +606,7 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
               // createChallenge={createChallengeButton}
               update={true}
               updateChallenge={updateChallengeButton}
+              adminApproved={selectedChallengeForUpdate?.adminApproved}
             />
           </TabPane>
         </Tabs>

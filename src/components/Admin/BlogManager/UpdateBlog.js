@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Form, Input, Button, Select, Modal, List } from "antd";
+import { Form, Input, Button, Select, Modal, List, Alert } from "antd";
 import { CloseSquareOutlined, LoadingOutlined } from "@ant-design/icons";
 import RemoteMediaManager from "../MediaManager/RemoteMediaManager";
 import {
   createBlogCategory,
   getAllBlogCategories,
-  getAllUserBlogs,
   removeBlogCategory,
 } from "../../../services/blogs";
 import EditCategoryName from "./EditCategoryName";
@@ -13,6 +12,8 @@ import TextEditor from "../../TextEditor";
 import Checkbox from "antd/lib/checkbox/Checkbox";
 import { userInfoContext } from "../../../contexts/UserStore";
 import { LanguageContext } from "../../../contexts/LanguageContext";
+import { T } from "../../Translate";
+import { get } from "lodash";
 
 const { Option } = Select;
 
@@ -42,22 +43,19 @@ function UpdateBlog({ blogInfo, show, setShow, onUpdateComplete }) {
   const [allowComments, setAllowComments] = useState(false);
   const [allowReviews, setAllowReviews] = useState(false);
 
-  const [allBlogs, setAllBlogs] = useState([]);
-  const [selectedBlog, setSelectedBlog] = useState("");
-  const { language } = useContext(LanguageContext);
+  // allBlogs and selectedBlog removed - using translationKey for multi-language support
+  const { language, strings } = useContext(LanguageContext);
 
   const userInfo = useContext(userInfoContext)[0];
   useEffect(() => {
     fethData();
-    getAllBlogsFromBackend();
     form.setFieldsValue({
       title: blogInfo.title,
       paragraph: blogInfo.paragraph,
       category: blogInfo.category,
     });
     blogInfo.category && setCategory(blogInfo.category._id);
-    blogInfo.alternativeLanguage &&
-      setSelectedBlog(blogInfo.alternativeLanguage._id);
+    // alternativeLanguage removed - using translationKey for multi-language support
     setFeaturedImage(blogInfo.featuredImage);
     setVideLink(blogInfo.videoLink);
     setTitle(blogInfo.title);
@@ -69,14 +67,7 @@ function UpdateBlog({ blogInfo, show, setShow, onUpdateComplete }) {
     console.log(blogInfo);
   }, [blogInfo]);
 
-  async function getAllBlogsFromBackend() {
-    const data = await getAllUserBlogs(
-      language === "dutch" ? "english" : "dutch"
-    );
-    if (data && data.blogs) {
-      setAllBlogs(data.blogs);
-    }
-  }
+  // getAllBlogsFromBackend removed - using translationKey for multi-language support
 
   const fethData = async () => {
     const data = await getAllBlogCategories(language);
@@ -105,7 +96,7 @@ function UpdateBlog({ blogInfo, show, setShow, onUpdateComplete }) {
         isPublic: isPublic,
         allowComments: allowComments,
         allowReviews: allowReviews,
-        alternativeLanguage: selectedBlog,
+        // alternativeLanguage removed - using translationKey for multi-language support
       };
       onUpdateComplete(setLoading, vals, blogInfo._id);
     }
@@ -232,26 +223,7 @@ function UpdateBlog({ blogInfo, show, setShow, onUpdateComplete }) {
         >
           <div>
             <p>Language: {blogInfo?.language}</p>
-            <span
-              style={{ marginRight: "5px" }}
-            >{`Select alternative language version`}</span>
-            <Select
-              style={{ width: "500px" }}
-              onChange={(e) => setSelectedBlog(e)}
-              value={selectedBlog}
-            >
-              <Option value={""} key={1}>
-                -
-              </Option>
-              {allBlogs.map(
-                (r, i) =>
-                  r._id !== blogInfo._id && (
-                    <Option key={i + 2} value={r._id}>
-                      {r.title}
-                    </Option>
-                  )
-              )}
-            </Select>
+            {/* Alternative language selector removed - using translationKey for multi-language support */}
           </div>
           <Form.Item
             label="Title"
@@ -423,6 +395,14 @@ function UpdateBlog({ blogInfo, show, setShow, onUpdateComplete }) {
                 </Checkbox>
               </Form.Item>
             </>
+          )}
+          {!blogInfo.adminApproved && (
+            <Alert
+              message={get(strings, "admin.approval_warning", "This content is pending admin approval and is not visible to the public.")}
+              type="warning"
+              showIcon
+              style={{ marginBottom: "15px", marginTop: "10px" }}
+            />
           )}
           {loading ? (
             <LoadingOutlined style={{ color: "#ff7700", fontSize: "30px" }} />

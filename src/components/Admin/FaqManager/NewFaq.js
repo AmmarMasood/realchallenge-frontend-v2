@@ -11,6 +11,8 @@ import {
 import EditTypeName from "./EditTypeName";
 import { LanguageContext } from "../../../contexts/LanguageContext";
 import LanguageSelector from "../../LanguageSelector/LanguageSelector";
+import { T } from "../../Translate";
+import { get } from "lodash";
 const { Option } = Select;
 
 function NewFaq({ setCurrentSelection, home }) {
@@ -27,7 +29,7 @@ function NewFaq({ setCurrentSelection, home }) {
   const [selectedItemForUpdate, setSelectedItemForUpdate] = useState({});
   const [selectedItemForUpdateTitle, setSelectedItemForUpdateTitle] =
     useState("");
-  const { language } = useContext(LanguageContext);
+  const { language, strings } = useContext(LanguageContext);
 
   const fetchData = async () => {
     const aC = await getAllFaqCategories(language);
@@ -77,7 +79,7 @@ function NewFaq({ setCurrentSelection, home }) {
         footer={false}
         visible={categoryModal}
       >
-        <p className="font-paragraph-white">Categories</p>
+        <p className="font-paragraph-white"><T>admin.manage_categories</T></p>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Input
             value={newCategoryName}
@@ -99,11 +101,11 @@ function NewFaq({ setCurrentSelection, home }) {
               }
             }}
           >
-            Create Category
+            <T>admin.create_category</T>
           </Button>
         </div>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-          <span className="font-subheading-white">All Categories</span>
+          <span className="font-subheading-white"><T>admin.all_categories</T></span>
           <List
             size="small"
             bordered
@@ -129,17 +131,17 @@ function NewFaq({ setCurrentSelection, home }) {
                     type="primary"
                     danger
                   >
-                    Delete
+                    <T>admin.delete</T>
                   </Button>
                   <Button
                     type="primary"
                     onClick={() => {
-                      setSelectedItemForUpdateTitle("Update Faq Category");
+                      setSelectedItemForUpdateTitle(get(strings, "admin.update_faq_category", "Update Faq Category"));
                       setSelectedItemForUpdate(cat);
                       setEditItemNameModalVisible(true);
                     }}
                   >
-                    Edit
+                    <T>admin.edit</T>
                   </Button>
                 </span>
               </List.Item>
@@ -148,7 +150,7 @@ function NewFaq({ setCurrentSelection, home }) {
         </div>
       </Modal>
       {/* ----------------- */}
-      <h2 className="font-heading-black">New FAQ</h2>
+      <h2 className="font-heading-black"><T>admin.new_faq</T></h2>
       <div
         className="admin-newuser-container"
         style={{ padding: "50px 50px 50px 20px" }}
@@ -160,30 +162,30 @@ function NewFaq({ setCurrentSelection, home }) {
           onFinishFailed={onFinishFailed}
         >
           <div>
-            <span style={{ marginRight: "10px" }}>Select Language</span>
+            <span style={{ marginRight: "10px" }}><T>admin.select_language</T></span>
             <LanguageSelector notFromNav={true} />
           </div>
           <Form.Item
-            label="Question"
+            label={<T>admin.question</T>}
             name="question"
-            rules={[{ required: true, message: "Please input question!" }]}
+            rules={[{ required: true, message: get(strings, "admin.please_input_question", "Please input question!") }]}
           >
             <Input.TextArea rows={3} />
           </Form.Item>
           <Form.Item
-            label="Answer"
+            label={<T>admin.answer</T>}
             name="answer"
-            rules={[{ required: true, message: "Please input answer!" }]}
+            rules={[{ required: true, message: get(strings, "admin.please_input_answer", "Please input answer!") }]}
           >
             <Input.TextArea rows={6} />
           </Form.Item>
 
-          <Form.Item label="Category" name="category">
+          <Form.Item label={<T>admin.category</T>} name="category">
             <Select
               mode="multiple"
               allowClear
               style={{ width: "100%" }}
-              placeholder="Please select"
+              placeholder={get(strings, "admin.please_select", "Please select")}
               value={category}
               onChange={(e) => setCategory(e)}
             >
@@ -203,7 +205,7 @@ function NewFaq({ setCurrentSelection, home }) {
               }}
               onClick={() => setCategoryModal(true)}
             >
-              Manage Category
+              <T>admin.manage_category</T>
             </Button>
           </Form.Item>
 
@@ -212,7 +214,7 @@ function NewFaq({ setCurrentSelection, home }) {
               checked={isPublic}
               onChange={(e) => setIsPublic(e.target.checked)}
             >
-              Make public
+              <T>admin.make_public</T>
             </Checkbox>
           </Form.Item>
           {/* footer */}
@@ -226,7 +228,7 @@ function NewFaq({ setCurrentSelection, home }) {
                 marginTop: "10px",
               }}
             >
-              Create
+              <T>admin.create</T>
             </Button>
           </Form.Item>
         </Form>

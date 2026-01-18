@@ -6,9 +6,10 @@ import HeartIconOrange from "../../assets/icons/heart-icon.svg";
 import RemoteMediaManager from "../../components/Admin/MediaManager/RemoteMediaManager";
 import { LanguageContext } from "../../contexts/LanguageContext";
 import { createTrainerGoal, updateTrainerGoal } from "../../services/trainers";
+import { get } from "lodash";
 
 function GoalCreatorPopup({ open, setOpen, onSuccess, selectedGoalForEdit }) {
-  const { language } = useContext(LanguageContext);
+  const { language, strings } = useContext(LanguageContext);
   const [goalName, setGoalName] = useState("");
   const [mediaManagerVisible, setMediaManagerVisible] = useState(false);
   const [mediaManagerType, setMediaManagerType] = useState("images");
@@ -102,14 +103,16 @@ function GoalCreatorPopup({ open, setOpen, onSuccess, selectedGoalForEdit }) {
         />
         <h2 className="music-selector__title">
           <span>
-            {selectedGoalForEdit ? "Edit Interest" : "Create Interest"}
+            {selectedGoalForEdit
+              ? get(strings, "adminv2.edit_interest", "Edit Interest")
+              : get(strings, "adminv2.create_interest", "Create Interest")}
           </span>
         </h2>
       </div>
 
       <input
         type="text"
-        placeholder="Interest Name"
+        placeholder={get(strings, "adminv2.interest_name", "Interest Name")}
         value={goalName}
         onChange={(e) => setGoalName(e.target.value)}
         style={{
@@ -179,9 +182,9 @@ function GoalCreatorPopup({ open, setOpen, onSuccess, selectedGoalForEdit }) {
                     e.stopPropagation();
                     setIconFile(null);
                   }}
-                  title="Remove"
+                  title={get(strings, "adminv2.remove", "Remove")}
                 >
-                  Remove
+                  {get(strings, "adminv2.remove", "Remove")}
                 </span>
               </div>
             ) : (
@@ -199,9 +202,9 @@ function GoalCreatorPopup({ open, setOpen, onSuccess, selectedGoalForEdit }) {
               marginTop: "8px",
             }}
           >
-            Select Icon
+            {get(strings, "adminv2.select_icon", "Select Icon")}
             <br />
-            (Optional)
+            {get(strings, "adminv2.optional", "(Optional)")}
           </h2>
         </div>
       </div>
@@ -212,7 +215,9 @@ function GoalCreatorPopup({ open, setOpen, onSuccess, selectedGoalForEdit }) {
         style={{ marginTop: "15px" }}
         disabled={!goalName || loading}
       >
-        {loading ? "Saving..." : "Save"}
+        {loading
+          ? get(strings, "adminv2.saving", "Saving...")
+          : get(strings, "adminv2.save", "Save")}
       </button>
     </Modal>
   );

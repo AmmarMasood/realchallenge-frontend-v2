@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Button, Tag, Table, Space, Input } from "antd";
 import moment from "moment";
 import { deleteCoupon, getAllCoupons } from "../../../services/coupons";
 import UpdateCoupon from "./UpdateCoupon";
 import { getAllChallenges } from "../../../services/createChallenge/main";
+import { LanguageContext } from "../../../contexts/LanguageContext";
+import { T } from "../../Translate";
+import { get } from "lodash";
 
 function AllCoupons() {
+  const { strings } = useContext(LanguageContext);
   const [filterAllCoupons, setFilterAllCoupons] = useState([]);
   const [selectedCoupon, setSelectedCoupon] = useState({});
   const [updateCouponModal, setUpdateCouponModal] = useState(false);
@@ -37,37 +41,37 @@ function AllCoupons() {
   }, [allCoupons]);
   const columns = [
     {
-      title: "Id",
+      title: get(strings, "admin.id", "Id"),
       dataIndex: "_id",
       key: "_id",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Name",
+      title: get(strings, "admin.name", "Name"),
       dataIndex: "name",
       key: "name",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Code",
+      title: get(strings, "admin.code", "Code"),
       dataIndex: "code",
       key: "code",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Discount",
+      title: get(strings, "admin.discount", "Discount"),
       dataIndex: "discountPercent",
       key: "discountPercent",
       render: (text) => <span className="font-paragraph-black">{text}%</span>,
     },
     {
-      title: "Limit",
+      title: get(strings, "admin.limit", "Limit"),
       dataIndex: "limitUsage",
       key: "limitUsage",
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
-      title: "Current Usage",
+      title: get(strings, "admin.current_usage", "Current Usage"),
       dataIndex: "currentUsage",
       key: "currentUsage",
       render: (text) => (
@@ -75,7 +79,7 @@ function AllCoupons() {
       ),
     },
     {
-      title: "Updated At",
+      title: get(strings, "admin.updated_at", "Updated At"),
       dataIndex: "createdAt",
       key: "createdAt",
       render: (text) => (
@@ -85,7 +89,7 @@ function AllCoupons() {
       ),
     },
     {
-      title: "Applicable On",
+      title: get(strings, "admin.applicable_on", "Applicable On"),
       key: "applicableOn",
       dataIndex: "applicableOn",
       render: (tags) => (
@@ -105,7 +109,7 @@ function AllCoupons() {
       ),
     },
     {
-      title: "Action",
+      title: get(strings, "admin.action", "Action"),
       key: "challengePreviewLink",
       render: (text, record) => (
         <Space size="middle">
@@ -116,7 +120,7 @@ function AllCoupons() {
               setUpdateCouponModal(true);
             }}
           >
-            Edit
+            <T>admin.edit</T>
           </Button>
           <Button
             type="danger"
@@ -125,7 +129,7 @@ function AllCoupons() {
               fetchData();
             }}
           >
-            Delete
+            <T>admin.delete</T>
           </Button>
         </Space>
       ),
@@ -140,10 +144,10 @@ function AllCoupons() {
         fetchData={fetchData}
         allChallenges={allChallenges}
       />
-      <h2 className="font-heading-black">All Coupons</h2>
+      <h2 className="font-heading-black"><T>admin.all_coupons</T></h2>
       <div className="admin-allchallenges-list-container">
         <Input
-          placeholder="Search Coupon By Code"
+          placeholder={get(strings, "admin.search_coupon_by_code", "Search Coupon By Code")}
           onChange={(e) =>
             setFilterAllCoupons(
               allCoupons.filter((mem) =>
@@ -154,7 +158,7 @@ function AllCoupons() {
         />
         <Input
           style={{ marginTop: "10px" }}
-          placeholder="Search Challenge By ID"
+          placeholder={get(strings, "admin.search_coupon_by_id", "Search Coupon By ID")}
           onChange={(e) =>
             setFilterAllCoupons(
               allCoupons.filter((mem) =>

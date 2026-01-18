@@ -328,3 +328,61 @@ export function addFreeChallenge(challenge) {
       return { success: false, data: err };
     });
 }
+
+// Get all translations of a challenge by translationKey
+export function getTranslationsByKey(translationKey, excludeLanguage = null) {
+  const params = new URLSearchParams();
+  if (excludeLanguage) params.append('excludeLanguage', excludeLanguage);
+
+  return axios
+    .get(
+      `${process.env.REACT_APP_SERVER}/api/challenges/translations/${translationKey}?${params.toString()}`
+    )
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+      return { translations: [], count: 0 };
+    });
+}
+
+// Get a challenge in a specific language by translationKey
+export function getChallengeByTranslationKey(translationKey, language) {
+  return axios
+    .get(
+      `${process.env.REACT_APP_SERVER}/api/challenges/translation/${translationKey}/${language}`
+    )
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+      return null;
+    });
+}
+
+// Get all translations of an exercise by translationKey
+export function getExerciseTranslationsByKey(translationKey, excludeLanguage = null) {
+  const params = new URLSearchParams();
+  if (excludeLanguage) params.append('excludeLanguage', excludeLanguage);
+
+  return axios
+    .get(
+      `${process.env.REACT_APP_SERVER}/api/exercise/translations/${translationKey}?${params.toString()}`
+    )
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+      return { translations: [], count: 0 };
+    });
+}
+
+// Get an exercise in a specific language by translationKey
+export function getExerciseByTranslationKey(translationKey, language) {
+  return axios
+    .get(
+      `${process.env.REACT_APP_SERVER}/api/exercise/translation/${translationKey}/${language}`
+    )
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+      return null;
+    });
+}

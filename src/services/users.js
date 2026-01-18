@@ -31,6 +31,21 @@ export function createUserByAdmin(userInfo) {
     });
 }
 
+export function updateUserRoles(userId, roles) {
+  return axios
+    .put(`${process.env.REACT_APP_SERVER}/api/users/${userId}/roles`, { roles })
+    .then((res) => {
+      openNotificationWithIcon("success", "User roles updated successfully!");
+      return res.data;
+    })
+    .catch((err) => {
+      const message = err.response?.data?.message || "Unable to update user roles";
+      openNotificationWithIcon("error", message);
+      console.log(err);
+      return null;
+    });
+}
+
 export function updateUserProfileByAdmin(userInfo, id, type) {
   if (type === "trainer") {
     return axios
@@ -89,9 +104,9 @@ export function getRecommandedChallenges(id, language) {
     });
 }
 
-export function getNotifications() {
+export function getNotifications(page = 1, limit = 10) {
   return axios
-    .get(`${process.env.REACT_APP_SERVER}/api/notification`)
+    .get(`${process.env.REACT_APP_SERVER}/api/notification?page=${page}&limit=${limit}`)
     .then((res) => res.data)
     .catch((err) => {
       return err;
@@ -101,6 +116,15 @@ export function getNotifications() {
 export function markNotificationsAsRead(id) {
   return axios
     .put(`${process.env.REACT_APP_SERVER}/api/notification/read/${id}`)
+    .then((res) => res.data)
+    .catch((err) => {
+      return err;
+    });
+}
+
+export function markAllNotificationsAsRead() {
+  return axios
+    .put(`${process.env.REACT_APP_SERVER}/api/notification/read-all`)
     .then((res) => res.data)
     .catch((err) => {
       return err;

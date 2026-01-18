@@ -6,6 +6,7 @@ export const emptyUserConstants = {
   id: "",
   username: "",
   role: "",
+  roles: [],
   email: "",
   avatar: "",
   notifications: [],

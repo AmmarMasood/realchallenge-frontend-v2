@@ -135,6 +135,16 @@ function AllChallenges({ setCurrentSelection, setSelectedChallengeForUpdate }) {
       ),
     },
     {
+      title: <T>admin.status</T>,
+      key: "adminApproved",
+      dataIndex: "adminApproved",
+      render: (approved) => (
+        <Tag color={approved ? "green" : "orange"}>
+          {approved ? <T>admin.approved</T> : <T>admin.pending_approval</T>}
+        </Tag>
+      ),
+    },
+    {
       title: "Action",
       key: "challengePreviewLink",
       render: (text, record) => (
