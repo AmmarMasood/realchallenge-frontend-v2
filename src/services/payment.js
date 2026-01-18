@@ -2,6 +2,7 @@ import axios from "axios";
 import { notification } from "antd";
 import { getUserProfileInfo } from "./users";
 import { Modal, Button, Space } from "antd";
+import { translate } from "../components/Translate";
 
 const openNotificationWithIcon = (type, message, description) => {
   notification[type]({
@@ -65,22 +66,19 @@ export function createSubscribtion(values) {
     .then((res) => res.data)
     .catch((err) => {
       errorPopup(
-        "Error",
-        <div>
-          Unable to create subscribtion, please contact the realchallenge for
-          more information.
-        </div>
+        translate("payment.error_title"),
+        translate("payment.contact_support")
       );
       console.log(err);
     });
 }
 
 const checkIfUserAlreadyHaveAFreeChallenge = (customer) => {
-  if (customer.customerDetails.challenges.length <= 0) {
+  if (!customer?.customerDetails?.challenges || customer.customerDetails.challenges.length <= 0) {
     return false;
   } else {
     const c = customer.customerDetails.challenges.filter((c) =>
-      c.access.includes("FREE")
+      c.access?.includes("FREE")
     );
     if (c.length > 0) {
       return true;
@@ -94,11 +92,11 @@ const alreadySubscribedToSpecificNumberOfChallenges = (
   customer,
   noOfChallengesAllowed
 ) => {
-  if (customer.customerDetails.challenges.length <= 0) {
+  if (!customer?.customerDetails?.challenges || customer.customerDetails.challenges.length <= 0) {
     return false;
   } else {
     const c = customer.customerDetails.challenges.filter(
-      (c) => !c.access.includes("FREE")
+      (c) => !c.access?.includes("FREE")
     );
     if (c.length >= noOfChallengesAllowed) {
       return true;
@@ -123,9 +121,13 @@ export function checkUserPackage(
     };
   }
   console.log(challenge);
-  console.log(customer.customerDetails.membership[0]);
+
+  // Get membership safely with null checks
+  const membership = customer?.customerDetails?.membership?.[0];
+  console.log(membership);
+
   // check if user is free subscriber
-  if (customer.customerDetails.membership[0] === undefined) {
+  if (membership === undefined) {
     // if has not subscribed to any package. They can only have one free challenge.
     // first we if the comming challenge is free or not.
     if (challenge.access.includes("FREE")) {
@@ -156,11 +158,8 @@ export function checkUserPackage(
         history.push("/create-payment");
       } else {
         errorPopup(
-          "Unable to subscribe",
-          <div>
-            You can only subscribe to free challenges. This is a paid challenge.
-            Please subscribe to get this challenge.
-          </div>
+          translate("payment.unable_to_subscribe"),
+          translate("payment.free_only")
         );
       }
       return {
@@ -170,10 +169,7 @@ export function checkUserPackage(
   }
 
   // check if user is challenge 1 subscriber
-  if (
-    customer.customerDetails.membership[0] &&
-    customer.customerDetails.membership[0].name === "CHALLENGE_1"
-  ) {
+  if (membership && membership.name === "CHALLENGE_1") {
     // if has not subscribed to any package. They can only have one free challenge.
     // first we if the comming challenge is free or not.
     if (challenge.access.includes("FREE")) {
@@ -203,11 +199,8 @@ export function checkUserPackage(
 
       if (alreadySubscribedToSpecificNumberOfChallenges(customer, 1)) {
         errorPopup(
-          "Unable to subscribe",
-          <div>
-            You have already bought a challenge. You can only buy new challenge
-            once that challenge expires.
-          </div>
+          translate("payment.unable_to_subscribe"),
+          translate("payment.challenge_1_limit")
         );
         return { success: false };
       } else {
@@ -220,10 +213,7 @@ export function checkUserPackage(
   }
 
   // check if user is challenge 3 subscriber
-  if (
-    customer.customerDetails.membership[0] &&
-    customer.customerDetails.membership[0].name === "CHALLENGE_3"
-  ) {
+  if (membership && membership.name === "CHALLENGE_3") {
     // if has not subscribed to any package. They can only have one free challenge.
     // first we if the comming challenge is free or not.
     if (challenge.access.includes("FREE")) {
@@ -255,11 +245,8 @@ export function checkUserPackage(
 
       if (alreadySubscribedToSpecificNumberOfChallenges(customer, 2)) {
         errorPopup(
-          "Unable to subscribe",
-          <div>
-            You are already enrolled in 2 challenge. You can only enroll new
-            challenge once those challenges expires.
-          </div>
+          translate("payment.unable_to_subscribe"),
+          translate("payment.challenge_3_limit")
         );
         return { success: false };
       } else {
@@ -272,10 +259,7 @@ export function checkUserPackage(
   }
 
   // check if user is challenge 12 subscriber
-  if (
-    customer.customerDetails.membership[0] &&
-    customer.customerDetails.membership[0].name === "CHALLENGE_12"
-  ) {
+  if (membership && membership.name === "CHALLENGE_12") {
     // if has not subscribed to any package. They can only have one free challenge.
     // first we if the comming challenge is free or not.
     if (challenge.access.includes("FREE")) {
@@ -307,17 +291,9 @@ export function checkUserPackage(
 
       if (alreadySubscribedToSpecificNumberOfChallenges(customer, 3)) {
         errorPopup(
-          "Unable to subscibe",
-          <div>
-            You are already enrolled in 3 challenges. You can only enroll new
-            challenge once those challenges expires.
-          </div>
+          translate("payment.unable_to_subscribe"),
+          translate("payment.challenge_12_limit")
         );
-
-        // openNotificationWithIcon(
-        //   "error",
-        //   `You are already enrolled in 3 challenges. You can only enroll new challenge once those challenges expires.`
-        // );
         return { success: false };
       } else {
         return {

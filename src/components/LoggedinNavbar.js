@@ -116,9 +116,13 @@ function LoggedinNavbar(props) {
                 onClick={() => readNotification(v._id, v)}
               >
                 <div className="notification-content">
-                  <span className="notification-item-title">{stripHtml(v.title)}</span>
-                  {v.body && (
-                    <span className="notification-item-body">{stripHtml(v.body)}</span>
+                  <span className="notification-item-title">
+                    <T params={v.params}>{v.titleKey || v.title}</T>
+                  </span>
+                  {(v.bodyKey || v.body) && (
+                    <span className="notification-item-body">
+                      <T params={v.params}>{v.bodyKey || v.body}</T>
+                    </span>
                   )}
                   <span className="notification-time">
                     {v.createdAt && formatTimeAgo(v.createdAt)}

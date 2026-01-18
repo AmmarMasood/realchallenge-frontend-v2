@@ -4,6 +4,7 @@ import { MailOutlined, LoadingOutlined } from "@ant-design/icons";
 import { userInfoContext } from "../../contexts/UserStore";
 import { withRouter } from "react-router-dom";
 import ForwardArrow from "../../assets/icons/forward-arrows.png";
+import { T } from "../Translate";
 
 import "../../assets/verifyUser.css";
 import {
@@ -58,18 +59,17 @@ function VerifyUser(props) {
       />
       <h2 className="font-paragraph-white">
         <img src={ForwardArrow} alt="" style={{ marginRight: "10px" }} />
-        Please verify your email.
+        <T>verify_email.title</T>
       </h2>
       <p className="font-paragraph-white" style={{ letterSpacing: "0.2" }}>
-        Thank you for signing up for realchallenge. Please verify your email to
-        continue your access to dashboard.
+        <T>verify_email.dashboard_message</T>
       </p>
       <button
         className="font-paragraph-white common-orange-button"
         style={{ width: "50%" }}
         onClick={onClickVeriyButton}
       >
-        Verify Email
+        <T>verify_email.verify_button</T>
       </button>
     </div>
   );
@@ -81,11 +81,10 @@ function VerifyUser(props) {
       />
       <h2 className="font-paragraph-white">
         <img src={ForwardArrow} alt="" style={{ marginRight: "10px" }} />
-        Please verify your email
+        <T>verify_email.title</T>
       </h2>
       <p className="font-paragraph-white" style={{ letterSpacing: "0.2" }}>
-        An email has been sent to your account, please verify your email address
-        to continue access to realchallenge.
+        <T>verify_email.welcome_message</T>
       </p>
       {!loading ? (
         <div
@@ -101,14 +100,14 @@ function VerifyUser(props) {
             style={{ width: "50%" }}
             onClick={onClickCheckEmailVerifiedButton}
           >
-            Complete
+            <T>verify_email.complete_button</T>
           </button>
           <Button
             type="link"
             style={{ marginTop: "10px" }}
             onClick={sendEmailAgain}
           >
-            I did not received any email
+            <T>verify_email.resend_link</T>
           </Button>
         </div>
       ) : (

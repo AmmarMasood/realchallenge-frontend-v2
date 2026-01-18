@@ -1067,5 +1067,22 @@
     "exercise_description_optional": "Oefening Beschrijving (Optioneel)",
     "duplicate_exercise_error": "Een oefening met deze naam bestaat al voor deze trainer. Kies een andere naam.",
     "save_exercise_error": "Oefening opslaan mislukt. Probeer het opnieuw."
+  },
+  "payment": {
+    "error_title": "Fout",
+    "unable_to_subscribe": "Kan niet abonneren",
+    "contact_support": "Kan geen abonnement aanmaken, neem contact op met RealChallenge voor meer informatie.",
+    "free_only": "Je kunt alleen abonneren op gratis challenges. Dit is een betaalde challenge. Neem een abonnement om deze challenge te krijgen.",
+    "challenge_1_limit": "Je hebt al een challenge gekocht. Je kunt pas een nieuwe challenge kopen als die challenge is verlopen.",
+    "challenge_3_limit": "Je bent al ingeschreven voor 2 challenges. Je kunt je pas voor een nieuwe challenge inschrijven als die challenges zijn verlopen.",
+    "challenge_12_limit": "Je bent al ingeschreven voor 3 challenges. Je kunt je pas voor een nieuwe challenge inschrijven als die challenges zijn verlopen."
+  },
+  "verify_email": {
+    "title": "Verifieer je e-mail",
+    "dashboard_message": "Bedankt voor je aanmelding bij RealChallenge. Verifieer je e-mail om toegang te krijgen tot je dashboard.",
+    "welcome_message": "Er is een e-mail naar je account verzonden. Verifieer je e-mailadres om toegang te krijgen tot RealChallenge.",
+    "verify_button": "Verifieer e-mail",
+    "complete_button": "Voltooien",
+    "resend_link": "Ik heb geen e-mail ontvangen"
   }
 }

@@ -1067,5 +1067,22 @@
     "exercise_description_optional": "Exercise Description (Optional)",
     "duplicate_exercise_error": "An exercise with this name already exists for this trainer. Please choose a different name.",
     "save_exercise_error": "Failed to save exercise. Please try again."
+  },
+  "payment": {
+    "error_title": "Error",
+    "unable_to_subscribe": "Unable to subscribe",
+    "contact_support": "Unable to create subscription, please contact RealChallenge for more information.",
+    "free_only": "You can only subscribe to free challenges. This is a paid challenge. Please subscribe to get this challenge.",
+    "challenge_1_limit": "You have already bought a challenge. You can only buy a new challenge once that challenge expires.",
+    "challenge_3_limit": "You are already enrolled in 2 challenges. You can only enroll in a new challenge once those challenges expire.",
+    "challenge_12_limit": "You are already enrolled in 3 challenges. You can only enroll in a new challenge once those challenges expire."
+  },
+  "verify_email": {
+    "title": "Please verify your email",
+    "dashboard_message": "Thank you for signing up for RealChallenge. Please verify your email to continue your access to dashboard.",
+    "welcome_message": "An email has been sent to your account, please verify your email address to continue access to RealChallenge.",
+    "verify_button": "Verify Email",
+    "complete_button": "Complete",
+    "resend_link": "I did not receive any email"
   }
 }
