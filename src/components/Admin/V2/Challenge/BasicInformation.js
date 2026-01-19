@@ -182,6 +182,7 @@ function BasicInformation(props) {
   const [userCreatePost, setUserCreatePost] = useState(false);
   const [isDraggingWorkout, setIsDraggingWorkout] = useState(false);
   const [draggedWorkoutId, setDraggedWorkoutId] = useState(null);
+  const [coverVideoLoading, setCoverVideoLoading] = useState(true);
   // Translation support - for linking challenges across languages
   const [allChallengesFromOtherLanguage, setAllChallengesFromOtherLanguage] = useState([]);
   const [selectedChallengeForTranslation, setSelectedChallengeForTranslation] = useState("");
@@ -346,8 +347,18 @@ function BasicInformation(props) {
       thumbnail: "",
     }));
     setMediaManagerVisible(true);
-    setMediaManagerType("images");
+    setMediaManagerType("coverMedia"); // Allow both images and videos
     setMediaManagerActions([thumbnail, setThumbnail]);
+  };
+
+  // Helper to check if a file is a video based on its extension
+  const isVideoFile = (file) => {
+    if (!file) return false;
+    const link = typeof file === "string" ? file : file.link;
+    if (!link) return false;
+    const videoExtensions = ["m4v", "avi", "mpg", "mp4", "mov", "wmv", "flv", "webm", "mkv"];
+    const ext = link.split(".").pop()?.toLowerCase();
+    return videoExtensions.includes(ext);
   };
 
   const openForTrailer = () => {
@@ -1163,22 +1174,83 @@ function BasicInformation(props) {
             className="trainer-profile-container-column1 adminV2-bi-trainer-profile-container-column1"
             onClick={openForThumbnail}
             style={{
-              background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${getThumbnailLink(
-                thumbnail
-              )})`,
+              background: isVideoFile(thumbnail)
+                ? "linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39))"
+                : `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${getThumbnailLink(
+                    thumbnail
+                  )})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
               border: errors.thumbnail && "2px solid red",
               cursor: "pointer",
+              // position: "relative",
+              overflow: "hidden",
             }}
           >
+            {/* Video cover loading spinner */}
+            {isVideoFile(thumbnail) && coverVideoLoading && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#171e27",
+                  zIndex: 3,
+                }}
+              >
+                <LoadingOutlined style={{ fontSize: "50px", color: "#ff7700" }} />
+              </div>
+            )}
+            {/* Video cover background - autoplay, muted, loop */}
+            {isVideoFile(thumbnail) && (
+              <video
+                src={getThumbnailLink(thumbnail)}
+                autoPlay
+                muted
+                loop
+                playsInline
+                onCanPlay={() => setCoverVideoLoading(false)}
+                onLoadStart={() => setCoverVideoLoading(true)}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  zIndex: 0,
+                  opacity: coverVideoLoading ? 0 : 1,
+                  transition: "opacity 0.3s ease",
+                }}
+              />
+            )}
+            {/* Gradient overlay for video */}
+            {isVideoFile(thumbnail) && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  background: "linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39))",
+                  zIndex: 1,
+                }}
+              />
+            )}
             <div
               className="profile-box adminV2-bi-profile-box"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
               }}
+              style={{ position: "relative", zIndex: 2 }}
             >
               <div className="challenge-profile-box-1 adminV2-bi-challenge-profile-box-1">
                 <div

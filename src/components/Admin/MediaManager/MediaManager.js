@@ -1499,6 +1499,14 @@ function checkForType(filename, fileType) {
     case "voiceOvers":
     case "musics":
       return ["mp3", "wav", "aac", "ogg", "flac", "m4a", "wma"].includes(ext);
+    case "coverMedia":
+      // Allow both images and videos for cover/thumbnail selection
+      return [
+        // Images
+        "png", "jpeg", "jpg", "tiff", "gif", "bmp", "webp", "svg",
+        // Videos
+        "m4v", "avi", "mpg", "mp4", "mov", "wmv", "flv", "webm", "mkv",
+      ].includes(ext);
     case "other":
     default:
       return true;

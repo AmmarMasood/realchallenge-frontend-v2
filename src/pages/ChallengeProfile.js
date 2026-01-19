@@ -12,7 +12,11 @@ import {
 } from "@ant-design/icons";
 import Attachment from "../assets/icons/attachement-symbol.png";
 import Ellipse from "../assets/icons/ellipse.svg";
-import { addComment, getChallengeById, getChallengeByTranslationKey } from "../services/createChallenge/main";
+import {
+  addComment,
+  getChallengeById,
+  getChallengeByTranslationKey,
+} from "../services/createChallenge/main";
 import { Link, withRouter } from "react-router-dom";
 // import ModalVideo from "react-modal-video";
 import { Tooltip, Collapse, Input, Avatar, Progress } from "antd";
@@ -56,7 +60,7 @@ function ChallengeProfile(props) {
   const [userInfo, setUserInfo] = useContext(userInfoContext);
   const [pack, setPack] = useState("");
   const [selectedChallenge, setSelectedChallenge] = useContext(
-    selectedChallengeContext
+    selectedChallengeContext,
   );
   const [commentText, setCommentText] = useState("");
   const [commentButtonLoading, setCommentButtomLoading] = useState(false);
@@ -72,6 +76,7 @@ function ChallengeProfile(props) {
     replaceFreeChallengePopupVisible,
     setReplaceFreeChallengePopupVisible,
   ] = useState(false);
+  const [coverVideoLoading, setCoverVideoLoading] = useState(true);
 
   const fetchChallengeData = async () => {
     setLoading(true);
@@ -91,7 +96,7 @@ function ChallengeProfile(props) {
         uInfo.customer &&
         uInfo.customer.customerDetails &&
         uInfo.customer.customerDetails.challenges.find(
-          (f) => f._id === res._id
+          (f) => f._id === res._id,
         );
       // console.log("check", check, uInfo, res);
       // if user is admin or trainer and creater of his own callenge
@@ -101,7 +106,7 @@ function ChallengeProfile(props) {
       if (uInfo && uInfo.customer && uInfo.customer.role === "trainer") {
         // check = true;
         const isChallengeTrainer = res.trainers.find(
-          (t) => t._id === uInfo.customer._id
+          (t) => t._id === uInfo.customer._id,
         );
         if (isChallengeTrainer) {
           check = true;
@@ -112,7 +117,7 @@ function ChallengeProfile(props) {
       // if users the challenge
       if (check) {
         let challengeProgress = await getChallengeProgress(
-          props.match.params.id
+          props.match.params.id,
         );
         if (challengeProgress.data) {
           setChallengeProgress(challengeProgress.data);
@@ -145,7 +150,7 @@ function ChallengeProfile(props) {
         if (challenge.translationKey) {
           const translatedChallenge = await getChallengeByTranslationKey(
             challenge.translationKey,
-            language
+            language,
           );
           if (translatedChallenge) {
             window.location.href = `${
@@ -186,7 +191,7 @@ function ChallengeProfile(props) {
       challengeProgress &&
       j > 0 &&
       challengeProgress.completedWorkouts.includes(
-        challenge.weeks[i].workouts[j - 1]._id
+        challenge.weeks[i].workouts[j - 1]._id,
       );
 
     const isPrevWeekCompleted =
@@ -194,7 +199,7 @@ function ChallengeProfile(props) {
       challengeProgress &&
       i >= 1 &&
       challenge.weeks[i - 1].workouts.every((r) =>
-        challengeProgress.completedWorkouts.includes(r._id)
+        challengeProgress.completedWorkouts.includes(r._id),
       );
 
     console.log(
@@ -202,8 +207,8 @@ function ChallengeProfile(props) {
       i >= 1 &&
         challengeProgress &&
         challenge.weeks[i - 1].workouts.every((r) =>
-          challengeProgress.completedWorkouts.includes(r._id)
-        )
+          challengeProgress.completedWorkouts.includes(r._id),
+        ),
     );
     if (challengeProgress === null && (i !== 0 || j !== 0)) {
       flag = true;
@@ -236,7 +241,7 @@ function ChallengeProfile(props) {
     // Filter unique equipment based on name
     const uniqueEquipments = eg.filter(
       (equipment, index, self) =>
-        index === self.findIndex((e) => e.name === equipment.name)
+        index === self.findIndex((e) => e.name === equipment.name),
     );
 
     return uniqueEquipments.length > 0 ? (
@@ -277,7 +282,7 @@ function ChallengeProfile(props) {
         pack,
         props.history,
         setSelectedChallenge,
-        setReplaceFreeChallengePopupVisible
+        setReplaceFreeChallengePopupVisible,
       );
       // console.log("chhhhhh", ch);
       // return;
@@ -285,7 +290,7 @@ function ChallengeProfile(props) {
         if (ch.success && ch.message === "SUBSCRIBE") {
           const res = await addChallengeToCustomerDetail(
             userInfo.id,
-            challenge._id
+            challenge._id,
           );
           if (res && res.success) {
             fetchData();
@@ -533,7 +538,7 @@ function ChallengeProfile(props) {
                             `/play-challenge/${props.match.params.challengeName}/${challenge._id}/${workout._id}`,
                             workout,
                             i,
-                            j
+                            j,
                           )
                         }
                         className={`challenge-profile-comment font-paragraph-white`}
@@ -569,9 +574,15 @@ function ChallengeProfile(props) {
                               flexDirection: "column",
                             }}
                           >
-                            <span style={{textTransform: "initial"}}>{workout.title}</span>
+                            <span style={{ textTransform: "initial" }}>
+                              {workout.title}
+                            </span>
                             <span
-                              style={{ color: "#BABCBF", fontSize: "14px",textTransform: "initial" }}
+                              style={{
+                                color: "#BABCBF",
+                                fontSize: "14px",
+                                textTransform: "initial",
+                              }}
                             >
                               {workout.subtitle}
                             </span>
@@ -633,7 +644,7 @@ function ChallengeProfile(props) {
 
                           {challengeProgress &&
                           challengeProgress.completedWorkouts.includes(
-                            workout._id
+                            workout._id,
                           ) ? (
                             <UndoOutlined
                               style={{
@@ -650,7 +661,7 @@ function ChallengeProfile(props) {
                         </div>
                         {challengeProgress &&
                           (challengeProgress.completedWorkouts.includes(
-                            workout._id
+                            workout._id,
                           ) ||
                             challengeProgress.currentWorkout ===
                               workout._id) && (
@@ -780,6 +791,26 @@ function ChallengeProfile(props) {
     return "";
   };
 
+  // Helper to check if a file is a video based on its extension
+  const isVideoFile = (file) => {
+    if (!file) return false;
+    const link = typeof file === "string" ? file : file.link;
+    if (!link) return false;
+    const videoExtensions = [
+      "m4v",
+      "avi",
+      "mpg",
+      "mp4",
+      "mov",
+      "wmv",
+      "flv",
+      "webm",
+      "mkv",
+    ];
+    const ext = link.split(".").pop()?.toLowerCase();
+    return videoExtensions.includes(ext);
+  };
+
   return loading ? (
     <div className="center-inpage">
       <LoadingOutlined style={{ fontSize: "50px", color: "#ff7700" }} />
@@ -820,15 +851,79 @@ function ChallengeProfile(props) {
         <div
           className="trainer-profile-container-column1"
           style={{
-            background: `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${getThumbnailLink(
-              challenge?.thumbnailLink
-            )})`,
+            background: isVideoFile(challenge?.thumbnailLink)
+              ? "linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39))"
+              : `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${getThumbnailLink(
+                  challenge?.thumbnailLink,
+                )})`,
             backgroundSize: "cover",
             backgroundPosition: "center center",
             backgroundRepeat: "no-repeat",
+            // position: "relative",
+            overflow: "hidden",
           }}
         >
-          <div className="profile-box">
+          {/* Video cover loading spinner */}
+          {isVideoFile(challenge?.thumbnailLink) && coverVideoLoading && (
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#171e27",
+                zIndex: 3,
+              }}
+            >
+              <LoadingOutlined style={{ fontSize: "50px", color: "#ff7700" }} />
+            </div>
+          )}
+          {/* Video cover background - autoplay, muted, loop */}
+          {isVideoFile(challenge?.thumbnailLink) && (
+            <video
+              src={getThumbnailLink(challenge?.thumbnailLink)}
+              autoPlay
+              muted
+              loop
+              playsInline
+              onCanPlay={() => setCoverVideoLoading(false)}
+              onLoadStart={() => setCoverVideoLoading(true)}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                zIndex: 0,
+                opacity: coverVideoLoading ? 0 : 1,
+                transition: "opacity 0.3s ease",
+              }}
+            />
+          )}
+          {/* Gradient overlay for video */}
+          {isVideoFile(challenge?.thumbnailLink) && (
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                background:
+                  "linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39))",
+                zIndex: 1,
+              }}
+            />
+          )}
+          <div
+            className="profile-box"
+            style={{ position: "relative", zIndex: 2 }}
+          >
             <div className="challenge-profile-box-1">
               {challenge?.videoThumbnailLink && (
                 <img
