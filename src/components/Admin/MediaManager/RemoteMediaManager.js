@@ -73,6 +73,8 @@ function RemoteMediaManager({ visible, setVisible, type, actions }) {
       footer={false}
       width={responsiveDimensions.width}
       centered
+      className="media-manager-modal"
+      wrapClassName="media-manager-modal-wrap"
       bodyStyle={{
         height: responsiveDimensions.height,
         maxHeight: responsiveDimensions.maxHeight,

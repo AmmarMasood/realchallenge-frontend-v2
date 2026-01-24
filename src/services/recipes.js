@@ -11,7 +11,7 @@ const openNotificationWithIcon = (type, message, description) => {
 export function getAllRecipes(language) {
   return axios
     .get(
-      `${process.env.REACT_APP_SERVER}/api/recipes/recipe?language=${language}`
+      `${process.env.REACT_APP_SERVER}/api/recipes/recipe?language=${language}`,
     )
     .then((res) => {
       return res.data;
@@ -29,7 +29,7 @@ export function getAllRecipes(language) {
 export function getAllUserRecipes(language) {
   return axios
     .get(
-      `${process.env.REACT_APP_SERVER}/api/recipes/recipe/all/users?language=${language}`
+      `${process.env.REACT_APP_SERVER}/api/recipes/recipe/all/users?language=${language}`,
     )
     .then((res) => {
       return res.data;
@@ -62,7 +62,7 @@ export function createRecipe(values) {
           openNotificationWithIcon(
             "error",
             err.response.data.header.message,
-            ""
+            "",
           );
           return;
         }
@@ -76,7 +76,7 @@ export function updateRecipe(values, id) {
   return axios
     .post(
       `${process.env.REACT_APP_SERVER}/api/recipes/recipe/${id}/update`,
-      values
+      values,
     )
     .then((res) => {
       openNotificationWithIcon("success", "Recipe updated successfully", "");
@@ -109,7 +109,7 @@ export function deleteRecipeWithId(id) {
 export function getAllMealTypes(language) {
   return axios
     .get(
-      `${process.env.REACT_APP_SERVER}/api/recipes/mealType?language=${language}`
+      `${process.env.REACT_APP_SERVER}/api/recipes/mealType?language=${language}`,
     )
     .then((res) => {
       return res.data;
@@ -126,7 +126,7 @@ export function getAllMealTypes(language) {
 
 export function removeMealType(id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/recipes/mealType/${id}/delete`)
+    .delete(`${process.env.REACT_APP_SERVER}/api/recipes/mealType/${id}`)
     .then((res) => {
       openNotificationWithIcon("success", "Meal Type deleted successfully", "");
     })
@@ -166,7 +166,7 @@ export function createMealType(name, language) {
 
 export function updateMealType(name, id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/recipes/mealType/${id}/update`, {
+    .put(`${process.env.REACT_APP_SERVER}/api/recipes/mealType/${id}`, {
       name: name,
     })
     .then((res) => {
@@ -185,7 +185,7 @@ export function updateMealType(name, id) {
 export function getAllFoodTypes(language) {
   return axios
     .get(
-      `${process.env.REACT_APP_SERVER}/api/recipes/foodType?language=${language}`
+      `${process.env.REACT_APP_SERVER}/api/recipes/foodType?language=${language}`,
     )
     .then((res) => {
       return res.data;
@@ -221,7 +221,7 @@ export function createFoodType(name, language) {
 
 export function removeFoodType(id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/recipes/foodType/${id}/delete`)
+    .delete(`${process.env.REACT_APP_SERVER}/api/recipes/foodType/${id}`)
     .then((res) => {
       openNotificationWithIcon("success", "Food Type deleted successfully", "");
     })
@@ -237,7 +237,7 @@ export function removeFoodType(id) {
 
 export function updateFoodType(name, id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/recipes/foodType/${id}/update`, {
+    .put(`${process.env.REACT_APP_SERVER}/api/recipes/foodType/${id}`, {
       name: name,
     })
     .then((res) => {
@@ -256,7 +256,7 @@ export function updateFoodType(name, id) {
 export function getAllDietTypes(language) {
   return axios
     .get(
-      `${process.env.REACT_APP_SERVER}/api/recipes/diet?language=${language}`
+      `${process.env.REACT_APP_SERVER}/api/recipes/diet?language=${language}`,
     )
     .then((res) => {
       return res.data;
@@ -292,7 +292,7 @@ export function createDiet(name, language) {
 
 export function updateDiet(name, id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/recipes/diet/${id}/update`, {
+    .put(`${process.env.REACT_APP_SERVER}/api/recipes/diet/${id}`, {
       name: name,
     })
     .then((res) => {
@@ -310,7 +310,7 @@ export function updateDiet(name, id) {
 
 export function removeDiet(id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/recipes/diet/${id}/delete`)
+    .delete(`${process.env.REACT_APP_SERVER}/api/recipes/diet/${id}`)
     .then((res) => {
       openNotificationWithIcon("success", "Diet deleted successfully", "");
     })
@@ -327,7 +327,7 @@ export function removeDiet(id) {
 export function getAllIngredients(language) {
   return axios
     .get(
-      `${process.env.REACT_APP_SERVER}/api/recipes/ingredient?language=${language}`
+      `${process.env.REACT_APP_SERVER}/api/recipes/ingredient?language=${language}`,
     )
     .then((res) => {
       return res.data;
@@ -352,7 +352,7 @@ export function createIngredient(name, language) {
       openNotificationWithIcon(
         "success",
         "Ingredient created successfully",
-        ""
+        "",
       );
     })
     .catch((err) => {
@@ -367,17 +367,14 @@ export function createIngredient(name, language) {
 
 export function updateIngredient(name, id) {
   return axios
-    .post(
-      `${process.env.REACT_APP_SERVER}/api/recipes/ingredient/${id}/update`,
-      {
-        name: name,
-      }
-    )
+    .put(`${process.env.REACT_APP_SERVER}/api/recipes/ingredient/${id}`, {
+      name: name,
+    })
     .then((res) => {
       openNotificationWithIcon(
         "success",
         "Ingredient updated successfully",
-        ""
+        "",
       );
     })
     .catch((err) => {
@@ -391,12 +388,12 @@ export function updateIngredient(name, id) {
 }
 export function removeIngredient(id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/recipes/ingredient/${id}/delete`)
+    .delete(`${process.env.REACT_APP_SERVER}/api/recipes/ingredient/${id}`)
     .then((res) => {
       openNotificationWithIcon(
         "success",
         "Ingredient deleted successfully",
-        ""
+        "",
       );
     })
     .catch((err) => {
@@ -410,11 +407,16 @@ export function removeIngredient(id) {
 }
 
 // Translation-related functions for multi-language support
-export function getRecipeTranslationsByKey(translationKey, excludeLanguage = null) {
+export function getRecipeTranslationsByKey(
+  translationKey,
+  excludeLanguage = null,
+) {
   const params = new URLSearchParams();
-  if (excludeLanguage) params.append('excludeLanguage', excludeLanguage);
+  if (excludeLanguage) params.append("excludeLanguage", excludeLanguage);
   return axios
-    .get(`${process.env.REACT_APP_SERVER}/api/recipes/recipe/translations/${translationKey}?${params.toString()}`)
+    .get(
+      `${process.env.REACT_APP_SERVER}/api/recipes/recipe/translations/${translationKey}?${params.toString()}`,
+    )
     .then((res) => res.data)
     .catch((err) => {
       console.log(err);
@@ -424,7 +426,9 @@ export function getRecipeTranslationsByKey(translationKey, excludeLanguage = nul
 
 export function getRecipeByTranslationKey(translationKey, language) {
   return axios
-    .get(`${process.env.REACT_APP_SERVER}/api/recipes/recipe/translation/${translationKey}/${language}`)
+    .get(
+      `${process.env.REACT_APP_SERVER}/api/recipes/recipe/translation/${translationKey}/${language}`,
+    )
     .then((res) => res.data)
     .catch((err) => {
       console.log(err);
@@ -454,7 +458,7 @@ export function favouriteRecipeById(body, id) {
   return axios
     .post(
       `${process.env.REACT_APP_SERVER}/api/customerDetails/favouriteRecipe/${id}/update`,
-      body
+      body,
     )
     .then((res) => {
       // setLoading(false);
@@ -473,7 +477,7 @@ export function favouriteRecipeById(body, id) {
         : openNotificationWithIcon(
             "error",
             "Unable to add recipe to favourite",
-            ""
+            "",
           );
     });
 }
@@ -482,14 +486,14 @@ export function unFavouriteRecipeById(body, id) {
   return axios
     .post(
       `${process.env.REACT_APP_SERVER}/api/customerDetails/unfavouriteRecipe/${id}/update`,
-      body
+      body,
     )
     .then((res) => {
       // setLoading(false);
       openNotificationWithIcon(
         "success",
         "Recipe removed from favourites!",
-        ""
+        "",
       );
       return res.data;
     })
@@ -505,7 +509,7 @@ export function unFavouriteRecipeById(body, id) {
         : openNotificationWithIcon(
             "error",
             "Unable to remove recipe from favourite",
-            ""
+            "",
           );
     });
 }
@@ -513,7 +517,7 @@ export function unFavouriteRecipeById(body, id) {
 export function getAllFavouriteRecipes(id) {
   return axios
     .get(
-      `${process.env.REACT_APP_SERVER}/api/customerDetails/favouriteRecipe/${id}`
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/favouriteRecipe/${id}`,
     )
     .then((res) => {
       return res.data;
@@ -541,7 +545,7 @@ export function addRecipeReview(recipeId, comment, rating) {
       {
         comment: comment,
         rating: rating,
-      }
+      },
     )
     .then((res) => {
       return { success: true, data: res.data };
@@ -561,7 +565,7 @@ export function addRecipeComment(recipeId, comment) {
   return axios
     .post(
       `${process.env.REACT_APP_SERVER}/api/recipes/recipe/${recipeId}/comments`,
-      { text: comment }
+      { text: comment },
     )
     .then((res) => {
       return res.data;

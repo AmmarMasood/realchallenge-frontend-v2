@@ -365,11 +365,12 @@ function Navbar({ color, history }) {
                 trigger="click"
               >
                 <div className="loggedin-nav-name font-paragraph-white">
-                  <span>
-                    {userInfo.username} <CaretDownOutlined />
+                  <span className="username-row">
+                    <span className="username-text">{userInfo.username}</span>
+                    <CaretDownOutlined className="dropdown-arrow" />
                   </span>
-                  <span style={{ color: "#677182", fontSize: "1.6rem" }}>
-                    <img src={Coins} /> {userPoints}
+                  <span className="points-row">
+                    <img src={Coins} alt="coins" /> {userPoints}
                   </span>
                 </div>
               </Popover>

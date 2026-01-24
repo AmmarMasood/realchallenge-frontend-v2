@@ -35,10 +35,11 @@ function LanguageSelector({ notFromNav }) {
   return (
     <Popover placement="bottom" content={languageChooser} trigger="click">
       <span
-        className="font-paragraph-white"
+        className="font-paragraph-white language-selector-trigger"
         style={{ cursor: "pointer", color: notFromNav ? "black" : "#fff" }}
       >
-        {getLanguageLabel(language)} <CaretDownOutlined />
+        <span className="language-text">{getLanguageLabel(language)}</span>
+        <CaretDownOutlined className="language-arrow" />
       </span>
     </Popover>
   );

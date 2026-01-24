@@ -6,20 +6,22 @@ import {
   ChallengeProvider,
   useChallenge,
 } from "../../contexts/ChallengeCreatorV2";
-import { DndProvider, useDrag, useDrop } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import { DndProvider } from "react-dnd";
+import { getDndBackend, isTouchDevice, touchBackendOptions } from "../../helpers/DndWrapper";
 import { useRemoteMediaManager } from "../../contexts/RemoteMediaManagerContext";
 import RemoteMediaManager from "../../components/Admin/MediaManager/RemoteMediaManager";
 
 function ChallengeContent() {
   const { showVideoCreator } = useChallenge();
+  const backend = getDndBackend();
+  const options = isTouchDevice() ? touchBackendOptions : undefined;
 
   return showVideoCreator ? (
-    <DndProvider backend={HTML5Backend}>
+    <DndProvider backend={backend} options={options}>
       <VideoCreator />
     </DndProvider>
   ) : (
-    <DndProvider backend={HTML5Backend}>
+    <DndProvider backend={backend} options={options}>
       <BasicInformation />
     </DndProvider>
   );

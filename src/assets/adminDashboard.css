@@ -1,26 +1,211 @@
+/* Fix horizontal scroll on whole page */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 .admin-dashboard-container {
-  /* border: 1px solid red; */
   background-color: var(--color-offwhite);
   min-height: 150vh;
-  /* border: 1px solid green; */
   width: 100%;
+  overflow-x: hidden;
 }
 
 .admin-dashboard-navbar {
-  /* border: 1px solid red; */
   background-color: var(--color-gray-dark);
-  padding: 5px;
+  padding: 5px 10px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   border-bottom: 1px solid var(--color-gray-dark);
   box-shadow: 5px 5px 10px;
-
-  /* border: 1px solid red; */
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  flex-wrap: wrap;
+  gap: 10px;
 }
+
+.admin-dashboard-navbar .navbar-logo img {
+  max-height: 40px;
+  width: auto;
+}
+
+.admin-dashboard-navbar .loggedin-nav-userinfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+/* Keep avatar size consistent */
+.admin-dashboard-navbar .loggedin-nav-userinfo .ant-avatar {
+  min-width: 36px !important;
+  min-height: 36px !important;
+  width: 36px !important;
+  height: 36px !important;
+  flex-shrink: 0;
+}
+
+/* Name with ellipsis and arrow on right */
+.admin-dashboard-navbar .loggedin-nav-name {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  cursor: pointer;
+  width: auto;
+  overflow: visible !important;
+}
+
+/* Username text - truncates with ellipsis */
+.admin-dashboard-navbar .loggedin-nav-name .username-text {
+  display: inline-block !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 100px;
+}
+
+/* Dropdown arrow - always visible on right */
+.admin-dashboard-navbar .loggedin-nav-name .dropdown-arrow {
+  display: inline-block !important;
+  margin-left: 6px !important;
+  font-size: 10px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Language Selector Styling */
+.language-selector-trigger {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+}
+
+.language-selector-trigger .language-text {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.language-selector-trigger .language-arrow {
+  flex: 0 0 auto !important;
+  margin-left: 4px !important;
+  font-size: 10px !important;
+}
+
 .admin-dashboard-container-main {
   min-height: 100vh;
   width: 100%;
   padding: 10px;
+  overflow-x: auto;
+}
+
+/* Responsive: Tablet and below */
+@media screen and (max-width: 992px) {
+  .admin-dashboard-navbar {
+    padding: 8px;
+  }
+
+  .admin-dashboard-navbar .loggedin-nav-userinfo {
+    width: auto !important;
+  }
+
+  .admin-dashboard-container-main {
+    padding: 8px;
+  }
+}
+
+/* Responsive: Mobile */
+@media screen and (max-width: 768px) {
+  .admin-dashboard-navbar {
+    padding: 8px;
+    justify-content: space-between;
+  }
+
+  .admin-dashboard-navbar .navbar-logo {
+    flex-shrink: 0;
+  }
+
+  .admin-dashboard-navbar .navbar-logo img {
+    max-height: 35px;
+  }
+
+  .admin-dashboard-navbar .loggedin-nav-userinfo {
+    width: auto !important;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .admin-dashboard-navbar .loggedin-nav-name .username-text {
+    max-width: 80px;
+    font-size: 13px;
+  }
+
+  .admin-dashboard-container-main {
+    padding: 5px;
+  }
+}
+
+/* Responsive: Small Mobile */
+@media screen and (max-width: 480px) {
+  .admin-dashboard-navbar {
+    padding: 5px 8px;
+    gap: 5px;
+  }
+
+  .admin-dashboard-navbar .navbar-logo img {
+    max-height: 25px;
+  }
+
+  .admin-dashboard-navbar .loggedin-nav-userinfo {
+    gap: 6px;
+  }
+
+  .admin-dashboard-navbar .loggedin-nav-userinfo .ant-avatar {
+    min-width: 32px !important;
+    min-height: 32px !important;
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .admin-dashboard-navbar .loggedin-nav-name .username-text {
+    max-width: 60px;
+    font-size: 12px;
+  }
+
+  .admin-dashboard-navbar .loggedin-nav-name .dropdown-arrow {
+    font-size: 9px !important;
+    margin-left: 4px !important;
+  }
+
+  .admin-dashboard-container-main {
+    padding: 3px;
+  }
+}
+
+/* Responsive: Extra Small Mobile */
+@media screen and (max-width: 360px) {
+  .admin-dashboard-navbar .navbar-logo img {
+    max-height: 22px;
+  }
+
+  .admin-dashboard-navbar .loggedin-nav-userinfo {
+    gap: 5px;
+  }
+
+  .admin-dashboard-navbar .loggedin-nav-userinfo .ant-avatar {
+    min-width: 30px !important;
+    min-height: 30px !important;
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .admin-dashboard-navbar .loggedin-nav-name .username-text {
+    max-width: 50px;
+    font-size: 11px;
+  }
 }
 
 /* media manager styling starts */
@@ -62,7 +247,7 @@
 }
 .new-workout-creator-container-1 {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(35rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 35rem), 1fr));
   padding: 10px;
   grid-gap: 1rem;
 }
@@ -72,8 +257,18 @@
   padding: 0px 0 50px 0;
 }
 .new-workout-creator-container-2-nonrender {
-  /* padding: 10px; */
   overflow-y: scroll;
+}
+
+@media screen and (max-width: 768px) {
+  .new-workout-creator-container {
+    padding: 5px;
+  }
+  .new-workout-creator-container-1 {
+    grid-template-columns: 1fr;
+    padding: 5px;
+    grid-gap: 0.5rem;
+  }
 }
 
 .new-workout-creator-container-2-nonrender
@@ -98,9 +293,16 @@
 .display-workout-inside-week-container {
   margin-top: 10px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr));
   grid-gap: 10px;
   width: 100%;
+}
+
+@media screen and (max-width: 768px) {
+  .display-workout-inside-week-container {
+    grid-template-columns: 1fr;
+    grid-gap: 8px;
+  }
 }
 /* challenge manager styling ends */
 
@@ -128,7 +330,7 @@
 /* recipe manager starts */
 .new-recipe-information-inputs-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
   grid-gap: 10px;
 }
 .new-recipe-ingredients-list-container {
@@ -137,6 +339,8 @@
 .new-recipe-ingredients-list-container-header {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .hover-orange:hover {
   color: var(--color-orange);
@@ -145,8 +349,569 @@
 .new-recipe-ingredient-listitem {
   padding: 15px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr));
   grid-gap: 10px;
   text-align: left;
 }
+
+@media screen and (max-width: 768px) {
+  .new-recipe-information-inputs-container {
+    grid-template-columns: 1fr;
+    grid-gap: 8px;
+  }
+  .new-recipe-ingredient-listitem {
+    padding: 10px;
+    grid-template-columns: 1fr;
+    grid-gap: 8px;
+  }
+}
 /* recipe manager ends */
+
+/* ============================================
+   COMPREHENSIVE RESPONSIVE STYLES FOR ADMIN
+   ============================================ */
+
+/* Challenge list container responsive */
+@media screen and (max-width: 768px) {
+  .admin-allchallenges-list-container {
+    padding: 8px;
+    margin: 5px;
+  }
+
+  .newchallenge-creator-container {
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+
+  .newchallenge-creator-container-tab {
+    padding: 5px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .admin-allchallenges-list-container {
+    padding: 5px;
+    margin: 3px;
+  }
+
+  .newchallenge-creator-container {
+    padding: 8px;
+  }
+}
+
+/* User manager responsive */
+@media screen and (max-width: 768px) {
+  .admin-newuser-container {
+    margin: 10px 5px;
+    padding: 15px 10px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .admin-newuser-container {
+    margin: 5px 3px;
+    padding: 10px 5px;
+  }
+}
+
+/* Ant Design Table Responsive - Full width on large screens, scrollable on small */
+.admin-dashboard-container-main .ant-table-wrapper {
+  width: 100%;
+  overflow-x: auto !important;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  display: block;
+}
+
+.admin-dashboard-container-main .ant-table-container {
+  overflow: visible !important;
+}
+
+.admin-dashboard-container-main .ant-table {
+  width: 100%;
+}
+
+.admin-dashboard-container-main .ant-table-content {
+  overflow: visible !important;
+}
+
+.admin-dashboard-container-main table {
+  width: 100%;
+  table-layout: auto;
+}
+
+.admin-dashboard-container-main .ant-table-thead > tr > th,
+.admin-dashboard-container-main .ant-table-tbody > tr > td {
+  white-space: nowrap;
+}
+
+/* Allow specific columns to wrap if needed */
+.ant-table-cell.allow-wrap {
+  white-space: normal;
+  min-width: 150px;
+  max-width: 300px;
+}
+
+@media screen and (max-width: 768px) {
+  .admin-dashboard-container-main .ant-table-wrapper {
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .admin-dashboard-container-main .ant-table,
+  .admin-dashboard-container-main table {
+    width: max-content;
+    min-width: 600px;
+  }
+
+  .admin-dashboard-container-main .ant-table {
+    font-size: 13px;
+  }
+
+  .admin-dashboard-container-main .ant-table-thead > tr > th,
+  .admin-dashboard-container-main .ant-table-tbody > tr > td {
+    padding: 10px 8px !important;
+  }
+
+  .admin-dashboard-container-main .ant-table-thead > tr > th {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* Hide less important columns on mobile */
+  .ant-table-cell.hide-mobile {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .admin-dashboard-container-main .ant-table,
+  .admin-dashboard-container-main table {
+    width: max-content;
+    min-width: 500px;
+  }
+
+  .admin-dashboard-container-main .ant-table {
+    font-size: 12px;
+  }
+
+  .admin-dashboard-container-main .ant-table-thead > tr > th,
+  .admin-dashboard-container-main .ant-table-tbody > tr > td {
+    padding: 8px 6px !important;
+  }
+
+  .admin-dashboard-container-main .ant-table-thead > tr > th {
+    font-size: 11px;
+  }
+}
+
+/* Scrollbar styling for tables */
+.admin-dashboard-container-main .ant-table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.admin-dashboard-container-main .ant-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.admin-dashboard-container-main .ant-table-wrapper::-webkit-scrollbar-thumb {
+  background: var(--color-orange, #c1c1c1);
+  border-radius: 4px;
+}
+
+.admin-dashboard-container-main .ant-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--color-orange-light, #a1a1a1);
+}
+
+/* Ant Design Form Responsive */
+.ant-form-item {
+  margin-bottom: 16px;
+}
+
+@media screen and (max-width: 768px) {
+  .ant-form-item {
+    margin-bottom: 12px;
+  }
+
+  .ant-form-item-label {
+    padding-bottom: 4px;
+  }
+
+  .ant-form-item-label > label {
+    font-size: 13px;
+  }
+
+  .ant-input,
+  .ant-input-number,
+  .ant-select-selector,
+  .ant-picker {
+    font-size: 14px !important;
+  }
+}
+
+/* Ant Design Button Responsive */
+@media screen and (max-width: 768px) {
+  .ant-btn {
+    padding: 4px 12px;
+    font-size: 13px;
+  }
+
+  .ant-btn-lg {
+    padding: 6px 15px;
+    font-size: 14px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .ant-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+}
+
+/* Ant Design Modal - Reasonable sizes for desktop/laptop */
+.admin-dashboard-container-main .ant-modal:not(.media-manager-modal),
+.ant-modal-root .ant-modal:not(.media-manager-modal) {
+  width: auto !important;
+  max-width: 600px !important;
+}
+
+/* Media Manager Modal - Allow larger size */
+.media-manager-modal {
+  width: 90vw !important;
+  max-width: 1400px !important;
+}
+
+.admin-dashboard-container-main .ant-modal .ant-modal-content,
+.ant-modal-root .ant-modal .ant-modal-content {
+  border-radius: 8px;
+}
+
+.admin-dashboard-container-main .ant-modal .ant-modal-body,
+.ant-modal-root .ant-modal .ant-modal-body {
+  padding: 24px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.admin-dashboard-container-main .ant-modal .ant-modal-header,
+.ant-modal-root .ant-modal .ant-modal-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.admin-dashboard-container-main .ant-modal .ant-modal-footer,
+.ant-modal-root .ant-modal .ant-modal-footer {
+  padding: 12px 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.admin-dashboard-container-main .ant-modal .ant-modal-title,
+.ant-modal-root .ant-modal .ant-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Tablet */
+@media screen and (max-width: 768px) {
+  .admin-dashboard-container-main .ant-modal:not(.media-manager-modal),
+  .ant-modal-root .ant-modal:not(.media-manager-modal) {
+    width: 90vw !important;
+    max-width: 500px !important;
+  }
+
+  .admin-dashboard-container-main .ant-modal .ant-modal-body,
+  .ant-modal-root .ant-modal .ant-modal-body {
+    padding: 16px;
+  }
+}
+
+
+/* Prevent horizontal scroll globally */
+.ant-modal-root {
+  overflow: hidden;
+}
+
+/* Mobile - Full Height Modal (except Media Manager which has its own sizing) */
+@media screen and (max-width: 480px) {
+  .admin-dashboard-container-main .ant-modal:not(.media-manager-modal),
+  .ant-modal-root .ant-modal:not(.media-manager-modal) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    top: 0 !important;
+    padding: 0 !important;
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  .admin-dashboard-container-main .ant-modal:not(.media-manager-modal) .ant-modal-content,
+  .ant-modal-root .ant-modal:not(.media-manager-modal) .ant-modal-content {
+    border-radius: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .admin-dashboard-container-main .ant-modal:not(.media-manager-modal) .ant-modal-header,
+  .ant-modal-root .ant-modal:not(.media-manager-modal) .ant-modal-header {
+    padding: 10px 12px !important;
+    flex-shrink: 0;
+    border-bottom: 1px solid #e8e8e8;
+  }
+
+  .admin-dashboard-container-main .ant-modal:not(.media-manager-modal) .ant-modal-body,
+  .ant-modal-root .ant-modal:not(.media-manager-modal) .ant-modal-body {
+    padding: 10px !important;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-dashboard-container-main .ant-modal:not(.media-manager-modal) .ant-modal-footer,
+  .ant-modal-root .ant-modal:not(.media-manager-modal) .ant-modal-footer {
+    padding: 8px 12px !important;
+    flex-shrink: 0;
+    border-top: 1px solid #e8e8e8;
+  }
+
+  .admin-dashboard-container-main .ant-modal:not(.media-manager-modal) .ant-modal-title,
+  .ant-modal-root .ant-modal:not(.media-manager-modal) .ant-modal-title {
+    font-size: 15px;
+  }
+
+  .admin-dashboard-container-main .ant-modal:not(.media-manager-modal) .ant-modal-close,
+  .ant-modal-root .ant-modal:not(.media-manager-modal) .ant-modal-close {
+    top: 10px;
+    right: 10px;
+  }
+
+  /* Fix for modal mask/backdrop */
+  .ant-modal-mask {
+    position: fixed;
+  }
+
+  .ant-modal-wrap {
+    overflow: hidden;
+    position: fixed;
+    inset: 0;
+  }
+}
+
+/* Ant Design Card Responsive */
+@media screen and (max-width: 768px) {
+  .ant-card {
+    margin-bottom: 10px;
+  }
+
+  .ant-card-head {
+    padding: 0 12px;
+    min-height: 40px;
+  }
+
+  .ant-card-head-title {
+    font-size: 14px;
+    padding: 10px 0;
+  }
+
+  .ant-card-body {
+    padding: 12px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .ant-card-head {
+    padding: 0 10px;
+  }
+
+  .ant-card-body {
+    padding: 10px;
+  }
+}
+
+/* Ant Design Tabs Responsive */
+@media screen and (max-width: 768px) {
+  .ant-tabs-nav {
+    margin-bottom: 12px !important;
+  }
+
+  .ant-tabs-tab {
+    padding: 8px 12px !important;
+    font-size: 13px;
+  }
+
+  .ant-tabs-content {
+    padding: 0 5px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .ant-tabs-tab {
+    padding: 6px 8px !important;
+    font-size: 12px;
+  }
+
+  .ant-tabs-nav-list {
+    flex-wrap: wrap;
+  }
+}
+
+/* Ant Design Menu/Sidebar Responsive */
+@media screen and (max-width: 768px) {
+  .ant-layout-sider {
+    position: fixed !important;
+    z-index: 999;
+    height: 100vh;
+  }
+
+  .ant-layout-sider-collapsed {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+  }
+
+  .ant-menu-item,
+  .ant-menu-submenu-title {
+    padding: 0 16px !important;
+    font-size: 13px;
+  }
+}
+
+/* Ant Design Select Responsive */
+@media screen and (max-width: 768px) {
+  .ant-select {
+    width: 100% !important;
+  }
+
+  .ant-select-dropdown {
+    max-width: calc(100vw - 20px);
+  }
+}
+
+/* Ant Design Upload Responsive */
+@media screen and (max-width: 768px) {
+  .ant-upload-list {
+    max-width: 100%;
+  }
+
+  .ant-upload-list-item {
+    padding: 6px 8px;
+  }
+
+  .ant-upload-list-item-name {
+    max-width: calc(100% - 60px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Action buttons group responsive */
+.admin-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media screen and (max-width: 768px) {
+  .admin-action-buttons {
+    gap: 5px;
+  }
+
+  .admin-action-buttons .ant-btn {
+    flex: 1 1 auto;
+    min-width: 80px;
+  }
+}
+
+/* Page header responsive */
+.admin-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+@media screen and (max-width: 768px) {
+  .admin-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .admin-page-header h1,
+  .admin-page-header h2 {
+    font-size: 18px;
+    margin-bottom: 0;
+  }
+}
+
+/* Search and filter bar responsive */
+.admin-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+@media screen and (max-width: 768px) {
+  .admin-filter-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .admin-filter-bar > * {
+    width: 100% !important;
+  }
+}
+
+/* Utility classes for responsive visibility */
+@media screen and (max-width: 768px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+}
+
+@media screen and (min-width: 769px) {
+  .show-on-mobile-only {
+    display: none !important;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .hide-on-small-mobile {
+    display: none !important;
+  }
+}
+
+/* Text truncation for mobile */
+@media screen and (max-width: 768px) {
+  .truncate-mobile {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .truncate-mobile {
+    max-width: 100px;
+  }
+}
+
+/* Image responsive in admin */
+.admin-image-preview {
+  max-width: 100%;
+  height: auto;
+}
+
+@media screen and (max-width: 768px) {
+  .admin-image-preview {
+    max-height: 150px;
+    object-fit: contain;
+  }
+}

@@ -59,7 +59,7 @@ function AdminDashboard(props) {
   const { language, strings } = useContext(LanguageContext);
   const [currentSelection, setCurrentSelection] = useState(1);
   const [selectedChallengeForUpdate, setSelectedChallengeForUpdate] = useState(
-    {}
+    {},
   );
   const content = (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -84,7 +84,15 @@ function AdminDashboard(props) {
 
   function showConfirm(newPath) {
     Modal.confirm({
-      title: get(strings, "admin.confirm_leave", "Are you sure you want to leave before saving? All your progress will be lost."),
+      title: (
+        <span style={{ color: "#fff" }}>
+          {get(
+            strings,
+            "admin.confirm_leave",
+            "Are you sure you want to leave before saving? All your progress will be lost.",
+          )}
+        </span>
+      ),
       icon: null,
       onOk() {
         // console.log("OK");
@@ -168,9 +176,8 @@ function AdminDashboard(props) {
           />
           <Popover placement="bottom" content={content} trigger="click">
             <div className="loggedin-nav-name font-paragraph-white">
-              <span>
-                {adminInfo.username} <CaretDownOutlined />
-              </span>
+              <span className="username-text">{adminInfo.username}</span>
+              <CaretDownOutlined className="dropdown-arrow" />
             </div>
           </Popover>
         </div>
@@ -204,8 +211,15 @@ function AdminDashboard(props) {
               >
                 <T>admin.requests</T>
               </Menu.Item> */}
-              {hasAnyRole(adminInfo, ["admin", "trainer", "blogger", "nutrist"]) && (
-                <Button onClick={goToNewDashboard}><T>admin.go_to_new_dashboard</T></Button>
+              {hasAnyRole(adminInfo, [
+                "admin",
+                "trainer",
+                "blogger",
+                "nutrist",
+              ]) && (
+                <Button onClick={goToNewDashboard}>
+                  <T>admin.go_to_new_dashboard</T>
+                </Button>
               )}
 
               {/* {adminInfo.role === "admin" && (
@@ -255,7 +269,11 @@ function AdminDashboard(props) {
                 </Menu.Item>
               )}
               {hasAnyRole(adminInfo, ["admin", "blogger"]) && (
-                <SubMenu key="2" icon={<CoffeeOutlined />} title={<T>admin.manage_blogs</T>}>
+                <SubMenu
+                  key="2"
+                  icon={<CoffeeOutlined />}
+                  title={<T>admin.manage_blogs</T>}
+                >
                   <Menu.Item
                     key="2.1"
                     style={{
@@ -267,7 +285,11 @@ function AdminDashboard(props) {
                     }}
                     onClick={() => checkBeforeMoving(2.1)}
                   >
-                    {hasRole(adminInfo, "admin") ? <T>admin.all_blogs</T> : <T>admin.my_blogs</T>}
+                    {hasRole(adminInfo, "admin") ? (
+                      <T>admin.all_blogs</T>
+                    ) : (
+                      <T>admin.my_blogs</T>
+                    )}
                   </Menu.Item>
                   <Menu.Item
                     key="2.2"
@@ -300,7 +322,11 @@ function AdminDashboard(props) {
               </Menu.Item>
 
               {hasAnyRole(adminInfo, ["admin", "nutrist"]) && (
-                <SubMenu key="4" icon={<CoffeeOutlined />} title={<T>admin.manage_recipes</T>}>
+                <SubMenu
+                  key="4"
+                  icon={<CoffeeOutlined />}
+                  title={<T>admin.manage_recipes</T>}
+                >
                   <Menu.Item
                     key="4.1"
                     style={{
@@ -312,7 +338,11 @@ function AdminDashboard(props) {
                     }}
                     onClick={() => checkBeforeMoving(4.1)}
                   >
-                    {hasRole(adminInfo, "admin") ? <T>admin.all_recipes</T> : <T>admin.my_recipes</T>}
+                    {hasRole(adminInfo, "admin") ? (
+                      <T>admin.all_recipes</T>
+                    ) : (
+                      <T>admin.my_recipes</T>
+                    )}
                   </Menu.Item>
                   <Menu.Item
                     style={{
@@ -330,7 +360,11 @@ function AdminDashboard(props) {
                 </SubMenu>
               )}
               {hasAnyRole(adminInfo, ["admin", "trainer"]) && (
-                <SubMenu key="5" icon={<ControlOutlined />} title={<T>admin.manage_exercises</T>}>
+                <SubMenu
+                  key="5"
+                  icon={<ControlOutlined />}
+                  title={<T>admin.manage_exercises</T>}
+                >
                   <Menu.Item
                     key="5.1"
                     style={{
@@ -342,7 +376,11 @@ function AdminDashboard(props) {
                     }}
                     onClick={() => checkBeforeMoving(5.1)}
                   >
-                    {hasRole(adminInfo, "admin") ? <T>admin.all_exercises</T> : <T>admin.my_exercises</T>}
+                    {hasRole(adminInfo, "admin") ? (
+                      <T>admin.all_exercises</T>
+                    ) : (
+                      <T>admin.my_exercises</T>
+                    )}
                   </Menu.Item>
                   <Menu.Item
                     key="5.2"
@@ -376,7 +414,11 @@ function AdminDashboard(props) {
                     }}
                     onClick={() => checkBeforeMoving(6.1)}
                   >
-                    {hasRole(adminInfo, "admin") ? <T>admin.all_challenges</T> : <T>admin.my_challenges</T>}
+                    {hasRole(adminInfo, "admin") ? (
+                      <T>admin.all_challenges</T>
+                    ) : (
+                      <T>admin.my_challenges</T>
+                    )}
                   </Menu.Item>
                   <Menu.Item
                     key="6.2"
@@ -571,13 +613,23 @@ function AdminDashboard(props) {
             {/* {currentSelection === 1.2 && <NewProduct />} */}
             {currentSelection === 2.1 && <AllBlogs key={`blogs-${language}`} />}
             {currentSelection === 2.2 && (
-              <NewBlog key={`new-blog-${language}`} setCurrentSelection={setCurrentSelection} />
+              <NewBlog
+                key={`new-blog-${language}`}
+                setCurrentSelection={setCurrentSelection}
+              />
             )}
-            {currentSelection === 4.1 && <AllRecipes key={`recipes-${language}`} />}
+            {currentSelection === 4.1 && (
+              <AllRecipes key={`recipes-${language}`} />
+            )}
             {currentSelection === 4.2 && (
-              <NewRecipe key={`new-recipe-${language}`} setCurrentSelection={setCurrentSelection} />
+              <NewRecipe
+                key={`new-recipe-${language}`}
+                setCurrentSelection={setCurrentSelection}
+              />
             )}
-            {currentSelection === 5.1 && <AllExercises key={`exercises-${language}`} />}
+            {currentSelection === 5.1 && (
+              <AllExercises key={`exercises-${language}`} />
+            )}
             {currentSelection === 5.2 && (
               <NewExercise
                 key={`new-exercise-${language}`}
@@ -595,7 +647,9 @@ function AdminDashboard(props) {
                 currentSelection={currentSelection}
               />
             )}
-            {currentSelection === 6.2 && <NewChallenge key={`new-challenge-${language}`} />}
+            {currentSelection === 6.2 && (
+              <NewChallenge key={`new-challenge-${language}`} />
+            )}
             {currentSelection === 5.3 && (
               <UpdateChallenge
                 key={
@@ -629,7 +683,11 @@ function AdminDashboard(props) {
             )}
             {currentSelection === 11.1 && <AllFaqs key={`faqs-${language}`} />}
             {currentSelection === 11.2 && (
-              <NewFaq key={`new-faq-${language}`} setCurrentSelection={setCurrentSelection} home={11.1} />
+              <NewFaq
+                key={`new-faq-${language}`}
+                setCurrentSelection={setCurrentSelection}
+                home={11.1}
+              />
             )}
             {currentSelection === 12 && <AllRequests />}
           </div>

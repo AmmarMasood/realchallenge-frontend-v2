@@ -128,13 +128,14 @@
   /* border: 2px solid red; */
 }
 .loggedin-nav-name {
-  /* border: 1px solid blue; */
   color: #fff;
   font-size: 1.8rem;
   display: flex;
   flex-direction: column;
-
   cursor: pointer;
+  max-width: 120px;
+  overflow: visible;
+  min-width: 120px;
 }
 .ant-popover-inner {
   background-color: var(--color-gray) !important;
@@ -473,5 +474,161 @@
   }
   .navbar {
     padding-right: 50px;
+  }
+}
+
+/* ============================================
+   RESPONSIVE NAVBAR USER INFO
+   ============================================ */
+
+/* Username row with ellipsis and arrow */
+.loggedin-nav-name .username-row {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px;
+}
+
+.loggedin-nav-name .username-text {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 80px;
+}
+
+.loggedin-nav-name .dropdown-arrow {
+  flex-shrink: 0 !important;
+  font-size: 10px !important;
+}
+
+.loggedin-nav-name .points-row {
+  color: #677182;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.loggedin-nav-name .points-row img {
+  width: 16px;
+  height: 16px;
+}
+
+/* Keep avatar size consistent */
+.loggedin-nav-userinfo .ant-avatar {
+  min-width: 36px !important;
+  min-height: 36px !important;
+  width: 36px !important;
+  height: 36px !important;
+  flex-shrink: 0;
+}
+
+/* Responsive: Tablet */
+@media screen and (max-width: 768px) {
+  .loggedin-nav-userinfo {
+    gap: 8px;
+  }
+
+  .loggedin-nav-name {
+    max-width: 90px;
+  }
+
+  .loggedin-nav-name .username-text {
+    /* max-width: 50px; */
+    font-size: 1.5rem;
+  }
+
+  .loggedin-nav-name .points-row {
+    font-size: 1.4rem;
+  }
+
+  .loggedin-nav-userinfo .ant-avatar {
+    min-width: 32px !important;
+    min-height: 32px !important;
+    width: 32px !important;
+    height: 32px !important;
+    margin-right: 10px !important;
+  }
+
+  .loggedin-nav-userinfo .ant-badge {
+    margin-right: 10px !important;
+  }
+
+  .loggedin-nav-userinfo .anticon-bell {
+    font-size: 2rem !important;
+    margin-right: 10px !important;
+  }
+}
+
+/* Responsive: Mobile */
+@media screen and (max-width: 480px) {
+  .loggedin-nav-userinfo {
+    gap: 5px;
+  }
+
+  .loggedin-nav-name {
+    max-width: 70px;
+  }
+
+  .loggedin-nav-name .username-text {
+    /* max-width: 35px; */
+    font-size: 1.4rem;
+  }
+
+  .loggedin-nav-name .dropdown-arrow {
+    font-size: 9px !important;
+  }
+
+  .loggedin-nav-name .points-row {
+    font-size: 1.2rem;
+  }
+
+  .loggedin-nav-name .points-row img {
+    width: 14px;
+    height: 14px;
+  }
+
+  .loggedin-nav-userinfo .ant-avatar {
+    min-width: 28px !important;
+    min-height: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+    margin-right: 5px !important;
+  }
+
+  .loggedin-nav-userinfo .ant-badge {
+    margin-right: 5px !important;
+  }
+
+  .loggedin-nav-userinfo .anticon-bell {
+    font-size: 1.8rem !important;
+    padding: 3px !important;
+    margin-right: 5px !important;
+  }
+}
+
+/* Responsive: Extra Small Mobile */
+@media screen and (max-width: 360px) {
+  .loggedin-nav-name {
+    max-width: 55px;
+  }
+
+  .loggedin-nav-name .username-text {
+    /* max-width: 25px; */
+    font-size: 1.3rem;
+  }
+
+  .loggedin-nav-name .points-row {
+    display: none;
+  }
+
+  .loggedin-nav-userinfo .ant-avatar {
+    min-width: 26px !important;
+    min-height: 26px !important;
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  .loggedin-nav-userinfo .anticon-bell {
+    font-size: 1.6rem !important;
   }
 }

@@ -1,6 +1,7 @@
 .adminv2-selector-container {
   background-color: #171e27;
   max-width: 650px;
+  width: 100%;
   margin-top: 10px;
   padding: 20px;
 }
@@ -227,4 +228,188 @@
 .adminV2-country-selector .ant-select-clear {
   background: transparent !important;
   color: #fff !important;
+}
+
+/* Mobile responsive - add top padding for navbar spacing */
+@media screen and (max-width: 960px) {
+  .trainer-profile-container {
+    padding-top: 88px;
+    background-color: #171e27;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .trainer-profile-container {
+    padding-top: 80px;
+  }
+
+  /* Profile section responsive */
+  .profile-box-row1 {
+    grid-template-columns: 0.4fr 1fr 0.3fr !important;
+    grid-gap: 8px !important;
+  }
+
+  .profile-box-row1-avatar {
+    width: 100px !important;
+    height: 100px !important;
+    overflow: hidden !important;
+    border-radius: 50% !important;
+  }
+
+  .profile-box-row1-avatar > img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
+  .profile-box-row1-information h2 {
+    font-size: 22px !important;
+    margin-bottom: 5px !important;
+  }
+
+  .profile-box-row1-information .ant-select {
+    width: 150px !important;
+  }
+
+  .profile-box-row1-playericon {
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  .profile-box-row1-playericon img {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .adminv2-selector-container {
+    padding: 15px;
+    max-width: 100%;
+  }
+
+  .adminv2-selector > h1 {
+    font-size: 28px;
+    line-height: 30px;
+  }
+
+  .adminv2-select {
+    font-size: 18px;
+    padding: 12px;
+  }
+
+  .adminv2-select > img {
+    margin-right: 20px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .trainer-profile-container {
+    padding-top: 70px;
+  }
+
+  /* Hide logo on small screens */
+  .navbar-logo {
+    display: none !important;
+  }
+
+  /* Profile section responsive - small mobile */
+  .profile-box-row1 {
+    grid-template-columns: 70px 1fr 45px !important;
+    grid-gap: 6px !important;
+  }
+
+  .profile-box-row1-avatar {
+    width: 70px !important;
+    height: 70px !important;
+    overflow: hidden !important;
+    border-radius: 50% !important;
+  }
+
+  .profile-box-row1-avatar > img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
+  .profile-box-row1-information h2 {
+    font-size: 18px !important;
+    margin-bottom: 3px !important;
+    line-height: 1.2 !important;
+  }
+
+  .profile-box-row1-information .ant-select {
+    width: 120px !important;
+  }
+
+  .profile-box-row1-information img[alt="share"] {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .profile-box-row1-information img[alt=""] {
+    height: 14px !important;
+    margin: 1px !important;
+  }
+
+  .profile-box-row1-playericon {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .profile-box-row1-playericon img {
+    width: 25px !important;
+    height: 25px !important;
+  }
+
+  .profile-box-row2-quote {
+    font-size: 14px !important;
+  }
+
+  .profile-box-row2-quote img {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .trainer-profile-aboutme-heading {
+    font-size: 12px !important;
+  }
+
+  .trainer-profile-aboutme textarea {
+    font-size: 14px !important;
+  }
+
+  .adminv2-selector-container {
+    padding: 10px;
+  }
+
+  .adminv2-selector > h1 {
+    font-size: 24px;
+    line-height: 26px;
+  }
+
+  .adminv2-selector > p {
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .adminv2-select {
+    font-size: 16px;
+    padding: 10px;
+  }
+
+  .adminv2-select > img {
+    margin-right: 15px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .adminv2-selector-interests-interest {
+    font-size: 14px;
+    padding: 8px;
+    margin: 5px;
+  }
+
+  .adminv2-interest-button {
+    font-size: 14px;
+    padding: 8px;
+  }
 }

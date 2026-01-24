@@ -1,6 +1,28 @@
 import React, { createContext, useContext, useRef, useCallback, useMemo } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import { TouchBackend } from "react-dnd-touch-backend";
+
+// Detect if device supports touch
+export const isTouchDevice = () => {
+  if (typeof window === "undefined") return false;
+  return (
+    "ontouchstart" in window ||
+    navigator.maxTouchPoints > 0 ||
+    navigator.msMaxTouchPoints > 0
+  );
+};
+
+// Get the appropriate backend based on device type
+export const getDndBackend = () => {
+  return isTouchDevice() ? TouchBackend : HTML5Backend;
+};
+
+// Touch backend options for better mobile experience
+export const touchBackendOptions = {
+  enableMouseEvents: true,
+  delayTouchStart: 150,
+};
 
 export const ItemTypeWeek = "DRAGGABLE_WEEK";
 export const ItemTypeWorkout = "DRAGGABLE_WORKOUT";
