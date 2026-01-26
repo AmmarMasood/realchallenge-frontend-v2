@@ -785,7 +785,19 @@
     "yes": "Yes",
     "no": "No",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "reset_password": "Reset Password",
+    "activate_user": "Activate User",
+    "reset_password_confirm": "Send password reset email to this user?",
+    "activate_user_confirm": "Activate this user's account?",
+    "reset_email_sent": "Password Reset Email Sent",
+    "email_sent_to": "Email sent to",
+    "email_failed_warning": "Note: Email sending failed, please share the link manually.",
+    "reset_link_backup": "Here is the password reset link in case they can't find it",
+    "copy_link": "Copy Link"
   },
   "adminDashboard": {
     "edit": "Edit",

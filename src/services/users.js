@@ -46,6 +46,36 @@ export function updateUserRoles(userId, roles) {
     });
 }
 
+export function adminResetPassword(userId) {
+  return axios
+    .put(`${process.env.REACT_APP_SERVER}/api/users/${userId}/admin-reset-password`)
+    .then((res) => {
+      // Don't show notification here - the component will show a modal with the reset link
+      return res.data;
+    })
+    .catch((err) => {
+      const message = err.response?.data?.message || "Unable to send password reset email";
+      openNotificationWithIcon("error", message);
+      console.log(err);
+      return null;
+    });
+}
+
+export function adminActivateUser(userId) {
+  return axios
+    .put(`${process.env.REACT_APP_SERVER}/api/users/${userId}/admin-activate`)
+    .then((res) => {
+      openNotificationWithIcon("success", res.data.message || "User activated successfully");
+      return res.data;
+    })
+    .catch((err) => {
+      const message = err.response?.data?.message || "Unable to activate user";
+      openNotificationWithIcon("error", message);
+      console.log(err);
+      return null;
+    });
+}
+
 export function updateUserProfileByAdmin(userInfo, id, type) {
   if (type === "trainer") {
     return axios

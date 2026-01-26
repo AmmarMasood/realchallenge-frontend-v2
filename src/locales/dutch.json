@@ -785,7 +785,19 @@
     "yes": "Ja",
     "no": "Nee",
     "save": "Opslaan",
-    "cancel": "Annuleren"
+    "cancel": "Annuleren",
+    "status": "Status",
+    "active": "Actief",
+    "inactive": "Inactief",
+    "reset_password": "Wachtwoord Resetten",
+    "activate_user": "Gebruiker Activeren",
+    "reset_password_confirm": "Wachtwoord reset e-mail naar deze gebruiker sturen?",
+    "activate_user_confirm": "Account van deze gebruiker activeren?",
+    "reset_email_sent": "Wachtwoord Reset E-mail Verzonden",
+    "email_sent_to": "E-mail verzonden naar",
+    "email_failed_warning": "Let op: E-mail verzenden mislukt, deel de link handmatig.",
+    "reset_link_backup": "Hier is de wachtwoord reset link voor het geval ze deze niet kunnen vinden",
+    "copy_link": "Kopieer Link"
   },
   "adminDashboard": {
     "edit": "Bewerk",

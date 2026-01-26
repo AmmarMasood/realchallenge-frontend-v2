@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Button, Table, Space, Input, Select } from "antd";
+import { Button, Table, Space, Input, Select, Tag, Popconfirm, Tooltip, Modal } from "antd";
+import { KeyOutlined, CheckCircleOutlined, CopyOutlined } from "@ant-design/icons";
 import moment from "moment";
-import { deleteUser, getAllUsers } from "../../../services/users";
+import { deleteUser, getAllUsers, adminResetPassword, adminActivateUser } from "../../../services/users";
 import UpdateUser from "./UpdateUser";
 import { getAllChallengeGoals } from "../../../services/createChallenge/goals";
 import { hasRole } from "../../../helpers/roleHelpers";
@@ -17,6 +18,7 @@ function AllUsers() {
   const [filter, setFilter] = useState("all");
   const [selectedUser, setSelectedUser] = useState({});
   const [show, setShow] = useState("");
+  const [resetLinkModal, setResetLinkModal] = useState({ visible: false, email: "", resetLink: "" });
 
   async function fetchUsers() {
     const users = await getAllUsers();
@@ -65,6 +67,29 @@ function AllUsers() {
   const removeUser = async (d) => {
     await deleteUser(d._id);
     fetchUsers();
+  };
+
+  const handleResetPassword = async (user) => {
+    const result = await adminResetPassword(user._id);
+    if (result) {
+      setResetLinkModal({
+        visible: true,
+        email: result.email,
+        resetLink: result.resetLink,
+        emailFailed: result.emailFailed,
+      });
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const handleActivateUser = async (user) => {
+    const result = await adminActivateUser(user._id);
+    if (result) {
+      fetchUsers();
+    }
   };
 
   const onUpdateComplete = async (setLoading, vals, blogId) => {
@@ -121,6 +146,16 @@ function AllUsers() {
       },
     },
     {
+      title: <T>admin.status</T>,
+      key: "isActive",
+      dataIndex: "isActive",
+      render: (isActive) => (
+        <Tag color={isActive ? "green" : "red"}>
+          {isActive ? <T>admin.active</T> : <T>admin.inactive</T>}
+        </Tag>
+      ),
+    },
+    {
       title: <T>admin.created_at</T>,
       key: "updatedAt",
       dataIndex: "updatedAt",
@@ -144,6 +179,28 @@ function AllUsers() {
           >
             <T>admin.edit</T>
           </Button>
+          <Popconfirm
+            title={<span style={{ color: "white" }}>{get(strings, "admin.reset_password_confirm", "Send password reset email to this user?")}</span>}
+            onConfirm={() => handleResetPassword(record)}
+            okText={get(strings, "admin.yes", "Yes")}
+            cancelText={get(strings, "admin.no", "No")}
+          >
+            <Tooltip title={get(strings, "admin.reset_password", "Reset Password")}>
+              <Button icon={<KeyOutlined />} />
+            </Tooltip>
+          </Popconfirm>
+          {!record.isActive && (
+            <Popconfirm
+              title={<span style={{ color: "white" }}>{get(strings, "admin.activate_user_confirm", "Activate this user's account?")}</span>}
+              onConfirm={() => handleActivateUser(record)}
+              okText={get(strings, "admin.yes", "Yes")}
+              cancelText={get(strings, "admin.no", "No")}
+            >
+              <Tooltip title={get(strings, "admin.activate_user", "Activate User")}>
+                <Button type="primary" icon={<CheckCircleOutlined />} style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }} />
+              </Tooltip>
+            </Popconfirm>
+          )}
           <Button type="danger" onClick={() => removeUser(record)}>
             <T>admin.delete</T>
           </Button>
@@ -212,6 +269,50 @@ function AllUsers() {
         />
         <Table columns={columns} dataSource={filterAllUsers} />
       </div>
+
+      <Modal
+        title={<span style={{ color: "white" }}>{get(strings, "admin.reset_email_sent", "Password Reset Email Sent")}</span>}
+        open={resetLinkModal.visible}
+        onOk={() => setResetLinkModal({ visible: false, email: "", resetLink: "" })}
+        onCancel={() => setResetLinkModal({ visible: false, email: "", resetLink: "" })}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setResetLinkModal({ visible: false, email: "", resetLink: "" })}>
+            OK
+          </Button>
+        ]}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <p>
+            <span style={{ color: "white" }}><strong>{get(strings, "admin.email_sent_to", "Email sent to")}:</strong> {resetLinkModal.email}</span>
+          </p>
+          {resetLinkModal.emailFailed && (
+            <p style={{ color: "#ff4d4f" }}>
+              {get(strings, "admin.email_failed_warning", "Note: Email sending failed, please share the link manually.")}
+            </p>
+          )}
+        </div>
+        <div>
+          <p><span style={{ color: "white" }}><strong>{get(strings, "admin.reset_link_backup", "Here is the password reset link in case they can't find it")}:</strong></span></p>
+          <div style={{
+            background: "#f5f5f5",
+            padding: "10px",
+            borderRadius: "4px",
+            wordBreak: "break-all",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px"
+          }}>
+            <span style={{ flex: 1 }}>{resetLinkModal.resetLink}</span>
+            <Tooltip title={get(strings, "admin.copy_link", "Copy Link")}>
+              <Button
+                icon={<CopyOutlined />}
+                size="small"
+                onClick={() => copyToClipboard(resetLinkModal.resetLink)}
+              />
+            </Tooltip>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

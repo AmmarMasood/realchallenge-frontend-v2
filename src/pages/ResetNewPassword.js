@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Input, Form, Button } from "antd";
 
 import "../assets/login.css";
@@ -8,12 +8,25 @@ import { useParams, useHistory } from "react-router-dom";
 import { LoadingOutlined } from "@ant-design/icons";
 import { newPassword } from "../services/authentication";
 import { T } from "../components/Translate";
+import { userInfoContext, emptyUserConstants } from "../contexts/UserStore";
 
 function ResetNewPassword() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const { token } = useParams();
   let history = useHistory();
+  const [userInfo, setUserInfo] = useContext(userInfoContext);
+
+  // Log out user immediately when visiting this page
+  useEffect(() => {
+    // Clear all auth data from localStorage
+    localStorage.removeItem("jwtToken");
+    localStorage.removeItem("package-type");
+    localStorage.removeItem("isActive");
+    localStorage.removeItem("mediaManager_lastPath");
+    // Reset user context to empty state
+    setUserInfo(emptyUserConstants);
+  }, [setUserInfo]);
 
   const onFinish = async (values) => {
     setLoading(true);
