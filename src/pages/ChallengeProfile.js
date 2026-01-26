@@ -43,12 +43,14 @@ import { Helmet } from "react-helmet";
 import { T } from "../components/Translate";
 import { LanguageContext } from "../contexts/LanguageContext";
 import PopupPlayer from "../components/PopupPlayer/PopupPlayer";
+import { usePackageConfig } from "../contexts/PackageConfigContext";
 
 const tooltipText = `
 If you don’t choose any plan and hit start now, you can go through the wizard, get your free intake, make a free account and enjoy our free challenges collection and one week meal plan. 
 `;
 function ChallengeProfile(props) {
   const { language, updateLanguage } = useContext(LanguageContext);
+  const { packages, getPackage } = usePackageConfig();
   const [reviewOpen, setReviewOpen] = useState(false);
   const [openPopupPlayer, setOpenPopupPlayer] = useState(false);
   const [open, setOpen] = useState(false);
@@ -283,6 +285,7 @@ function ChallengeProfile(props) {
         props.history,
         setSelectedChallenge,
         setReplaceFreeChallengePopupVisible,
+        packages,
       );
       // console.log("chhhhhh", ch);
       // return;
@@ -370,6 +373,7 @@ function ChallengeProfile(props) {
                 <T>challenge_profile.gataf</T>
               </div>
               <div className="unlock-challenge-packages">
+                {/* CHALLENGE_1 - One Time */}
                 <div
                   className="unlock-challenge-pack font-paragraph-white"
                   onClick={() => {
@@ -393,7 +397,7 @@ function ChallengeProfile(props) {
                       marginBottom: "30px",
                     }}
                   >
-                    One-Time <br /> Challenge
+                    {getPackage("CHALLENGE_1")?.displayName || "One-Time Challenge"}
                   </span>
                   <span
                     style={{ fontSize: "26px", fontWeight: "600" }}
@@ -403,6 +407,7 @@ function ChallengeProfile(props) {
                     Billed Once
                   </span>
                 </div>
+                {/* CHALLENGE_12 - 12 Months */}
                 <div
                   className="unlock-challenge-pack font-paragraph-white"
                   onClick={() => {
@@ -426,30 +431,33 @@ function ChallengeProfile(props) {
                       marginBottom: "10px",
                     }}
                   >
-                    Repeat & Save
+                    {getPackage("CHALLENGE_12")?.displayName || "12 Months Plan"}
                   </span>
-                  <span
-                    className="font-paragraph-white"
-                    style={{
-                      fontSize: "13px",
-                      backgroundColor: "#f37720",
-                      padding: "5px",
-                      width: "120px",
-                      fontWeight: "600",
-                      alignSelf: "center",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Save up to 60%
-                  </span>
+                  {getPackage("CHALLENGE_12")?.savingsPercent && (
+                    <span
+                      className="font-paragraph-white"
+                      style={{
+                        fontSize: "13px",
+                        backgroundColor: "#f37720",
+                        padding: "5px",
+                        width: "120px",
+                        fontWeight: "600",
+                        alignSelf: "center",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      Save up to {getPackage("CHALLENGE_12")?.savingsPercent}
+                    </span>
+                  )}
                   <span style={{ fontSize: "26px", fontWeight: "600" }}>
-                    €4.5 <span style={{ fontSize: "14px" }}>/Week</span>
+                    {getPackage("CHALLENGE_12")?.priceDisplayText || `€${getPackage("CHALLENGE_12")?.price}`}
                   </span>
-                  <span style={{ margin: "15px 0" }}>12 months plan</span>
+                  <span style={{ margin: "15px 0" }}>{getPackage("CHALLENGE_12")?.billingInterval} months plan</span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
                     Billed Monthly
                   </span>
                 </div>
+                {/* CHALLENGE_3 - 3 Months */}
                 <div
                   className="unlock-challenge-pack font-paragraph-white"
                   onClick={() => {
@@ -473,26 +481,28 @@ function ChallengeProfile(props) {
                       marginBottom: "10px",
                     }}
                   >
-                    Repeat & Save
+                    {getPackage("CHALLENGE_3")?.displayName || "3 Months Plan"}
                   </span>
-                  <span
-                    className="font-paragraph-white"
-                    style={{
-                      fontSize: "13px",
-                      backgroundColor: "#f37720",
-                      padding: "5px",
-                      width: "120px",
-                      fontWeight: "600",
-                      alignSelf: "center",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Save up to 30%
-                  </span>
+                  {getPackage("CHALLENGE_3")?.savingsPercent && (
+                    <span
+                      className="font-paragraph-white"
+                      style={{
+                        fontSize: "13px",
+                        backgroundColor: "#f37720",
+                        padding: "5px",
+                        width: "120px",
+                        fontWeight: "600",
+                        alignSelf: "center",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      Save up to {getPackage("CHALLENGE_3")?.savingsPercent}
+                    </span>
+                  )}
                   <span style={{ fontSize: "26px", fontWeight: "600" }}>
-                    €6 <span style={{ fontSize: "14px" }}>/Week</span>
+                    {getPackage("CHALLENGE_3")?.priceDisplayText || `€${getPackage("CHALLENGE_3")?.price}`}
                   </span>
-                  <span style={{ margin: "15px 0" }}>3 months plan</span>
+                  <span style={{ margin: "15px 0" }}>{getPackage("CHALLENGE_3")?.billingInterval} months plan</span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
                     Billed Monthly
                   </span>

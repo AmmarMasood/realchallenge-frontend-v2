@@ -31,6 +31,7 @@ import ChallengeProfileSubtract from "../../../../assets/icons/challenge-profile
 import { T } from "../../../../components/Translate";
 import { LanguageContext } from "../../../../contexts/LanguageContext";
 import { get } from "lodash";
+import { usePackageConfig } from "../../../../contexts/PackageConfigContext";
 import "../../../../assets/adminDashboardV2.css";
 import RemoteMediaManager from "../../MediaManager/RemoteMediaManager";
 import PopupPlayer from "../../../PopupPlayer/PopupPlayer";
@@ -91,6 +92,7 @@ const iconStyle = {
 
 function BasicInformation(props) {
   const { language, updateLanguage, strings } = useContext(LanguageContext);
+  const { getPackage } = usePackageConfig();
   const [userInfo, setUserInfo] = useContext(userInfoContext);
   const [isUpdate, setIsUpdate] = useState(false);
   const {
@@ -2206,7 +2208,7 @@ function BasicInformation(props) {
                       marginBottom: "30px",
                     }}
                   >
-                    One-Time <br /> Challenge
+                    {getPackage("CHALLENGE_1")?.displayName || "One-Time Challenge"}
                   </span>
                   <span>
                     <input
@@ -2276,26 +2278,28 @@ function BasicInformation(props) {
                       marginBottom: "10px",
                     }}
                   >
-                    Repeat & Save
+                    {getPackage("CHALLENGE_12")?.displayName || "12 Months Plan"}
                   </span>
-                  <span
-                    className="font-paragraph-white"
-                    style={{
-                      fontSize: "13px",
-                      backgroundColor: "#f37720",
-                      padding: "5px",
-                      width: "120px",
-                      fontWeight: "600",
-                      alignSelf: "center",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    <T>challengeStudio.save_60</T>
-                  </span>
+                  {getPackage("CHALLENGE_12")?.savingsPercent && (
+                    <span
+                      className="font-paragraph-white"
+                      style={{
+                        fontSize: "13px",
+                        backgroundColor: "#f37720",
+                        padding: "5px",
+                        width: "120px",
+                        fontWeight: "600",
+                        alignSelf: "center",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      <T>challengeStudio.save_up_to</T> {getPackage("CHALLENGE_12")?.savingsPercent}
+                    </span>
+                  )}
                   <span style={{ fontSize: "26px", fontWeight: "600" }}>
-                    €4.5 <span style={{ fontSize: "14px" }}>/<T>challengeStudio.week</T></span>
+                    {getPackage("CHALLENGE_12")?.priceDisplayText || `€${getPackage("CHALLENGE_12")?.price}`}
                   </span>
-                  <span style={{ margin: "15px 0" }}><T>challengeStudio.twelve_months_plan</T></span>
+                  <span style={{ margin: "15px 0" }}>{getPackage("CHALLENGE_12")?.billingInterval} months plan</span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
                     <T>challengeStudio.billed_monthly</T>
                   </span>
@@ -2328,26 +2332,28 @@ function BasicInformation(props) {
                       marginBottom: "10px",
                     }}
                   >
-                    Repeat & Save
+                    {getPackage("CHALLENGE_3")?.displayName || "3 Months Plan"}
                   </span>
-                  <span
-                    className="font-paragraph-white"
-                    style={{
-                      fontSize: "13px",
-                      backgroundColor: "#f37720",
-                      padding: "5px",
-                      width: "120px",
-                      fontWeight: "600",
-                      alignSelf: "center",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    <T>challengeStudio.save_30</T>
-                  </span>
+                  {getPackage("CHALLENGE_3")?.savingsPercent && (
+                    <span
+                      className="font-paragraph-white"
+                      style={{
+                        fontSize: "13px",
+                        backgroundColor: "#f37720",
+                        padding: "5px",
+                        width: "120px",
+                        fontWeight: "600",
+                        alignSelf: "center",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      <T>challengeStudio.save_up_to</T> {getPackage("CHALLENGE_3")?.savingsPercent}
+                    </span>
+                  )}
                   <span style={{ fontSize: "26px", fontWeight: "600" }}>
-                    €6 <span style={{ fontSize: "14px" }}>/<T>challengeStudio.week</T></span>
+                    {getPackage("CHALLENGE_3")?.priceDisplayText || `€${getPackage("CHALLENGE_3")?.price}`}
                   </span>
-                  <span style={{ margin: "15px 0" }}><T>challengeStudio.three_months_plan</T></span>
+                  <span style={{ margin: "15px 0" }}>{getPackage("CHALLENGE_3")?.billingInterval} months plan</span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
                     <T>challengeStudio.billed_monthly</T>
                   </span>

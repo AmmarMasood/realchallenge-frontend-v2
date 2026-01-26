@@ -51,8 +51,12 @@ function UpdateCoupon({
           challengesApplicableOn.length > 0 ? challengesApplicableOn : null,
       };
       const res = await updateCoupon(s, selectedCoupon._id);
-      fetchData();
       console.log(res);
+      if (res) {
+        form.resetFields();
+        fetchData();
+        setVisible(false);
+      }
     } else {
       alert(get(strings, "admin.please_enter_coupon_code", "Please enter coupon code"));
     }

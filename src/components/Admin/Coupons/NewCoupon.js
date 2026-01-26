@@ -7,7 +7,7 @@ import { LanguageContext } from "../../../contexts/LanguageContext";
 import { T } from "../../Translate";
 import { get } from "lodash";
 
-function NewCoupon() {
+function NewCoupon({ setCurrentSelection, home }) {
   const { strings } = useContext(LanguageContext);
   const [code, setCode] = useState("");
   const [active, setActive] = useState(false);
@@ -30,6 +30,9 @@ function NewCoupon() {
       };
       const res = await createCoupon(s);
       console.log(res);
+      if (res && setCurrentSelection) {
+        setCurrentSelection(home);
+      }
     } else {
       alert(get(strings, "admin.please_enter_coupon_code", "Please enter coupon code"));
     }

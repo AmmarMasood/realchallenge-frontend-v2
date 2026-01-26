@@ -16,6 +16,8 @@ import {
   ControlOutlined,
   QuestionCircleOutlined,
   ExclamationCircleOutlined,
+  GlobalOutlined,
+  DollarOutlined,
 } from "@ant-design/icons";
 import { Link, withRouter } from "react-router-dom";
 import { VFSBrowser } from "../components/Admin/MediaManager/MediaManager";
@@ -44,6 +46,8 @@ import NewPost from "../components/Admin/PostsManager/NewPost";
 import AllFaqs from "../components/Admin/FaqManager/AllFaqs";
 import NewFaq from "../components/Admin/FaqManager/NewFaq";
 import AllRequests from "../components/Admin/RequestManager/AllRequests";
+import TranslationManager from "../components/Admin/TranslationManager";
+import PackageManager from "../components/Admin/PackageManager";
 import { T } from "../components/Translate";
 import LanguageSelector from "../components/LanguageSelector/LanguageSelector";
 import { hasRole, hasAnyRole } from "../helpers/roleHelpers";
@@ -605,6 +609,38 @@ function AdminDashboard(props) {
                   </Menu.Item>
                 </SubMenu>
               )}
+              {hasRole(adminInfo, "admin") && (
+                <Menu.Item
+                  key="13"
+                  icon={<GlobalOutlined />}
+                  style={{
+                    backgroundColor:
+                      currentSelection === 13
+                        ? "var(--color-orange)"
+                        : "transparent",
+                    color: currentSelection === 13 ? "#fff" : "",
+                  }}
+                  onClick={() => checkBeforeMoving(13)}
+                >
+                  <T>admin.translation_manager</T>
+                </Menu.Item>
+              )}
+              {hasRole(adminInfo, "admin") && (
+                <Menu.Item
+                  key="14"
+                  icon={<DollarOutlined />}
+                  style={{
+                    backgroundColor:
+                      currentSelection === 14
+                        ? "var(--color-orange)"
+                        : "transparent",
+                    color: currentSelection === 14 ? "#fff" : "",
+                  }}
+                  onClick={() => checkBeforeMoving(14)}
+                >
+                  <T>admin.package_manager</T>
+                </Menu.Item>
+              )}
             </Menu>
           </Sider>
           <div className="admin-dashboard-container-main">
@@ -690,6 +726,8 @@ function AdminDashboard(props) {
               />
             )}
             {currentSelection === 12 && <AllRequests />}
+            {currentSelection === 13 && <TranslationManager />}
+            {currentSelection === 14 && <PackageManager />}
           </div>
         </Layout>
       </div>

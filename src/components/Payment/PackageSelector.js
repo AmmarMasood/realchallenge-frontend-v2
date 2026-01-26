@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { CheckOutlined, EuroOutlined } from "@ant-design/icons";
 import "../../assets/packageSelector.css";
+import { usePackageConfig } from "../../contexts/PackageConfigContext";
 
 const checkStyle = {
   color: "#ff7700",
@@ -9,7 +10,13 @@ const checkStyle = {
 };
 
 function PackageSelector({ onChoosePlan }) {
+  const { getPackage } = usePackageConfig();
   const [pack, setPack] = useState("CHALLENGE_12");
+
+  const pkg1 = getPackage("CHALLENGE_1");
+  const pkg12 = getPackage("CHALLENGE_12");
+  const pkg3 = getPackage("CHALLENGE_3");
+
   return (
     <div className="package-selector-wrapper">
       <input
@@ -36,21 +43,21 @@ function PackageSelector({ onChoosePlan }) {
           className="tab-1 font-paragraph-white"
           onClick={() => setPack("CHALLENGE_1")}
         >
-          Challenge
+          {pkg1?.displayName || "Challenge"}
         </label>
         <label
           for="tab-2"
           className="tab-2 font-paragraph-white"
           onClick={() => setPack("CHALLENGE_12")}
         >
-          12 Months Plan
+          {pkg12?.displayName || "12 Months Plan"}
         </label>
         <label
           for="tab-3"
           className="tab-3 font-paragraph-white"
           onClick={() => setPack("CHALLENGE_3")}
         >
-          3 Months Plan
+          {pkg3?.displayName || "3 Months Plan"}
         </label>
         <div className="slider"></div>
       </header>
@@ -59,7 +66,7 @@ function PackageSelector({ onChoosePlan }) {
           <div className="row row-1">
             <div className="price-details">
               <span className="price font-heading-white">
-                One-Time Challenge
+                {pkg1?.displayName || "One-Time Challenge"}
               </span>
               <p className="font-subheading-white">
                 {" "}
@@ -90,20 +97,26 @@ function PackageSelector({ onChoosePlan }) {
           </div>
           <div className="row">
             <div className="price-details">
-              <span className="price font-heading-white">Repeat & Save</span>
-              <p className="font-subheading-white" style={{ fontSize: "16px" }}>
-                <span style={{ fontSize: "35px" }}>€4.5</span> / Week
-              </p>
-              <span
-                className="font-paragraph-white"
-                style={{
-                  fontSize: "16px",
-                  backgroundColor: "#ff8b07",
-                  padding: "5px",
-                }}
-              >
-                Save up to 60%
+              <span className="price font-heading-white">
+                {pkg12?.displayName || "12 Months Plan"}
               </span>
+              <p className="font-subheading-white" style={{ fontSize: "16px" }}>
+                <span style={{ fontSize: "35px" }}>
+                  {pkg12?.priceDisplayText || `€${pkg12?.price}`}
+                </span>
+              </p>
+              {pkg12?.savingsPercent && (
+                <span
+                  className="font-paragraph-white"
+                  style={{
+                    fontSize: "16px",
+                    backgroundColor: "#ff8b07",
+                    padding: "5px",
+                  }}
+                >
+                  Save up to {pkg12?.savingsPercent}
+                </span>
+              )}
             </div>
             <ul className="features">
               <li>
@@ -126,20 +139,26 @@ function PackageSelector({ onChoosePlan }) {
           </div>
           <div className="row">
             <div className="price-details">
-              <span className="price font-heading-white">Repeat & Save</span>
-              <p className="font-subheading-white" style={{ fontSize: "16px" }}>
-                <span style={{ fontSize: "35px" }}>€6</span> / Week
-              </p>
-              <span
-                className="font-paragraph-white"
-                style={{
-                  fontSize: "16px",
-                  backgroundColor: "#ff8b07",
-                  padding: "5px",
-                }}
-              >
-                Save up to 30%
+              <span className="price font-heading-white">
+                {pkg3?.displayName || "3 Months Plan"}
               </span>
+              <p className="font-subheading-white" style={{ fontSize: "16px" }}>
+                <span style={{ fontSize: "35px" }}>
+                  {pkg3?.priceDisplayText || `€${pkg3?.price}`}
+                </span>
+              </p>
+              {pkg3?.savingsPercent && (
+                <span
+                  className="font-paragraph-white"
+                  style={{
+                    fontSize: "16px",
+                    backgroundColor: "#ff8b07",
+                    padding: "5px",
+                  }}
+                >
+                  Save up to {pkg3?.savingsPercent}
+                </span>
+              )}
             </div>
             <ul className="features">
               <li>

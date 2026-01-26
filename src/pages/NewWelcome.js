@@ -9,8 +9,10 @@ import { userInfoContext } from "../contexts/UserStore";
 import { selectedChallengeContext } from "../contexts/PaymentProcessStore";
 import { addFreeChallenge } from "../services/createChallenge/main";
 import { T } from "../components/Translate";
+import { usePackageConfig } from "../contexts/PackageConfigContext";
 
 function NewWelcome(props) {
+  const { getPackage } = usePackageConfig();
   const history = useHistory();
   const userInfo = useContext(userInfoContext)[0];
   const selectedChallenge = useContext(selectedChallengeContext)[0];
@@ -157,7 +159,7 @@ function NewWelcome(props) {
                 </li>
               </ul>
             </div>
-            {/* second card */}
+            {/* second card - 12 months */}
             <div
               className="new-welcome-card"
               onClick={() => setChoosenPlan("CHALLENGE_12")}
@@ -169,35 +171,38 @@ function NewWelcome(props) {
               }}
             >
               <h2 className="font-paragraph-white">
-                {" "}
-                <T>newWelcome.rs</T>
+                {getPackage("CHALLENGE_12")?.displayName || "12 Months Plan"}
               </h2>
-              <span
-                className="font-paragraph-white"
-                style={{
-                  fontSize: "13px",
-                  backgroundColor: "#f37720",
-                  padding: "5px",
-                  width: "120px",
-                  fontWeight: "600",
-                  alignSelf: "center",
-                  marginBottom: "10px",
-                }}
-              >
-                <T>newWelcome.saveUpTo</T> 60%
-              </span>
+              {getPackage("CHALLENGE_12")?.savingsPercent && (
+                <span
+                  className="font-paragraph-white"
+                  style={{
+                    fontSize: "13px",
+                    backgroundColor: "#f37720",
+                    padding: "5px",
+                    width: "120px",
+                    fontWeight: "600",
+                    alignSelf: "center",
+                    marginBottom: "10px",
+                  }}
+                >
+                  <T>newWelcome.saveUpTo</T> {getPackage("CHALLENGE_12")?.savingsPercent}
+                </span>
+              )}
               <span
                 className="font-paragraph-white"
                 style={{ fontWeight: "600", margin: "10px" }}
               >
-                <span style={{ fontSize: "30px" }}>€4.5</span> / WEEK
+                <span style={{ fontSize: "30px" }}>
+                  {getPackage("CHALLENGE_12")?.priceDisplayText || `€${getPackage("CHALLENGE_12")?.price}`}
+                </span>
               </span>
 
               <span
                 className="font-paragraph-white"
                 style={{ color: "#969696", textAlign: "left" }}
               >
-                12 months plan
+                {getPackage("CHALLENGE_12")?.billingInterval} months plan
               </span>
               <ul
                 className="features"
@@ -223,7 +228,7 @@ function NewWelcome(props) {
                 </li>
               </ul>
             </div>
-            {/* third card */}
+            {/* third card - 3 months */}
             <div
               className="new-welcome-card"
               onClick={() => setChoosenPlan("CHALLENGE_3")}
@@ -235,34 +240,37 @@ function NewWelcome(props) {
               }}
             >
               <h2 className="font-paragraph-white">
-                <T>newWelcome.rs</T>
+                {getPackage("CHALLENGE_3")?.displayName || "3 Months Plan"}
               </h2>
-              <span
-                className="font-paragraph-white"
-                style={{
-                  fontSize: "13px",
-                  backgroundColor: "#f37720",
-                  padding: "5px",
-                  width: "120px",
-                  fontWeight: "600",
-                  alignSelf: "center",
-                  marginBottom: "10px",
-                }}
-              >
-                <T>newWelcome.saveUpTo</T> 30%
-              </span>
+              {getPackage("CHALLENGE_3")?.savingsPercent && (
+                <span
+                  className="font-paragraph-white"
+                  style={{
+                    fontSize: "13px",
+                    backgroundColor: "#f37720",
+                    padding: "5px",
+                    width: "120px",
+                    fontWeight: "600",
+                    alignSelf: "center",
+                    marginBottom: "10px",
+                  }}
+                >
+                  <T>newWelcome.saveUpTo</T> {getPackage("CHALLENGE_3")?.savingsPercent}
+                </span>
+              )}
               <span
                 className="font-paragraph-white"
                 style={{ fontWeight: "600", margin: "10px" }}
               >
-                <span style={{ fontSize: "30px" }}>€6</span> /{" "}
-                <T>newWelcome.week</T>
+                <span style={{ fontSize: "30px" }}>
+                  {getPackage("CHALLENGE_3")?.priceDisplayText || `€${getPackage("CHALLENGE_3")?.price}`}
+                </span>
               </span>
               <span
                 className="font-paragraph-white"
                 style={{ color: "#969696", textAlign: "left" }}
               >
-                <T>newWelcome.tmp</T>
+                {getPackage("CHALLENGE_3")?.billingInterval} months plan
               </span>
               <ul
                 className="features"

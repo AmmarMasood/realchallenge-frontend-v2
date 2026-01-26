@@ -407,11 +407,14 @@ import "../../assets/createPayment.css";
 import VerifyUser from "../UserDashboard/VerifyUser";
 import { createPayment } from "../../services/payment";
 import { getCouponByCode, getCouponDiscount } from "../../services/coupons";
-import { availMyPoints } from "../../services/users";
+import { redeemPoints } from "../../services/users";
+import { usePackageConfig } from "../../contexts/PackageConfigContext";
 
 function CreatePayment(props) {
+  const { getPackage } = usePackageConfig();
   const [couponCode, setCouponCode] = useState("");
-  const [newPrice, setNewPrice] = useState({ success: false, price: 0 });
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [pointsRedeemed, setPointsRedeemed] = useState(false);
   const [showCouponModal, setShowCouponModal] = useState([]);
   const [userInfo, setUserInfo] = useContext(userInfoContext);
   const [userPoints, setUserPoints] = useContext(userPointsContext);
@@ -430,125 +433,142 @@ function CreatePayment(props) {
   const [couponButtonLoading, setCouponButtonLoading] = useState(false);
   const history = useHistory();
 
+  // Redirect if no package selected or if CHALLENGE_1 has no challenge
+  useEffect(() => {
+    const packType = localStorage.getItem("package-type");
+    if (!packType) {
+      history.replace("/user/dashboard");
+      return;
+    }
+    if (packType === "CHALLENGE_1" && !selectedChallenge?._id) {
+      history.replace("/user/dashboard");
+    }
+  }, [history, selectedChallenge]);
+
   const getDiscountFromPoints = async () => {
-    if (userPoints >= 100) {
-      const d = userPoints;
-      const res = await availMyPoints(setUserPoints);
-      if (res) {
-        setPackInfo({
-          ...packInfo,
-          price: packInfo.price - d / 100,
-        });
-        const c = { ...selectedChallenge, price: selectedChallenge.price - 1 };
-        setSelectedChallenge(c);
+    if (pointsRedeemed) {
+      alert("Points have already been redeemed for this order.");
+      return;
+    }
+    if (userPoints < 100) {
+      alert("You need at least 100 points to redeem.");
+      return;
+    }
+
+    // Redeem all available points
+    const res = await redeemPoints(userPoints, setUserPoints);
+    if (res && res.success) {
+      const discount = res.discount;
+      const packType = localStorage.getItem("package-type");
+      if (packType === "CHALLENGE_1") {
+        const newPrice = selectedChallenge.price - discount;
+        setSelectedChallenge({ ...selectedChallenge, price: newPrice });
+        setPackInfo((prev) => ({ ...prev, price: newPrice }));
+      } else {
+        setPackInfo((prev) => ({
+          ...prev,
+          price: parseFloat(prev.price) - discount,
+        }));
       }
-      console.log(d, packInfo, res, packInfo.price - d / 100, userPoints);
-    } else {
-      console.log("here");
+      setPointsRedeemed(true);
     }
   };
+
   const checkCouponCode = async () => {
+    if (couponApplied) {
+      alert("A coupon has already been applied to this order.");
+      return;
+    }
+    if (!couponCode.trim()) {
+      alert("Please enter a coupon code.");
+      return;
+    }
     setCouponButtonLoading(true);
     const couponInfo = await getCouponByCode(couponCode);
 
-    if (couponInfo.success) {
+    if (couponInfo && couponInfo.success) {
       const coupon = couponInfo.data.coupon;
-      console.log(coupon, packInfo, pack);
-      if (
-        packInfo.name === "One-Time Challenge" &&
-        coupon.applicableOn.includes("CHALLENGE ONE")
-      ) {
-        if (
-          coupon.challengesApplicableOn &&
-          !coupon.challengesApplicableOn.includes(selectedChallenge._id)
-        ) {
-          alert("Coupon isnt available for the selected challenge!");
-          return;
-        }
-        // console.log("valid");
-        const res = await getCouponDiscount(coupon._id);
-        if (res.success) {
-          setPackInfo({
-            ...packInfo,
-            price: packInfo.price - packInfo.price * (coupon.discount / 100),
-          });
-        }
+      const packType = localStorage.getItem("package-type");
+
+      // Determine which coupon plan label matches the current package
+      const packageToCouponLabel = {
+        CHALLENGE_1: "CHALLENGE ONE",
+        CHALLENGE_3: "CHALLENGE THREE",
+        CHALLENGE_12: "CHALLENGE TWELVE",
+      };
+      const couponLabel = packageToCouponLabel[packType];
+      const isApplicable =
+        coupon.applicableOn.includes("ALL") ||
+        (couponLabel && coupon.applicableOn.includes(couponLabel));
+
+      if (!isApplicable) {
+        alert("This code is not valid for this subscription package.");
         setCouponButtonLoading(false);
         return;
-      } else if (
-        packInfo.name === "3 Months Plan" &&
-        coupon.applicableOn.includes("CHALLENGE THREE")
-      ) {
-        const res = await getCouponDiscount(coupon._id);
-        if (res && res.success) {
-          console.log(
-            coupon,
-            packInfo,
-            packInfo.price - packInfo.price * (coupon.discountPercent / 100)
-          );
-          setPackInfo({
-            ...packInfo,
-            price:
-              packInfo.price - packInfo.price * (coupon.discountPercent / 100),
-          });
-        }
-        setCouponButtonLoading(false);
-        return;
-      } else if (
-        packInfo.name === "12 Months Plan" &&
-        coupon.applicableOn.includes("CHALLENGE TWELVE")
-      ) {
-        const res = await getCouponDiscount(coupon._id);
-        if (res.success) {
-          setPackInfo({
-            ...packInfo,
-            price: packInfo.price - packInfo.price * (coupon.discount / 100),
-          });
-        }
-        setCouponButtonLoading(false);
-        return;
-      } else {
-        alert("This code is not valid for these subscribtion package");
       }
 
-      // setNewPrice({success: true, })
-      // const res = await useCoupon(id);
+      // For CHALLENGE_1, check if coupon is restricted to specific challenges
+      if (
+        packType === "CHALLENGE_1" &&
+        coupon.challengesApplicableOn &&
+        coupon.challengesApplicableOn.length > 0 &&
+        !coupon.challengesApplicableOn.includes(selectedChallenge._id)
+      ) {
+        alert("Coupon isn't available for the selected challenge!");
+        setCouponButtonLoading(false);
+        return;
+      }
+
+      // Mark coupon as used on the server
+      const res = await getCouponDiscount(coupon._id);
+      if (res && res.success) {
+        const discountFraction = coupon.discountPercent / 100;
+        if (packType === "CHALLENGE_1") {
+          const newPrice =
+            selectedChallenge.price -
+            selectedChallenge.price * discountFraction;
+          setSelectedChallenge({ ...selectedChallenge, price: newPrice });
+          setPackInfo((prev) => ({ ...prev, price: newPrice }));
+        } else {
+          setPackInfo((prev) => ({
+            ...prev,
+            price:
+              parseFloat(prev.price) -
+              parseFloat(prev.price) * discountFraction,
+          }));
+        }
+        setCouponApplied(true);
+      }
     }
     setCouponButtonLoading(false);
-    // console.log("resssssss", res);
   };
-  useEffect(() => {
-    const pack = localStorage.getItem("package-type");
 
-    if (pack === "CHALLENGE_12") {
+  useEffect(() => {
+    const packType = localStorage.getItem("package-type");
+    if (!packType) return;
+    const packageConfig = getPackage(packType);
+
+    if (packType === "CHALLENGE_1") {
+      // One-time challenge uses the challenge's own price
       setPackInfo({
-        name: "12 Months Plan",
-        noOfChallenges: "12",
-        save: "40%",
-        price: "19.99",
-        billed: "12",
-      });
-    }
-    if (pack === "CHALLENGE_1") {
-      setPackInfo({
-        name: "One-Time Challenge",
-        noOfChallenges: "1",
-        save: "",
+        name: packageConfig?.displayName || "One-Time Challenge",
+        noOfChallenges: String(packageConfig?.challengesAllowed || 1),
+        save: packageConfig?.savingsPercent || "",
         price: selectedChallenge.price ? selectedChallenge.price : "",
-        billed: "1",
+        billed: String(packageConfig?.billingInterval || 1),
       });
-    }
-    if (pack === "CHALLENGE_3") {
+    } else if (packageConfig) {
+      // Subscription packages use config prices
       setPackInfo({
-        name: "3 Months Plan",
-        noOfChallenges: "3",
-        save: "20%",
-        price: "26.00",
-        billed: "3",
+        name: packageConfig.displayName,
+        noOfChallenges: String(packageConfig.challengesAllowed),
+        save: packageConfig.savingsPercent || "",
+        price: String(packageConfig.price),
+        billed: String(packageConfig.billingInterval),
       });
     }
-    setPack(pack.replace("_", " "));
-  }, []);
+    setPack(packType ? packType.replace("_", " ") : "");
+  }, [getPackage, selectedChallenge.price]);
 
   const sendRequestToMollie = async () => {
     setLoading(true);
@@ -649,8 +669,8 @@ function CreatePayment(props) {
           </div>
           <div className="font-paragraph-white" style={{ fontWeight: "600" }}>
             {packInfo.noOfChallenges === "1"
-              ? `${selectedChallenge.currency} ${selectedChallenge.price}`
-              : `€ ${packInfo.price}`}
+              ? `${selectedChallenge.currency} ${parseFloat(selectedChallenge.price || 0).toFixed(2)}`
+              : `€ ${parseFloat(packInfo.price || 0).toFixed(2)}`}
           </div>
         </div>
         {/* ---- */}
@@ -836,8 +856,8 @@ function CreatePayment(props) {
           <div className="font-paragraph-white">Order Total</div>
           <div className="font-paragraph-white">
             {packInfo.noOfChallenges === "1"
-              ? `${selectedChallenge.currency} ${selectedChallenge.price}`
-              : `€ ${packInfo.price}`}
+              ? `${selectedChallenge.currency} ${parseFloat(selectedChallenge.price || 0).toFixed(2)}`
+              : `€ ${parseFloat(packInfo.price || 0).toFixed(2)}`}
             {/* {`€ ${packInfo.price}`} */}
           </div>
         </div>

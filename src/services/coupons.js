@@ -34,7 +34,7 @@ export function getAllCoupons() {
 
 export function deleteCoupon(id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/coupons/${id}/delete`)
+    .delete(`${process.env.REACT_APP_SERVER}/api/coupons/${id}`)
     .then((res) => {
       openNotificationWithIcon("success", "Coupon deleted!", "");
     })
@@ -46,7 +46,7 @@ export function deleteCoupon(id) {
 
 export function updateCoupon(body, id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/coupons/${id}/update`, body)
+    .put(`${process.env.REACT_APP_SERVER}/api/coupons/${id}`, body)
     .then((res) => {
       openNotificationWithIcon("success", "Coupon updated!", "");
     })
@@ -69,7 +69,7 @@ export function getCouponByCode(code) {
       openNotificationWithIcon(
         "error",
         "Unable to verify coupon, please make sure you've entered correct code",
-        ""
+        "",
       );
       console.log(err);
     });
@@ -89,7 +89,7 @@ export function getCouponDiscount(id) {
       openNotificationWithIcon(
         "error",
         "Unable to verify coupon, please make sure you've entered correct code",
-        ""
+        "",
       );
       console.log(err);
     });

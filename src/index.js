@@ -15,6 +15,7 @@ import PaymentProcessStore from "./contexts/PaymentProcessStore";
 import { fetchTranslations } from "./helpers/translationHelpers";
 import { MediaManagerProvider } from "./contexts/MediaManagerContext";
 import { RemoteMediaManagerProvider } from "./contexts/RemoteMediaManagerContext";
+import { PackageConfigProvider } from "./contexts/PackageConfigContext";
 
 // Somewhere in your `index.ts`:
 setChonkyDefaults({ iconComponent: ChonkyIconFA, disableDragAndDrop: true });
@@ -25,11 +26,13 @@ ReactDOM.render(
       <NotificationProvider>
         <PaymentProcessStore>
           <LanguageProvider fetchTranslations={fetchTranslations}>
-            <RemoteMediaManagerProvider>
-              <MediaManagerProvider>
-                <App />
-              </MediaManagerProvider>
-            </RemoteMediaManagerProvider>
+            <PackageConfigProvider>
+              <RemoteMediaManagerProvider>
+                <MediaManagerProvider>
+                  <App />
+                </MediaManagerProvider>
+              </RemoteMediaManagerProvider>
+            </PackageConfigProvider>
           </LanguageProvider>
         </PaymentProcessStore>
       </NotificationProvider>

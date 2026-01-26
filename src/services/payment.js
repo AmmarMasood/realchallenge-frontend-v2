@@ -106,13 +106,44 @@ const alreadySubscribedToSpecificNumberOfChallenges = (
   }
 };
 
+// Default challenges allowed per package (fallback if config not provided)
+const DEFAULT_CHALLENGES_ALLOWED = {
+  CHALLENGE_1: 1,
+  CHALLENGE_3: 2,
+  CHALLENGE_12: 3,
+};
+
+/**
+ * Get the number of challenges allowed for a package
+ * @param {string} packageName - The package name (CHALLENGE_1, CHALLENGE_3, CHALLENGE_12)
+ * @param {Object} packageConfigs - Package configurations from context (optional)
+ * @returns {number} - Number of challenges allowed
+ */
+export function getChallengesAllowedForPackage(packageName, packageConfigs = null) {
+  if (packageConfigs && packageConfigs[packageName]) {
+    return packageConfigs[packageName].challengesAllowed;
+  }
+  return DEFAULT_CHALLENGES_ALLOWED[packageName] || 1;
+}
+
+/**
+ * Check if user can subscribe to a challenge based on their package
+ * @param {Object} customer - Customer object with customerDetails
+ * @param {Object} challenge - Challenge object
+ * @param {string} pack - Selected package type
+ * @param {Object} history - Router history
+ * @param {Function} setSelectedChallenge - Function to set selected challenge
+ * @param {Function} setReplaceFreeChallengePopupVisible - Function to show replace popup
+ * @param {Object} packageConfigs - Package configurations from context (optional)
+ */
 export function checkUserPackage(
   customer,
   challenge,
   pack,
   history,
   setSelectedChallenge,
-  setReplaceFreeChallengePopupVisible
+  setReplaceFreeChallengePopupVisible,
+  packageConfigs = null
 ) {
   if (customer.role === "admin") {
     return {
@@ -134,10 +165,6 @@ export function checkUserPackage(
       // if free we check if they already have a free challenge
       if (checkIfUserAlreadyHaveAFreeChallenge(customer)) {
         // if they already have a free challenge
-        // openNotificationWithIcon(
-        //   "error",
-        //   `You can only subscribe to one free challenge at a time.`
-        // );
         setReplaceFreeChallengePopupVisible(true);
         return {
           success: false,
@@ -151,7 +178,6 @@ export function checkUserPackage(
       }
     } else {
       // if not free
-
       if (pack) {
         setSelectedChallenge(challenge);
         localStorage.setItem("package-type", pack);
@@ -168,139 +194,39 @@ export function checkUserPackage(
     }
   }
 
-  // check if user is challenge 1 subscriber
-  if (membership && membership.name === "CHALLENGE_1") {
-    // if has not subscribed to any package. They can only have one free challenge.
-    // first we if the comming challenge is free or not.
-    if (challenge.access.includes("FREE")) {
-      // if free we check if they already have a free challenge
-      if (checkIfUserAlreadyHaveAFreeChallenge(customer)) {
-        // if they already have a free challenge
-        // openNotificationWithIcon(
-        //   "error",
-        //   `You can only subscribe to one free challenge at a time.`
-        // );
-        setReplaceFreeChallengePopupVisible(true);
-        return {
-          success: false,
-        };
-      } else {
-        // if they dont have a free challenge
-        return {
-          success: true,
-          message: "SUBSCRIBE",
-        };
-      }
-    } else {
-      // if not free we check if user is already subscirbed to 1 challenge.
-      // alreadySubscribedToSpecificNumberOfChallenges function check if the user has already subscribed to specific
-      // number of challenges other than free challenge. So challenge 1 wala user can subscribe to only 1 more challenge other than free
-      // where are challenge 3 wala can subscribe to 2 challenges other than free, where are 12 months wala can subscribe to 3 other than free.
+  // Get challenges allowed for the user's membership package
+  const membershipName = membership.name;
+  const challengesAllowed = getChallengesAllowedForPackage(membershipName, packageConfigs);
 
-      if (alreadySubscribedToSpecificNumberOfChallenges(customer, 1)) {
-        errorPopup(
-          translate("payment.unable_to_subscribe"),
-          translate("payment.challenge_1_limit")
-        );
-        return { success: false };
-      } else {
-        return {
-          success: true,
-          message: "SUBSCRIBE",
-        };
-      }
+  // Check if challenge is free
+  if (challenge.access.includes("FREE")) {
+    // if free we check if they already have a free challenge
+    if (checkIfUserAlreadyHaveAFreeChallenge(customer)) {
+      setReplaceFreeChallengePopupVisible(true);
+      return {
+        success: false,
+      };
+    } else {
+      return {
+        success: true,
+        message: "SUBSCRIBE",
+      };
     }
-  }
-
-  // check if user is challenge 3 subscriber
-  if (membership && membership.name === "CHALLENGE_3") {
-    // if has not subscribed to any package. They can only have one free challenge.
-    // first we if the comming challenge is free or not.
-    if (challenge.access.includes("FREE")) {
-      // if free we check if they already have a free challenge
-      if (checkIfUserAlreadyHaveAFreeChallenge(customer)) {
-        // if they already have a free challenge
-        // openNotificationWithIcon(
-        //   "error",
-        //   `You can only subscribe to one free challenge at a time.`
-        // );
-        setReplaceFreeChallengePopupVisible(true);
-        return {
-          success: false,
-        };
-      } else {
-        console.log("penis");
-        // if they dont have a free challenge
-        return {
-          success: true,
-          message: "SUBSCRIBE",
-        };
-      }
+  } else {
+    // if not free we check if user has already reached their limit
+    if (alreadySubscribedToSpecificNumberOfChallenges(customer, challengesAllowed)) {
+      // Get the appropriate error message based on package
+      const errorKey = `payment.${membershipName.toLowerCase()}_limit`;
+      errorPopup(
+        translate("payment.unable_to_subscribe"),
+        translate(errorKey) || translate("payment.challenge_limit_reached")
+      );
+      return { success: false };
     } else {
-      console.log("poop");
-      // if not free we check if user is already subscirbed to 2 challenge.
-      // alreadySubscribedToSpecificNumberOfChallenges function check if the user has already subscribed to specific
-      // number of challenges other than free challenge. So challenge 1 wala user can subscribe to only 1 more challenge other than free
-      // where are challenge 3 wala can subscribe to 2 challenges other than free, where are 12 months wala can subscribe to 3 other than free.
-
-      if (alreadySubscribedToSpecificNumberOfChallenges(customer, 2)) {
-        errorPopup(
-          translate("payment.unable_to_subscribe"),
-          translate("payment.challenge_3_limit")
-        );
-        return { success: false };
-      } else {
-        return {
-          success: true,
-          message: "SUBSCRIBE",
-        };
-      }
-    }
-  }
-
-  // check if user is challenge 12 subscriber
-  if (membership && membership.name === "CHALLENGE_12") {
-    // if has not subscribed to any package. They can only have one free challenge.
-    // first we if the comming challenge is free or not.
-    if (challenge.access.includes("FREE")) {
-      // if free we check if they already have a free challenge
-      if (checkIfUserAlreadyHaveAFreeChallenge(customer)) {
-        // if they already have a free challenge
-        // openNotificationWithIcon(
-        //   "error",
-        //   `You can only subscribe to one free challenge at a time.`
-        // );
-        setReplaceFreeChallengePopupVisible(true);
-        return {
-          success: false,
-        };
-      } else {
-        console.log("penis");
-        // if they dont have a free challenge
-        return {
-          success: true,
-          message: "SUBSCRIBE",
-        };
-      }
-    } else {
-      console.log("poop");
-      // if not free we check if user is already subscirbed to 2 challenge.
-      // alreadySubscribedToSpecificNumberOfChallenges function check if the user has already subscribed to specific
-      // number of challenges other than free challenge. So challenge 1 wala user can subscribe to only 1 more challenge other than free
-      // where are challenge 3 wala can subscribe to 2 challenges other than free, where are 12 months wala can subscribe to 3 other than free.
-
-      if (alreadySubscribedToSpecificNumberOfChallenges(customer, 3)) {
-        errorPopup(
-          translate("payment.unable_to_subscribe"),
-          translate("payment.challenge_12_limit")
-        );
-        return { success: false };
-      } else {
-        return {
-          success: true,
-          message: "SUBSCRIBE",
-        };
-      }
+      return {
+        success: true,
+        message: "SUBSCRIBE",
+      };
     }
   }
 }

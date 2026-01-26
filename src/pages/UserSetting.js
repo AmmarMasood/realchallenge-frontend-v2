@@ -15,6 +15,7 @@ import { getSubscribtionInformation } from "../services/payment";
 import { logoutUser, resetPassword } from "../services/authentication";
 import { useHistory } from "react-router";
 import { T } from "../components/Translate";
+import { usePackageConfig } from "../contexts/PackageConfigContext";
 
 const emailIconStyle = {
   fontSize: "5rem",
@@ -31,6 +32,7 @@ const passwordIconStyle = {
 };
 
 function UserSetting() {
+  const { getPackage } = usePackageConfig();
   const history = useHistory();
   const [loading, setLoading] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -223,10 +225,8 @@ function UserSetting() {
                     <T>user_setting.subscription</T>
                   </span>
                   <span className="font-paragraph-white">
-                    {membershipDetails.name === "CHALLENGE_12"
-                      ? "12 Months Subscribtion Plan"
-                      : membershipDetails.name === "CHALLENGE_3"
-                      ? "3 Months Subscribtion Plan"
+                    {membershipDetails.name && getPackage(membershipDetails.name)
+                      ? getPackage(membershipDetails.name).displayName
                       : "None"}
                   </span>
                 </div>

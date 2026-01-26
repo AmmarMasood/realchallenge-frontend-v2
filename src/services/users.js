@@ -206,23 +206,23 @@ export function getUserPoints(userPoints, setUserPoints) {
     });
 }
 
-export function availMyPoints(setUserPoints) {
+export function redeemPoints(pointsToRedeem, setUserPoints) {
   return axios
-    .get(
-      `${process.env.REACT_APP_SERVER}/api/customerDetails/points/use-points`
+    .post(
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/points/redeem`,
+      { pointsToRedeem }
     )
     .then((res) => {
-      // return;
-      if (res && res.data) {
-        const p = res.data.points;
-        setUserPoints(p);
+      if (res && res.data && res.data.success) {
+        setUserPoints(res.data.remainingPoints);
         return res.data;
       }
+      return null;
     })
     .catch((err) => {
       console.log(err);
-      // openNotificationWithIcon("error", "Unable to use user points!");
-      return err;
+      openNotificationWithIcon("error", err.response?.data?.message || "Unable to redeem points!");
+      return null;
     });
 }
 
