@@ -883,7 +883,16 @@
     "only_admins_manage_requests": "Only admins can change this from the \"Manage Requests\" section",
     "translate_existing_challenge": "Translate an existing challenge (optional)",
     "select_challenge_to_translate": "Select a challenge to translate (optional)",
-    "translation_linked": "This challenge will be linked as a translation of the selected challenge."
+    "translation_linked": "This challenge will be linked as a translation of the selected challenge.",
+    "fitness_interests": "Fitness Interests",
+    "body_focus": "Body Focus",
+    "subscription": "Subscription",
+    "add_workout_title": "Add Workout Title",
+    "add_more_info": "Add More Info",
+    "admin_approval_status": "Admin Approval Status",
+    "approved": "Approved",
+    "pending_approval": "Pending Approval",
+    "save_challenge": "Save Challenge"
   },
 
   "workoutStudio": {

@@ -193,14 +193,6 @@ function PlayerVideoBrowser({
                           <img
                             src={e.videoThumbnailURL}
                             alt="thumbnail"
-                            style={{
-                              width: 250,
-                              height: 200,
-                              objectFit: "cover",
-                              objectPosition: "center",
-                              display: "block",
-                              borderRadius: "4px",
-                            }}
                           />
                         ) : (
                           <VideoThumbnail
@@ -268,14 +260,6 @@ function PlayerVideoBrowser({
                           <img
                             src={e.videoThumbnailURL}
                             alt="thumbnail"
-                            style={{
-                              width: 250,
-                              height: 200,
-                              objectFit: "cover",
-                              objectPosition: "center",
-                              display: "block",
-                              borderRadius: "4px",
-                            }}
                           />
                         ) : (
                           <VideoThumbnail

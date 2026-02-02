@@ -65,6 +65,7 @@ import {
   getAllUserChallenges,
 } from "../../../../services/createChallenge/main";
 import { useBrowserEvents } from "../../../../helpers/useBrowserEvents";
+import setAuthToken from "../../../../helpers/setAuthToken";
 import DragAndDropIcon from "../../../../assets/icons/drag-drop.svg";
 import CopyIcon from "../../../../assets/icons/copy-icon.svg";
 import DeleteIcon from "../../../../assets/icons/delete_icon.svg";
@@ -142,6 +143,8 @@ function BasicInformation(props) {
     setShowChangePanel,
     allGoals,
     setAllGoals,
+    defaultGoalsEN,
+    defaultGoalsNL,
     weeks,
     setWeeks,
     musics,
@@ -212,6 +215,8 @@ function BasicInformation(props) {
   });
 
   const fetchDataV2 = async (effectiveLanguage) => {
+    // Set auth token before making API calls
+    setAuthToken(localStorage.getItem("jwtToken"));
     setLoading(true);
     let currentUserDetails = null;
     // Use the effective language (challenge's language for updates, global language for new)
@@ -233,7 +238,13 @@ function BasicInformation(props) {
     const trainers = await getAllTrainers(langToUse);
     const res = await getAllTrainerGoals(langToUse);
     const allExercises = await getAllExercises(langToUse);
+    const challengeGoals = await getAllChallengeGoals(langToUse);
     setAllBodyFocus(bodyFocus.body);
+    setAllGoals(
+      challengeGoals?.challengeGoals?.length > 0
+        ? challengeGoals.challengeGoals
+        : langToUse === "dutch" ? defaultGoalsNL : defaultGoalsEN
+    );
 
     // If user is admin, ensure they appear in the trainers list
     let trainersList = trainers.trainers || [];
@@ -980,7 +991,7 @@ function BasicInformation(props) {
             }}
             onClick={async () => {
               if (newBodyFocus.length > 0) {
-                await createBodyFocus(newBodyFocus);
+                await createBodyFocus(newBodyFocus, language);
 
                 fetchDataV2();
               }
@@ -1476,7 +1487,7 @@ function BasicInformation(props) {
                 className="trainer-profile-goals-heading font-paragraph-white"
                 style={{ color: "#72777B", textTransform: "uppercase" }}
               >
-                FITNESS INTERESTS
+                <T>challengeStudio.fitness_interests</T>
               </div>
               <div className="trainer-profile-goals-container">
                 {selectedFitnessInterest.map((interest) => (
@@ -1527,7 +1538,7 @@ function BasicInformation(props) {
                 className="trainer-profile-goals-heading font-paragraph-white"
                 style={{ color: "#72777B", textTransform: "uppercase" }}
               >
-                BODY FOCUS
+                <T>challengeStudio.body_focus</T>
               </div>
               <div className="trainer-profile-goals-container">
                 {selectedBodyFocus.map((interest) => (
@@ -1921,7 +1932,7 @@ function BasicInformation(props) {
                                             }}
                                             className="workout-input-field-1 adminV2-bi-input font-paragraph-white"
                                             value={workout.title}
-                                            placeholder="Add Workout Title"
+                                            placeholder={get(strings, "challengeStudio.add_workout_title", "Add Workout Title")}
                                             onChange={(e) => {
                                               const newWeeks = [...weeks];
                                               const weekIndex =
@@ -1953,7 +1964,7 @@ function BasicInformation(props) {
                                             }}
                                             className="adminV2-bi-input font-paragraph-white"
                                             value={workout.subtitle}
-                                            placeholder="Add More Info"
+                                            placeholder={get(strings, "challengeStudio.add_more_info", "Add More Info")}
                                             onChange={(e) => {
                                               const newWeeks = [...weeks];
                                               const weekIndex =
@@ -2173,7 +2184,7 @@ function BasicInformation(props) {
                 className="trainer-profile-goals-heading font-paragraph-white"
                 style={{ color: "#72777B", textTransform: "uppercase" }}
               >
-                SUBSCRIPTION
+                <T>challengeStudio.subscription</T>
                 <Tooltip placement="top" title={tooltipText}>
                   <img src={HelpIcon} alt="" style={{ marginLeft: "5px" }} />
                 </Tooltip>
@@ -2426,7 +2437,7 @@ function BasicInformation(props) {
                         fontSize: "14px",
                       }}
                     >
-                      Admin Approval Status
+                      <T>challengeStudio.admin_approval_status</T>
                     </p>
                     <p
                       style={{
@@ -2448,7 +2459,7 @@ function BasicInformation(props) {
                       color: "#fff",
                     }}
                   >
-                    {adminApproved ? "Approved" : "Pending Approval"}
+                    {adminApproved ? get(strings, "challengeStudio.approved", "Approved") : get(strings, "challengeStudio.pending_approval", "Pending Approval")}
                   </div>
                 </div>
               )}
@@ -2479,7 +2490,7 @@ function BasicInformation(props) {
                 handleSaveChallenge();
               }}
             >
-              Save Challenge
+              <T>challengeStudio.save_challenge</T>
             </button>
           </div>
         </div>

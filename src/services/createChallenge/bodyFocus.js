@@ -8,9 +8,9 @@ const openNotificationWithIcon = (type, message, description) => {
   });
 };
 
-export function createBodyFocus(name) {
+export function createBodyFocus(name, language) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/body/create`, { name })
+    .post(`${process.env.REACT_APP_SERVER}/api/body/create`, { name, language })
     .then((res) =>
       openNotificationWithIcon("success", "Successfully Created", "")
     )
@@ -20,9 +20,9 @@ export function createBodyFocus(name) {
     });
 }
 
-export function updateBodyFocus(name, id) {
+export function updateBodyFocus(name, id, language) {
   return axios
-    .put(`${process.env.REACT_APP_SERVER}/api/body/${id}`, { name })
+    .put(`${process.env.REACT_APP_SERVER}/api/body/${id}`, { name, language })
     .then((res) =>
       openNotificationWithIcon("success", "Successfully Updated", "")
     )

@@ -478,14 +478,6 @@ function Exercises({
                         <img
                           src={firstExercise.videoThumbnailURL}
                           alt="thumbnail"
-                          style={{
-                            width: 250,
-                            height: 200,
-                            objectFit: "cover",
-                            objectPosition: "center",
-                            display: "block",
-                            borderRadius: "4px",
-                          }}
                         />
                       ) : (
                         <VideoThumbnail
@@ -496,7 +488,23 @@ function Exercises({
                         />
                       )
                     ) : (
-                      <img src={AddExercise} alt="add-exercise" />
+                      <img
+                        src={AddExercise}
+                        alt="add-exercise"
+                        style={{
+                          width: "auto",
+                          height: "auto",
+                          maxWidth: "80px",
+                          maxHeight: "80px",
+                          objectFit: "contain",
+                          margin: "auto",
+                          display: "block",
+                          position: "absolute",
+                          top: "50%",
+                          left: "50%",
+                          transform: "translate(-50%, -50%)",
+                        }}
+                      />
                     )}
                   </div>
                   <div className="challenge-player-container-exercies-box-details font-paragraph-white">
@@ -543,6 +551,9 @@ function Exercises({
                   setIsDragging(dragging);
                   setDraggedItemId(draggedId);
                 }}
+                scrollContainerRef={scrollContainerRef}
+                autoScrollSpeed={15}
+                autoScrollThreshold={60}
               >
                 {remainingExercises &&
                   remainingExercises.map((e, i) => {
@@ -660,14 +671,6 @@ function Exercises({
                                   <img
                                     src={e.videoThumbnailURL}
                                     alt="thumbnail"
-                                    style={{
-                                      width: 250,
-                                      height: 200,
-                                      objectFit: "cover",
-                                      objectPosition: "center",
-                                      display: "block",
-                                      borderRadius: "4px",
-                                    }}
                                   />
                                 ) : (
                                   <VideoThumbnail
@@ -678,7 +681,23 @@ function Exercises({
                                   />
                                 )
                               ) : (
-                                <img src={AddExercise} alt="add-exercise" />
+                                <img
+                                  src={AddExercise}
+                                  alt="add-exercise"
+                                  style={{
+                                    width: "auto",
+                                    height: "auto",
+                                    maxWidth: "80px",
+                                    maxHeight: "80px",
+                                    objectFit: "contain",
+                                    margin: "auto",
+                                    display: "block",
+                                    position: "absolute",
+                                    top: "50%",
+                                    left: "50%",
+                                    transform: "translate(-50%, -50%)",
+                                  }}
+                                />
                               )}
                             </div>
                             <div

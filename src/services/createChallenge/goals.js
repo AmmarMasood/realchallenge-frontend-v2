@@ -8,9 +8,9 @@ const openNotificationWithIcon = (type, message, description) => {
   });
 };
 
-export function createChallengeGoal(name) {
+export function createChallengeGoal(name, language) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/challengeGoals/create`, { name })
+    .post(`${process.env.REACT_APP_SERVER}/api/challengeGoals/create`, { name, language })
     .then((res) =>
       openNotificationWithIcon("success", "Successfully Created", "")
     )

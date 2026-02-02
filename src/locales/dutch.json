@@ -883,7 +883,16 @@
     "only_admins_manage_requests": "Alleen beheerders kunnen dit wijzigen vanuit de sectie \"Verzoeken Beheren\"",
     "translate_existing_challenge": "Vertaal een bestaande challenge (optioneel)",
     "select_challenge_to_translate": "Selecteer een challenge om te vertalen (optioneel)",
-    "translation_linked": "Deze challenge wordt gekoppeld als vertaling van de geselecteerde challenge."
+    "translation_linked": "Deze challenge wordt gekoppeld als vertaling van de geselecteerde challenge.",
+    "fitness_interests": "Fitness Interesses",
+    "body_focus": "Lichaamsfocus",
+    "subscription": "Abonnement",
+    "add_workout_title": "Voeg Trainingstitel Toe",
+    "add_more_info": "Voeg Meer Info Toe",
+    "admin_approval_status": "Admin Goedkeuringsstatus",
+    "approved": "Goedgekeurd",
+    "pending_approval": "Wacht op Goedkeuring",
+    "save_challenge": "Challenge Opslaan"
   },
 
   "workoutStudio": {

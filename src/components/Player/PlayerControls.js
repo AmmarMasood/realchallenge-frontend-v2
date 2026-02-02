@@ -106,17 +106,30 @@ function PlayerControls(
   // Initialize Chromecast
   useEffect(() => {
     const initializeCast = () => {
-      if (window.cast && window.cast.framework) {
+      try {
+        // Check all required Cast SDK components are available
+        if (!window.cast?.framework?.CastContext) {
+          console.log("Cast framework not fully loaded yet");
+          return false;
+        }
+
         const context = window.cast.framework.CastContext.getInstance();
 
-        context.setOptions({
-          receiverApplicationId:
-            window.chrome?.cast?.media?.DEFAULT_MEDIA_RECEIVER_APP_ID ||
-            "CC1AD845",
-          autoJoinPolicy:
-            window.chrome?.cast?.AutoJoinPolicy.ORIGIN_SCOPED ||
-            "origin_scoped",
-        });
+        // Use safe defaults - don't rely on chrome.cast being available
+        const options = {
+          receiverApplicationId: "CC1AD845", // Default Media Receiver
+          autoJoinPolicy: "origin_scoped",
+        };
+
+        // Only use chrome.cast values if they're fully available
+        if (window.chrome?.cast?.media?.DEFAULT_MEDIA_RECEIVER_APP_ID) {
+          options.receiverApplicationId = window.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID;
+        }
+        if (window.chrome?.cast?.AutoJoinPolicy?.ORIGIN_SCOPED) {
+          options.autoJoinPolicy = window.chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED;
+        }
+
+        context.setOptions(options);
 
         // Listen for cast availability
         context.addEventListener(
@@ -138,22 +151,29 @@ function PlayerControls(
             setCastConnected(!!session);
           }
         );
+
+        return true;
+      } catch (error) {
+        console.warn("Failed to initialize Cast:", error);
+        return false;
       }
     };
 
-    // Wait for Cast SDK to load
-    if (window.cast && window.cast.framework) {
-      initializeCast();
-    } else {
-      const checkCastSDK = setInterval(() => {
-        if (window.cast && window.cast.framework) {
-          clearInterval(checkCastSDK);
-          initializeCast();
-        }
-      }, 100);
+    // Wait for Cast SDK to load with timeout
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max
 
-      return () => clearInterval(checkCastSDK);
-    }
+    const checkCastSDK = setInterval(() => {
+      attempts++;
+      if (initializeCast() || attempts >= maxAttempts) {
+        clearInterval(checkCastSDK);
+        if (attempts >= maxAttempts) {
+          console.log("Cast SDK not available, skipping initialization");
+        }
+      }
+    }, 100);
+
+    return () => clearInterval(checkCastSDK);
   }, []);
   const currentTime = playerRef.current
     ? playerRef.current.getCurrentTime()

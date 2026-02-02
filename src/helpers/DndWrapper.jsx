@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useRef, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useRef, useCallback, useMemo, useEffect } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TouchBackend } from "react-dnd-touch-backend";
@@ -21,7 +21,10 @@ export const getDndBackend = () => {
 // Touch backend options for better mobile experience
 export const touchBackendOptions = {
   enableMouseEvents: true,
-  delayTouchStart: 150,
+  delayTouchStart: 150,  // Short delay - handle's touchAction:"none" does the heavy lifting
+  ignoreContextMenu: true,
+  // Don't use scrollAngleRanges - it blocks vertical drag for weeks/workouts
+  // Instead, we rely on DraggableHandle having touchAction:"none"
 };
 
 export const ItemTypeWeek = "DRAGGABLE_WEEK";
@@ -36,10 +39,15 @@ export function DraggableArea({
   direction = "vertical",
   itemType,
   onDragStateChange,
+  scrollContainerRef,  // Optional ref to the scroll container for auto-scroll
+  autoScrollSpeed = 10,  // Pixels to scroll per frame
+  autoScrollThreshold = 50,  // Distance from edge to trigger auto-scroll
 }) {
   const childArray = React.Children.toArray(children);
   const timeoutRef = React.useRef(null);
   const lastChangeRef = React.useRef(null);
+  const autoScrollIntervalRef = React.useRef(null);
+  const isDraggingRef = React.useRef(false);
 
   const moveItem = useCallback((dragIndex, hoverIndex) => {
     if (
@@ -82,8 +90,90 @@ export function DraggableArea({
     }, 16);
   }, [childArray, onChange]);
 
+  // Auto-scroll logic
+  const handleAutoScroll = useCallback((clientX, clientY) => {
+    const container = scrollContainerRef?.current;
+    if (!container || !isDraggingRef.current) return;
+
+    const rect = container.getBoundingClientRect();
+    let scrollX = 0;
+    let scrollY = 0;
+
+    if (direction === "horizontal") {
+      // Check left edge
+      if (clientX < rect.left + autoScrollThreshold) {
+        scrollX = -autoScrollSpeed;
+      }
+      // Check right edge
+      else if (clientX > rect.right - autoScrollThreshold) {
+        scrollX = autoScrollSpeed;
+      }
+    } else {
+      // Check top edge
+      if (clientY < rect.top + autoScrollThreshold) {
+        scrollY = -autoScrollSpeed;
+      }
+      // Check bottom edge
+      else if (clientY > rect.bottom - autoScrollThreshold) {
+        scrollY = autoScrollSpeed;
+      }
+    }
+
+    if (scrollX !== 0 || scrollY !== 0) {
+      container.scrollBy({ left: scrollX, top: scrollY });
+    }
+  }, [scrollContainerRef, direction, autoScrollSpeed, autoScrollThreshold]);
+
+  // Set up auto-scroll during drag
+  useEffect(() => {
+    if (!scrollContainerRef?.current) return;
+
+    const handlePointerMove = (e) => {
+      if (!isDraggingRef.current) return;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      handleAutoScroll(clientX, clientY);
+    };
+
+    // Use interval for smoother scrolling
+    const startAutoScrollInterval = (clientX, clientY) => {
+      if (autoScrollIntervalRef.current) return;
+      autoScrollIntervalRef.current = setInterval(() => {
+        handleAutoScroll(clientX, clientY);
+      }, 16); // ~60fps
+    };
+
+    const stopAutoScrollInterval = () => {
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
+    };
+
+    window.addEventListener("mousemove", handlePointerMove);
+    window.addEventListener("touchmove", handlePointerMove, { passive: true });
+
+    return () => {
+      window.removeEventListener("mousemove", handlePointerMove);
+      window.removeEventListener("touchmove", handlePointerMove);
+      stopAutoScrollInterval();
+    };
+  }, [scrollContainerRef, handleAutoScroll]);
+
+  // Wrap onDragStateChange to track dragging state for auto-scroll
+  const handleDragStateChange = useCallback((dragging, draggedId) => {
+    isDraggingRef.current = dragging;
+    if (!dragging && autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+      autoScrollIntervalRef.current = null;
+    }
+    if (onDragStateChange) {
+      onDragStateChange(dragging, draggedId);
+    }
+  }, [onDragStateChange]);
+
   return (
-    <DragContext.Provider value={{ moveItem, direction, itemType, onDragStateChange, childArray }}>
+    <DragContext.Provider value={{ moveItem, direction, itemType, onDragStateChange: handleDragStateChange, childArray }}>
       <div
         style={{
           display: direction === "horizontal" ? "flex" : "block",
@@ -100,6 +190,7 @@ export function DraggableArea({
 
 export function DraggableItem({ children, index, id, ...rest }) {
   const ref = useRef(null);
+  const handleRef = useRef(null);
   const { moveItem, direction, itemType, onDragStateChange, childArray } = useContext(DragContext);
 
   const [, drop] = useDrop({
@@ -137,6 +228,8 @@ export function DraggableItem({ children, index, id, ...rest }) {
     }),
   });
 
+  // Attach drop target and preview to the item container
+  // But DON'T attach drag here - drag is only from handle
   preview(drop(ref));
 
   const itemStyle = useMemo(
@@ -150,7 +243,7 @@ export function DraggableItem({ children, index, id, ...rest }) {
 
   return (
     <div ref={ref} style={itemStyle} {...rest}>
-      <DragContext.Provider value={{ drag }}>{children}</DragContext.Provider>
+      <DragContext.Provider value={{ drag, handleRef }}>{children}</DragContext.Provider>
     </div>
   );
 }
@@ -158,14 +251,38 @@ export function DraggableItem({ children, index, id, ...rest }) {
 export function DraggableHandle({ children }) {
   const { drag } = useContext(DragContext);
   const ref = useRef(null);
-  drag(ref);
+
+  // Attach drag to the handle only
+  useEffect(() => {
+    if (drag && ref.current) {
+      drag(ref);
+    }
+  }, [drag]);
+
+  // Prevent parent components (like Ant Design Collapse) from intercepting touch events
+  const handleTouchStart = (e) => {
+    e.stopPropagation();
+  };
+
+  const handleMouseDown = (e) => {
+    e.stopPropagation();
+  };
+
   return (
     <div
       ref={ref}
+      onTouchStart={handleTouchStart}
+      onMouseDown={handleMouseDown}
       style={{
         display: "inline-block",
         cursor: "move",
         position: "relative",
+        touchAction: "none",  // Critical: prevents scrolling when touching the handle
+        WebkitUserSelect: "none",
+        userSelect: "none",
+        WebkitTouchCallout: "none",  // Prevent iOS callout
+        padding: "12px",  // Larger touch target for mobile
+        margin: "-12px",  // Compensate for padding
       }}
     >
       {children}
