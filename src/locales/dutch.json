@@ -1140,5 +1140,33 @@
     "verify_button": "Verifieer e-mail",
     "complete_button": "Voltooien",
     "resend_link": "Ik heb geen e-mail ontvangen"
+  },
+  "mediaManager": {
+    "title": "Mediabeheer",
+    "admin_mode": "Beheerdersmodus",
+    "search_mode": "Zoekmodus",
+    "on": "AAN",
+    "off": "UIT",
+    "toggle_admin_mode": "Beheerdersmodus wisselen",
+    "exit_search_mode": "Sluit zoekmodus om normaal door mappen te bladeren",
+    "enable_search_mode": "Schakel zoekmodus in om te zoeken in alle mappen en bestanden",
+    "refresh_all": "Alles vernieuwen",
+    "refresh_all_tooltip": "Vernieuw alle gegevens en ga terug naar hoofdmap",
+    "back_to_users_list": "Terug naar gebruikerslijst",
+    "viewing": "Bekijken",
+    "sort_by": "Sorteren op",
+    "sort_by_name": "Sorteren op naam",
+    "sort_by_size": "Sorteren op grootte",
+    "sort_by_date": "Sorteren op datum",
+    "sort_by_type": "Sorteren op type",
+    "upload_files": "Bestanden uploaden",
+    "create_folder": "Map aanmaken",
+    "delete_folder": "Map verwijderen",
+    "delete_items": "Items verwijderen",
+    "preview": "Voorbeeld",
+    "actions": "Acties",
+    "cut": "Knippen",
+    "paste_move": "Plakken (Verplaatsen)",
+    "rename": "Hernoemen"
   }
 }

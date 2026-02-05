@@ -51,55 +51,81 @@ import {
   CheckCircleOutlined,
 } from "@ant-design/icons";
 import { userInfoContext } from "../../../contexts/UserStore";
+import { LanguageContext } from "../../../contexts/LanguageContext";
+import { get } from "lodash";
 
 const { confirm } = Modal;
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
-// Override default sort actions to change group name from "Options" to "Sort by"
-const SortFilesByName = defineFileAction({
-  id: ChonkyActions.SortFilesByName.id,
-  sortKeySelector: ChonkyActions.SortFilesByName.sortKeySelector,
-  button: {
-    name: 'Sort by Name',
-    toolbar: true,
-    group: 'Sort by',
-  },
-});
+// Factory function to create translated sort actions
+const createSortActions = (strings) => {
+  const sortByGroup = get(strings, "mediaManager.sort_by", "Sort by");
 
-const SortFilesBySize = defineFileAction({
-  id: ChonkyActions.SortFilesBySize.id,
-  sortKeySelector: ChonkyActions.SortFilesBySize.sortKeySelector,
-  button: {
-    name: 'Sort by Size',
-    toolbar: true,
-    group: 'Sort by',
-  },
-});
+  return {
+    SortFilesByName: defineFileAction({
+      id: ChonkyActions.SortFilesByName.id,
+      sortKeySelector: ChonkyActions.SortFilesByName.sortKeySelector,
+      button: {
+        name: get(strings, "mediaManager.sort_by_name", "Sort by Name"),
+        toolbar: true,
+        group: sortByGroup,
+      },
+    }),
+    SortFilesBySize: defineFileAction({
+      id: ChonkyActions.SortFilesBySize.id,
+      sortKeySelector: ChonkyActions.SortFilesBySize.sortKeySelector,
+      button: {
+        name: get(strings, "mediaManager.sort_by_size", "Sort by Size"),
+        toolbar: true,
+        group: sortByGroup,
+      },
+    }),
+    SortFilesByDate: defineFileAction({
+      id: ChonkyActions.SortFilesByDate.id,
+      sortKeySelector: ChonkyActions.SortFilesByDate.sortKeySelector,
+      button: {
+        name: get(strings, "mediaManager.sort_by_date", "Sort by Date"),
+        toolbar: true,
+        group: sortByGroup,
+      },
+    }),
+    SortFilesByType: defineFileAction({
+      id: 'sort_by_type',
+      sortKeySelector: (file) => {
+        if (file.isDir) return ''; // Folders come first
+        const extension = file.name ? file.name.split('.').pop()?.toLowerCase() || '' : '';
+        return extension;
+      },
+      button: {
+        name: get(strings, "mediaManager.sort_by_type", "Sort by Type"),
+        toolbar: true,
+        group: sortByGroup,
+      },
+    }),
+  };
+};
 
-const SortFilesByDate = defineFileAction({
-  id: ChonkyActions.SortFilesByDate.id,
-  sortKeySelector: ChonkyActions.SortFilesByDate.sortKeySelector,
-  button: {
-    name: 'Sort by Date',
-    toolbar: true,
-    group: 'Sort by',
-  },
-});
-
-// Custom sort action for file type/extension
-const SortFilesByType = defineFileAction({
-  id: 'sort_by_type',
-  sortKeySelector: (file) => {
-    if (file.isDir) return ''; // Folders come first
-    const extension = file.name ? file.name.split('.').pop()?.toLowerCase() || '' : '';
-    return extension;
-  },
-  button: {
-    name: 'Sort by Type',
-    toolbar: true,
-    group: 'Sort by',
-  },
+// Factory function to create translated file actions
+const createTranslatedActions = (strings) => ({
+  UploadFiles: defineFileAction({
+    id: ChonkyActions.UploadFiles.id,
+    button: {
+      name: get(strings, "mediaManager.upload_files", "Upload files"),
+      toolbar: true,
+      contextMenu: true,
+      icon: ChonkyActions.UploadFiles.button.icon,
+    },
+  }),
+  CreateFolder: defineFileAction({
+    id: ChonkyActions.CreateFolder.id,
+    button: {
+      name: get(strings, "mediaManager.create_folder", "Create folder"),
+      toolbar: true,
+      contextMenu: true,
+      icon: ChonkyActions.CreateFolder.button.icon,
+    },
+  }),
 });
 
 const openNotificationWithIcon = (type, message, description) => {
@@ -331,6 +357,7 @@ const useCustomFileMap = () => {
   } = useMediaManager();
 
   const [userInfo, setUserInfo] = useContext(userInfoContext);
+  const { strings } = useContext(LanguageContext);
   const [currentFolderId, setCurrentFolderId] = useState("root");
   const [currentFolderName, setCurrentFolderName] = useState("Media Manager");
   const [lastViewedPath, setLastViewedPath] = useState("root");
@@ -1805,6 +1832,8 @@ const RenameModal = ({ visible, onClose, onSuccess, target, isNameUnique }) => {
 
 // Enhanced VFSBrowser with admin support
 export const VFSBrowser = React.memo((props) => {
+  const { strings } = useContext(LanguageContext);
+
   // Search mode toggle - enables searching across all folders and files
   const [searchMode, setSearchMode] = useState(false);
 
@@ -2034,6 +2063,11 @@ export const VFSBrowser = React.memo((props) => {
     const currentDepth = getCurrentDepth();
     const canCreateSubfolder = currentDepth < 2;
 
+    // Create translated actions
+    const sortActions = createSortActions(strings);
+    const translatedActions = createTranslatedActions(strings);
+    const actionsGroup = get(strings, "mediaManager.actions", "Actions");
+
     // Don't show actions in admin users view
     if (showAdminView) {
       return [];
@@ -2047,10 +2081,10 @@ export const VFSBrowser = React.memo((props) => {
     }
 
     // Add sorting actions with custom "Sort by" group
-    actions.push(SortFilesByName);
-    actions.push(SortFilesBySize);
-    actions.push(SortFilesByDate);
-    actions.push(SortFilesByType);
+    actions.push(sortActions.SortFilesByName);
+    actions.push(sortActions.SortFilesBySize);
+    actions.push(sortActions.SortFilesByDate);
+    actions.push(sortActions.SortFilesByType);
 
     // Enable drag and drop only if not in admin mode
     if (!adminMode) {
@@ -2062,17 +2096,17 @@ export const VFSBrowser = React.memo((props) => {
       actions.push({
         id: "delete_folders",
         button: {
-          name: "Delete Folder",
+          name: get(strings, "mediaManager.delete_folder", "Delete Folder"),
           toolbar: false,
           contextMenu: true,
-          group: "Actions",
+          group: actionsGroup,
           icon: ChonkyActions.DeleteFiles.button.icon,
         },
         hotkeys: ["Delete"],
       });
 
       if (canCreateSubfolder) {
-        actions.push(ChonkyActions.CreateFolder);
+        actions.push(translatedActions.CreateFolder);
       }
 
       // Add preview action for search mode (when at root but showing files)
@@ -2080,10 +2114,10 @@ export const VFSBrowser = React.memo((props) => {
         actions.push({
           id: "preview_file",
           button: {
-            name: "Preview",
+            name: get(strings, "mediaManager.preview", "Preview"),
             toolbar: false,
             contextMenu: true,
-            group: "Actions",
+            group: actionsGroup,
           },
           fileFilter: (file) => !file.isDir, // Only show for files, not folders
         });
@@ -2093,29 +2127,29 @@ export const VFSBrowser = React.memo((props) => {
       actions.push({
         id: "delete_files",
         button: {
-          name: "Delete Items",
+          name: get(strings, "mediaManager.delete_items", "Delete Items"),
           toolbar: false,
           contextMenu: true,
-          group: "Actions",
+          group: actionsGroup,
           icon: ChonkyActions.DeleteFiles.button.icon,
         },
         hotkeys: ["Delete"],
       });
 
-      actions.push(ChonkyActions.UploadFiles);
+      actions.push(translatedActions.UploadFiles);
 
       if (canCreateSubfolder) {
-        actions.push(ChonkyActions.CreateFolder);
+        actions.push(translatedActions.CreateFolder);
       }
 
       // Add preview action for files only
       actions.push({
         id: "preview_file",
         button: {
-          name: "Preview",
+          name: get(strings, "mediaManager.preview", "Preview"),
           toolbar: false,
           contextMenu: true,
-          group: "Actions",
+          group: actionsGroup,
         },
         fileFilter: (file) => !file.isDir, // Only show for files, not folders
       });
@@ -2125,10 +2159,10 @@ export const VFSBrowser = React.memo((props) => {
     actions.push({
       id: "cut_files",
       button: {
-        name: "Cut",
+        name: get(strings, "mediaManager.cut", "Cut"),
         toolbar: true,
         contextMenu: true,
-        group: "Actions",
+        group: actionsGroup,
         icon: ChonkyActions.CopyFiles.button.icon, // Reuse copy icon for now
       },
       hotkeys: ["ctrl+v"],
@@ -2138,10 +2172,10 @@ export const VFSBrowser = React.memo((props) => {
     actions.push({
       id: "paste_files",
       button: {
-        name: "Paste (Move)",
+        name: get(strings, "mediaManager.paste_move", "Paste (Move)"),
         toolbar: true,
         contextMenu: true,
-        group: "Actions",
+        group: actionsGroup,
         icon: ChonkyActions.CopyFiles.button.icon, // Reuse copy icon for now
       },
     });
@@ -2150,16 +2184,17 @@ export const VFSBrowser = React.memo((props) => {
     actions.push({
       id: "rename_item",
       button: {
-        name: "Rename",
+        name: get(strings, "mediaManager.rename", "Rename"),
         toolbar: false,
         contextMenu: true,
-        group: "Actions",
+        group: actionsGroup,
       },
       hotkeys: ["F2"],
     });
 
     return actions;
   }, [
+    strings,
     currentFolderId,
     getCurrentDepth,
     showAdminView,
@@ -2189,14 +2224,14 @@ export const VFSBrowser = React.memo((props) => {
         >
           <Space>
             {isAdmin && (
-              <Tooltip title="Toggle Admin Mode">
+              <Tooltip title={get(strings, "mediaManager.toggle_admin_mode", "Toggle Admin Mode")}>
                 <Space>
-                  <Text>Admin Mode:</Text>
+                  <Text>{get(strings, "mediaManager.admin_mode", "Admin Mode")}:</Text>
                   <Switch
                     checked={adminMode}
                     onChange={handleAdminModeToggle}
-                    checkedChildren="ON"
-                    unCheckedChildren="OFF"
+                    checkedChildren={get(strings, "mediaManager.on", "ON")}
+                    unCheckedChildren={get(strings, "mediaManager.off", "OFF")}
                   />
                 </Space>
               </Tooltip>
@@ -2211,10 +2246,10 @@ export const VFSBrowser = React.memo((props) => {
                   onClick={handleBackToUsersList}
                   size="small"
                 >
-                  Back to Users List
+                  {get(strings, "mediaManager.back_to_users_list", "Back to Users List")}
                 </Button>
                 <Text type="secondary">
-                  Viewing: <strong>{currentContext.currentUser?.email}</strong>
+                  {get(strings, "mediaManager.viewing", "Viewing")}: <strong>{currentContext.currentUser?.email}</strong>
                 </Text>
               </>
             )}
@@ -2225,17 +2260,17 @@ export const VFSBrowser = React.memo((props) => {
               <Tooltip
                 title={
                   searchMode
-                    ? "Exit search mode to browse folders normally"
-                    : "Enable search mode to search across all folders and files"
+                    ? get(strings, "mediaManager.exit_search_mode", "Exit search mode to browse folders normally")
+                    : get(strings, "mediaManager.enable_search_mode", "Enable search mode to search across all folders and files")
                 }
               >
                 <Space>
-                  <Text>Search Mode:</Text>
+                  <Text>{get(strings, "mediaManager.search_mode", "Search Mode")}:</Text>
                   <Switch
                     checked={searchMode}
                     onChange={(checked) => setSearchMode(checked)}
-                    checkedChildren="ON"
-                    unCheckedChildren="OFF"
+                    checkedChildren={get(strings, "mediaManager.on", "ON")}
+                    unCheckedChildren={get(strings, "mediaManager.off", "OFF")}
                   />
                 </Space>
               </Tooltip>
@@ -2245,9 +2280,9 @@ export const VFSBrowser = React.memo((props) => {
               size="small"
               onClick={refreshData}
               loading={loading}
-              title="Refresh all data and reset to root folder"
+              title={get(strings, "mediaManager.refresh_all_tooltip", "Refresh all data and reset to root folder")}
             >
-              🔄 Refresh All
+              🔄 {get(strings, "mediaManager.refresh_all", "Refresh All")}
             </Button>
           </Space>
         </div>
@@ -2266,23 +2301,23 @@ export const VFSBrowser = React.memo((props) => {
             alignItems: "center",
           }}
         >
-          <Text strong>Media Manager</Text>
+          <Text strong>{get(strings, "mediaManager.title", "Media Manager")}</Text>
 
           <Space>
             <Tooltip
               title={
                 searchMode
-                  ? "Exit search mode to browse folders normally"
-                  : "Enable search mode to search across all folders and files"
+                  ? get(strings, "mediaManager.exit_search_mode", "Exit search mode to browse folders normally")
+                  : get(strings, "mediaManager.enable_search_mode", "Enable search mode to search across all folders and files")
               }
             >
               <Space>
-                <Text>Search Mode:</Text>
+                <Text>{get(strings, "mediaManager.search_mode", "Search Mode")}:</Text>
                 <Switch
                   checked={searchMode}
                   onChange={(checked) => setSearchMode(checked)}
-                  checkedChildren="ON"
-                  unCheckedChildren="OFF"
+                  checkedChildren={get(strings, "mediaManager.on", "ON")}
+                  unCheckedChildren={get(strings, "mediaManager.off", "OFF")}
                 />
               </Space>
             </Tooltip>
@@ -2291,9 +2326,9 @@ export const VFSBrowser = React.memo((props) => {
               size="small"
               onClick={refreshData}
               loading={loading}
-              title="Refresh all folders and files"
+              title={get(strings, "mediaManager.refresh_all_tooltip", "Refresh all folders and files")}
             >
-              🔄 Refresh All
+              🔄 {get(strings, "mediaManager.refresh_all", "Refresh All")}
             </Button>
           </Space>
         </div>

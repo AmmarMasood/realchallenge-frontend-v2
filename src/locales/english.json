@@ -1140,5 +1140,33 @@
     "verify_button": "Verify Email",
     "complete_button": "Complete",
     "resend_link": "I did not receive any email"
+  },
+  "mediaManager": {
+    "title": "Media Manager",
+    "admin_mode": "Admin Mode",
+    "search_mode": "Search Mode",
+    "on": "ON",
+    "off": "OFF",
+    "toggle_admin_mode": "Toggle Admin Mode",
+    "exit_search_mode": "Exit search mode to browse folders normally",
+    "enable_search_mode": "Enable search mode to search across all folders and files",
+    "refresh_all": "Refresh All",
+    "refresh_all_tooltip": "Refresh all data and reset to root folder",
+    "back_to_users_list": "Back to Users List",
+    "viewing": "Viewing",
+    "sort_by": "Sort by",
+    "sort_by_name": "Sort by Name",
+    "sort_by_size": "Sort by Size",
+    "sort_by_date": "Sort by Date",
+    "sort_by_type": "Sort by Type",
+    "upload_files": "Upload files",
+    "create_folder": "Create folder",
+    "delete_folder": "Delete Folder",
+    "delete_items": "Delete Items",
+    "preview": "Preview",
+    "actions": "Actions",
+    "cut": "Cut",
+    "paste_move": "Paste (Move)",
+    "rename": "Rename"
   }
 }
