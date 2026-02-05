@@ -9,9 +9,7 @@ import { getNotifications, getUserProfileInfo } from "../services/users";
 import { userInfoContext } from "../contexts/UserStore";
 // import { uploadImage } from "../services/mediaManager";
 // icons
-import Muscle from "../assets/icons/muscle.png";
-import Waist from "../assets/icons/waist.png";
-import HeartRate from "../assets/icons/heart-rate.png";
+import { getDefaultGoals } from "../constants/goals";
 import ArrowOneActive from "../assets/icons/arrow-one-active.png";
 import ArrowForward from "../assets/icons/forward-arrows.png";
 import ArrowThreeActive from "../assets/icons/arrow-three-active.png";
@@ -239,51 +237,24 @@ function UserUpdate() {
               <T>user_update.your_goals</T>
             </div>
             <div className="user-update-container-box-row1-inside">
-              <div
-                className="font-paragraph-white"
-                onClick={() => setGoal("gain-muscle")}
-                style={{
-                  padding: "10px",
-                  background:
-                    goal === "gain-muscle"
-                      ? "var(--color-gray-light)"
-                      : "var(--color-gray-dark)",
-                }}
-              >
-                {" "}
-                <img src={Muscle} alt="" style={iconsStyle} />
-                <T>user_update.gain_muscle</T>
-              </div>
-              <div
-                className="font-paragraph-white"
-                onClick={() => setGoal("get-fit")}
-                style={{
-                  padding: "10px",
-                  background:
-                    goal === "get-fit"
-                      ? "var(--color-gray-light)"
-                      : "var(--color-gray-dark)",
-                }}
-              >
-                {" "}
-                <img src={HeartRate} alt="" style={iconsStyle} />
-                <T>user_update.get_fit</T>
-              </div>
-              <div
-                className="font-paragraph-white"
-                onClick={() => setGoal("lose-weight")}
-                style={{
-                  padding: "10px",
-                  background:
-                    goal === "lose-weight"
-                      ? "var(--color-gray-light)"
-                      : "var(--color-gray-dark)",
-                }}
-              >
-                {" "}
-                <img src={Waist} alt="" style={iconsStyle} />
-                <T>user_update.lose_weight</T>
-              </div>
+              {getDefaultGoals().map((g) => (
+                <div
+                  key={g._id}
+                  className="font-paragraph-white"
+                  onClick={() => setGoal(g._id)}
+                  style={{
+                    padding: "10px",
+                    background:
+                      goal === g._id
+                        ? "var(--color-gray-light)"
+                        : "var(--color-gray-dark)",
+                  }}
+                >
+                  {" "}
+                  <img src={g.icon} alt="" style={iconsStyle} />
+                  {g.name}
+                </div>
+              ))}
             </div>
           </div>
           <div className="user-update-container-box-row2">
