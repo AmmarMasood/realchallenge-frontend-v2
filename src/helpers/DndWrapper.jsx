@@ -21,7 +21,7 @@ export const getDndBackend = () => {
 // Touch backend options for better mobile experience
 export const touchBackendOptions = {
   enableMouseEvents: true,
-  delayTouchStart: 150,  // Short delay - handle's touchAction:"none" does the heavy lifting
+  delayTouchStart: 200,  // Slightly longer delay to distinguish drag from scroll
   ignoreContextMenu: true,
   // Don't use scrollAngleRanges - it blocks vertical drag for weeks/workouts
   // Instead, we rely on DraggableHandle having touchAction:"none"
@@ -87,93 +87,136 @@ export function DraggableArea({
           onChange(mappedOrder);
         }
       }
-    }, 16);
+    }, 50);  // Increased debounce to reduce re-renders during drag
   }, [childArray, onChange]);
 
-  // Auto-scroll logic
-  const handleAutoScroll = useCallback((clientX, clientY) => {
+  // Store current pointer position for continuous auto-scroll
+  const pointerPositionRef = useRef({ x: 0, y: 0 });
+
+  // Auto-scroll logic - checks current pointer position and scrolls if near edges
+  const performAutoScroll = useCallback(() => {
     const container = scrollContainerRef?.current;
     if (!container || !isDraggingRef.current) return;
+
+    const { x: clientX, y: clientY } = pointerPositionRef.current;
+    if (clientX === 0 && clientY === 0) return;  // No position yet
 
     const rect = container.getBoundingClientRect();
     let scrollX = 0;
     let scrollY = 0;
 
+    // Check if container can scroll
+    const canScrollLeft = container.scrollLeft > 0;
+    const canScrollRight = container.scrollLeft < container.scrollWidth - container.clientWidth - 1; // -1 for rounding
+
+    const canScrollUp = container.scrollTop > 0;
+    const canScrollDown = container.scrollTop < container.scrollHeight - container.clientHeight - 1;
+
     if (direction === "horizontal") {
-      // Check left edge
-      if (clientX < rect.left + autoScrollThreshold) {
+      // Simple threshold check - trigger when cursor is within threshold of edge or beyond
+      const rightEdgeStart = rect.right - autoScrollThreshold;
+      const leftEdgeEnd = rect.left + autoScrollThreshold;
+
+      console.log("Scroll check:", { clientX, rightEdgeStart, rectRight: rect.right, canScrollRight, threshold: autoScrollThreshold });
+
+      // Scroll left when cursor is near/past left edge
+      if (clientX <= leftEdgeEnd && canScrollLeft) {
         scrollX = -autoScrollSpeed;
       }
-      // Check right edge
-      else if (clientX > rect.right - autoScrollThreshold) {
+      // Scroll right when cursor is near/past right edge
+      else if (clientX >= rightEdgeStart && canScrollRight) {
         scrollX = autoScrollSpeed;
       }
     } else {
-      // Check top edge
-      if (clientY < rect.top + autoScrollThreshold) {
+      const topEdgeEnd = rect.top + autoScrollThreshold;
+      const bottomEdgeStart = rect.bottom - autoScrollThreshold;
+
+      if (clientY <= topEdgeEnd && canScrollUp) {
         scrollY = -autoScrollSpeed;
       }
-      // Check bottom edge
-      else if (clientY > rect.bottom - autoScrollThreshold) {
+      else if (clientY >= bottomEdgeStart && canScrollDown) {
         scrollY = autoScrollSpeed;
       }
     }
 
     if (scrollX !== 0 || scrollY !== 0) {
-      container.scrollBy({ left: scrollX, top: scrollY });
+      container.scrollLeft += scrollX;
+      container.scrollTop += scrollY;
     }
   }, [scrollContainerRef, direction, autoScrollSpeed, autoScrollThreshold]);
 
-  // Set up auto-scroll during drag
+  // Start continuous auto-scroll interval when dragging
+  const startAutoScrollInterval = useCallback(() => {
+    if (autoScrollIntervalRef.current) return;
+    autoScrollIntervalRef.current = setInterval(() => {
+      performAutoScroll();
+    }, 16); // ~60fps
+  }, [performAutoScroll]);
+
+  const stopAutoScrollInterval = useCallback(() => {
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+      autoScrollIntervalRef.current = null;
+    }
+  }, []);
+
+  // Set up pointer tracking (works during drag via dragover event)
   useEffect(() => {
-    if (!scrollContainerRef?.current) return;
-
     const handlePointerMove = (e) => {
-      if (!isDraggingRef.current) return;
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      handleAutoScroll(clientX, clientY);
-    };
-
-    // Use interval for smoother scrolling
-    const startAutoScrollInterval = (clientX, clientY) => {
-      if (autoScrollIntervalRef.current) return;
-      autoScrollIntervalRef.current = setInterval(() => {
-        handleAutoScroll(clientX, clientY);
-      }, 16); // ~60fps
-    };
-
-    const stopAutoScrollInterval = () => {
-      if (autoScrollIntervalRef.current) {
-        clearInterval(autoScrollIntervalRef.current);
-        autoScrollIntervalRef.current = null;
+      const clientX = e.touches ? e.touches[0]?.clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0]?.clientY : e.clientY;
+      if (clientX !== undefined && clientY !== undefined) {
+        pointerPositionRef.current = { x: clientX, y: clientY };
       }
     };
 
+    // dragover fires continuously during HTML5 drag - add to window to catch all
+    const handleDragOver = (e) => {
+      pointerPositionRef.current = { x: e.clientX, y: e.clientY };
+    };
+
+    // Track all pointer moves
     window.addEventListener("mousemove", handlePointerMove);
     window.addEventListener("touchmove", handlePointerMove, { passive: true });
+    window.addEventListener("mousedown", handlePointerMove);
+    window.addEventListener("touchstart", handlePointerMove, { passive: true });
+    // dragover on window catches drag position even at edges
+    window.addEventListener("dragover", handleDragOver);
 
     return () => {
       window.removeEventListener("mousemove", handlePointerMove);
       window.removeEventListener("touchmove", handlePointerMove);
+      window.removeEventListener("mousedown", handlePointerMove);
+      window.removeEventListener("touchstart", handlePointerMove);
+      window.removeEventListener("dragover", handleDragOver);
       stopAutoScrollInterval();
     };
-  }, [scrollContainerRef, handleAutoScroll]);
+  }, [stopAutoScrollInterval]);
 
   // Wrap onDragStateChange to track dragging state for auto-scroll
   const handleDragStateChange = useCallback((dragging, draggedId) => {
     isDraggingRef.current = dragging;
-    if (!dragging && autoScrollIntervalRef.current) {
-      clearInterval(autoScrollIntervalRef.current);
-      autoScrollIntervalRef.current = null;
+    if (dragging) {
+      // Start auto-scroll interval when drag begins
+      startAutoScrollInterval();
+    } else {
+      // Stop auto-scroll interval when drag ends
+      stopAutoScrollInterval();
     }
     if (onDragStateChange) {
       onDragStateChange(dragging, draggedId);
     }
-  }, [onDragStateChange]);
+  }, [onDragStateChange, startAutoScrollInterval, stopAutoScrollInterval, scrollContainerRef]);
+
+  // Update pointer position from drag monitor (called by DraggableItem during hover)
+  const updatePointerPosition = useCallback((clientOffset) => {
+    if (clientOffset) {
+      pointerPositionRef.current = { x: clientOffset.x, y: clientOffset.y };
+    }
+  }, []);
 
   return (
-    <DragContext.Provider value={{ moveItem, direction, itemType, onDragStateChange: handleDragStateChange, childArray }}>
+    <DragContext.Provider value={{ moveItem, direction, itemType, onDragStateChange: handleDragStateChange, childArray, updatePointerPosition }}>
       <div
         style={{
           display: direction === "horizontal" ? "flex" : "block",
@@ -191,12 +234,23 @@ export function DraggableArea({
 export function DraggableItem({ children, index, id, ...rest }) {
   const ref = useRef(null);
   const handleRef = useRef(null);
-  const { moveItem, direction, itemType, onDragStateChange, childArray } = useContext(DragContext);
+  const lastHoverTime = useRef(0);
+  const { moveItem, direction, itemType, onDragStateChange, childArray, updatePointerPosition } = useContext(DragContext);
 
   const [, drop] = useDrop({
     accept: itemType,
-    hover(item) {
+    hover(item, monitor) {
       if (!ref.current) return;
+
+      // Update pointer position for auto-scroll (from drag monitor)
+      const clientOffset = monitor.getClientOffset();
+      if (updatePointerPosition && clientOffset) {
+        updatePointerPosition(clientOffset);
+      }
+
+      // Throttle hover events to reduce vibration (minimum 50ms between moves)
+      const now = Date.now();
+      if (now - lastHoverTime.current < 50) return;
 
       // Find the current index of the dragged item by its ID
       const dragItemIndex = childArray.findIndex(
@@ -206,6 +260,20 @@ export function DraggableItem({ children, index, id, ...rest }) {
       // Skip if item hasn't moved or indices are invalid
       if (dragItemIndex === -1 || dragItemIndex === index) return;
 
+      // For horizontal drag, add a minimum distance threshold to reduce jitter
+      if (direction === "horizontal") {
+        const hoverBoundingRect = ref.current.getBoundingClientRect();
+        const hoverMiddleX = (hoverBoundingRect.right - hoverBoundingRect.left) / 2;
+        if (!clientOffset) return;
+        const hoverClientX = clientOffset.x - hoverBoundingRect.left;
+
+        // Only move if cursor is clearly past the middle (30% threshold)
+        const threshold = hoverMiddleX * 0.3;
+        if (dragItemIndex < index && hoverClientX < hoverMiddleX - threshold) return;
+        if (dragItemIndex > index && hoverClientX > hoverMiddleX + threshold) return;
+      }
+
+      lastHoverTime.current = now;
       moveItem(dragItemIndex, index);
     },
   });

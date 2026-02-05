@@ -385,6 +385,8 @@ function Exercises({
               display: "flex",
               overflowX: "auto",
               overflowY: "hidden",
+              touchAction: isDragging ? "none" : "pan-x",  // Allow horizontal scroll when not dragging
+              WebkitOverflowScrolling: "touch",  // Smooth scrolling on iOS
             }}
           >
             {firstExercise && (
@@ -552,8 +554,8 @@ function Exercises({
                   setDraggedItemId(draggedId);
                 }}
                 scrollContainerRef={scrollContainerRef}
-                autoScrollSpeed={15}
-                autoScrollThreshold={60}
+                autoScrollSpeed={150}
+                autoScrollThreshold={200}
               >
                 {remainingExercises &&
                   remainingExercises.map((e, i) => {

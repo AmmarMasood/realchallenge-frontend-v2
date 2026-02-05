@@ -329,7 +329,7 @@
   /* border: 1px solid red; */
   margin-top: 50px;
   display: flex;
-  align-items: center;
+  /* align-items: center; */
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
@@ -342,7 +342,7 @@
   position: relative;
   background-color: #1a1f26;
   border-radius: 4px;
-  flex-shrink: 0;  /* Prevent shrinking in flex containers */
+  flex-shrink: 0; /* Prevent shrinking in flex containers */
 }
 
 .challenge-player-container-exercies-box-imagebox img,
@@ -597,7 +597,6 @@
   .challenge-player-container-exercies {
     width: 100%;
   }
-
 }
 @media screen and (max-width: 550px) {
   .player-page {

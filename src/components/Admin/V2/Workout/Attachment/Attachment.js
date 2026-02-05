@@ -10,7 +10,9 @@ function Attachment({
   setSelectedValue,
 }) {
   return (
-    <div>
+    <div style={{
+      minWidth: "300px"
+    }}>
       <p
         className="font-paragraph-white"
         style={{
