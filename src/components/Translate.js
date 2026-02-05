@@ -11,6 +11,24 @@ const localeStrings = {
   dutch: dutchStrings,
 };
 
+// Cache key for localStorage (same as in translationHelpers.js)
+const CACHE_KEY = "ui_translations_cache";
+
+/**
+ * Get cached translations from localStorage
+ */
+const getCachedTranslations = (language) => {
+  try {
+    const cached = localStorage.getItem(`${CACHE_KEY}_${language}`);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (e) {
+    console.warn("Failed to read translation cache:", e);
+  }
+  return null;
+};
+
 /**
  * Interpolate a string with parameters
  * Replaces {{paramName}} with the corresponding value from params
@@ -28,13 +46,16 @@ const interpolate = (str, params = {}) => {
 /**
  * Get translation string outside of React context
  * Use this in service files, modals, or anywhere React context isn't available
+ * Checks cached database translations first, falls back to static files
  * @param {string} key - The translation key (e.g., "payment.error_title")
  * @param {Object} params - Optional parameters for interpolation
  * @returns {string} The translated string
  */
 export const translate = (key, params = {}) => {
   const locale = getLocale() || "english";
-  const strings = localeStrings[locale] || localeStrings.english;
+  // Try cached (database) translations first, fall back to static files
+  const cached = getCachedTranslations(locale);
+  const strings = cached || localeStrings[locale] || localeStrings.english;
   const translatedString = get(strings, key, key);
   return interpolate(translatedString, params);
 };

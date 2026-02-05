@@ -81,6 +81,7 @@ import {
 } from "../../../../helpers/DndWrapper.jsx";
 import { debounce } from "lodash";
 import { createPost } from "../../../../services/posts.js";
+import { getDefaultGoals } from "../../../../constants/goals.js";
 
 const tooltipText = `
 If you don’t choose any plan and hit start now, you can go through the wizard, get your free intake, make a free account and enjoy our free challenges collection and one week meal plan. 
@@ -143,8 +144,6 @@ function BasicInformation(props) {
     setShowChangePanel,
     allGoals,
     setAllGoals,
-    defaultGoalsEN,
-    defaultGoalsNL,
     weeks,
     setWeeks,
     musics,
@@ -189,17 +188,26 @@ function BasicInformation(props) {
   const [draggedWorkoutId, setDraggedWorkoutId] = useState(null);
   const [coverVideoLoading, setCoverVideoLoading] = useState(true);
   // Translation support - for linking challenges across languages
-  const [allChallengesFromOtherLanguage, setAllChallengesFromOtherLanguage] = useState([]);
-  const [selectedChallengeForTranslation, setSelectedChallengeForTranslation] = useState("");
+  const [allChallengesFromOtherLanguage, setAllChallengesFromOtherLanguage] =
+    useState([]);
+  const [selectedChallengeForTranslation, setSelectedChallengeForTranslation] =
+    useState("");
   const [translationKey, setTranslationKey] = useState(null);
   // Store the challenge's original language to prevent global language changes from affecting updates
   const [challengeLanguage, setChallengeLanguage] = useState(null);
   const { reloadWithoutConfirmation } = useBrowserEvents({
     enableBeforeUnloadConfirm: true,
     hasUnsavedChanges: true,
-    backForwardMessage:
-      get(strings, "challengeStudio.unsaved_changes_warning", "You have unsaved changes in this challenge. Are you sure you want to leave?"),
-    confirmMessage: get(strings, "challengeStudio.unsaved_work_lost", "Any unsaved work will be lost. Continue?"),
+    backForwardMessage: get(
+      strings,
+      "challengeStudio.unsaved_changes_warning",
+      "You have unsaved changes in this challenge. Are you sure you want to leave?",
+    ),
+    confirmMessage: get(
+      strings,
+      "challengeStudio.unsaved_work_lost",
+      "Any unsaved work will be lost. Continue?",
+    ),
     onPopState: (e) => {
       console.log("Navigation detected", e);
     },
@@ -243,14 +251,14 @@ function BasicInformation(props) {
     setAllGoals(
       challengeGoals?.challengeGoals?.length > 0
         ? challengeGoals.challengeGoals
-        : langToUse === "dutch" ? defaultGoalsNL : defaultGoalsEN
+        : getDefaultGoals(),
     );
 
     // If user is admin, ensure they appear in the trainers list
     let trainersList = trainers.trainers || [];
     if (userInfo.role === "admin" && currentUserDetails) {
       const adminExists = trainersList.find(
-        (t) => t._id === currentUserDetails._id
+        (t) => t._id === currentUserDetails._id,
       );
       if (!adminExists) {
         trainersList = [...trainersList, currentUserDetails];
@@ -264,8 +272,13 @@ function BasicInformation(props) {
     // Fetch challenges from other language for translation linking (only for new challenges)
     if (!props.match.params.challengeId) {
       const otherLanguage = langToUse === "dutch" ? "english" : "dutch";
-      const challengesFromOtherLang = await getAllUserChallenges(otherLanguage, true);
-      setAllChallengesFromOtherLanguage(challengesFromOtherLang?.challenges || []);
+      const challengesFromOtherLang = await getAllUserChallenges(
+        otherLanguage,
+        true,
+      );
+      setAllChallengesFromOtherLanguage(
+        challengesFromOtherLang?.challenges || [],
+      );
     }
 
     setDataLoaded(true); // Set dataLoaded to true after all setters are done
@@ -277,7 +290,9 @@ function BasicInformation(props) {
   const handleSelectChallengeForTranslation = (challengeId) => {
     setSelectedChallengeForTranslation(challengeId);
     if (challengeId) {
-      const challenge = allChallengesFromOtherLanguage.find((c) => c._id === challengeId);
+      const challenge = allChallengesFromOtherLanguage.find(
+        (c) => c._id === challengeId,
+      );
       if (challenge && challenge.translationKey) {
         setTranslationKey(challenge.translationKey);
       } else {
@@ -299,7 +314,7 @@ function BasicInformation(props) {
       const fetchChallenge = async () => {
         setLoading(true);
         const challenge = await getChallengeById(
-          props.match.params.challengeId
+          props.match.params.challengeId,
         );
 
         // Store the challenge's original language
@@ -369,7 +384,17 @@ function BasicInformation(props) {
     if (!file) return false;
     const link = typeof file === "string" ? file : file.link;
     if (!link) return false;
-    const videoExtensions = ["m4v", "avi", "mpg", "mp4", "mov", "wmv", "flv", "webm", "mkv"];
+    const videoExtensions = [
+      "m4v",
+      "avi",
+      "mpg",
+      "mp4",
+      "mov",
+      "wmv",
+      "flv",
+      "webm",
+      "mkv",
+    ];
     const ext = link.split(".").pop()?.toLowerCase();
     return videoExtensions.includes(ext);
   };
@@ -437,7 +462,7 @@ function BasicInformation(props) {
   const onAddWorkout = (weekId) => {
     const newWeeks = [...weeks];
     const weekIndex = newWeeks.findIndex(
-      (week) => week.id === weekId || week._id === weekId
+      (week) => week.id === weekId || week._id === weekId,
     );
     if (weekIndex !== -1) {
       newWeeks[weekIndex].workouts.push({
@@ -451,7 +476,11 @@ function BasicInformation(props) {
             createdAt: "",
             exerciseGroupName: "Introduction",
             exerciseLength: 0,
-            title: get(strings, "challengeStudio.introduction_to_workout", "Introduction to workout"),
+            title: get(
+              strings,
+              "challengeStudio.introduction_to_workout",
+              "Introduction to workout",
+            ),
             videoURL: "",
             voiceOverLink: "",
             videoThumbnailURL: "",
@@ -471,8 +500,18 @@ function BasicInformation(props) {
     const errors = [];
     const errorToShow = {};
     if (!challengeName) {
-      errors.push(get(strings, "challengeStudio.challenge_name_required", "Challenge Name is required"));
-      errorToShow.challengeName = get(strings, "challengeStudio.challenge_name_required", "Challenge Name is required");
+      errors.push(
+        get(
+          strings,
+          "challengeStudio.challenge_name_required",
+          "Challenge Name is required",
+        ),
+      );
+      errorToShow.challengeName = get(
+        strings,
+        "challengeStudio.challenge_name_required",
+        "Challenge Name is required",
+      );
     }
     // if (!challengeDescription) {
     //   errors.push("Description is required");
@@ -480,7 +519,11 @@ function BasicInformation(props) {
     // }
     if (!pack) {
       errors.push(get(strings, "challengeStudio.select_pack", "Select a pack"));
-      errorToShow.pack = get(strings, "challengeStudio.select_pack", "Select a pack");
+      errorToShow.pack = get(
+        strings,
+        "challengeStudio.select_pack",
+        "Select a pack",
+      );
     }
     if (
       pack === "CHALLENGE_1" &&
@@ -489,8 +532,14 @@ function BasicInformation(props) {
         customPrice === undefined ||
         customPrice < 0)
     ) {
-      errors.push(get(strings, "challengeStudio.price_required", "Price is required"));
-      errorToShow.customPrice = get(strings, "challengeStudio.price_required", "Price is required");
+      errors.push(
+        get(strings, "challengeStudio.price_required", "Price is required"),
+      );
+      errorToShow.customPrice = get(
+        strings,
+        "challengeStudio.price_required",
+        "Price is required",
+      );
     }
 
     // if (!thumbnail) {
@@ -507,8 +556,18 @@ function BasicInformation(props) {
     // }
     // if (!difficulty) errors.push("Difficulty is required");
     if (!seletedTrainers || seletedTrainers.length === 0) {
-      errors.push(get(strings, "challengeStudio.trainer_required", "At least one Trainer is required"));
-      errorToShow.trainers = get(strings, "challengeStudio.trainer_required", "At least one Trainer is required");
+      errors.push(
+        get(
+          strings,
+          "challengeStudio.trainer_required",
+          "At least one Trainer is required",
+        ),
+      );
+      errorToShow.trainers = get(
+        strings,
+        "challengeStudio.trainer_required",
+        "At least one Trainer is required",
+      );
     }
     // if (!selectedGoals || selectedGoals.length === 0) {
     //   errors.push("At least one Goal is required");
@@ -518,7 +577,11 @@ function BasicInformation(props) {
     setErrors(errorToShow);
     if (errors.length > 0) {
       notification.error({
-        message: get(strings, "challengeStudio.fill_required_fields", "Please fill all required fields"),
+        message: get(
+          strings,
+          "challengeStudio.fill_required_fields",
+          "Please fill all required fields",
+        ),
         description: (
           <ul>
             {errors.map((err, idx) => (
@@ -534,7 +597,8 @@ function BasicInformation(props) {
     try {
       setLoading(true);
       // Use challenge's original language for updates, global language for new challenges
-      const effectiveLanguage = isUpdate && challengeLanguage ? challengeLanguage : language;
+      const effectiveLanguage =
+        isUpdate && challengeLanguage ? challengeLanguage : language;
       const obj = {
         language: effectiveLanguage,
         challengeName: challengeName,
@@ -607,7 +671,11 @@ function BasicInformation(props) {
       ) {
         setErrors((prev) => ({
           ...prev,
-          challengeName: get(strings, "challengeStudio.duplicate_name", "A challenge with this name already exists"),
+          challengeName: get(
+            strings,
+            "challengeStudio.duplicate_name",
+            "A challenge with this name already exists",
+          ),
         }));
       }
 
@@ -716,7 +784,7 @@ function BasicInformation(props) {
       return weeks.map((week) => {
         const transformedWeek = transformWeek(week);
         transformedWeek.workout = week.workouts.map((workout) =>
-          transformWorkout(workout)
+          transformWorkout(workout),
         );
         return transformedWeek;
       });
@@ -763,8 +831,8 @@ function BasicInformation(props) {
       prevWeeks.map((week) =>
         week.id === weekId || week._id === weekId
           ? { ...week, workouts: [...week.workouts, newWorkout] }
-          : week
-      )
+          : week,
+      ),
     );
   };
 
@@ -786,7 +854,7 @@ function BasicInformation(props) {
   const handleWeekReorder = (newWeekOrder) => {
     // new week ordered ids - extract id from the week objects
     const filteredOrder = newWeekOrder.filter(
-      (item) => item && item.id !== undefined
+      (item) => item && item.id !== undefined,
     );
     const newOrderIds = filteredOrder.map((week) => week.id);
 
@@ -873,7 +941,9 @@ function BasicInformation(props) {
         visible={fitnessInterestModal}
       >
         {/* body focus stuff */}
-        <p className="font-paragraph-white"><T>challengeStudio.create_fitness_interest</T></p>
+        <p className="font-paragraph-white">
+          <T>challengeStudio.create_fitness_interest</T>
+        </p>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Input
             value={newTrainerFitnessInterest}
@@ -902,7 +972,9 @@ function BasicInformation(props) {
           </Button>
         </div>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-          <span className="font-subheading-white"><T>challengeStudio.all_fitness_interests</T></span>
+          <span className="font-subheading-white">
+            <T>challengeStudio.all_fitness_interests</T>
+          </span>
           <List
             size="small"
             bordered
@@ -933,16 +1005,20 @@ function BasicInformation(props) {
                     style={{ marginRight: "10px" }}
                     type="primary"
                   >
-                    {selectedFitnessInterest.find((item) => item._id === g._id)
-                      ? <T>challengeStudio.unselect</T>
-                      : <T>challengeStudio.select</T>}
+                    {selectedFitnessInterest.find(
+                      (item) => item._id === g._id,
+                    ) ? (
+                      <T>challengeStudio.unselect</T>
+                    ) : (
+                      <T>challengeStudio.select</T>
+                    )}
                   </Button>
 
                   <Button
                     onClick={async () => {
                       await deleteTrainerGoals(g._id);
                       setSelectedFitnessInterest((prev) =>
-                        prev.filter((item) => item._id !== g._id)
+                        prev.filter((item) => item._id !== g._id),
                       );
                       fetchDataV2();
                     }}
@@ -955,7 +1031,13 @@ function BasicInformation(props) {
                   <Button
                     type="primary"
                     onClick={() => {
-                      setSelectedItemForUpdateTitle(get(strings, "challengeStudio.update_fitness_interest", "Update Fitness Interest"));
+                      setSelectedItemForUpdateTitle(
+                        get(
+                          strings,
+                          "challengeStudio.update_fitness_interest",
+                          "Update Fitness Interest",
+                        ),
+                      );
                       setSelectedItemForUpdate(g);
                       setEditItemNameModalVisible(true);
                     }}
@@ -975,7 +1057,9 @@ function BasicInformation(props) {
         visible={bodyFocusModal}
       >
         {/* body focus stuff */}
-        <p className="font-paragraph-white"><T>challengeStudio.create_body_focus</T></p>
+        <p className="font-paragraph-white">
+          <T>challengeStudio.create_body_focus</T>
+        </p>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Input
             value={newBodyFocus}
@@ -1001,7 +1085,9 @@ function BasicInformation(props) {
           </Button>
         </div>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-          <span className="font-subheading-white"><T>challengeStudio.all_body_focus</T></span>
+          <span className="font-subheading-white">
+            <T>challengeStudio.all_body_focus</T>
+          </span>
           <List
             size="small"
             bordered
@@ -1032,16 +1118,18 @@ function BasicInformation(props) {
                     style={{ marginRight: "10px" }}
                     type="primary"
                   >
-                    {selectedBodyFocus.find((item) => item._id === g._id)
-                      ? <T>challengeStudio.unselect</T>
-                      : <T>challengeStudio.select</T>}
+                    {selectedBodyFocus.find((item) => item._id === g._id) ? (
+                      <T>challengeStudio.unselect</T>
+                    ) : (
+                      <T>challengeStudio.select</T>
+                    )}
                   </Button>
 
                   <Button
                     onClick={async () => {
                       await deleteChallengeBodyfocus(g._id);
                       setSelectedBodyFocus((prev) =>
-                        prev.filter((item) => item._id !== g._id)
+                        prev.filter((item) => item._id !== g._id),
                       );
                       fetchDataV2();
                     }}
@@ -1054,7 +1142,13 @@ function BasicInformation(props) {
                   <Button
                     type="primary"
                     onClick={() => {
-                      setSelectedItemForUpdateTitle(get(strings, "challengeStudio.update_body_focus", "Update Body Focus"));
+                      setSelectedItemForUpdateTitle(
+                        get(
+                          strings,
+                          "challengeStudio.update_body_focus",
+                          "Update Body Focus",
+                        ),
+                      );
                       setSelectedItemForUpdate(g);
                       setEditItemNameModalVisible(true);
                     }}
@@ -1074,7 +1168,9 @@ function BasicInformation(props) {
         visible={goalsModal}
       >
         {/* body focus stuff */}
-        <p className="font-paragraph-white"><T>challengeStudio.all_goals</T></p>
+        <p className="font-paragraph-white">
+          <T>challengeStudio.all_goals</T>
+        </p>
         <div style={{ height: "200px", overflow: "auto", marginTop: "10px" }}>
           <List
             size="small"
@@ -1106,9 +1202,11 @@ function BasicInformation(props) {
                     style={{ marginRight: "10px" }}
                     type="primary"
                   >
-                    {selectedGoals.find((item) => item._id === g._id)
-                      ? <T>challengeStudio.unselect</T>
-                      : <T>challengeStudio.select</T>}
+                    {selectedGoals.find((item) => item._id === g._id) ? (
+                      <T>challengeStudio.unselect</T>
+                    ) : (
+                      <T>challengeStudio.select</T>
+                    )}
                   </Button>
                 </span>
               </List.Item>
@@ -1123,7 +1221,9 @@ function BasicInformation(props) {
         visible={trainerModal}
       >
         {/* body focus stuff */}
-        <p className="font-paragraph-white"><T>challengeStudio.all_trainers</T></p>
+        <p className="font-paragraph-white">
+          <T>challengeStudio.all_trainers</T>
+        </p>
         <div style={{ height: "200px", overflow: "auto", marginTop: "10px" }}>
           <List
             size="small"
@@ -1150,7 +1250,7 @@ function BasicInformation(props) {
                       onClick={() => {
                         setSelectedTrainers((prev) => {
                           const isExist = prev.find(
-                            (item) => item._id === g._id
+                            (item) => item._id === g._id,
                           );
                           if (isExist) {
                             return prev.filter((item) => item._id !== g._id);
@@ -1162,9 +1262,11 @@ function BasicInformation(props) {
                       style={{ marginRight: "10px" }}
                       type="primary"
                     >
-                      {seletedTrainers.find((item) => item._id === g._id)
-                        ? <T>challengeStudio.unselect</T>
-                        : <T>challengeStudio.select</T>}
+                      {seletedTrainers.find((item) => item._id === g._id) ? (
+                        <T>challengeStudio.unselect</T>
+                      ) : (
+                        <T>challengeStudio.select</T>
+                      )}
                     </Button>
                   )}
                 </span>
@@ -1190,7 +1292,7 @@ function BasicInformation(props) {
               background: isVideoFile(thumbnail)
                 ? "linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39))"
                 : `linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39)), url(${getThumbnailLink(
-                    thumbnail
+                    thumbnail,
                   )})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
@@ -1217,7 +1319,9 @@ function BasicInformation(props) {
                   zIndex: 3,
                 }}
               >
-                <LoadingOutlined style={{ fontSize: "50px", color: "#ff7700" }} />
+                <LoadingOutlined
+                  style={{ fontSize: "50px", color: "#ff7700" }}
+                />
               </div>
             )}
             {/* Video cover background - autoplay, muted, loop */}
@@ -1252,7 +1356,8 @@ function BasicInformation(props) {
                   left: 0,
                   width: "100%",
                   height: "100%",
-                  background: "linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39))",
+                  background:
+                    "linear-gradient(rgba(23, 30, 39, 0), rgb(23, 30, 39))",
                   zIndex: 1,
                 }}
               />
@@ -1278,7 +1383,11 @@ function BasicInformation(props) {
                       cursor: "pointer",
                     }}
                   >
-                    {videoThumbnail ? videoThumbnail.link : <T>challengeStudio.add_trailer</T>}
+                    {videoThumbnail ? (
+                      videoThumbnail.link
+                    ) : (
+                      <T>challengeStudio.add_trailer</T>
+                    )}
                   </p>
                   <img
                     src={ChallengeProfileSubtract}
@@ -1288,7 +1397,11 @@ function BasicInformation(props) {
                   />
                 </div>
                 <input
-                  placeholder={get(strings, "challengeStudio.challenge_name", "Challenge Name")}
+                  placeholder={get(
+                    strings,
+                    "challengeStudio.challenge_name",
+                    "Challenge Name",
+                  )}
                   style={{
                     border: errors.challengeName && "2px solid red",
                   }}
@@ -1310,18 +1423,32 @@ function BasicInformation(props) {
                   <Select
                     defaultValue={difficulty}
                     style={{ width: "100%" }}
-                    placeholder={get(strings, "challengeStudio.please_select", "Please select")}
+                    placeholder={get(
+                      strings,
+                      "challengeStudio.please_select",
+                      "Please select",
+                    )}
                     value={difficulty}
                     onChange={(e) => setDifficulty(e)}
                     className="font-paragraph-white adminV2-bi-input"
                   >
-                    <Select.Option value="high"><T>challengeStudio.high</T></Select.Option>
-                    <Select.Option value="medium"><T>challengeStudio.medium</T></Select.Option>
-                    <Select.Option value="low"><T>challengeStudio.low</T></Select.Option>
+                    <Select.Option value="high">
+                      <T>challengeStudio.high</T>
+                    </Select.Option>
+                    <Select.Option value="medium">
+                      <T>challengeStudio.medium</T>
+                    </Select.Option>
+                    <Select.Option value="low">
+                      <T>challengeStudio.low</T>
+                    </Select.Option>
                   </Select>
 
                   <input
-                    placeholder={get(strings, "challengeStudio.duration_in_minutes", "Duration in minutes")}
+                    placeholder={get(
+                      strings,
+                      "challengeStudio.duration_in_minutes",
+                      "Duration in minutes",
+                    )}
                     className="font-paragraph-white adminV2-bi-input"
                     onChange={(e) => {
                       if (errors.duration) {
@@ -1340,7 +1467,11 @@ function BasicInformation(props) {
                   />
 
                   <input
-                    placeholder={get(strings, "challengeStudio.challenge_points", "Challenge Points")}
+                    placeholder={get(
+                      strings,
+                      "challengeStudio.challenge_points",
+                      "Challenge Points",
+                    )}
                     className="font-paragraph-white adminV2-bi-input"
                     onChange={(e) => {
                       setPoints(e.target.value);
@@ -1352,7 +1483,11 @@ function BasicInformation(props) {
 
                 <textarea
                   rows={4}
-                  placeholder={get(strings, "challengeStudio.add_challenge_description", "Add challenge description")}
+                  placeholder={get(
+                    strings,
+                    "challengeStudio.add_challenge_description",
+                    "Add challenge description",
+                  )}
                   className="font-paragraph-white adminV2-bi-input"
                   onChange={(e) => {
                     if (errors.challengeDescription) {
@@ -1377,7 +1512,10 @@ function BasicInformation(props) {
           <div className="trainer-profile-container-column2">
             {/* Translation selector - only shown when creating a new challenge */}
             {!isUpdate && allChallengesFromOtherLanguage.length > 0 && (
-              <div className="trainer-profile-goals" style={{ marginBottom: "20px" }}>
+              <div
+                className="trainer-profile-goals"
+                style={{ marginBottom: "20px" }}
+              >
                 <div
                   className="trainer-profile-goals-heading font-paragraph-white"
                   style={{ color: "#72777B", textTransform: "uppercase" }}
@@ -1386,7 +1524,11 @@ function BasicInformation(props) {
                 </div>
                 <Select
                   style={{ width: "100%", marginTop: "10px" }}
-                  placeholder={get(strings, "challengeStudio.select_challenge_to_translate", "Select a challenge to translate (optional)")}
+                  placeholder={get(
+                    strings,
+                    "challengeStudio.select_challenge_to_translate",
+                    "Select a challenge to translate (optional)",
+                  )}
                   value={selectedChallengeForTranslation || undefined}
                   onChange={handleSelectChallengeForTranslation}
                   allowClear
@@ -1399,7 +1541,14 @@ function BasicInformation(props) {
                   ))}
                 </Select>
                 {selectedChallengeForTranslation && (
-                  <p className="font-paragraph-white" style={{ marginTop: "8px", fontSize: "12px", color: "#888" }}>
+                  <p
+                    className="font-paragraph-white"
+                    style={{
+                      marginTop: "8px",
+                      fontSize: "12px",
+                      color: "#888",
+                    }}
+                  >
                     <T>challengeStudio.translation_linked</T>
                   </p>
                 )}
@@ -1453,7 +1602,7 @@ function BasicInformation(props) {
                         onClick={() => {
                           const newSelectedFitnessInterest =
                             seletedTrainers.filter(
-                              (item) => item._id !== trainer._id
+                              (item) => item._id !== trainer._id,
                             );
                           setSelectedTrainers(newSelectedFitnessInterest);
                         }}
@@ -1507,7 +1656,7 @@ function BasicInformation(props) {
                       onClick={() => {
                         const newSelectedFitnessInterest =
                           selectedFitnessInterest.filter(
-                            (item) => item !== interest
+                            (item) => item !== interest,
                           );
                         setSelectedFitnessInterest(newSelectedFitnessInterest);
                       }}
@@ -1558,7 +1707,7 @@ function BasicInformation(props) {
                       onClick={() => {
                         const newSelectedFitnessInterest =
                           selectedBodyFocus.filter(
-                            (item) => item._id !== interest._id
+                            (item) => item._id !== interest._id,
                           );
                         setSelectedBodyFocus(newSelectedFitnessInterest);
                       }}
@@ -1607,11 +1756,11 @@ function BasicInformation(props) {
                     <span>{interest.name}</span>
                     <DeleteFilled
                       onClick={() => {
-                        const newSelectedFitnessInterest =
-                          selectedBodyFocus.filter(
-                            (item) => item._id !== interest._id
+                        const newSelectedGoals =
+                          selectedGoals.filter(
+                            (item) => item._id !== interest._id,
                           );
-                        setSelectedGoals(newSelectedFitnessInterest);
+                        setSelectedGoals(newSelectedGoals);
                       }}
                       style={{
                         color: "#ff7700",
@@ -1646,7 +1795,11 @@ function BasicInformation(props) {
               <div>
                 <textarea
                   rows={3}
-                  placeholder={get(strings, "challengeStudio.enter_challenge_result", "Enter challenge result")}
+                  placeholder={get(
+                    strings,
+                    "challengeStudio.enter_challenge_result",
+                    "Enter challenge result",
+                  )}
                   className="font-paragraph-white adminV2-bi-input"
                   onChange={(e) => setResult(e.target.value)}
                   value={result}
@@ -1680,7 +1833,11 @@ function BasicInformation(props) {
                           marginTop: "10px",
                         }}
                         className="font-paragraph-white adminV2-bi-input"
-                        placeholder={get(strings, "challengeStudio.add_info", "Add info")}
+                        placeholder={get(
+                          strings,
+                          "challengeStudio.add_info",
+                          "Add info",
+                        )}
                         onChange={(e) => {
                           const newChallengeInfo = [...challengeInfo];
                           newChallengeInfo[index] = e.target.value;
@@ -1758,7 +1915,11 @@ function BasicInformation(props) {
                                   }}
                                   className="adminV2-bi-input font-paragraph-white"
                                   value={w.weekName}
-                                  placeholder={get(strings, "challengeStudio.name_group", "Name Group")}
+                                  placeholder={get(
+                                    strings,
+                                    "challengeStudio.name_group",
+                                    "Name Group",
+                                  )}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                   }}
@@ -1789,7 +1950,11 @@ function BasicInformation(props) {
                                     }}
                                     className="adminV2-bi-input font-paragraph-white"
                                     value={w.weekSubtitle}
-                                    placeholder={get(strings, "challengeStudio.add_description", "Add Description")}
+                                    placeholder={get(
+                                      strings,
+                                      "challengeStudio.add_description",
+                                      "Add Description",
+                                    )}
                                     onChange={(e) => {
                                       const newWeeks = [...weeks];
                                       newWeeks[i].weekSubtitle = e.target.value;
@@ -1823,7 +1988,7 @@ function BasicInformation(props) {
                                     alt="delete-icon"
                                     onClick={() => {
                                       const newWeek = weeks.filter(
-                                        (item) => item.id !== w.id
+                                        (item) => item.id !== w.id,
                                       );
                                       setWeeks(newWeek);
                                     }}
@@ -1932,19 +2097,23 @@ function BasicInformation(props) {
                                             }}
                                             className="workout-input-field-1 adminV2-bi-input font-paragraph-white"
                                             value={workout.title}
-                                            placeholder={get(strings, "challengeStudio.add_workout_title", "Add Workout Title")}
+                                            placeholder={get(
+                                              strings,
+                                              "challengeStudio.add_workout_title",
+                                              "Add Workout Title",
+                                            )}
                                             onChange={(e) => {
                                               const newWeeks = [...weeks];
                                               const weekIndex =
                                                 newWeeks.findIndex(
-                                                  (week) => week.id === w.id
+                                                  (week) => week.id === w.id,
                                                 );
                                               if (weekIndex !== -1) {
                                                 const workoutIndex = newWeeks[
                                                   weekIndex
                                                 ].workouts.findIndex(
                                                   (item) =>
-                                                    item.id === workout.id
+                                                    item.id === workout.id,
                                                 );
                                                 if (workoutIndex !== -1) {
                                                   newWeeks[weekIndex].workouts[
@@ -1964,19 +2133,23 @@ function BasicInformation(props) {
                                             }}
                                             className="adminV2-bi-input font-paragraph-white"
                                             value={workout.subtitle}
-                                            placeholder={get(strings, "challengeStudio.add_more_info", "Add More Info")}
+                                            placeholder={get(
+                                              strings,
+                                              "challengeStudio.add_more_info",
+                                              "Add More Info",
+                                            )}
                                             onChange={(e) => {
                                               const newWeeks = [...weeks];
                                               const weekIndex =
                                                 newWeeks.findIndex(
-                                                  (week) => week.id === w.id
+                                                  (week) => week.id === w.id,
                                                 );
                                               if (weekIndex !== -1) {
                                                 const workoutIndex = newWeeks[
                                                   weekIndex
                                                 ].workouts.findIndex(
                                                   (item) =>
-                                                    item.id === workout.id
+                                                    item.id === workout.id,
                                                 );
                                                 if (workoutIndex !== -1) {
                                                   newWeeks[weekIndex].workouts[
@@ -2017,10 +2190,16 @@ function BasicInformation(props) {
                                                     isWorkoutLocked(workout)
                                                   ) {
                                                     notification.error({
-                                                      message:
-                                                        get(strings, "challengeStudio.workout_type_locked", "Workout Type is Locked"),
-                                                      description:
-                                                        get(strings, "challengeStudio.workout_type_locked_desc", "Workout type is locked after adding content. Please create a new workout to change the type."),
+                                                      message: get(
+                                                        strings,
+                                                        "challengeStudio.workout_type_locked",
+                                                        "Workout Type is Locked",
+                                                      ),
+                                                      description: get(
+                                                        strings,
+                                                        "challengeStudio.workout_type_locked_desc",
+                                                        "Workout type is locked after adding content. Please create a new workout to change the type.",
+                                                      ),
                                                       placement: "topRight",
                                                       duration: 5,
                                                     });
@@ -2030,7 +2209,8 @@ function BasicInformation(props) {
                                                   const newWeeks = [...weeks];
                                                   const weekIndex =
                                                     newWeeks.findIndex(
-                                                      (week) => week.id === w.id
+                                                      (week) =>
+                                                        week.id === w.id,
                                                     );
                                                   if (weekIndex !== -1) {
                                                     const workoutIndex =
@@ -2038,7 +2218,8 @@ function BasicInformation(props) {
                                                         weekIndex
                                                       ].workouts.findIndex(
                                                         (item) =>
-                                                          item.id === workout.id
+                                                          item.id ===
+                                                          workout.id,
                                                       );
                                                     if (workoutIndex !== -1) {
                                                       // Invert the checkbox logic
@@ -2053,10 +2234,16 @@ function BasicInformation(props) {
                                                   }
                                                 }}
                                               >
-                                                <T>challengeStudio.workout_no_exercises</T>
+                                                <T>
+                                                  challengeStudio.workout_no_exercises
+                                                </T>
                                               </Checkbox>
                                               <Tooltip
-                                                title={get(strings, "challengeStudio.workout_type_tooltip", "Workouts are 'with exercises' by default. Turn this on to create a workout without exercises")}
+                                                title={get(
+                                                  strings,
+                                                  "challengeStudio.workout_type_tooltip",
+                                                  "Workouts are 'with exercises' by default. Turn this on to create a workout without exercises",
+                                                )}
                                                 placement="top"
                                               >
                                                 <img
@@ -2108,21 +2295,22 @@ function BasicInformation(props) {
                                                 const newWeeks = [...weeks];
                                                 const weekIndex =
                                                   newWeeks.findIndex(
-                                                    (week) => week._id === w._id
+                                                    (week) =>
+                                                      week._id === w._id,
                                                   );
                                                 if (weekIndex !== -1) {
                                                   const workoutIndex = newWeeks[
                                                     weekIndex
                                                   ].workouts.findIndex(
                                                     (item) =>
-                                                      item._id === workout._id
+                                                      item._id === workout._id,
                                                   );
                                                   if (workoutIndex !== -1) {
                                                     newWeeks[
                                                       weekIndex
                                                     ].workouts.splice(
                                                       workoutIndex,
-                                                      1
+                                                      1,
                                                     );
                                                     setWeeks(newWeeks);
                                                   }
@@ -2189,7 +2377,9 @@ function BasicInformation(props) {
                   <img src={HelpIcon} alt="" style={{ marginLeft: "5px" }} />
                 </Tooltip>
               </div>
-              <div className="font-paragraph-white"><T>challengeStudio.choose_your_prices</T></div>
+              <div className="font-paragraph-white">
+                <T>challengeStudio.choose_your_prices</T>
+              </div>
               <div className="unlock-challenge-packages">
                 <div
                   className="unlock-challenge-pack font-paragraph-white"
@@ -2208,8 +2398,8 @@ function BasicInformation(props) {
                     border: errors.pack
                       ? "2px solid red"
                       : pack === "CHALLENGE_1"
-                      ? "2px solid #f37720"
-                      : "2px solid #2a2f36",
+                        ? "2px solid #f37720"
+                        : "2px solid #2a2f36",
                   }}
                 >
                   <span
@@ -2219,7 +2409,8 @@ function BasicInformation(props) {
                       marginBottom: "30px",
                     }}
                   >
-                    {getPackage("CHALLENGE_1")?.displayName || "One-Time Challenge"}
+                    {getPackage("CHALLENGE_1")?.displayName ||
+                      "One-Time Challenge"}
                   </span>
                   <span>
                     <input
@@ -2256,7 +2447,9 @@ function BasicInformation(props) {
                       }}
                     />
                   </span>
-                  <span style={{ margin: "15px 0" }}><T>challengeStudio.no_subscription</T></span>
+                  <span style={{ margin: "15px 0" }}>
+                    <T>challengeStudio.no_subscription</T>
+                  </span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
                     <T>challengeStudio.billed_once</T>
                   </span>
@@ -2278,8 +2471,8 @@ function BasicInformation(props) {
                     border: errors.pack
                       ? "2px solid red"
                       : pack === "CHALLENGE_12"
-                      ? "2px solid #f37720"
-                      : "2px solid #2a2f36",
+                        ? "2px solid #f37720"
+                        : "2px solid #2a2f36",
                   }}
                 >
                   <span
@@ -2289,7 +2482,8 @@ function BasicInformation(props) {
                       marginBottom: "10px",
                     }}
                   >
-                    {getPackage("CHALLENGE_12")?.displayName || "12 Months Plan"}
+                    {getPackage("CHALLENGE_12")?.displayName ||
+                      "12 Months Plan"}
                   </span>
                   {getPackage("CHALLENGE_12")?.savingsPercent && (
                     <span
@@ -2304,13 +2498,17 @@ function BasicInformation(props) {
                         marginBottom: "10px",
                       }}
                     >
-                      <T>challengeStudio.save_up_to</T> {getPackage("CHALLENGE_12")?.savingsPercent}
+                      <T>challengeStudio.save_up_to</T>{" "}
+                      {getPackage("CHALLENGE_12")?.savingsPercent}
                     </span>
                   )}
                   <span style={{ fontSize: "26px", fontWeight: "600" }}>
-                    {getPackage("CHALLENGE_12")?.priceDisplayText || `€${getPackage("CHALLENGE_12")?.price}`}
+                    {getPackage("CHALLENGE_12")?.priceDisplayText ||
+                      `€${getPackage("CHALLENGE_12")?.price}`}
                   </span>
-                  <span style={{ margin: "15px 0" }}>{getPackage("CHALLENGE_12")?.billingInterval} months plan</span>
+                  <span style={{ margin: "15px 0" }}>
+                    {getPackage("CHALLENGE_12")?.billingInterval} months plan
+                  </span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
                     <T>challengeStudio.billed_monthly</T>
                   </span>
@@ -2332,8 +2530,8 @@ function BasicInformation(props) {
                     border: errors.pack
                       ? "2px solid red"
                       : pack === "CHALLENGE_3"
-                      ? "2px solid #f37720"
-                      : "2px solid #2a2f36",
+                        ? "2px solid #f37720"
+                        : "2px solid #2a2f36",
                   }}
                 >
                   <span
@@ -2358,13 +2556,17 @@ function BasicInformation(props) {
                         marginBottom: "10px",
                       }}
                     >
-                      <T>challengeStudio.save_up_to</T> {getPackage("CHALLENGE_3")?.savingsPercent}
+                      <T>challengeStudio.save_up_to</T>{" "}
+                      {getPackage("CHALLENGE_3")?.savingsPercent}
                     </span>
                   )}
                   <span style={{ fontSize: "26px", fontWeight: "600" }}>
-                    {getPackage("CHALLENGE_3")?.priceDisplayText || `€${getPackage("CHALLENGE_3")?.price}`}
+                    {getPackage("CHALLENGE_3")?.priceDisplayText ||
+                      `€${getPackage("CHALLENGE_3")?.price}`}
                   </span>
-                  <span style={{ margin: "15px 0" }}>{getPackage("CHALLENGE_3")?.billingInterval} months plan</span>
+                  <span style={{ margin: "15px 0" }}>
+                    {getPackage("CHALLENGE_3")?.billingInterval} months plan
+                  </span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
                     <T>challengeStudio.billed_monthly</T>
                   </span>
@@ -2421,7 +2623,9 @@ function BasicInformation(props) {
                     marginTop: "20px",
                     padding: "15px",
                     backgroundColor: adminApproved ? "#1a472a" : "#4a3626",
-                    border: adminApproved ? "2px solid #22c55e" : "2px solid #f59e0b",
+                    border: adminApproved
+                      ? "2px solid #22c55e"
+                      : "2px solid #f59e0b",
                     borderRadius: "5px",
                     display: "flex",
                     alignItems: "center",
@@ -2459,7 +2663,13 @@ function BasicInformation(props) {
                       color: "#fff",
                     }}
                   >
-                    {adminApproved ? get(strings, "challengeStudio.approved", "Approved") : get(strings, "challengeStudio.pending_approval", "Pending Approval")}
+                    {adminApproved
+                      ? get(strings, "challengeStudio.approved", "Approved")
+                      : get(
+                          strings,
+                          "challengeStudio.pending_approval",
+                          "Pending Approval",
+                        )}
                   </div>
                 </div>
               )}
@@ -2467,7 +2677,11 @@ function BasicInformation(props) {
 
             {isUpdate && !adminApproved && (
               <Alert
-                message={get(strings, "admin.approval_warning", "This content is pending admin approval and is not visible to the public.")}
+                message={get(
+                  strings,
+                  "admin.approval_warning",
+                  "This content is pending admin approval and is not visible to the public.",
+                )}
                 type="warning"
                 showIcon
                 style={{ margin: "10px" }}

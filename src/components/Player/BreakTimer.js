@@ -26,7 +26,8 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
   }, []);
 
   const playAudio = () => {
-    new Audio(tune).play();
+    const audio = new Audio(tune);
+    audio.play().catch((err) => console.log("Audio play failed:", err));
   };
 
   const CountdownDisplay = ({ hours, minutes, seconds, total }) => {
@@ -66,16 +67,18 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
         date={Date.now() + (exercise?.break || 0) * 1000}
         renderer={CountdownDisplay}
         onMount={() => {
-          // Don't call moveToNextExercise here - it's likely causing a loop
-          // Just ensure the player is paused during the break
+          // Pause the player during the break
           setPlayerState((prevState) => ({ ...prevState, playing: false }));
-          console.log("break mounted");
+          // Play beep sound at the START of the break
+          playAudio();
+          console.log("break mounted - start beep played");
         }}
         onTick={(e) => {
-          if (e.seconds === 3) {
+          // Play beep sound for the last 3 seconds (3, 2, 1 countdown)
+          if (e.seconds <= 3 && e.seconds > 0) {
             playAudio();
           }
-          console.log("tick tick tick mf", e);
+          console.log("break tick", e.seconds);
         }}
         onComplete={(e) => {
           console.log("timer completed");

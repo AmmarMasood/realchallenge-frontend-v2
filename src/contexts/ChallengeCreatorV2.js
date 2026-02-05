@@ -1,6 +1,7 @@
 // ChallengeContext.js
 import React, { createContext, useState, useContext } from "react";
 import { v4 } from "uuid";
+import { getDefaultGoals } from "../constants/goals";
 
 const ChallengeContext = createContext();
 
@@ -29,17 +30,7 @@ export function ChallengeProvider({ children }) {
   const [allFitnessInterests, setAllFitnessInterests] = useState([]);
   const [allBodyFocus, setAllBodyFocus] = useState([]);
   const [showChangePanel, setShowChangePanel] = useState([]);
-  const defaultGoalsEN = [
-    { _id: "get-fit", name: "Get Fit" },
-    { _id: "lose-weight", name: "Lose Weight" },
-    { _id: "gain-muscle", name: "Gain Muscle" },
-  ];
-  const defaultGoalsNL = [
-    { _id: "get-fit", name: "Fit Worden" },
-    { _id: "lose-weight", name: "Afvallen" },
-    { _id: "gain-muscle", name: "Spieren Opbouwen" },
-  ];
-  const [allGoals, setAllGoals] = useState(defaultGoalsEN);
+  const [allGoals, setAllGoals] = useState(getDefaultGoals());
   const [weeks, setWeeks] = useState([]);
   const [selectedWorkoutForStudioId, setSelectedWorkoutForStudioId] = useState(
     {}
@@ -229,8 +220,7 @@ export function ChallengeProvider({ children }) {
         setShowChangePanel,
         allGoals,
         setAllGoals,
-        defaultGoalsEN,
-        defaultGoalsNL,
+        getDefaultGoals,
         weeks,
         setWeeks,
         musics,

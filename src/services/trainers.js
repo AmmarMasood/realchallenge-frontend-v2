@@ -60,6 +60,19 @@ export function deleteTrainerGoals(id) {
     });
 }
 
+// Public endpoint - get all trainer goals in database
+export function getAllTrainerGoalsPublic(language) {
+  return axios
+    .get(
+      `${process.env.REACT_APP_SERVER}/api/trainers/trainerGoals/public/all?language=${language}`
+    )
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+      return { goals: [] };
+    });
+}
+
 // Public endpoint - get goals for a specific trainer (for viewing their profile)
 export function getTrainerGoalsByTrainerId(trainerId, language) {
   return axios

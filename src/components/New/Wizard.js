@@ -10,11 +10,9 @@ import "../../assets/wizard.css";
 import "../../assets/home.css";
 import MaleSexLogo from "../../assets/icons/male.svg";
 import FemaleSexLogo from "../../assets/icons/female.svg";
-import WaistLogo from "../../assets/icons/waist-icon.svg";
-import HeartcheckFont from "../../assets/icons/heart-icon.svg";
-import DumbellIcon from "../../assets/icons/dumbell-icon.svg";
 
-import { getAllTrainerGoals } from "../../services/trainers";
+import { getAllTrainerGoalsPublic } from "../../services/trainers";
+import { getDefaultGoals } from "../../constants/goals";
 import { T } from "../Translate";
 import { LanguageContext } from "../../contexts/LanguageContext";
 
@@ -102,7 +100,7 @@ function Wizard({ setWizardCompleted }) {
   }, [gender, details, fitnessLevel]);
 
   const getAllFitnessInterests = async () => {
-    const res = await getAllTrainerGoals(language);
+    const res = await getAllTrainerGoalsPublic(language);
     if (res) {
       console.log(res);
       setAllFitnessInterests(res.goals);
@@ -211,58 +209,26 @@ function Wizard({ setWizardCompleted }) {
             <T>wizard.sgda</T>
           </p>
           <div className="wizard-goal-selection-container">
-            <div
-              style={{
-                border:
-                  goal && goal === "gain-muscle"
-                    ? "2px solid var(--color-orange)"
-                    : "2px solid var(--color-gray)",
-              }}
-              className="wizard-goal-selection-container-goal"
-              onClick={() => {
-                setGoal("gain-muscle");
-              }}
-            >
-              <img src={DumbellIcon} alt="" />
-              <span className="font-paragraph-white">
-                {" "}
-                <T>wizard.gainmuslce</T> (Bulk)
-              </span>
-            </div>
-            <div
-              style={{
-                border:
-                  goal && goal === "get-fit"
-                    ? "2px solid var(--color-orange)"
-                    : "2px solid var(--color-gray)",
-              }}
-              className="wizard-goal-selection-container-goal"
-              onClick={() => {
-                setGoal("get-fit");
-              }}
-            >
-              <img src={HeartcheckFont} alt="" />
-              <span className="font-paragraph-white">
-                <T>wizard.getfit</T>
-              </span>
-            </div>
-            <div
-              style={{
-                border:
-                  goal && goal === "lose-weight"
-                    ? "2px solid var(--color-orange)"
-                    : "2px solid var(--color-gray)",
-              }}
-              className="wizard-goal-selection-container-goal"
-              onClick={() => {
-                setGoal("lose-weight");
-              }}
-            >
-              <img src={WaistLogo} alt="" />
-              <span className="font-paragraph-white">
-                <T>wizard.loseweight</T> (Cut)
-              </span>
-            </div>
+            {getDefaultGoals().map((g) => (
+              <div
+                key={g._id}
+                style={{
+                  border:
+                    goal && goal === g._id
+                      ? "2px solid var(--color-orange)"
+                      : "2px solid var(--color-gray)",
+                }}
+                className="wizard-goal-selection-container-goal"
+                onClick={() => {
+                  setGoal(g._id);
+                }}
+              >
+                <img src={g.icon} alt="" />
+                <span className="font-paragraph-white">
+                  {g.name}
+                </span>
+              </div>
+            ))}
           </div>
           <div
             className="create-payment-check-out poppins-medium-white-20px"

@@ -1128,6 +1128,11 @@
     "challenge_12_limit": "Je bent al ingeschreven voor 3 challenges. Je kunt je pas voor een nieuwe challenge inschrijven als die challenges zijn verlopen.",
     "challenge_limit_reached": "Je hebt het maximale aantal challenges voor je abonnement bereikt. Wacht tot je huidige challenges verlopen."
   },
+  "goals": {
+    "get_fit": "Word Fit",
+    "lose_weight": "Afvallen",
+    "gain_muscle": "Spieren Opbouwen"
+  },
   "verify_email": {
     "title": "Verifieer je e-mail",
     "dashboard_message": "Bedankt voor je aanmelding bij RealChallenge. Verifieer je e-mail om toegang te krijgen tot je dashboard.",

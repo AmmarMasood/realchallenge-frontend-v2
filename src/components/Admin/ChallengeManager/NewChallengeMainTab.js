@@ -37,6 +37,7 @@ import EditTypeName from "./EditTypeName";
 import { LanguageContext } from "../../../contexts/LanguageContext";
 import LanguageSelector from "../../LanguageSelector/LanguageSelector";
 import { T } from "../../Translate";
+import { getDefaultGoals } from "../../../constants/goals";
 const { Option } = Select;
 
 function NewChallengeMainTab({
@@ -790,17 +791,11 @@ function NewChallengeMainTab({
             value={goals}
             onChange={(e) => setGoals(e)}
           >
-            <Option value={"get-fit"}>
-              {" "}
-              <T>wizard.getfit</T>
-            </Option>
-            <Option value={"lose-weight"}>
-              <T>wizard.loseweight</T>
-            </Option>
-            <Option value={"gain-muscle"}>
-              {" "}
-              <T>wizard.gainmuslce</T>{" "}
-            </Option>
+            {getDefaultGoals().map((g) => (
+              <Option key={g._id} value={g._id}>
+                {g.name}
+              </Option>
+            ))}
           </Select>
           {/* <Button
             style={{

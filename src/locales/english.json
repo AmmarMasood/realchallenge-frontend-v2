@@ -1128,6 +1128,11 @@
     "challenge_12_limit": "You are already enrolled in 3 challenges. You can only enroll in a new challenge once those challenges expire.",
     "challenge_limit_reached": "You have reached the maximum number of challenges for your plan. Please wait until your current challenges expire."
   },
+  "goals": {
+    "get_fit": "Get Fit",
+    "lose_weight": "Lose Weight",
+    "gain_muscle": "Gain Muscle"
+  },
   "verify_email": {
     "title": "Please verify your email",
     "dashboard_message": "Thank you for signing up for RealChallenge. Please verify your email to continue your access to dashboard.",
