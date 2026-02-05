@@ -117,8 +117,6 @@ export function DraggableArea({
       const rightEdgeStart = rect.right - autoScrollThreshold;
       const leftEdgeEnd = rect.left + autoScrollThreshold;
 
-      console.log("Scroll check:", { clientX, rightEdgeStart, rectRight: rect.right, canScrollRight, threshold: autoScrollThreshold });
-
       // Scroll left when cursor is near/past left edge
       if (clientX <= leftEdgeEnd && canScrollLeft) {
         scrollX = -autoScrollSpeed;

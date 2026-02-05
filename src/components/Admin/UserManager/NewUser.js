@@ -188,6 +188,30 @@ function NewUser({ setCurrentSelection, home }) {
           await updateUserProfileByAdmin(data, res._id, "trainer");
           console.log("TRAINER CREATED");
           setLoading(false);
+        } else if (selectedRoles.includes("CUSTOMER")) {
+          // Create customer details for customer role
+          await createCustomerDetails(
+            {
+              gender: gender || "other",
+              goals: goals || [],
+              currentFitnessLevel: [],
+              age: 0,
+              weight: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+              measureSystem: "metrics",
+              height: 0,
+              bmi: 0,
+              bmir: 0,
+              caloriesPerDay: 0,
+              amountOfProtein: 33,
+              amountOfFat: 33,
+              amountOfCarbohydrate: 34,
+              avatarLink: typeof avatar === "object" ? avatar.link : "",
+              membership: membership || [],
+            },
+            res._id
+          );
+          console.log("CUSTOMER CREATED");
+          setLoading(false);
         } else {
           const data = {
             heroBanner: typeof hero === "object" ? hero.link : "",
@@ -460,40 +484,62 @@ function NewUser({ setCurrentSelection, home }) {
               <Option value="SHOPMANAGER" disabled={selectedRoles.includes("ADMIN") || selectedRoles.includes("CUSTOMER")}>
                 <T>admin.shopmanager_role</T>
               </Option>
+              <Option value="CUSTOMER" disabled={selectedRoles.length > 0 && !selectedRoles.includes("CUSTOMER")}>
+                Customer
+              </Option>
             </Select>
           </Form.Item>
-          {selectedRoles.includes("CUSTOMER") ? (
-            <Form.Item
-              name="membership"
-              label={<T>admin.membership</T>}
-              rules={[
-                {
-                  required: true,
-                },
-              ]}
-            >
-              <Select
-                mode="multiple"
-                className="field-focus-orange-border"
-                placeholder={get(strings, "admin.select_membership", "Select A Membership")}
-                onChange={(e) => setMembership(e)}
-                allowClear
+          {/* {selectedRoles.includes("CUSTOMER") ? (
+            <>
+              <Form.Item
+                name="membership"
+                label={<T>admin.membership</T>}
+                rules={[
+                  {
+                    required: true,
+                  },
+                ]}
               >
-                {[
-                  "Challenge Three",
-                  "Challenge One",
-                  "Challenge Twelve",
-                  "Free",
-                ].map((e) => (
-                  <Option value={e}>{e}</Option>
-                ))}
-              </Select>
-            </Form.Item>
+                <Select
+                  mode="multiple"
+                  className="field-focus-orange-border"
+                  placeholder={get(strings, "admin.select_membership", "Select A Membership")}
+                  onChange={(e) => setMembership(e)}
+                  allowClear
+                >
+                  {[
+                    "Challenge Three",
+                    "Challenge One",
+                    "Challenge Twelve",
+                    "Free",
+                  ].map((e) => (
+                    <Option value={e}>{e}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+              <Form.Item
+                name="customerGoals"
+                label={<T>admin.fitness_goals</T>}
+              >
+                <Select
+                  mode="multiple"
+                  className="field-focus-orange-border"
+                  placeholder={get(strings, "admin.select_goals", "Select Fitness Goals")}
+                  value={goals}
+                  onChange={(e) => setGoals(e)}
+                  allowClear
+                >
+                  {allChallengeGoals.map((g) => (
+                    <Option key={g._id} value={g._id}>{g.name}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </>
           ) : (
             ""
-          )}
+          )} */}
 
-          {!selectedRoles.includes("ADMIN") && (
+          {!selectedRoles.includes("ADMIN") && !selectedRoles.includes("CUSTOMER") && (
             <>
               <Form.Item label={<T>admin.avatar</T>} name="avatar">
                 <Button

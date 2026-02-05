@@ -1,4 +1,4 @@
-import React, { useEffect, useContext } from "react";
+import React, { useEffect, useContext, useMemo, useRef, useCallback } from "react";
 import Countdown from "react-countdown";
 import { Progress } from "antd";
 import tune from "../../assets/music/break-end.wav";
@@ -9,9 +9,21 @@ import {
 } from "../../contexts/PlayerState";
 
 function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExercise, onWorkoutComplete }) {
-  const [currentBreak, setCurrentBreak] = useContext(breakContext);
-  const [playerState, setPlayerState] = useContext(playerStateContext);
-  const [timerVisible, setTimerVisible] = useContext(timerVisibleContext);
+  const [, setCurrentBreak] = useContext(breakContext);
+  const [, setPlayerState] = useContext(playerStateContext);
+  const [, setTimerVisible] = useContext(timerVisibleContext);
+
+  // Store the target date ONCE when component mounts - this prevents re-calculation on re-renders
+  const targetDate = useMemo(() => {
+    return Date.now() + (exercise?.break || 0) * 1000;
+  }, []); // Empty deps = only calculate once on mount
+
+  // Store break duration for the renderer
+  const breakDuration = exercise?.break || 0;
+  const exerciseGroupName = exercise?.exerciseGroupName;
+
+  // Use ref to track if audio has been played for this break
+  const audioPlayedRef = useRef(false);
 
   useEffect(() => {
     // Only run this once when the component mounts
@@ -25,15 +37,52 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
     }
   }, []);
 
-  const playAudio = () => {
+  const playAudio = useCallback(() => {
+    // Create new audio instance each time for reliable playback
     const audio = new Audio(tune);
     audio.play().catch((err) => console.log("Audio play failed:", err));
-  };
+  }, []);
 
-  const CountdownDisplay = ({ hours, minutes, seconds, total }) => {
-    const totalSeconds = total / 1000;
-    const givenSeconds = (exercise?.break * 1000) / 1000;
-    const progress = ((givenSeconds - totalSeconds) / givenSeconds) * 100;
+  const handleMount = useCallback(() => {
+    // Pause the player during the break
+    setPlayerState((prevState) => ({ ...prevState, playing: false }));
+    // Reset audio played flag when timer mounts
+    audioPlayedRef.current = false;
+  }, [setPlayerState]);
+
+  const handleTick = useCallback((e) => {
+    // Play the countdown audio once when 3 seconds remain
+    // The audio file contains the full "beep beep beep beeeep" pattern
+    if (e.seconds === 3 && !audioPlayedRef.current) {
+      audioPlayedRef.current = true;
+      playAudio();
+    }
+  }, [playAudio]);
+
+  const handleComplete = useCallback(() => {
+    setTimerVisible(false);
+    setCurrentBreak(false);
+
+    if (isLastExercise) {
+      // Last exercise completed, update progress first then show success popup
+      setPlayerState((prevState) => ({ ...prevState, playing: false }));
+      moveToNextExercise(); // This updates backend progress
+      if (onWorkoutComplete) {
+        setTimeout(() => {
+          onWorkoutComplete();
+        }, 100);
+      }
+    } else {
+      // Move to next exercise and resume playing
+      moveToNextExercise();
+      setPlayerState((prevState) => ({ ...prevState, playing: true }));
+    }
+  }, [isLastExercise, moveToNextExercise, onWorkoutComplete, setCurrentBreak, setPlayerState, setTimerVisible]);
+
+  // Memoized renderer to prevent re-creation on each render
+  const CountdownDisplay = useCallback(({ total }) => {
+    const totalSeconds = Math.round(total / 1000);
+    const progress = ((breakDuration - totalSeconds) / breakDuration) * 100;
     return (
       <div className="inner-layout-break">
         <div style={{ width: "30%", textAlign: "center" }}>
@@ -47,7 +96,7 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
           {nextExerciseTitle ? (
             <>
               <span>
-                {exercise?.exerciseGroupName === "Introduction"
+                {exerciseGroupName === "Introduction"
                   ? "First Exercise"
                   : "Next Exercise"}
               </span>{" "}
@@ -59,48 +108,17 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
         </div>
       </div>
     );
-  };
+  }, [breakDuration, nextExerciseTitle, exerciseGroupName]);
 
   return (
     <div className="break-layout-for-player">
       <Countdown
-        date={Date.now() + (exercise?.break || 0) * 1000}
+        key={targetDate}
+        date={targetDate}
         renderer={CountdownDisplay}
-        onMount={() => {
-          // Pause the player during the break
-          setPlayerState((prevState) => ({ ...prevState, playing: false }));
-          // Play beep sound at the START of the break
-          playAudio();
-          console.log("break mounted - start beep played");
-        }}
-        onTick={(e) => {
-          // Play beep sound for the last 3 seconds (3, 2, 1 countdown)
-          if (e.seconds <= 3 && e.seconds > 0) {
-            playAudio();
-          }
-          console.log("break tick", e.seconds);
-        }}
-        onComplete={(e) => {
-          console.log("timer completed");
-          setTimerVisible(false);
-          setCurrentBreak(false);
-
-          if (isLastExercise) {
-            // Last exercise completed, update progress first then show success popup
-            setPlayerState((prevState) => ({ ...prevState, playing: false }));
-            moveToNextExercise(); // This updates backend progress
-            if (onWorkoutComplete) {
-              setTimeout(() => {
-                onWorkoutComplete();
-              }, 100);
-            }
-          } else {
-            // Move to next exercise and resume playing
-            moveToNextExercise();
-            setPlayerState((prevState) => ({ ...prevState, playing: true }));
-          }
-          console.log("break ended");
-        }}
+        onMount={handleMount}
+        onTick={handleTick}
+        onComplete={handleComplete}
       />
     </div>
   );
