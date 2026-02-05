@@ -2540,6 +2540,135 @@ export const VFSBrowser = React.memo((props) => {
           background-color: #e6f7ff;
           border: 1px solid #40a9ff;
         }
+
+        /* Mobile responsive - smaller Chonky folder icons on phones */
+        @media (max-width: 768px) {
+          /* Only scale the folder preview/icon area, not the name */
+          [class^="previewFile-"],
+          [class^="gridFileEntryPreview-"] {
+            transform: scale(0.7);
+            transform-origin: center center;
+          }
+
+          /* Toolbar responsive adjustments */
+          .chonky-toolbarContainer {
+            flex-wrap: wrap;
+            gap: 8px;
+          }
+
+          .chonky-toolbarLeft {
+            flex: 1 1 100%;
+            min-width: 0;
+          }
+
+          .chonky-toolbarRight {
+            flex: 1 1 100%;
+            flex-wrap: wrap;
+            justify-content: flex-start !important;
+            gap: 4px;
+          }
+
+          /* Hide button text, show only icons */
+          .chonky-toolbarRight .chonky-baseButton span:not(.MuiTouchRipple-root):not(.MuiButton-label) {
+            display: none;
+          }
+
+          /* Make buttons smaller */
+          .chonky-toolbarRight .chonky-baseButton {
+            min-width: 36px !important;
+            padding: 4px 8px !important;
+          }
+
+          /* Hide info text on small screens */
+          .chonky-infoContainer .chonky-extraInfoSpan {
+            display: none;
+          }
+
+          /* Smaller search field */
+          .chonky-searchFieldContainer {
+            max-width: 150px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          /* Even smaller folder icons on small phones */
+          [class^="previewFile-"],
+          [class^="gridFileEntryPreview-"] {
+            transform: scale(0.55);
+            transform-origin: center center;
+          }
+
+          /* Even more compact toolbar */
+          .chonky-toolbarRight .chonky-baseButton {
+            min-width: 32px !important;
+            padding: 2px 6px !important;
+            font-size: 12px !important;
+          }
+
+          .chonky-toolbarRight .chonky-baseButton svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
+
+          /* Smaller search */
+          .chonky-searchFieldContainer {
+            max-width: 120px;
+          }
+
+          .chonky-searchFieldInput {
+            font-size: 12px !important;
+          }
+
+          /* Hide item count text */
+          .chonky-infoText {
+            font-size: 11px !important;
+          }
+        }
+
+        /* Custom controls card responsive */
+        @media (max-width: 768px) {
+          .ant-card.ant-card-small .ant-card-body > div {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+          }
+
+          .ant-card.ant-card-small .ant-card-body .ant-space {
+            flex-wrap: wrap;
+          }
+
+          .ant-card.ant-card-small .ant-card-body .ant-typography {
+            font-size: 12px !important;
+          }
+
+          .ant-card.ant-card-small .ant-card-body .ant-btn {
+            font-size: 12px !important;
+            padding: 2px 8px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .ant-card.ant-card-small .ant-card-body > div {
+            gap: 8px !important;
+          }
+
+          .ant-card.ant-card-small .ant-card-body .ant-space {
+            gap: 4px !important;
+          }
+
+          .ant-card.ant-card-small .ant-card-body .ant-typography {
+            font-size: 11px !important;
+          }
+
+          .ant-card.ant-card-small .ant-card-body .ant-switch {
+            min-width: 40px !important;
+          }
+
+          .ant-card.ant-card-small .ant-card-body .ant-btn {
+            font-size: 11px !important;
+            padding: 2px 6px !important;
+          }
+        }
       `}</style>
     </>
   );
