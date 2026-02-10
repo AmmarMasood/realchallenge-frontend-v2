@@ -65,6 +65,7 @@ import {
   getAllUserChallenges,
 } from "../../../../services/createChallenge/main";
 import { useBrowserEvents } from "../../../../helpers/useBrowserEvents";
+import { hasAnyRole } from "../../../../helpers/roleHelpers";
 import setAuthToken from "../../../../helpers/setAuthToken";
 import DragAndDropIcon from "../../../../assets/icons/drag-drop.svg";
 import CopyIcon from "../../../../assets/icons/copy-icon.svg";
@@ -316,6 +317,22 @@ function BasicInformation(props) {
         const challenge = await getChallengeById(
           props.match.params.challengeId,
         );
+
+        // Authorization check
+        const isAdmin = hasAnyRole(userInfo, ["admin"]);
+        const isCreator = challenge.user === userInfo.id || challenge.user?._id === userInfo.id;
+        const isAssignedTrainer = challenge.trainers?.some(
+          (t) => (t._id || t) === userInfo.id
+        );
+
+        if (!isAdmin && !isCreator && !isAssignedTrainer) {
+          notification.error({
+            message: "Not Authorized",
+            description: "You don't have permission to edit this challenge.",
+          });
+          props.history.push("/admin/v2");
+          return;
+        }
 
         // Store the challenge's original language
         if (challenge && challenge.language) {
@@ -642,6 +659,7 @@ function BasicInformation(props) {
         allowComments,
         allowReviews,
         isPublic: makePublic,
+        ...(hasAnyRole(userInfo, ["admin"]) && { adminApproved }),
       };
 
       // Add translationKey for linking with other language versions (only for new challenges)
@@ -2661,7 +2679,11 @@ function BasicInformation(props) {
                       fontWeight: "600",
                       fontSize: "14px",
                       color: "#fff",
+                      ...(hasAnyRole(userInfo, ["admin"]) && { cursor: "pointer" }),
                     }}
+                    {...(hasAnyRole(userInfo, ["admin"]) && {
+                      onClick: () => {},
+                    })}
                   >
                     {adminApproved
                       ? get(strings, "challengeStudio.approved", "Approved")

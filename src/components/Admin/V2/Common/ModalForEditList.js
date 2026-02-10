@@ -46,10 +46,12 @@ function ModalForEditList({
 
   // Check if user can edit a specific item
   const canEdit = (item) => {
-    console.log("item", item, adminInfo);
     if (isAdmin) return true; // Admins can edit everything
     if (isTrainer && item.user && item.user._id === adminInfo.id) {
-      return true; // Trainers can only edit their own content
+      return true; // Trainers can edit their own content
+    }
+    if (isTrainer && item.trainers?.some((t) => (t._id || t) === adminInfo.id)) {
+      return true; // Assigned trainers can edit
     }
     return false;
   };
