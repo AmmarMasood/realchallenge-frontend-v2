@@ -21,6 +21,13 @@ import { get } from "lodash";
 
 const { Panel } = Collapse;
 
+const getThumbnailLink = (thumbnail) => {
+  if (!thumbnail) return "";
+  if (typeof thumbnail === "string") return thumbnail.replace(/ /g, "%20");
+  if (thumbnail.link) return thumbnail.link.replace(/ /g, "%20");
+  return "";
+};
+
 const filterTextStyle = {
   margin: 0,
   padding: 0,
@@ -309,7 +316,7 @@ function AllChallenges() {
                 to={`challenge/${challenge.challengeName}/${challenge._id}`}
               >
                 <ChallengeCard
-                  picture={`${challenge.thumbnailLink}`}
+                  picture={getThumbnailLink(challenge.thumbnailLink)}
                   rating={challenge.rating}
                   name={challenge.challengeName}
                   newc={true}

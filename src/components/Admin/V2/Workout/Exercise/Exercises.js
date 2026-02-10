@@ -378,11 +378,12 @@ function Exercises({
           width: fromFullScreen && "100%",
         }}
       >
-        <div className="video-browser-container">
+        <div className="video-browser-container" style={{ display: "flex" }}>
           <div
             ref={scrollContainerRef}
             style={{
               display: "flex",
+              flex: 1,
               overflowX: "auto",
               overflowY: "hidden",
               touchAction: isDragging ? "none" : "pan-x",  // Allow horizontal scroll when not dragging
@@ -543,6 +544,7 @@ function Exercises({
                   : "2px solid transparent",
                 transition: "all 0.3s ease",
                 borderRadius: isDragging ? "8px" : "0px",
+                flexShrink: 0,
               }}
             >
               <DraggableArea
@@ -554,8 +556,8 @@ function Exercises({
                   setDraggedItemId(draggedId);
                 }}
                 scrollContainerRef={scrollContainerRef}
-                autoScrollSpeed={150}
-                autoScrollThreshold={200}
+                autoScrollSpeed={14}
+                autoScrollThreshold={300}
               >
                 {remainingExercises &&
                   remainingExercises.map((e, i) => {
@@ -760,35 +762,32 @@ function Exercises({
                   })}
               </DraggableArea>
             </div>
+          </div>
 
-            <div
-              style={{
-                position: "sticky",
-                right: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                minWidth: "fit-content",
-                flexShrink: 0,
-                zIndex: 100,
-              }}
-            >
-              {!workout.renderWorkout && workout.exercises?.length === 2 ? (
-                <div></div>
-              ) : (
-                <img
-                  src={AddNewExercise}
-                  onClick={addNewExercise}
-                  alt="exercise"
-                  style={{
-                    cursor: "pointer",
-                    marginTop: "0px",
-                    background: "#171e27",
-                    height: "100%",
-                  }}
-                />
-              )}
-            </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: "fit-content",
+              flexShrink: 0,
+            }}
+          >
+            {!workout.renderWorkout && workout.exercises?.length === 2 ? (
+              <div></div>
+            ) : (
+              <img
+                src={AddNewExercise}
+                onClick={addNewExercise}
+                alt="exercise"
+                style={{
+                  cursor: "pointer",
+                  marginTop: "0px",
+                  background: "#171e27",
+                  height: "100%",
+                }}
+              />
+            )}
           </div>
         </div>
       </div>

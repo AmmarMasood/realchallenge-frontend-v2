@@ -93,7 +93,8 @@ export function DraggableArea({
   // Store current pointer position for continuous auto-scroll
   const pointerPositionRef = useRef({ x: 0, y: 0 });
 
-  // Auto-scroll logic - checks current pointer position and scrolls if near edges
+  // Auto-scroll logic - uses progressive speed based on distance from edge
+  // Minimum 30% of autoScrollSpeed once inside the threshold zone, scaling to 100% at the edge
   const performAutoScroll = useCallback(() => {
     const container = scrollContainerRef?.current;
     if (!container || !isDraggingRef.current) return;
@@ -105,35 +106,41 @@ export function DraggableArea({
     let scrollX = 0;
     let scrollY = 0;
 
-    // Check if container can scroll
-    const canScrollLeft = container.scrollLeft > 0;
-    const canScrollRight = container.scrollLeft < container.scrollWidth - container.clientWidth - 1; // -1 for rounding
+    // Check if container can scroll (use Math.round to avoid sub-pixel rounding issues)
+    const canScrollLeft = Math.round(container.scrollLeft) > 0;
+    const canScrollRight = Math.round(container.scrollLeft) < Math.round(container.scrollWidth - container.clientWidth);
 
-    const canScrollUp = container.scrollTop > 0;
-    const canScrollDown = container.scrollTop < container.scrollHeight - container.clientHeight - 1;
+    const canScrollUp = Math.round(container.scrollTop) > 0;
+    const canScrollDown = Math.round(container.scrollTop) < Math.round(container.scrollHeight - container.clientHeight);
+
+    const MIN_SPEED_RATIO = 0.3;  // Minimum 30% speed once inside threshold
 
     if (direction === "horizontal") {
-      // Simple threshold check - trigger when cursor is within threshold of edge or beyond
-      const rightEdgeStart = rect.right - autoScrollThreshold;
       const leftEdgeEnd = rect.left + autoScrollThreshold;
+      const rightEdgeStart = rect.right - autoScrollThreshold;
 
-      // Scroll left when cursor is near/past left edge
       if (clientX <= leftEdgeEnd && canScrollLeft) {
-        scrollX = -autoScrollSpeed;
-      }
-      // Scroll right when cursor is near/past right edge
-      else if (clientX >= rightEdgeStart && canScrollRight) {
-        scrollX = autoScrollSpeed;
+        // Progressive: MIN_SPEED_RATIO at threshold boundary, 1.0 at edge/beyond
+        const rawProximity = Math.min(1, (leftEdgeEnd - clientX) / autoScrollThreshold);
+        const speed = autoScrollSpeed * (MIN_SPEED_RATIO + (1 - MIN_SPEED_RATIO) * rawProximity);
+        scrollX = -speed;
+      } else if (clientX >= rightEdgeStart && canScrollRight) {
+        const rawProximity = Math.min(1, (clientX - rightEdgeStart) / autoScrollThreshold);
+        const speed = autoScrollSpeed * (MIN_SPEED_RATIO + (1 - MIN_SPEED_RATIO) * rawProximity);
+        scrollX = speed;
       }
     } else {
       const topEdgeEnd = rect.top + autoScrollThreshold;
       const bottomEdgeStart = rect.bottom - autoScrollThreshold;
 
       if (clientY <= topEdgeEnd && canScrollUp) {
-        scrollY = -autoScrollSpeed;
-      }
-      else if (clientY >= bottomEdgeStart && canScrollDown) {
-        scrollY = autoScrollSpeed;
+        const rawProximity = Math.min(1, (topEdgeEnd - clientY) / autoScrollThreshold);
+        const speed = autoScrollSpeed * (MIN_SPEED_RATIO + (1 - MIN_SPEED_RATIO) * rawProximity);
+        scrollY = -speed;
+      } else if (clientY >= bottomEdgeStart && canScrollDown) {
+        const rawProximity = Math.min(1, (clientY - bottomEdgeStart) / autoScrollThreshold);
+        const speed = autoScrollSpeed * (MIN_SPEED_RATIO + (1 - MIN_SPEED_RATIO) * rawProximity);
+        scrollY = speed;
       }
     }
 
@@ -169,7 +176,9 @@ export function DraggableArea({
     };
 
     // dragover fires continuously during HTML5 drag - add to window to catch all
+    // preventDefault is needed so the browser doesn't block drag tracking at container edges
     const handleDragOver = (e) => {
+      e.preventDefault();
       pointerPositionRef.current = { x: e.clientX, y: e.clientY };
     };
 
@@ -217,8 +226,9 @@ export function DraggableArea({
     <DragContext.Provider value={{ moveItem, direction, itemType, onDragStateChange: handleDragStateChange, childArray, updatePointerPosition }}>
       <div
         style={{
-          display: direction === "horizontal" ? "flex" : "block",
-          width: "98.5%",
+          display: direction === "horizontal" ? "inline-flex" : "block",
+          width: direction === "horizontal" ? undefined : "98.5%",
+          flexShrink: 0,
         }}
       >
         {childArray.map((child, index) =>
@@ -302,6 +312,7 @@ export function DraggableItem({ children, index, id, ...rest }) {
     () => ({
       opacity: isDragging ? 0.5 : 1,
       display: direction === "horizontal" ? "inline-block" : "block",
+      flexShrink: direction === "horizontal" ? 0 : undefined,
       transition: "opacity 0.15s ease-out",
     }),
     [isDragging, direction]

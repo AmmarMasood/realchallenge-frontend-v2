@@ -32,10 +32,10 @@ function MusicPlayer({ visible, setMusicPlayerVisible, musicList }) {
       return;
     }
 
-    // if (currentBreak && !playerState.playing) {
-    //   localStorage.setItem("music-playing", true);
-    //   return;
-    // }
+    if (currentBreak && !playerState.playing) {
+      localStorage.setItem("music-playing", true);
+      return;
+    }
 
     localStorage.removeItem("music-playing");
   }, [playerState.playing, currentBreak]);

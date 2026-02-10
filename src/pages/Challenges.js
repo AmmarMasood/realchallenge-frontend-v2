@@ -19,6 +19,25 @@ import slug from "elegant-slug";
 import { T } from "../components/Translate";
 import { LanguageContext } from "../contexts/LanguageContext";
 
+const VIDEO_EXTENSIONS = [
+  "m4v", "avi", "mpg", "mp4", "mov", "wmv", "flv", "webm", "mkv",
+];
+
+const isVideoFile = (src) => {
+  if (!src) return false;
+  const link = typeof src === "string" ? src : src.link;
+  if (!link) return false;
+  const ext = link.split(".").pop()?.toLowerCase().split("?")[0];
+  return VIDEO_EXTENSIONS.includes(ext);
+};
+
+const getThumbnailLink = (thumbnail) => {
+  if (!thumbnail) return "";
+  if (typeof thumbnail === "string") return thumbnail.replace(/ /g, "%20");
+  if (thumbnail.link) return thumbnail.link.replace(/ /g, "%20");
+  return "";
+};
+
 function Challenges() {
   // eslint-disable-next-line
   const [loading, setLoading] = useState(false);
@@ -85,19 +104,48 @@ function Challenges() {
                     className="challenge-carousel-body"
                     style={{
                       zIndex: 1000000,
-                      background: `url(${
-                        process.env.REACT_APP_SERVER
-                      }/uploads/${
-                        challenge.thumbnailLink
-                          ? challenge.thumbnailLink.replaceAll(" ", "%20")
-                          : ""
-                      })`,
+                      background: isVideoFile(challenge.thumbnailLink)
+                        ? "#171e27"
+                        : `url(${getThumbnailLink(challenge.thumbnailLink)})`,
                       backgroundSize: "cover",
                       backgroundPosition: "50% 50%",
+                      position: "relative",
+                      overflow: "hidden",
                     }}
                   >
+                    {isVideoFile(challenge.thumbnailLink) && (
+                      <>
+                        <video
+                          src={getThumbnailLink(challenge.thumbnailLink)}
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            zIndex: 0,
+                          }}
+                        />
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            background: "linear-gradient(rgba(23, 30, 39, 0.3), rgba(23, 30, 39, 0.8))",
+                            zIndex: 1,
+                          }}
+                        />
+                      </>
+                    )}
                     <div className="challenge-carousel-body-overcolor"></div>
-                    <div className="challenge-carousel-body-abstext for-650px-screen-nodisplay">
+                    <div className="challenge-carousel-body-abstext for-650px-screen-nodisplay" style={{ zIndex: 2 }}>
                       <h1
                         className="font-subheading-white"
                         style={{ fontSize: "4rem" }}
@@ -110,7 +158,7 @@ function Challenges() {
                     </div>
                     <div
                       className="challenge-carousel-body-textbox font-subheading-white"
-                      style={{ fontSize: "3rem" }}
+                      style={{ fontSize: "3rem", position: "relative", zIndex: 2 }}
                     >
                       <h1>{challenge.challengeName}</h1>
                       <p className="challenge-carousel-body-abstext-paragraph  font-paragraph-white">
@@ -188,11 +236,7 @@ function Challenges() {
                   }`}
                 >
                   <ChallengeCard
-                    picture={`${
-                      challenge.thumbnailLink
-                        ? challenge.thumbnailLink.replaceAll(" ", "%20")
-                        : ""
-                    }`}
+                    picture={getThumbnailLink(challenge.thumbnailLink)}
                     rating={challenge.rating}
                     name={challenge.challengeName}
                     newc={true}

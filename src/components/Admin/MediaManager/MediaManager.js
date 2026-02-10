@@ -1834,6 +1834,33 @@ const RenameModal = ({ visible, onClose, onSuccess, target, isNameUnique }) => {
 export const VFSBrowser = React.memo((props) => {
   const { strings } = useContext(LanguageContext);
 
+  // Track window width for responsive grid sizing
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1024
+  );
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Responsive grid view action — smaller entries on mobile
+  const responsiveGridAction = useMemo(() => {
+    let entryWidth = 165;
+    let entryHeight = 130;
+    if (windowWidth <= 480) {
+      entryWidth = 100;
+      entryHeight = 100;
+    } else if (windowWidth <= 768) {
+      entryWidth = 130;
+      entryHeight = 110;
+    }
+    return defineFileAction({
+      id: "responsive_grid_view",
+      fileViewConfig: { entryWidth, entryHeight },
+    });
+  }, [windowWidth]);
+
   // Search mode toggle - enables searching across all folders and files
   const [searchMode, setSearchMode] = useState(false);
 
@@ -2073,6 +2100,9 @@ export const VFSBrowser = React.memo((props) => {
       return [];
     }
 
+    // Add responsive grid sizing action (applies entryWidth/entryHeight for current screen size)
+    actions.push(responsiveGridAction);
+
     // Add view mode actions based on current mode
     if (currentViewMode === "list") {
       actions.push(ChonkyActions.EnableGridView);
@@ -2202,6 +2232,7 @@ export const VFSBrowser = React.memo((props) => {
     currentViewMode,
     clipboardFiles,
     searchMode,
+    responsiveGridAction,
   ]);
 
   const thumbnailGenerator = useCallback(
@@ -2473,6 +2504,7 @@ export const VFSBrowser = React.memo((props) => {
                 disableSelection={loading}
                 disableToolbar={false}
                 disableDefaultFileActions={true}
+                defaultFileViewActionId={responsiveGridAction.id}
                 {...props}
               />
             </div>
@@ -2578,13 +2610,6 @@ export const VFSBrowser = React.memo((props) => {
 
         /* Mobile responsive - smaller Chonky folder icons on phones */
         @media (max-width: 768px) {
-          /* Only scale the folder preview/icon area, not the name */
-          [class^="previewFile-"],
-          [class^="gridFileEntryPreview-"] {
-            transform: scale(0.7);
-            transform-origin: center center;
-          }
-
           /* Toolbar responsive adjustments */
           .chonky-toolbarContainer {
             flex-wrap: wrap;
@@ -2626,13 +2651,6 @@ export const VFSBrowser = React.memo((props) => {
         }
 
         @media (max-width: 480px) {
-          /* Even smaller folder icons on small phones */
-          [class^="previewFile-"],
-          [class^="gridFileEntryPreview-"] {
-            transform: scale(0.55);
-            transform-origin: center center;
-          }
-
           /* Even more compact toolbar */
           .chonky-toolbarRight .chonky-baseButton {
             min-width: 32px !important;
