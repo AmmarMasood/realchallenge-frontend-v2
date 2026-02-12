@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from "react";
+import React, { useState, useEffect, useContext, useCallback, useRef } from "react";
 import "../../../../assets/trainerprofile.css";
 import "../../../../assets/home.css";
 import "../../../../assets/challengeProfile.css";
@@ -194,6 +194,9 @@ function BasicInformation(props) {
   const [selectedChallengeForTranslation, setSelectedChallengeForTranslation] =
     useState("");
   const [translationKey, setTranslationKey] = useState(null);
+  const [translationDropdownOpen, setTranslationDropdownOpen] = useState(false);
+  const [translationSearch, setTranslationSearch] = useState("");
+  const translationDropdownRef = useRef(null);
   // Store the challenge's original language to prevent global language changes from affecting updates
   const [challengeLanguage, setChallengeLanguage] = useState(null);
   const { reloadWithoutConfirmation } = useBrowserEvents({
@@ -270,17 +273,15 @@ function BasicInformation(props) {
     setAllFitnessInterests(res.goals);
     setAllExercises(allExercises.exercises);
 
-    // Fetch challenges from other language for translation linking (only for new challenges)
-    if (!props.match.params.challengeId) {
-      const otherLanguage = langToUse === "dutch" ? "english" : "dutch";
-      const challengesFromOtherLang = await getAllUserChallenges(
-        otherLanguage,
-        true,
-      );
-      setAllChallengesFromOtherLanguage(
-        challengesFromOtherLang?.challenges || [],
-      );
-    }
+    // Fetch challenges from other language for translation linking
+    const otherLanguage = langToUse === "dutch" ? "english" : "dutch";
+    const challengesFromOtherLang = await getAllUserChallenges(
+      otherLanguage,
+      true,
+    );
+    setAllChallengesFromOtherLanguage(
+      challengesFromOtherLang?.challenges || [],
+    );
 
     setDataLoaded(true); // Set dataLoaded to true after all setters are done
 
@@ -385,6 +386,42 @@ function BasicInformation(props) {
       fetchDataV2(challengeLanguage);
     }
   }, [challengeLanguage]);
+
+  // Pre-populate translation link when editing an existing challenge
+  useEffect(() => {
+    if (
+      dataLoaded &&
+      props.match.params.challengeId &&
+      allChallengesFromOtherLanguage.length > 0
+    ) {
+      const fetchAndSetTranslation = async () => {
+        const challenge = await getChallengeById(
+          props.match.params.challengeId,
+        );
+        if (challenge?.translationKey) {
+          setTranslationKey(challenge.translationKey);
+          const linked = allChallengesFromOtherLanguage.find(
+            (c) => c.translationKey === challenge.translationKey,
+          );
+          if (linked) {
+            setSelectedChallengeForTranslation(linked._id);
+          }
+        }
+      };
+      fetchAndSetTranslation();
+    }
+  }, [dataLoaded, allChallengesFromOtherLanguage]);
+
+  // Close translation dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (translationDropdownRef.current && !translationDropdownRef.current.contains(e.target)) {
+        setTranslationDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const openForThumbnail = () => {
     setErrors((prev) => ({
@@ -662,9 +699,11 @@ function BasicInformation(props) {
         ...(hasAnyRole(userInfo, ["admin"]) && { adminApproved }),
       };
 
-      // Add translationKey for linking with other language versions (only for new challenges)
-      if (!isUpdate && translationKey) {
+      // Add translationKey for linking with other language versions
+      if (translationKey) {
         obj.translationKey = translationKey;
+      } else if (isUpdate) {
+        obj.translationKey = null; // Allow clearing the connection
       }
 
       console.log("us update", isUpdate);
@@ -695,6 +734,18 @@ function BasicInformation(props) {
             "A challenge with this name already exists",
           ),
         }));
+      }
+
+      // Check if it's a duplicate translation link error
+      if (
+        err.response?.status === 409 &&
+        err.response?.data?.error === "DUPLICATE_TRANSLATION_LINK"
+      ) {
+        notification.error({
+          message: "Translation Link Conflict",
+          description: err.response.data.message ||
+            "Another challenge in this language is already linked with this translation.",
+        });
       }
 
       setLoading(false);
@@ -1528,8 +1579,8 @@ function BasicInformation(props) {
             </div>
           </div>
           <div className="trainer-profile-container-column2">
-            {/* Translation selector - only shown when creating a new challenge */}
-            {!isUpdate && allChallengesFromOtherLanguage.length > 0 && (
+            {/* Translation selector - shown for both new and existing challenges */}
+            {allChallengesFromOtherLanguage.length > 0 && (
               <div
                 className="trainer-profile-goals"
                 style={{ marginBottom: "20px" }}
@@ -1538,26 +1589,128 @@ function BasicInformation(props) {
                   className="trainer-profile-goals-heading font-paragraph-white"
                   style={{ color: "#72777B", textTransform: "uppercase" }}
                 >
-                  <T>challengeStudio.translate_existing_challenge</T>
+                  {isUpdate ? "Link Translation" : <T>challengeStudio.translate_existing_challenge</T>}
                 </div>
-                <Select
-                  style={{ width: "100%", marginTop: "10px" }}
-                  placeholder={get(
-                    strings,
-                    "challengeStudio.select_challenge_to_translate",
-                    "Select a challenge to translate (optional)",
+                <div ref={translationDropdownRef} style={{ position: "relative", width: "100%", marginTop: "10px" }}>
+                  {/* Selected value / trigger */}
+                  <div
+                    onClick={() => setTranslationDropdownOpen((prev) => !prev)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "8px 12px",
+                      border: "1px solid #434343",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      background: "#1a1a2e",
+                      minHeight: "38px",
+                    }}
+                  >
+                    <span style={{ color: selectedChallengeForTranslation ? "#e0e0e0" : "#888", fontSize: "14px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                      {selectedChallengeForTranslation
+                        ? allChallengesFromOtherLanguage.find((c) => c._id === selectedChallengeForTranslation)?.challengeName +
+                          ` (${allChallengesFromOtherLanguage.find((c) => c._id === selectedChallengeForTranslation)?.language})`
+                        : get(strings, "challengeStudio.select_challenge_to_translate", "Select a challenge to translate (optional)")}
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "8px", flexShrink: 0 }}>
+                      {selectedChallengeForTranslation && (
+                        <span
+                          onClick={(e) => { e.stopPropagation(); handleSelectChallengeForTranslation(null); setTranslationSearch(""); }}
+                          style={{ color: "#888", cursor: "pointer", fontSize: "16px", lineHeight: 1 }}
+                          title="Clear"
+                        >
+                          ×
+                        </span>
+                      )}
+                      <span style={{ color: "#888", fontSize: "10px", transform: translationDropdownOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
+                    </span>
+                  </div>
+
+                  {/* Dropdown panel */}
+                  {translationDropdownOpen && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 4px)",
+                        left: 0,
+                        right: 0,
+                        zIndex: 99999,
+                        background: "#1a1a2e",
+                        border: "1px solid #434343",
+                        borderRadius: "6px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {/* Search input */}
+                      <div style={{ padding: "8px" }}>
+                        <input
+                          type="text"
+                          placeholder="Search challenges..."
+                          value={translationSearch}
+                          onChange={(e) => setTranslationSearch(e.target.value)}
+                          autoFocus
+                          style={{
+                            width: "100%",
+                            padding: "6px 10px",
+                            border: "1px solid #555",
+                            borderRadius: "4px",
+                            background: "#16213e",
+                            color: "#e0e0e0",
+                            fontSize: "13px",
+                            outline: "none",
+                            boxSizing: "border-box",
+                          }}
+                        />
+                      </div>
+                      {/* Options list */}
+                      <div style={{ maxHeight: "220px", overflowY: "auto", padding: "4px 0" }}>
+                        {allChallengesFromOtherLanguage
+                          .filter((c) =>
+                            c.challengeName.toLowerCase().includes(translationSearch.toLowerCase())
+                          )
+                          .map((c) => {
+                            const alreadyLinked = c.translationKey && c.translationKey !== translationKey;
+                            const isSelected = c._id === selectedChallengeForTranslation;
+                            return (
+                              <div
+                                key={c._id}
+                                onClick={() => {
+                                  if (!alreadyLinked) {
+                                    handleSelectChallengeForTranslation(c._id);
+                                    setTranslationDropdownOpen(false);
+                                    setTranslationSearch("");
+                                  }
+                                }}
+                                style={{
+                                  padding: "8px 12px",
+                                  cursor: alreadyLinked ? "not-allowed" : "pointer",
+                                  color: alreadyLinked ? "#555" : isSelected ? "#fff" : "#ccc",
+                                  background: isSelected ? "#2a2a4a" : "transparent",
+                                  fontSize: "13px",
+                                  transition: "background 0.15s",
+                                  opacity: alreadyLinked ? 0.5 : 1,
+                                }}
+                                onMouseEnter={(e) => { if (!alreadyLinked) e.currentTarget.style.background = "#2a2a4a"; }}
+                                onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                              >
+                                {c.challengeName} ({c.language})
+                                {alreadyLinked && <span style={{ marginLeft: "8px", fontSize: "11px", color: "#888" }}>— already linked</span>}
+                              </div>
+                            );
+                          })}
+                        {allChallengesFromOtherLanguage.filter((c) =>
+                          c.challengeName.toLowerCase().includes(translationSearch.toLowerCase())
+                        ).length === 0 && (
+                          <div style={{ padding: "12px", color: "#666", textAlign: "center", fontSize: "13px" }}>
+                            No challenges found
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
-                  value={selectedChallengeForTranslation || undefined}
-                  onChange={handleSelectChallengeForTranslation}
-                  allowClear
-                  className="font-paragraph-white"
-                >
-                  {allChallengesFromOtherLanguage.map((c) => (
-                    <Select.Option key={c._id} value={c._id}>
-                      {c.challengeName} ({c.language})
-                    </Select.Option>
-                  ))}
-                </Select>
+                </div>
                 {selectedChallengeForTranslation && (
                   <p
                     className="font-paragraph-white"
