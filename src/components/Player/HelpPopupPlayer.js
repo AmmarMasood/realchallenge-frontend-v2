@@ -170,87 +170,92 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
         />
       </div>
       <div
-        className="helpPopOut-player-wrapper"
-        style={{ position: "relative", backgroundColor: "#000" }}
+        style={{
+          backgroundColor: "#000",
+        }}
       >
-        {/* Loader */}
-        {buffering && (
+        <div
+          className="helpPopOut-player-wrapper"
+          style={{ position: "relative", backgroundColor: "#000" }}
+        >
+          {/* Loader */}
+          {buffering && (
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                zIndex: 10,
+                background: "rgba(0,0,0,0.6)",
+                padding: "20px",
+                borderRadius: "10px",
+              }}
+            >
+              <Spin
+                indicator={
+                  <LoadingOutlined
+                    style={{ fontSize: 48, color: "#FB7600" }}
+                    spin
+                  />
+                }
+              />
+            </div>
+          )}
+          {console.log("ammar", exercise)}
+          <ReactPlayer
+            ref={playerRef}
+            width="100%"
+            height="100%"
+            url={exercise.videoURL}
+            loop={true}
+            controls={false}
+            muted={true}
+            playing={playing}
+            stopOnUnmount={false}
+            onProgress={handleProgress}
+            onDuration={handleDuration}
+            onBuffer={handleBuffer}
+            onBufferEnd={handleBufferEnd}
+          />
+
           <div
             style={{
               position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              zIndex: 10,
-              background: "rgba(0,0,0,0.6)",
-              padding: "20px",
-              borderRadius: "10px",
+              bottom: "0",
+              width: "100%",
+              padding: "20px 0",
             }}
           >
-            <Spin
-              indicator={
-                <LoadingOutlined
-                  style={{ fontSize: 48, color: "#FB7600" }}
-                  spin
-                />
-              }
-            />
-          </div>
-        )}
-        {console.log("ammar", exercise)}
-        <ReactPlayer
-          ref={playerRef}
-          width="100%"
-          height="100%"
-          url={exercise.videoURL}
-          loop={true}
-          controls={false}
-          muted={true}
-          playing={playing}
-          stopOnUnmount={false}
-          onProgress={handleProgress}
-          onDuration={handleDuration}
-          onBuffer={handleBuffer}
-          onBufferEnd={handleBufferEnd}
-        />
-
-        <div
-          style={{
-            position: "absolute",
-            bottom: "0",
-            width: "100%",
-            padding: "20px 0",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              margin: "0 30px",
-              alignItems: "center",
-              gap: "10px",
-            }}
-          >
-            <div className="player-play-pause-icon-box" style={{ margin: 0 }}>
-              {playing ? (
-                <img
-                  src={PopupPauseIcon}
-                  alt="pause"
-                  style={{ cursor: "pointer", height: "25px" }}
-                  className="controls-wrapper-bottom-icons"
-                  onClick={onPlayPause}
-                />
-              ) : (
-                <img
-                  src={PopupPlayIcon}
-                  alt="play"
-                  style={{ cursor: "pointer", height: "25px" }}
-                  className="controls-wrapper-bottom-icons"
-                  onClick={onPlayPause}
-                />
-              )}
-            </div>
-            {/* <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                margin: "0 30px",
+                alignItems: "center",
+                gap: "10px",
+              }}
+            >
+              <div className="player-play-pause-icon-box" style={{ margin: 0 }}>
+                {playing ? (
+                  <img
+                    src={PopupPauseIcon}
+                    alt="pause"
+                    style={{ cursor: "pointer", height: "25px" }}
+                    className="controls-wrapper-bottom-icons"
+                    onClick={onPlayPause}
+                  />
+                ) : (
+                  <img
+                    src={PopupPlayIcon}
+                    alt="play"
+                    style={{ cursor: "pointer", height: "25px" }}
+                    className="controls-wrapper-bottom-icons"
+                    onClick={onPlayPause}
+                  />
+                )}
+              </div>
+              {/* <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
               <span className="font-paragraph-white" style={{ fontSize: "16px" }}>
                 {elapsedTime}
               </span>
@@ -258,6 +263,7 @@ function HelpPopupPlayer({ open, setOpen, onCancel, exercise }) {
                 / {formatTime(audioDuration || progress.duration)}
               </span>
             </div> */}
+            </div>
           </div>
         </div>
       </div>

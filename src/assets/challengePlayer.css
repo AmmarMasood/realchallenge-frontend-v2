@@ -80,6 +80,7 @@
   left: 20px;
   background-color: #fb7600;
   cursor: pointer;
+  z-index: 10;
 }
 .challenge-player-container-exercies-box-asktrainerbtn:hover {
   /* transform: scale(1.1); */

@@ -5,6 +5,7 @@ import ReactPlayer from "react-player";
 import BreakTimer from "./BreakTimer";
 import PlayerControls from "./PlayerControls";
 import tune from "../../assets/music/break-start.wav";
+import PlayerPlayIcon from "../../assets/icons/player-play-icon.svg";
 import {
   breakContext,
   exerciseWorkoutTimeTrackContext,
@@ -42,6 +43,8 @@ function RenderedVideoPlayer({
     exerciseWorkoutTimeTrackContext
   );
   const [exerciseSeconds, setExerciseSeconds] = useState(-1);
+  const [workoutStarted, setWorkoutStarted] = useState(false);
+  const [waitingForTap, setWaitingForTap] = useState(true);
   const playerRef = useRef(null);
   const playerContainerRef = useRef(null);
   const controlsRef = useRef(null);
@@ -76,8 +79,12 @@ function RenderedVideoPlayer({
         playerRef.current.seekTo(0);
       }
 
-      // Reset timer visibility when exercise changes
-      setTimerVisible(false);
+      // Show start countdown on first load, reset timer on subsequent exercise changes
+      if (!workoutStarted && !inCreation) {
+        setTimerVisible(true);
+      } else {
+        setTimerVisible(false);
+      }
       hasHandledEnd.current = false;
     }
   }, [exercise]);
@@ -164,8 +171,8 @@ function RenderedVideoPlayer({
     ? workout.exercises[currentExercise.index + 1]
     : null;
 
-  // During break timer, preload next exercise video if it exists
-  const videoUrlToLoad = shouldShowTimer && nextExercise
+  // During break timer, preload next exercise video (but not during start countdown)
+  const videoUrlToLoad = shouldShowTimer && workoutStarted && nextExercise
     ? (nextExercise.videoURL || "")
     : (exercise?.videoURL || "");
 
@@ -222,7 +229,45 @@ function RenderedVideoPlayer({
         inCreation={inCreation}
       />
 
-      {shouldShowTimer && !inCreation && (
+      {shouldShowTimer && !inCreation && !workoutStarted && waitingForTap && (
+        <div
+          className="break-layout-for-player"
+          onClick={() => setWaitingForTap(false)}
+          style={{ cursor: "pointer", justifyContent: "center", alignItems: "center" }}
+        >
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "20px",
+          }}>
+            <img
+              src={PlayerPlayIcon}
+              alt="Start"
+              style={{ width: "80px", height: "80px", transition: "transform 0.2s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.15)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+            />
+            <span style={{ color: "#fff", fontSize: "16px", fontWeight: "500", textTransform: "uppercase", letterSpacing: "1px" }}>
+              {exercise?.title || "Start Workout"}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {shouldShowTimer && !inCreation && !workoutStarted && !waitingForTap && (
+        <BreakTimer
+          moveToNextExercise={() => setWorkoutStarted(true)}
+          nextExerciseTitle={exercise?.title || ""}
+          exercise={{ break: 5, exerciseGroupName: "Get Ready" }}
+          timerVisible={timerVisible}
+          setTimerVisible={setTimerVisible}
+          isLastExercise={false}
+        />
+      )}
+
+      {shouldShowTimer && !inCreation && workoutStarted && (
         <BreakTimer
           moveToNextExercise={moveToNextExercise}
           nextExerciseTitle={nextExerciseTitle}
