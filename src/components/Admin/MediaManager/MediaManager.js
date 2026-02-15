@@ -15,7 +15,6 @@ import MediaFileUploader from "./MediaFileUploader";
 import AdminSearchPanel from "./AdminSearchPanel";
 import { useMediaManager } from "../../../contexts/MediaManagerContext";
 import setAuthToken from "../../../helpers/setAuthToken";
-import { retryVideoProcessing } from "../../../services/mediaManager";
 import {
   Button,
   Input,
@@ -46,9 +45,8 @@ import {
   SearchOutlined,
   FileOutlined,
   LoadingOutlined,
-  SyncOutlined,
-  ExclamationCircleOutlined,
   CheckCircleOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { userInfoContext } from "../../../contexts/UserStore";
 import { LanguageContext } from "../../../contexts/LanguageContext";
@@ -94,7 +92,8 @@ const createSortActions = (strings) => {
       id: 'sort_by_type',
       sortKeySelector: (file) => {
         if (file.isDir) return ''; // Folders come first
-        const extension = file.name ? file.name.split('.').pop()?.toLowerCase() || '' : '';
+        const name = file.rawName || file.name || '';
+        const extension = name.split('.').pop()?.toLowerCase() || '';
         return extension;
       },
       button: {
@@ -136,65 +135,35 @@ const openNotificationWithIcon = (type, message, description) => {
 };
 
 // Video Processing Badge Component
-const VideoProcessingBadge = ({ status, error, fileId, onRetry }) => {
+const VideoProcessingBadge = ({ status }) => {
   if (!status || status === "none") return null;
 
-  if (status === "pending") {
-    return (
-      <Tooltip title="Video queued for optimization">
-        <Tag color="gold" icon={<SyncOutlined />}>
-          Queued
-        </Tag>
-      </Tooltip>
-    );
-  }
+  const config = {
+    processing: {
+      color: "processing",
+      icon: <LoadingOutlined spin />,
+      text: "Optimizing...",
+    },
+    completed: {
+      color: "success",
+      icon: <CheckCircleOutlined />,
+      text: "Optimized",
+    },
+    failed: {
+      color: "error",
+      icon: <ExclamationCircleOutlined />,
+      text: "Failed",
+    },
+  };
 
-  if (status === "processing") {
-    return (
-      <Tooltip title="Video is being optimized...">
-        <Tag color="blue" icon={<LoadingOutlined spin />}>
-          Processing
-        </Tag>
-      </Tooltip>
-    );
-  }
+  const cfg = config[status];
+  if (!cfg) return null;
 
-  if (status === "completed") {
-    return (
-      <Tooltip title="Video has been optimized for streaming">
-        <Tag color="green" icon={<CheckCircleOutlined />}>
-          Optimized
-        </Tag>
-      </Tooltip>
-    );
-  }
-
-  if (status === "failed") {
-    return (
-      <Space size="small">
-        <Tooltip title={error || "Video optimization failed"}>
-          <Tag color="red" icon={<ExclamationCircleOutlined />}>
-            Failed
-          </Tag>
-        </Tooltip>
-        {fileId && onRetry && (
-          <Tooltip title="Retry video optimization">
-            <Button
-              type="link"
-              size="small"
-              icon={<SyncOutlined />}
-              onClick={() => onRetry(fileId)}
-              style={{ padding: 0, height: "auto" }}
-            >
-              Retry
-            </Button>
-          </Tooltip>
-        )}
-      </Space>
-    );
-  }
-
-  return null;
+  return (
+    <Tag color={cfg.color} icon={cfg.icon} style={{ marginLeft: 8, fontSize: 11 }}>
+      {cfg.text}
+    </Tag>
+  );
 };
 
 // Admin Users Table Component
@@ -352,8 +321,6 @@ const useCustomFileMap = () => {
     clearClipboard,
     // Cache management
     clearFilesByFolderCache,
-    // Video processing polling
-    pollProcessingStatus,
   } = useMediaManager();
 
   const [userInfo, setUserInfo] = useContext(userInfoContext);
@@ -745,30 +712,30 @@ const useCustomFileMap = () => {
           file.isFolder === true ||
           file.mediaType === "folder";
 
-        // Prefer optimized video URL if available
-        const fileLink = file.optimizedFilelink || file.filelink;
+        const baseName = file.originalName || file.filename;
+        const status = file.processingStatus || "none";
+        const statusPrefix =
+          status === "processing" ? "⏳ "
+          : status === "completed" ? "✅ "
+          : status === "failed" ? "❌ "
+          : "";
 
         newFileMap[file._id] = {
           id: file._id,
-          name: file.originalName || file.filename,
-          isDir: isActuallyFolder, // Use the correct folder detection
+          name: statusPrefix + baseName,
+          rawName: baseName, // Keep original name for operations
+          isDir: isActuallyFolder,
           parentId: folderId,
-          link: fileLink, // Use optimized URL when available
-          originalLink: file.filelink, // Keep original for reference
-          optimizedLink: file.optimizedFilelink, // Keep optimized for reference
+          link: file.filelink,
           mediaType: file.mediaType,
           thumbnailUrl: file.thumbnailUrl || file.filelink,
           createdAt: file.createdAt,
-          modDate: file.createdAt ? new Date(file.createdAt) : null, // For Chonky date sorting
+          modDate: file.createdAt ? new Date(file.createdAt) : null,
           filename: file.filename,
-          size: file.optimizedSize || file.size || 0, // Prefer optimized size
-          originalSize: file.size || 0,
+          size: file.size || 0,
+          processingStatus: status,
           draggable: !isActuallyFolder,
           droppable: isActuallyFolder,
-          // Video processing status
-          processingStatus: file.processingStatus || "none",
-          processingError: file.processingError,
-          processedAt: file.processedAt,
         };
       });
     });
@@ -889,37 +856,6 @@ const useCustomFileMap = () => {
     setShowAdminView,
   ]);
 
-  // Polling effect for video processing status
-  useEffect(() => {
-    // Find all files with pending or processing status
-    const processingFiles = [];
-    Object.entries(filesByFolder).forEach(([folderId, files]) => {
-      files.forEach((file) => {
-        if (
-          file.processingStatus === "pending" ||
-          file.processingStatus === "processing"
-        ) {
-          processingFiles.push({ fileId: file._id, folderId });
-        }
-      });
-    });
-
-    if (processingFiles.length === 0) return;
-
-    console.log(
-      `🎬 POLLING: ${processingFiles.length} files being processed, starting polling...`
-    );
-
-    // Poll every 10 seconds
-    const interval = setInterval(() => {
-      processingFiles.forEach(({ fileId, folderId }) => {
-        pollProcessingStatus(fileId, folderId);
-      });
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [filesByFolder, pollProcessingStatus]);
-
   return {
     fileMap,
     currentFolderId,
@@ -953,9 +889,6 @@ const useCustomFileMap = () => {
     cutFilesToClipboard,
     pasteFilesFromClipboard,
     clearClipboard,
-    // Video processing
-    filesByFolder,
-    pollProcessingStatus,
   };
 };
 
@@ -1068,28 +1001,30 @@ export const PreviewModal = ({ visible, onClose, file }) => {
     }
   };
 
+  const fileName = file.rawName || file.name;
+
   // Check video: first by link URL, then by mediaType, finally by filename extension
   const isVideo =
     isVideoUrl(file.link) ||
     file.mediaType === "video" ||
-    (file.name && ["mp4", "mov", "avi", "mkv", "webm", "flv", "wmv", "m4v", "mpg"].includes(
-      file.name.split(".").pop()?.toLowerCase() || ""
+    (fileName && ["mp4", "mov", "avi", "mkv", "webm", "flv", "wmv", "m4v", "mpg"].includes(
+      fileName.split(".").pop()?.toLowerCase() || ""
     ));
 
   // Check image: first by link URL, then by mediaType, finally by filename extension
   const isImage =
     isImageUrl(file.link) ||
     file.mediaType === "picture" ||
-    (file.name && ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff"].includes(
-      file.name.split(".").pop()?.toLowerCase() || ""
+    (fileName && ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff"].includes(
+      fileName.split(".").pop()?.toLowerCase() || ""
     ));
 
   // Check audio: first by link URL, then by mediaType, finally by filename extension
   const isAudio =
     isAudioUrl(file.link) ||
     file.mediaType === "audio" ||
-    (file.name && ["mp3", "wav", "ogg", "m4a", "aac", "flac", "wma", "webm"].includes(
-      file.name.split(".").pop()?.toLowerCase() || ""
+    (fileName && ["mp3", "wav", "ogg", "m4a", "aac", "flac", "wma", "webm"].includes(
+      fileName.split(".").pop()?.toLowerCase() || ""
     ));
 
   return (
@@ -1121,13 +1056,8 @@ export const PreviewModal = ({ visible, onClose, file }) => {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <h3 style={{ color: "white", margin: 0 }}>{file.name}</h3>
-          {file.processingStatus && file.processingStatus !== "none" && (
-            <VideoProcessingBadge
-              status={file.processingStatus}
-              error={file.processingError}
-            />
-          )}
+          <h3 style={{ color: "white", margin: 0 }}>{file.rawName || file.name}</h3>
+          <VideoProcessingBadge status={file.processingStatus} />
         </div>
         <CloseOutlined
           style={{
@@ -1763,7 +1693,7 @@ const RenameModal = ({ visible, onClose, onSuccess, target, isNameUnique }) => {
 
   useEffect(() => {
     if (target) {
-      setNewName(target.name);
+      setNewName(target.rawName || target.name);
     }
   }, [target]);
 
@@ -1773,7 +1703,7 @@ const RenameModal = ({ visible, onClose, onSuccess, target, isNameUnique }) => {
       return;
     }
 
-    if (newName === target.name) {
+    if (newName === (target.rawName || target.name)) {
       onClose();
       return;
     }
@@ -1903,24 +1833,7 @@ export const VFSBrowser = React.memo((props) => {
     cutFilesToClipboard,
     pasteFilesFromClipboard,
     clearClipboard,
-    // Video processing
-    filesByFolder,
-    pollProcessingStatus,
   } = useCustomFileMap();
-
-  // Handle retry video processing
-  const handleRetryProcessing = useCallback(
-    async (fileId) => {
-      try {
-        await retryVideoProcessing(fileId);
-        // Refresh data to update the status
-        refreshData(true);
-      } catch (error) {
-        console.error("Failed to retry video processing:", error);
-      }
-    },
-    [refreshData]
-  );
 
   const files = useFiles(fileMap, currentFolderId);
   const folderChain = useFolderChain(fileMap, currentFolderId);
@@ -2013,6 +1926,7 @@ export const VFSBrowser = React.memo((props) => {
             createdAt: file.createdAt,
             filename: file.filename,
             size: file.size,
+            processingStatus: file.processingStatus || "none",
             searchPath: file.folderPath,
             displayName: file.folderPath
               ? `${file.originalName} (in ${file.folderPath})`
@@ -2491,6 +2405,25 @@ export const VFSBrowser = React.memo((props) => {
             {loading && (
               <div className="loading-overlay">
                 <div className="loading-spinner">Loading...</div>
+              </div>
+            )}
+
+            {/* Video optimization status legend */}
+            {filesForBrowser.some(f => f.processingStatus && f.processingStatus !== "none") && (
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "16px",
+                padding: "4px 12px",
+                background: "#f5f5f5",
+                borderBottom: "1px solid #e8e8e8",
+                fontSize: "12px",
+                color: "#666",
+              }}>
+                <span style={{ fontWeight: 500 }}>Video optimization:</span>
+                <span>⏳ Optimizing</span>
+                <span>✅ Optimized</span>
+                <span>❌ Failed</span>
               </div>
             )}
 

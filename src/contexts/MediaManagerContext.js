@@ -15,7 +15,6 @@ import {
   copyMediaFile,
   searchMediaFiles, // New search function for admin
   searchMyMediaFiles, // New search function for regular users
-  getProcessingStatus, // Video processing status
 } from "../services/mediaManager";
 import { notification } from "antd";
 import { userInfoContext } from "./UserStore";
@@ -265,74 +264,6 @@ export const MediaManagerProvider = ({ children }) => {
       }
     },
     [filesByFolder]
-  );
-
-  // Poll processing status for a file and update cache if changed
-  const pollProcessingStatus = useCallback(
-    async (fileId, folderId) => {
-      try {
-        const status = await getProcessingStatus(fileId);
-
-        // Update the file in cache if status changed to completed
-        if (status.processingStatus === "completed" && status.optimizedFilelink) {
-          setFilesByFolder((prev) => {
-            const folderFiles = prev[folderId];
-            if (!folderFiles) return prev;
-
-            const updatedFiles = folderFiles.map((file) => {
-              if (file._id === fileId) {
-                return {
-                  ...file,
-                  processingStatus: status.processingStatus,
-                  optimizedFilelink: status.optimizedFilelink,
-                  optimizedSize: status.optimizedSize,
-                  processedAt: status.processedAt,
-                };
-              }
-              return file;
-            });
-
-            return { ...prev, [folderId]: updatedFiles };
-          });
-
-          openNotificationWithIcon(
-            "success",
-            "Video Optimized",
-            "Video processing completed successfully"
-          );
-        } else if (status.processingStatus === "failed") {
-          setFilesByFolder((prev) => {
-            const folderFiles = prev[folderId];
-            if (!folderFiles) return prev;
-
-            const updatedFiles = folderFiles.map((file) => {
-              if (file._id === fileId) {
-                return {
-                  ...file,
-                  processingStatus: status.processingStatus,
-                  processingError: status.processingError,
-                };
-              }
-              return file;
-            });
-
-            return { ...prev, [folderId]: updatedFiles };
-          });
-
-          openNotificationWithIcon(
-            "warning",
-            "Video Processing Failed",
-            status.processingError || "Unknown error"
-          );
-        }
-
-        return status;
-      } catch (error) {
-        console.error("Error polling processing status:", error);
-        return null;
-      }
-    },
-    []
   );
 
   const handleUploadFile = async (folderId, file) => {
@@ -908,9 +839,6 @@ export const MediaManagerProvider = ({ children }) => {
         searchPagination,
         lastSearchCriteria,
         showSearchResults,
-
-        // Video processing status polling
-        pollProcessingStatus,
       }}
     >
       {children}

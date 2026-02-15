@@ -340,38 +340,3 @@ export function searchMediaFiles(searchParams) {
       throw err;
     });
 }
-
-// --- VIDEO PROCESSING STATUS APIs ---
-
-// Get video processing status for a file
-export function getProcessingStatus(fileId) {
-  return axios
-    .get(`${process.env.REACT_APP_SERVER}/api/media/processing-status/${fileId}`)
-    .then((res) => res.data)
-    .catch((err) => {
-      console.error("Failed to get processing status:", err);
-      throw err;
-    });
-}
-
-// Retry video processing for a file
-export function retryVideoProcessing(fileId) {
-  return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/media/retry-processing/${fileId}`)
-    .then((res) => {
-      openNotificationWithIcon(
-        "success",
-        "Processing Retry Started",
-        "Video optimization has been queued"
-      );
-      return res.data;
-    })
-    .catch((err) => {
-      openNotificationWithIcon(
-        "error",
-        "Retry Failed",
-        err?.response?.data?.message || "Unable to retry video processing"
-      );
-      throw err;
-    });
-}
