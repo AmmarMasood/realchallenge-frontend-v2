@@ -19,6 +19,7 @@ function AllRequests() {
   const [requestsTypeFilter, setRequestsTypeFilter] = useState("challenge");
   const [requestsApprovedFilter, setRequestsApprovedFilter] =
     useState("notApproved");
+  const [sortOrder, setSortOrder] = useState("desc");
   useEffect(() => {
     fetchData();
   }, []);
@@ -34,31 +35,38 @@ function AllRequests() {
   }
 
   useEffect(() => {
+    let data = [];
     if (requestsTypeFilter === "challenge") {
       if (requestsApprovedFilter === "approved") {
-        setFilterAllData(allData?.challenges?.filter((f) => f.adminApproved));
+        data = allData?.challenges?.filter((f) => f.adminApproved) || [];
       }
       if (requestsApprovedFilter === "notApproved") {
-        setFilterAllData(allData?.challenges?.filter((f) => !f.adminApproved));
+        data = allData?.challenges?.filter((f) => !f.adminApproved) || [];
       }
     }
     if (requestsTypeFilter === "recipe") {
       if (requestsApprovedFilter === "approved") {
-        setFilterAllData(allData?.recipes?.filter((f) => f.adminApproved));
+        data = allData?.recipes?.filter((f) => f.adminApproved) || [];
       }
       if (requestsApprovedFilter === "notApproved") {
-        setFilterAllData(allData?.recipes?.filter((f) => !f.adminApproved));
+        data = allData?.recipes?.filter((f) => !f.adminApproved) || [];
       }
     }
     if (requestsTypeFilter === "blog") {
       if (requestsApprovedFilter === "approved") {
-        setFilterAllData(allData?.blogs?.filter((f) => f.adminApproved));
+        data = allData?.blogs?.filter((f) => f.adminApproved) || [];
       }
       if (requestsApprovedFilter === "notApproved") {
-        setFilterAllData(allData?.blogs?.filter((f) => !f.adminApproved));
+        data = allData?.blogs?.filter((f) => !f.adminApproved) || [];
       }
     }
-  }, [requestsApprovedFilter, allData, requestsTypeFilter]);
+    const sorted = [...data].sort((a, b) => {
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
+      return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+    });
+    setFilterAllData(sorted);
+  }, [requestsApprovedFilter, allData, requestsTypeFilter, sortOrder]);
 
   const fetchData = async () => {
     const data = await getAllAdminRequests();
@@ -200,6 +208,23 @@ function AllRequests() {
             </Select.Option>
             <Select.Option key={2} value={"approved"}>
               <T>admin.approved</T>
+            </Select.Option>
+          </Select>
+        </div>
+        <div style={{ marginLeft: "20px" }}>
+          <span className="font-heading-black" style={{ marginLeft: "10px" }}>
+            <T>admin.sort_by</T>
+          </span>
+          <Select
+            defaultValue={sortOrder}
+            style={{ width: 200, marginLeft: "10px" }}
+            onChange={(e) => setSortOrder(e)}
+          >
+            <Select.Option key={1} value={"desc"}>
+              <T>admin.newest_first</T>
+            </Select.Option>
+            <Select.Option key={2} value={"asc"}>
+              <T>admin.oldest_first</T>
             </Select.Option>
           </Select>
         </div>
