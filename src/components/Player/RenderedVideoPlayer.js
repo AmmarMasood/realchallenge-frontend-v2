@@ -4,7 +4,7 @@ import "../../assets/player.css";
 import ReactPlayer from "react-player";
 import BreakTimer from "./BreakTimer";
 import PlayerControls from "./PlayerControls";
-import tune from "../../assets/music/break-start.wav";
+import { playBreakStart, unlockAudio } from "../../utils/audioHelper";
 import PlayerPlayIcon from "../../assets/icons/player-play-icon.svg";
 import {
   breakContext,
@@ -14,10 +14,6 @@ import {
 } from "../../contexts/PlayerState";
 
 var count = 0;
-
-const playAudio = () => {
-  new Audio(tune).play();
-};
 
 function RenderedVideoPlayer({
   exercise,
@@ -93,7 +89,7 @@ function RenderedVideoPlayer({
     if (exerciseSeconds === 0 && !hasHandledEnd.current) {
       hasHandledEnd.current = true;
       if (!inCreation) {
-        playAudio();
+        playBreakStart();
       }
 
       // Get current exercise data
@@ -232,7 +228,7 @@ function RenderedVideoPlayer({
       {shouldShowTimer && !inCreation && !workoutStarted && waitingForTap && (
         <div
           className="break-layout-for-player"
-          onClick={() => setWaitingForTap(false)}
+          onClick={() => { unlockAudio(); setWaitingForTap(false); }}
           style={{ cursor: "pointer", justifyContent: "center", alignItems: "center" }}
         >
           <div style={{

@@ -346,7 +346,8 @@
 }
 
 .challenge-player-container-exercies-box-imagebox img,
-.challenge-player-container-exercies-box-imagebox video {
+.challenge-player-container-exercies-box-imagebox video,
+.challenge-player-container-exercies-box-imagebox canvas {
   width: 100%;
   height: 100%;
   object-fit: cover;

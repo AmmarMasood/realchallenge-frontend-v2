@@ -545,6 +545,7 @@ function Exercises({
                 transition: "all 0.3s ease",
                 borderRadius: isDragging ? "8px" : "0px",
                 flexShrink: 0,
+                paddingRight: isDragging ? "300px" : "0px",
               }}
             >
               <DraggableArea

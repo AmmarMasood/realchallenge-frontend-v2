@@ -113,7 +113,7 @@ export function DraggableArea({
     const canScrollUp = Math.round(container.scrollTop) > 0;
     const canScrollDown = Math.round(container.scrollTop) < Math.round(container.scrollHeight - container.clientHeight);
 
-    const MIN_SPEED_RATIO = 0.3;  // Minimum 30% speed once inside threshold
+    const MIN_SPEED_RATIO = 0.5;  // Minimum 50% speed once inside threshold
 
     if (direction === "horizontal") {
       const leftEdgeEnd = rect.left + autoScrollThreshold;

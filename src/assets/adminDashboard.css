@@ -1,5 +1,6 @@
 /* Fix horizontal scroll on whole page */
-html, body {
+html,
+body {
   overflow-x: hidden;
   max-width: 100%;
 }
@@ -520,7 +521,8 @@ html, body {
   border-radius: 4px;
 }
 
-.admin-dashboard-container-main .ant-table-wrapper::-webkit-scrollbar-thumb:hover {
+.admin-dashboard-container-main
+  .ant-table-wrapper::-webkit-scrollbar-thumb:hover {
   background: var(--color-orange-light, #a1a1a1);
 }
 
@@ -573,7 +575,7 @@ html, body {
 /* Ant Design Modal - Reasonable sizes for desktop/laptop */
 .admin-dashboard-container-main .ant-modal:not(.media-manager-modal),
 .ant-modal-root .ant-modal:not(.media-manager-modal) {
-  width: auto !important;
+  /* width: auto !important; */
   max-width: 600px !important;
 }
 
@@ -627,7 +629,6 @@ html, body {
   }
 }
 
-
 /* Prevent horizontal scroll globally */
 .ant-modal-root {
   overflow: hidden;
@@ -646,7 +647,9 @@ html, body {
     max-height: 100vh;
   }
 
-  .admin-dashboard-container-main .ant-modal:not(.media-manager-modal) .ant-modal-content,
+  .admin-dashboard-container-main
+    .ant-modal:not(.media-manager-modal)
+    .ant-modal-content,
   .ant-modal-root .ant-modal:not(.media-manager-modal) .ant-modal-content {
     border-radius: 0;
     height: 100vh;
@@ -654,14 +657,18 @@ html, body {
     flex-direction: column;
   }
 
-  .admin-dashboard-container-main .ant-modal:not(.media-manager-modal) .ant-modal-header,
+  .admin-dashboard-container-main
+    .ant-modal:not(.media-manager-modal)
+    .ant-modal-header,
   .ant-modal-root .ant-modal:not(.media-manager-modal) .ant-modal-header {
     padding: 10px 12px !important;
     flex-shrink: 0;
     border-bottom: 1px solid #e8e8e8;
   }
 
-  .admin-dashboard-container-main .ant-modal:not(.media-manager-modal) .ant-modal-body,
+  .admin-dashboard-container-main
+    .ant-modal:not(.media-manager-modal)
+    .ant-modal-body,
   .ant-modal-root .ant-modal:not(.media-manager-modal) .ant-modal-body {
     padding: 10px !important;
     flex: 1;
@@ -670,19 +677,25 @@ html, body {
     -webkit-overflow-scrolling: touch;
   }
 
-  .admin-dashboard-container-main .ant-modal:not(.media-manager-modal) .ant-modal-footer,
+  .admin-dashboard-container-main
+    .ant-modal:not(.media-manager-modal)
+    .ant-modal-footer,
   .ant-modal-root .ant-modal:not(.media-manager-modal) .ant-modal-footer {
     padding: 8px 12px !important;
     flex-shrink: 0;
     border-top: 1px solid #e8e8e8;
   }
 
-  .admin-dashboard-container-main .ant-modal:not(.media-manager-modal) .ant-modal-title,
+  .admin-dashboard-container-main
+    .ant-modal:not(.media-manager-modal)
+    .ant-modal-title,
   .ant-modal-root .ant-modal:not(.media-manager-modal) .ant-modal-title {
     font-size: 15px;
   }
 
-  .admin-dashboard-container-main .ant-modal:not(.media-manager-modal) .ant-modal-close,
+  .admin-dashboard-container-main
+    .ant-modal:not(.media-manager-modal)
+    .ant-modal-close,
   .ant-modal-root .ant-modal:not(.media-manager-modal) .ant-modal-close {
     top: 10px;
     right: 10px;

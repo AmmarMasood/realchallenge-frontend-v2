@@ -1,7 +1,7 @@
 import React, { useEffect, useContext, useMemo, useRef, useCallback } from "react";
 import Countdown from "react-countdown";
 import { Progress } from "antd";
-import tune from "../../assets/music/break-end.wav";
+import { playBreakEnd } from "../../utils/audioHelper";
 import {
   breakContext,
   playerStateContext,
@@ -38,9 +38,7 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
   }, []);
 
   const playAudio = useCallback(() => {
-    // Create new audio instance each time for reliable playback
-    const audio = new Audio(tune);
-    audio.play().catch((err) => console.log("Audio play failed:", err));
+    playBreakEnd();
   }, []);
 
   const handleMount = useCallback(() => {

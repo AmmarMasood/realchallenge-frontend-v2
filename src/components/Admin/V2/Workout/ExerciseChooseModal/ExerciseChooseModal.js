@@ -66,26 +66,26 @@ function ExerciseChooseModal({
     if (width < 600) {
       return {
         width: "95vw",
-        listHeight: `${height - 350}px`,
-        maxListHeight: "50vh",
+        listHeight: `${height - 250}px`,
+        maxListHeight: "60vh",
       };
     } else if (width < 900) {
       return {
-        width: "80vw",
-        listHeight: `${height - 380}px`,
-        maxListHeight: "55vh",
+        width: "90vw",
+        listHeight: `${height - 280}px`,
+        maxListHeight: "65vh",
       };
     } else if (width < 1200) {
       return {
-        width: "70vw",
-        listHeight: `${height - 400}px`,
-        maxListHeight: "60vh",
+        width: "85vw",
+        listHeight: `${height - 300}px`,
+        maxListHeight: "70vh",
       };
     } else {
       return {
-        width: "60vw",
-        listHeight: `${height - 450}px`,
-        maxListHeight: "65vh",
+        width: "80vw",
+        listHeight: `${height - 350}px`,
+        maxListHeight: "75vh",
       };
     }
   };

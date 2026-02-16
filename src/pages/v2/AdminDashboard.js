@@ -18,7 +18,7 @@ import ChallengeProfileSubtract from "../../assets/icons/challenge-profile-subtr
 import ShareIcon from "../../assets/icons/share-icon.svg";
 import StarFilled from "../../assets/icons/star-orange.svg";
 import StarTransparent from "../../assets/icons/star-transparent.svg";
-import { Avatar, Button, Input, Select } from "antd";
+import { Avatar, Button, Input, Select, message } from "antd";
 import slug from "elegant-slug";
 import { Helmet } from "react-helmet";
 import { T } from "../../components/Translate";
@@ -523,27 +523,36 @@ function AdminDashboard(props) {
                       </Select.Option>
                     ))}
                   </Select>
-                  <img
-                    src={ShareIcon}
-                    alt="share"
-                    style={{
-                      width: "24px",
-                      height: "24px",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => {
-                      navigator.clipboard.writeText(
-                        `${window.location.origin}/trainer/${slug(
+                  {hasAnyRole(adminInfo, ["admin", "trainer"]) && (
+                    <img
+                      src={ShareIcon}
+                      alt="share"
+                      style={{
+                        width: "24px",
+                        height: "24px",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => {
+                        const url = `${window.location.origin}/trainer/${slug(
                           trainer.firstName || ""
-                        )}/${trainer._id}`
-                      );
-                    }}
-                    title={get(
-                      strings,
-                      "adminv2.copy_profile_link",
-                      "Copy profile link"
-                    )}
-                  />
+                        )}/${trainer._id}`;
+                        navigator.clipboard.writeText(url).then(() => {
+                          message.success(
+                            get(strings, "adminv2.link_copied", "Profile link copied!")
+                          );
+                        }).catch(() => {
+                          message.error(
+                            get(strings, "adminv2.link_copy_failed", "Failed to copy link")
+                          );
+                        });
+                      }}
+                      title={get(
+                        strings,
+                        "adminv2.copy_profile_link",
+                        "Copy profile link"
+                      )}
+                    />
+                  )}
                 </div>
                 <div style={{ paddingTop: "10px" }}>
                   {[1, 2, 3, 4, 5].map((star) => (

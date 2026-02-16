@@ -3,14 +3,10 @@ import "../../assets/video-player-design.css";
 import "../../assets/player.css";
 import ReactPlayer from "react-player";
 import PlayerControls from "./PlayerControls";
-import tune from "../../assets/music/break-start.wav";
+import { playBreakStart } from "../../utils/audioHelper";
 import { playerStateContext } from "../../contexts/PlayerState";
 
 var count = 0;
-
-const playAudio = () => {
-  new Audio(tune).play();
-};
 function NonRenderedVideoPlayer({
   exercise,
   musics,
@@ -78,7 +74,7 @@ function NonRenderedVideoPlayer({
         controls={false}
         onEnded={() => {
           // this will not work when the video is on loop, because onEnded doesnt work on videos that are looping.
-          playAudio();
+          playBreakStart();
           if (workout.exercises[currentExercise.index + 1]) {
             // this was how it was originall
             setPlayerState({ ...playerState, playing: false });
