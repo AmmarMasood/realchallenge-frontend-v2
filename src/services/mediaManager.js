@@ -278,6 +278,57 @@ export function copyMediaFile(fileId, fromFolderId, toFolderId) {
     });
 }
 
+// --- DIRECT-TO-S3 UPLOAD APIs ---
+
+// Get a pre-signed URL for direct-to-S3 upload
+export function getPresignedUrl({ folderId, filename, fileSize, mimeType }) {
+  return axios
+    .post(`${process.env.REACT_APP_SERVER}/api/media/presign`, {
+      folderId,
+      filename,
+      fileSize,
+      mimeType,
+    })
+    .then((res) => res.data)
+    .catch((err) => {
+      openNotificationWithIcon(
+        "error",
+        "Upload preparation failed",
+        err?.response?.data?.message || ""
+      );
+      throw err;
+    });
+}
+
+// Confirm a direct-to-S3 upload completed
+export function confirmDirectUpload({
+  folderId,
+  s3Key,
+  filename,
+  originalName,
+  mimeType,
+  fileSize,
+}) {
+  return axios
+    .post(`${process.env.REACT_APP_SERVER}/api/media/confirm-upload`, {
+      folderId,
+      s3Key,
+      filename,
+      originalName,
+      mimeType,
+      fileSize,
+    })
+    .then((res) => res.data)
+    .catch((err) => {
+      openNotificationWithIcon(
+        "error",
+        "Upload confirmation failed",
+        err?.response?.data?.message || ""
+      );
+      throw err;
+    });
+}
+
 // --- Search user's own media files and folders ---
 export function searchMyMediaFiles(searchParams) {
   const { filename, mediaType } = searchParams;

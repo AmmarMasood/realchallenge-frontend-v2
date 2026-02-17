@@ -7,11 +7,14 @@ import {
 } from "@ant-design/icons";
 import { useDropzone } from "react-dropzone";
 import { useMediaManager } from "../../../contexts/MediaManagerContext";
-import axios from "axios";
+import {
+  getPresignedUrl,
+  confirmDirectUpload,
+} from "../../../services/mediaManager";
 import "../../../assets/mediaManager.css";
 
-// Maximum file size: 150MB in bytes
-const MAX_FILE_SIZE = 400 * 1024 * 1024; // 150MB
+// Maximum file size: 2GB in bytes
+const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024;
 
 const allowedMimeTypes = {
   picture: [
@@ -47,9 +50,8 @@ const MediaFileUploader = ({
   const [overallProgress, setOverallProgress] = useState(0);
   const [completedFiles, setCompletedFiles] = useState(new Set());
   const [failedFiles, setFailedFiles] = useState(new Map()); // Map of fileId -> error message
-  const [simulateSlowUpload, setSimulateSlowUpload] = useState(false);
-  const [useBackendProgress, setUseBackendProgress] = useState(true);
   const [progressMessages, setProgressMessages] = useState({});
+  const [activeXhrs, setActiveXhrs] = useState({});
 
   // Find the current folder to get its mediaType
   const folder = useMemo(
@@ -183,21 +185,18 @@ const MediaFileUploader = ({
 
       for (let i = 0; i < myFiles.length; i++) {
         const file = myFiles[i];
-        const fileId = file.name + file.size; // unique identifier for each file
+        const fileId = file.name + file.size;
 
-        // Start upload for this file
         setUploadProgress((prev) => ({
           ...prev,
           [fileId]: { progress: 0, status: "uploading" },
         }));
 
         try {
-          // Create progress callbacks for this specific file
           let lastProgressUpdate = 0;
 
           const onProgress = (progressPercent, stage, message) => {
             const now = Date.now();
-            // Throttle updates to every 100ms for smoother animation
             if (
               now - lastProgressUpdate > 100 ||
               progressPercent === 0 ||
@@ -222,20 +221,13 @@ const MediaFileUploader = ({
             }));
           };
 
-          if (simulateSlowUpload) {
-            await simulateUploadWithProgress(folder._id, file, onProgress);
-          } else if (useBackendProgress) {
-            await uploadMediaFileWithEnhancedProgress(
-              folder._id,
-              file,
-              onProgress,
-              onMessage
-            );
-          } else {
-            await uploadMediaFileWithProgress(folder._id, file, onProgress);
-          }
+          await uploadMediaFileDirectToS3(
+            folder._id,
+            file,
+            onProgress,
+            onMessage
+          );
 
-          // Mark file as completed
           setUploadProgress((prev) => ({
             ...prev,
             [fileId]: { progress: 100, status: "completed" },
@@ -244,26 +236,21 @@ const MediaFileUploader = ({
           setCompletedFiles((prev) => new Set([...prev, fileId]));
           completedCount++;
 
-          // Update overall progress
           setOverallProgress(Math.round((completedCount / totalFiles) * 100));
         } catch (fileErr) {
-          // Extract error message
           const errorMessage = getErrorMessage(fileErr);
 
-          // Mark file as failed
           setUploadProgress((prev) => ({
             ...prev,
             [fileId]: { progress: 0, status: "error", errorMessage },
           }));
 
-          // Track failed file
           setFailedFiles((prev) => {
             const newMap = new Map(prev);
             newMap.set(fileId, errorMessage);
             return newMap;
           });
 
-          // Show error notification
           notification.error({
             message: `Upload Failed: ${file.name}`,
             description: errorMessage,
@@ -276,26 +263,22 @@ const MediaFileUploader = ({
 
       await fetchFiles(folder._id, true);
 
-      // Show summary notification
       const failedCount = failedFiles.size;
       const successCount = completedCount;
 
       if (failedCount > 0 && successCount > 0) {
-        // Some succeeded, some failed
         notification.warning({
           message: "Upload Completed with Errors",
           description: `${successCount} file(s) uploaded successfully, but ${failedCount} file(s) failed.`,
           duration: 10,
         });
       } else if (failedCount > 0) {
-        // All failed
         notification.error({
           message: "Upload Failed",
           description: `All ${failedCount} file(s) failed to upload. Please check the errors and try again.`,
           duration: 10,
         });
       } else if (successCount > 0) {
-        // All succeeded
         notification.success({
           message: "Upload Successful",
           description: `${successCount} file(s) uploaded successfully!`,
@@ -303,9 +286,7 @@ const MediaFileUploader = ({
         });
       }
 
-      // Small delay to show completion before closing
       setTimeout(() => {
-        // Only close modal if all files succeeded
         if (failedCount === 0) {
           setMyFiles([]);
           setUploadProgress({});
@@ -316,12 +297,10 @@ const MediaFileUploader = ({
           setVisible(false);
           if (onUpload) onUpload();
         } else {
-          // Keep modal open to show errors, but allow user to retry or close manually
           setLoading(false);
         }
       }, 1000);
     } catch (err) {
-      // General error notification
       const errorMessage = getErrorMessage(err);
       notification.error({
         message: "Upload Error",
@@ -336,255 +315,120 @@ const MediaFileUploader = ({
     }
   };
 
-  // Enhanced axios upload function with both client-side and backend progress tracking
-  const uploadMediaFileWithEnhancedProgress = async (
+  // Direct-to-S3 upload: presign -> PUT to S3 -> confirm
+  const uploadMediaFileDirectToS3 = async (
     folderId,
     file,
     onProgress,
     onMessage
   ) => {
-    const uploadId = `upload-${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
-    console.log(
-      `Starting enhanced axios upload for ${file.name} with ID: ${uploadId}`
-    );
+    const fileId = file.name + file.size;
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("uploadId", uploadId);
+    // Phase 1 (0-5%): Get pre-signed URL from backend
+    onProgress(1, "preparing", "Preparing upload...");
+    if (onMessage) onMessage("Validating and preparing upload...");
 
-    let clientProgress = 0;
-    let backendProgress = 0;
-    let useBackendProgress = false;
-
+    let presignData;
     try {
-      // Establish SSE connection for backend progress if available
-      const token = localStorage.getItem("jwtToken");
-      const eventSource = new EventSource(
-        `${process.env.REACT_APP_SERVER}/api/media/progress/${uploadId}?token=${token}`
-      );
-
-      let uploadCompleted = false;
-      let sseConnected = false;
-
-      const ssePromise = new Promise((sseResolve, sseReject) => {
-        eventSource.onopen = () => {
-          console.log(
-            `SSE connection established for enhanced upload ${uploadId}`
-          );
-          sseConnected = true;
-        };
-
-        eventSource.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            console.log(`SSE message for enhanced upload ${uploadId}:`, data);
-
-            switch (data.type) {
-              case "connected":
-                console.log(`SSE connected for enhanced upload ${uploadId}`);
-                useBackendProgress = true;
-                break;
-
-              case "progress":
-                useBackendProgress = true;
-                backendProgress = data.progress;
-                onProgress(data.progress, data.stage, data.message);
-                if (onMessage) onMessage(data.message);
-                break;
-
-              case "complete":
-                console.log(
-                  `Enhanced upload completed for ${uploadId}:`,
-                  data.result
-                );
-                uploadCompleted = true;
-                eventSource.close();
-                sseResolve(data.result);
-                break;
-
-              case "error":
-                console.error(
-                  `Enhanced upload error for ${uploadId}:`,
-                  data.error
-                );
-                eventSource.close();
-                sseReject(new Error(data.error));
-                break;
-            }
-          } catch (parseError) {
-            console.error(`Error parsing SSE message:`, parseError);
-          }
-        };
-
-        eventSource.onerror = (error) => {
-          console.error(`SSE error for enhanced upload ${uploadId}:`, error);
-          if (!uploadCompleted) {
-            eventSource.close();
-            if (sseConnected) {
-              sseReject(new Error("SSE connection failed"));
-            } else {
-              // If SSE never connected, fall back to axios-only progress
-              console.log(
-                `SSE connection failed, falling back to axios-only progress for ${uploadId}`
-              );
-              sseReject(new Error("SSE_FALLBACK"));
-            }
-          }
-        };
-
-        // SSE timeout - 15 minutes for 150MB files
-        setTimeout(() => {
-          if (!uploadCompleted && sseConnected) {
-            console.log(`Enhanced upload ${uploadId} SSE timed out`);
-            eventSource.close();
-            sseReject(new Error("SSE timed out"));
-          }
-        }, 15 * 60 * 1000);
+      presignData = await getPresignedUrl({
+        folderId,
+        filename: file.name,
+        fileSize: file.size,
+        mimeType: file.type || "application/octet-stream",
       });
-
-      // Start the axios upload
-      const axiosPromise = axios.post(
-        `${process.env.REACT_APP_SERVER}/api/media/folders/${folderId}/with-progress`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            "X-Upload-Id": uploadId,
-          },
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent.lengthComputable) {
-              clientProgress = Math.round(
-                (progressEvent.loaded * 100) / progressEvent.total
-              );
-
-              // Use client progress if backend progress not available
-              if (!useBackendProgress) {
-                console.log(
-                  `Enhanced axios client progress for ${file.name}: ${clientProgress}%`
-                );
-                onProgress(clientProgress);
-              }
-            }
-          },
-          timeout: 720000, // 12 minute timeout (sufficient for 150MB files)
-        }
+    } catch (err) {
+      throw new Error(
+        err?.response?.data?.message || "Failed to prepare upload"
       );
-
-      // Wait for either SSE completion or axios completion
-      try {
-        const result = await Promise.race([
-          ssePromise,
-          axiosPromise.then((res) => res.data),
-        ]);
-        eventSource.close();
-        return result;
-      } catch (error) {
-        eventSource.close();
-
-        // If SSE failed to connect, fall back to axios result
-        if (error.message === "SSE_FALLBACK") {
-          console.log(`Falling back to axios-only upload for ${file.name}`);
-          try {
-            const axiosResult = await axiosPromise;
-            onProgress(100); // Show completion
-            return axiosResult.data;
-          } catch (axiosError) {
-            throw axiosError;
-          }
-        }
-
-        throw error;
-      }
-    } catch (error) {
-      console.error(`Enhanced axios upload error for ${file.name}:`, error);
-
-      if (error.code === "ECONNABORTED") {
-        throw new Error("Upload timed out");
-      } else if (error.response) {
-        throw new Error(
-          `Upload failed: ${
-            error.response.data?.message || error.response.statusText
-          }`
-        );
-      } else if (error.request) {
-        throw new Error("Network error during upload");
-      } else {
-        throw new Error(error.message || "Upload failed");
-      }
     }
-  };
 
-  // Axios-based upload function with client-side progress callback
-  const uploadMediaFileWithProgress = async (folderId, file, onProgress) => {
-    console.log(`Starting axios upload for ${file.name} (${file.size} bytes)`);
+    onProgress(5, "preparing", "Upload prepared");
 
-    const formData = new FormData();
-    formData.append("file", file);
+    // Phase 2 (5-90%): Upload directly to S3 via XMLHttpRequest
+    if (onMessage) onMessage("Uploading to cloud storage...");
 
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      // Store xhr reference for cancel support
+      setActiveXhrs((prev) => ({ ...prev, [fileId]: xhr }));
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const s3Progress = Math.round(
+            (event.loaded / event.total) * 85
+          );
+          onProgress(5 + s3Progress, "uploading", "Uploading...");
+        }
+      };
+
+      xhr.onload = () => {
+        setActiveXhrs((prev) => {
+          const next = { ...prev };
+          delete next[fileId];
+          return next;
+        });
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(
+            new Error(
+              `S3 upload failed with status ${xhr.status}: ${xhr.statusText}`
+            )
+          );
+        }
+      };
+
+      xhr.onerror = () => {
+        setActiveXhrs((prev) => {
+          const next = { ...prev };
+          delete next[fileId];
+          return next;
+        });
+        reject(new Error("Network error during S3 upload"));
+      };
+
+      xhr.ontimeout = () => {
+        setActiveXhrs((prev) => {
+          const next = { ...prev };
+          delete next[fileId];
+          return next;
+        });
+        reject(new Error("S3 upload timed out"));
+      };
+
+      xhr.open("PUT", presignData.presignedUrl);
+      xhr.setRequestHeader("Content-Type", presignData.contentType);
+      xhr.timeout = 30 * 60 * 1000; // 30 minute timeout for large files
+      xhr.send(file);
+    });
+
+    onProgress(90, "confirming", "Upload complete, confirming...");
+
+    // Phase 3 (90-100%): Confirm upload with backend
+    if (onMessage) onMessage("Finalizing upload...");
+
+    let confirmData;
     try {
-      onProgress(0); // Initialize progress
-
-      const response = await axios.post(
-        `${process.env.REACT_APP_SERVER}/api/media/folders/${folderId}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent.lengthComputable) {
-              const percentComplete = Math.round(
-                (progressEvent.loaded * 100) / progressEvent.total
-              );
-              console.log(
-                `Axios upload progress for ${file.name}: ${percentComplete}%`
-              );
-              onProgress(percentComplete);
-            }
-          },
-          timeout: 720000, // 12 minute timeout (sufficient for 150MB files)
-        }
+      confirmData = await confirmDirectUpload({
+        folderId,
+        s3Key: presignData.s3Key,
+        filename: presignData.filename,
+        originalName: presignData.originalName,
+        mimeType: file.type || "application/octet-stream",
+        fileSize: file.size,
+      });
+    } catch (err) {
+      throw new Error(
+        err?.response?.data?.message || "Failed to confirm upload"
       );
-
-      onProgress(100); // Ensure we show 100% on completion
-      console.log(`Axios upload completed for ${file.name}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Axios upload error for ${file.name}:`, error);
-
-      if (error.code === "ECONNABORTED") {
-        throw new Error("Upload timed out");
-      } else if (error.response) {
-        // Server responded with error status
-        throw new Error(
-          `Upload failed: ${
-            error.response.data?.message || error.response.statusText
-          }`
-        );
-      } else if (error.request) {
-        // Network error
-        throw new Error("Network error during upload");
-      } else {
-        // Other error
-        throw new Error(error.message || "Upload failed");
-      }
-    }
-  };
-
-  // Simulated upload function for testing progress (when real uploads are too fast)
-  const simulateUploadWithProgress = async (folderId, file, onProgress) => {
-    console.log(`Simulating slow upload for ${file.name}`);
-
-    // Simulate progress from 0 to 100
-    for (let progress = 0; progress <= 100; progress += 5) {
-      await new Promise((resolve) => setTimeout(resolve, 100)); // 100ms delay
-      onProgress(progress);
     }
 
-    // Then do the actual upload
-    return uploadMediaFileWithProgress(folderId, file, () => {});
+    onProgress(100, "completed", "Upload completed!");
+    if (onMessage) onMessage("Upload completed!");
+
+    return confirmData;
   };
 
   const removeFile = (file) => () => {
@@ -662,16 +506,12 @@ const MediaFileUploader = ({
           }));
         };
 
-        if (useBackendProgress) {
-          await uploadMediaFileWithEnhancedProgress(
-            folder._id,
-            file,
-            onProgress,
-            onMessage
-          );
-        } else {
-          await uploadMediaFileWithProgress(folder._id, file, onProgress);
-        }
+        await uploadMediaFileDirectToS3(
+          folder._id,
+          file,
+          onProgress,
+          onMessage
+        );
 
         // Mark file as completed
         setUploadProgress((prev) => ({
