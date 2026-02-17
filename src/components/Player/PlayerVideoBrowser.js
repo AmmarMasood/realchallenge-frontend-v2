@@ -164,7 +164,7 @@ function PlayerVideoBrowser({
                         )}
                       </h4>
                     </div>
-                    {workout.isRendered && !e?.exerciseId && (
+                    {workout.isRendered && e?.voiceOverLink && !e?.exerciseId && (
                       <img
                         src={SquarePlay}
                         onClick={() =>
@@ -175,7 +175,7 @@ function PlayerVideoBrowser({
                         style={{ padding: "8px" }}
                       />
                     )}
-                    {workout.isRendered && e?.exerciseId && (
+                    {workout.isRendered && e?.voiceOverLink && e?.exerciseId && (
                       <img
                         src={SquarePT}
                         alt=""
@@ -242,7 +242,7 @@ function PlayerVideoBrowser({
                         )}
                       </h4>
                     </div>
-                    {workout.isRendered && !fullscreen && (
+                    {workout.isRendered && !fullscreen && e?.voiceOverLink && (
                       <img
                         src={SquarePT}
                         alt=""

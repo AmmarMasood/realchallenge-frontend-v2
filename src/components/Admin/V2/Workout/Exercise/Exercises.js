@@ -440,6 +440,7 @@ function Exercises({
                 </div>
                 {workout.renderWorkout &&
                   firstExercise?.videoURL &&
+                  firstExercise?.voiceOverLink &&
                   !firstExercise?.exerciseId && (
                     <img
                       src={SquarePlay}
@@ -454,6 +455,7 @@ function Exercises({
                 {workout.renderWorkout &&
                   !fullscreen &&
                   firstExercise?.videoURL &&
+                  firstExercise?.voiceOverLink &&
                   firstExercise?.exerciseId && (
                     <img
                       src={SquarePT}
@@ -645,7 +647,8 @@ function Exercises({
                           )}
                           {workout.renderWorkout &&
                             !fullscreen &&
-                            e?.videoURL && (
+                            e?.videoURL &&
+                            e?.voiceOverLink && (
                               <img
                                 src={SquarePT}
                                 alt=""
