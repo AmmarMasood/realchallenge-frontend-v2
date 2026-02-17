@@ -1,5 +1,5 @@
-import breakEndSound from "../assets/music/break-end.wav";
-import breakStartSound from "../assets/music/break-start.wav";
+import breakEndSound from "../assets/music/break-end.mp3";
+import breakStartSound from "../assets/music/break-start.mp3";
 
 const audioElements = {
   breakEnd: null,
