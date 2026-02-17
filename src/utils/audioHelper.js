@@ -1,5 +1,6 @@
-import breakEndSound from "../assets/music/break-end.mp3";
-import breakStartSound from "../assets/music/break-start.mp3";
+// Audio files served from public/audio/ — bypasses webpack bundling issues
+const BREAK_END_URL = `${process.env.PUBLIC_URL}/audio/break-end.mp3`;
+const BREAK_START_URL = `${process.env.PUBLIC_URL}/audio/break-start.mp3`;
 
 const audioElements = {
   breakEnd: null,
@@ -10,11 +11,11 @@ let unlocked = false;
 
 function ensureElements() {
   if (!audioElements.breakEnd) {
-    audioElements.breakEnd = new Audio(breakEndSound);
+    audioElements.breakEnd = new Audio(BREAK_END_URL);
     audioElements.breakEnd.preload = "auto";
   }
   if (!audioElements.breakStart) {
-    audioElements.breakStart = new Audio(breakStartSound);
+    audioElements.breakStart = new Audio(BREAK_START_URL);
     audioElements.breakStart.preload = "auto";
   }
 }
