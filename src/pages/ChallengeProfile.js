@@ -19,7 +19,9 @@ import {
 } from "../services/createChallenge/main";
 import { Link, withRouter } from "react-router-dom";
 // import ModalVideo from "react-modal-video";
-import { Tooltip, Collapse, Input, Avatar, Progress } from "antd";
+import { Tooltip, Collapse, Input, Avatar, Progress, message } from "antd";
+import ShareIcon from "../assets/icons/share-icon.svg";
+import FavIcon from "../assets/icons/add-to-fav-icon.svg";
 
 import { userInfoContext } from "../contexts/UserStore";
 import { checkUserPackage } from "../services/payment";
@@ -37,7 +39,7 @@ import ForwardWhite from "../assets/icons/forward-white.png";
 import ChallengeCompleteModal from "../components/Challenge/ChallengeCompleteModal";
 import ReplaceFreeChallengePopup from "../components/Challenge/ReplaceFreeChallengePopup";
 import ChallengeReviewModal from "../components/Challenge/ChallengeReviewModal";
-import { set } from "lodash";
+import { set, get } from "lodash";
 import slug from "elegant-slug";
 import { Helmet } from "react-helmet";
 import { T } from "../components/Translate";
@@ -49,7 +51,7 @@ const tooltipText = `
 If you don’t choose any plan and hit start now, you can go through the wizard, get your free intake, make a free account and enjoy our free challenges collection and one week meal plan. 
 `;
 function ChallengeProfile(props) {
-  const { language, updateLanguage } = useContext(LanguageContext);
+  const { language, updateLanguage, strings } = useContext(LanguageContext);
   const { packages, getPackage } = usePackageConfig();
   const [reviewOpen, setReviewOpen] = useState(false);
   const [openPopupPlayer, setOpenPopupPlayer] = useState(false);
@@ -397,7 +399,8 @@ function ChallengeProfile(props) {
                       marginBottom: "30px",
                     }}
                   >
-                    {getPackage("CHALLENGE_1")?.displayName || "One-Time Challenge"}
+                    {getPackage("CHALLENGE_1")?.displayName ||
+                      "One-Time Challenge"}
                   </span>
                   <span
                     style={{ fontSize: "26px", fontWeight: "600" }}
@@ -431,7 +434,8 @@ function ChallengeProfile(props) {
                       marginBottom: "10px",
                     }}
                   >
-                    {getPackage("CHALLENGE_12")?.displayName || "12 Months Plan"}
+                    {getPackage("CHALLENGE_12")?.displayName ||
+                      "12 Months Plan"}
                   </span>
                   {getPackage("CHALLENGE_12")?.savingsPercent && (
                     <span
@@ -450,9 +454,12 @@ function ChallengeProfile(props) {
                     </span>
                   )}
                   <span style={{ fontSize: "26px", fontWeight: "600" }}>
-                    {getPackage("CHALLENGE_12")?.priceDisplayText || `€${getPackage("CHALLENGE_12")?.price}`}
+                    {getPackage("CHALLENGE_12")?.priceDisplayText ||
+                      `€${getPackage("CHALLENGE_12")?.price}`}
                   </span>
-                  <span style={{ margin: "15px 0" }}>{getPackage("CHALLENGE_12")?.billingInterval} months plan</span>
+                  <span style={{ margin: "15px 0" }}>
+                    {getPackage("CHALLENGE_12")?.billingInterval} months plan
+                  </span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
                     Billed Monthly
                   </span>
@@ -500,9 +507,12 @@ function ChallengeProfile(props) {
                     </span>
                   )}
                   <span style={{ fontSize: "26px", fontWeight: "600" }}>
-                    {getPackage("CHALLENGE_3")?.priceDisplayText || `€${getPackage("CHALLENGE_3")?.price}`}
+                    {getPackage("CHALLENGE_3")?.priceDisplayText ||
+                      `€${getPackage("CHALLENGE_3")?.price}`}
                   </span>
-                  <span style={{ margin: "15px 0" }}>{getPackage("CHALLENGE_3")?.billingInterval} months plan</span>
+                  <span style={{ margin: "15px 0" }}>
+                    {getPackage("CHALLENGE_3")?.billingInterval} months plan
+                  </span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
                     Billed Monthly
                   </span>
@@ -945,9 +955,16 @@ function ChallengeProfile(props) {
                   onClick={openTailerPlayer}
                 />
               )}
-              <h1 className="font-heading-white" style={{ fontSize: "4rem" }}>
-                {challenge.challengeName ? challenge.challengeName : ""}
-              </h1>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+              >
+                <h1
+                  className="font-heading-white"
+                  style={{ fontSize: "4rem", margin: 0 }}
+                >
+                  {challenge.challengeName ? challenge.challengeName : ""}
+                </h1>
+              </div>
               <Progress
                 percent={
                   challengeProgress && challengeProgress.challengeCompletionRate
@@ -986,13 +1003,67 @@ function ChallengeProfile(props) {
                 )}
               </div>
               <div className="challenge-profile-box-2-info">
-                <div className="challenge-profile-box-2-container">
-                  <img src={ForwardWhite} alt="" />{" "}
-                  {challenge.difficulty ? challenge.difficulty : ""}
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <div className="challenge-profile-box-2-container">
+                    <img src={ForwardWhite} alt="" />{" "}
+                    {challenge.difficulty ? challenge.difficulty : ""}
+                  </div>
+                  <div className="challenge-profile-box-2-container">
+                    {challenge.duration ? `${challenge.duration} mins` : ""}
+                  </div>
                 </div>
-                <div className="challenge-profile-box-2-container">
-                  {challenge.duration ? `${challenge.duration} mins` : ""}
-                </div>
+                {challenge._id && (
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <img
+                      src={ShareIcon}
+                      alt="share"
+                      style={{
+                        width: "34px",
+                        height: "34px",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => {
+                        const url = `${window.location.origin}/challenge/${slug(
+                          challenge.challengeName || "",
+                        )}/${challenge._id}`;
+                        navigator.clipboard
+                          .writeText(url)
+                          .then(() => {
+                            message.success("Challenge link copied!");
+                          })
+                          .catch(() => {
+                            message.error("Failed to copy link");
+                          });
+                      }}
+                      title="Copy challenge link"
+                    />
+                    {localStorage.getItem("jwtToken") && (
+                      <img
+                        src={FavIcon}
+                        alt="fav"
+                        style={{
+                          width: "34px",
+                          height: "34px",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => {
+                          message.success(
+                            get(
+                              strings,
+                              "challenge_profile.added_to_favourites",
+                              "Added to favourites!",
+                            ),
+                          );
+                        }}
+                        title={get(
+                          strings,
+                          "challenge_profile.added_to_favourites",
+                          "Add to favourites",
+                        )}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
               <div
                 className="font-paragraph-white"

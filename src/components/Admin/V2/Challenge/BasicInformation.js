@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useContext, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+  useRef,
+} from "react";
 import "../../../../assets/trainerprofile.css";
 import "../../../../assets/home.css";
 import "../../../../assets/challengeProfile.css";
@@ -21,6 +27,7 @@ import {
   Checkbox,
   notification,
   Alert,
+  message,
 } from "antd";
 
 import { userInfoContext } from "../../../../contexts/UserStore";
@@ -69,6 +76,8 @@ import { hasAnyRole } from "../../../../helpers/roleHelpers";
 import setAuthToken from "../../../../helpers/setAuthToken";
 import DragAndDropIcon from "../../../../assets/icons/drag-drop.svg";
 import CopyIcon from "../../../../assets/icons/copy-icon.svg";
+import ShareIcon from "../../../../assets/icons/share-icon.svg";
+import FavIcon from "../../../../assets/icons/add-to-fav-icon.svg";
 import DeleteIcon from "../../../../assets/icons/delete_icon.svg";
 import DeleteWhite from "../../../../assets/icons/delete-icon-white.svg";
 import CopyIconWhite from "../../../../assets/icons/copy-icon-white.svg";
@@ -321,9 +330,10 @@ function BasicInformation(props) {
 
         // Authorization check
         const isAdmin = hasAnyRole(userInfo, ["admin"]);
-        const isCreator = challenge.user === userInfo.id || challenge.user?._id === userInfo.id;
+        const isCreator =
+          challenge.user === userInfo.id || challenge.user?._id === userInfo.id;
         const isAssignedTrainer = challenge.trainers?.some(
-          (t) => (t._id || t) === userInfo.id
+          (t) => (t._id || t) === userInfo.id,
         );
 
         if (!isAdmin && !isCreator && !isAssignedTrainer) {
@@ -415,7 +425,10 @@ function BasicInformation(props) {
   // Close translation dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (translationDropdownRef.current && !translationDropdownRef.current.contains(e.target)) {
+      if (
+        translationDropdownRef.current &&
+        !translationDropdownRef.current.contains(e.target)
+      ) {
         setTranslationDropdownOpen(false);
       }
     };
@@ -743,7 +756,8 @@ function BasicInformation(props) {
       ) {
         notification.error({
           message: "Translation Link Conflict",
-          description: err.response.data.message ||
+          description:
+            err.response.data.message ||
             "Another challenge in this language is already linked with this translation.",
         });
       }
@@ -1486,9 +1500,18 @@ function BasicInformation(props) {
                   }}
                   value={challengeName}
                 />
+                {props.match.params.challengeId && <></>}
               </div>
               <div className="challenge-profile-box-2 adminV2-bi-challenge-profile-box-2">
-                <div className="challenge-profile-box-2-info">
+                <div
+                  className="challenge-profile-box-2-info"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gridGap: "8px",
+                    alignItems: "inherit",
+                  }}
+                >
                   <Select
                     defaultValue={difficulty}
                     style={{ width: "100%" }}
@@ -1534,7 +1557,16 @@ function BasicInformation(props) {
                       border: errors.duration && "2px solid red",
                     }}
                   />
-
+                </div>
+                <div
+                  className="challenge-profile-box-2-info"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gridGap: "8px",
+                    alignItems: "inherit",
+                  }}
+                >
                   <input
                     placeholder={get(
                       strings,
@@ -1548,6 +1580,64 @@ function BasicInformation(props) {
                     value={points}
                     type="number"
                   />
+                  {props.match.params.challengeId && (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "flex-end",
+                        gap: "8px",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <img
+                        src={ShareIcon}
+                        alt="share"
+                        style={{
+                          width: "34px",
+                          height: "34px",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => {
+                          const url = `${window.location.origin}/challenge/${slug(
+                            challengeName || "",
+                          )}/${props.match.params.challengeId}`;
+                          navigator.clipboard
+                            .writeText(url)
+                            .then(() => {
+                              message.success("Challenge link copied!");
+                            })
+                            .catch(() => {
+                              message.error("Failed to copy link");
+                            });
+                        }}
+                        title="Copy challenge link"
+                      />
+                      <img
+                        src={FavIcon}
+                        alt="fav"
+                        style={{
+                          width: "34px",
+                          height: "34px",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => {
+                          message.success(
+                            get(
+                              strings,
+                              "challenge_profile.added_to_favourites",
+                              "Added to favourites!",
+                            ),
+                          );
+                        }}
+                        title={get(
+                          strings,
+                          "challenge_profile.added_to_favourites",
+                          "Add to favourites",
+                        )}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <textarea
@@ -1589,9 +1679,20 @@ function BasicInformation(props) {
                   className="trainer-profile-goals-heading font-paragraph-white"
                   style={{ color: "#72777B", textTransform: "uppercase" }}
                 >
-                  {isUpdate ? "Link Translation" : <T>challengeStudio.translate_existing_challenge</T>}
+                  {isUpdate ? (
+                    "Link Translation"
+                  ) : (
+                    <T>challengeStudio.translate_existing_challenge</T>
+                  )}
                 </div>
-                <div ref={translationDropdownRef} style={{ position: "relative", width: "100%", marginTop: "10px" }}>
+                <div
+                  ref={translationDropdownRef}
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    marginTop: "10px",
+                  }}
+                >
                   {/* Selected value / trigger */}
                   <div
                     onClick={() => setTranslationDropdownOpen((prev) => !prev)}
@@ -1607,23 +1708,68 @@ function BasicInformation(props) {
                       minHeight: "38px",
                     }}
                   >
-                    <span style={{ color: selectedChallengeForTranslation ? "#e0e0e0" : "#888", fontSize: "14px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                    <span
+                      style={{
+                        color: selectedChallengeForTranslation
+                          ? "#e0e0e0"
+                          : "#888",
+                        fontSize: "14px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        flex: 1,
+                      }}
+                    >
                       {selectedChallengeForTranslation
-                        ? allChallengesFromOtherLanguage.find((c) => c._id === selectedChallengeForTranslation)?.challengeName +
+                        ? allChallengesFromOtherLanguage.find(
+                            (c) => c._id === selectedChallengeForTranslation,
+                          )?.challengeName +
                           ` (${allChallengesFromOtherLanguage.find((c) => c._id === selectedChallengeForTranslation)?.language})`
-                        : get(strings, "challengeStudio.select_challenge_to_translate", "Select a challenge to translate (optional)")}
+                        : get(
+                            strings,
+                            "challengeStudio.select_challenge_to_translate",
+                            "Select a challenge to translate (optional)",
+                          )}
                     </span>
-                    <span style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "8px", flexShrink: 0 }}>
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        marginLeft: "8px",
+                        flexShrink: 0,
+                      }}
+                    >
                       {selectedChallengeForTranslation && (
                         <span
-                          onClick={(e) => { e.stopPropagation(); handleSelectChallengeForTranslation(null); setTranslationSearch(""); }}
-                          style={{ color: "#888", cursor: "pointer", fontSize: "16px", lineHeight: 1 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectChallengeForTranslation(null);
+                            setTranslationSearch("");
+                          }}
+                          style={{
+                            color: "#888",
+                            cursor: "pointer",
+                            fontSize: "16px",
+                            lineHeight: 1,
+                          }}
                           title="Clear"
                         >
                           ×
                         </span>
                       )}
-                      <span style={{ color: "#888", fontSize: "10px", transform: translationDropdownOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
+                      <span
+                        style={{
+                          color: "#888",
+                          fontSize: "10px",
+                          transform: translationDropdownOpen
+                            ? "rotate(180deg)"
+                            : "rotate(0deg)",
+                          transition: "transform 0.2s",
+                        }}
+                      >
+                        ▼
+                      </span>
                     </span>
                   </div>
 
@@ -1665,14 +1811,25 @@ function BasicInformation(props) {
                         />
                       </div>
                       {/* Options list */}
-                      <div style={{ maxHeight: "220px", overflowY: "auto", padding: "4px 0" }}>
+                      <div
+                        style={{
+                          maxHeight: "220px",
+                          overflowY: "auto",
+                          padding: "4px 0",
+                        }}
+                      >
                         {allChallengesFromOtherLanguage
                           .filter((c) =>
-                            c.challengeName.toLowerCase().includes(translationSearch.toLowerCase())
+                            c.challengeName
+                              .toLowerCase()
+                              .includes(translationSearch.toLowerCase()),
                           )
                           .map((c) => {
-                            const alreadyLinked = c.translationKey && c.translationKey !== translationKey;
-                            const isSelected = c._id === selectedChallengeForTranslation;
+                            const alreadyLinked =
+                              c.translationKey &&
+                              c.translationKey !== translationKey;
+                            const isSelected =
+                              c._id === selectedChallengeForTranslation;
                             return (
                               <div
                                 key={c._id}
@@ -1685,25 +1842,60 @@ function BasicInformation(props) {
                                 }}
                                 style={{
                                   padding: "8px 12px",
-                                  cursor: alreadyLinked ? "not-allowed" : "pointer",
-                                  color: alreadyLinked ? "#555" : isSelected ? "#fff" : "#ccc",
-                                  background: isSelected ? "#2a2a4a" : "transparent",
+                                  cursor: alreadyLinked
+                                    ? "not-allowed"
+                                    : "pointer",
+                                  color: alreadyLinked
+                                    ? "#555"
+                                    : isSelected
+                                      ? "#fff"
+                                      : "#ccc",
+                                  background: isSelected
+                                    ? "#2a2a4a"
+                                    : "transparent",
                                   fontSize: "13px",
                                   transition: "background 0.15s",
                                   opacity: alreadyLinked ? 0.5 : 1,
                                 }}
-                                onMouseEnter={(e) => { if (!alreadyLinked) e.currentTarget.style.background = "#2a2a4a"; }}
-                                onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                                onMouseEnter={(e) => {
+                                  if (!alreadyLinked)
+                                    e.currentTarget.style.background =
+                                      "#2a2a4a";
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isSelected)
+                                    e.currentTarget.style.background =
+                                      "transparent";
+                                }}
                               >
                                 {c.challengeName} ({c.language})
-                                {alreadyLinked && <span style={{ marginLeft: "8px", fontSize: "11px", color: "#888" }}>— already linked</span>}
+                                {alreadyLinked && (
+                                  <span
+                                    style={{
+                                      marginLeft: "8px",
+                                      fontSize: "11px",
+                                      color: "#888",
+                                    }}
+                                  >
+                                    — already linked
+                                  </span>
+                                )}
                               </div>
                             );
                           })}
                         {allChallengesFromOtherLanguage.filter((c) =>
-                          c.challengeName.toLowerCase().includes(translationSearch.toLowerCase())
+                          c.challengeName
+                            .toLowerCase()
+                            .includes(translationSearch.toLowerCase()),
                         ).length === 0 && (
-                          <div style={{ padding: "12px", color: "#666", textAlign: "center", fontSize: "13px" }}>
+                          <div
+                            style={{
+                              padding: "12px",
+                              color: "#666",
+                              textAlign: "center",
+                              fontSize: "13px",
+                            }}
+                          >
                             No challenges found
                           </div>
                         )}
@@ -1927,10 +2119,9 @@ function BasicInformation(props) {
                     <span>{interest.name}</span>
                     <DeleteFilled
                       onClick={() => {
-                        const newSelectedGoals =
-                          selectedGoals.filter(
-                            (item) => item._id !== interest._id,
-                          );
+                        const newSelectedGoals = selectedGoals.filter(
+                          (item) => item._id !== interest._id,
+                        );
                         setSelectedGoals(newSelectedGoals);
                       }}
                       style={{
@@ -2832,7 +3023,9 @@ function BasicInformation(props) {
                       fontWeight: "600",
                       fontSize: "14px",
                       color: "#fff",
-                      ...(hasAnyRole(userInfo, ["admin"]) && { cursor: "pointer" }),
+                      ...(hasAnyRole(userInfo, ["admin"]) && {
+                        cursor: "pointer",
+                      }),
                     }}
                     {...(hasAnyRole(userInfo, ["admin"]) && {
                       onClick: () => {},

@@ -119,9 +119,18 @@
 }
 .challenge-profile-box-2-info {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   /* border: 2px solid blue; */
   /* border: 2px solid red; */
   /* height: 10px; */
+}
+
+.challenge-profile-box-2-info > input.adminV2-bi-input,
+.challenge-profile-box-2-info > .ant-select {
+  flex: 1;
+  min-width: 0;
 }
 .challenge-profile-box-2-rating > span {
   color: #ffa343;

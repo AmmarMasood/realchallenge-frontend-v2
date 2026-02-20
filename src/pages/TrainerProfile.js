@@ -11,7 +11,8 @@ import ChallengeCard from "../components/Cards/ChallengeCard";
 import { addCommentToTrainer, getTrainerById } from "../services/trainers";
 import QuoteIcon from "../assets/icons/quote-icon.png";
 import ChallengeProfileSubtract from "../assets/icons/challenge-profile-subtract.svg";
-import { Avatar, Input } from "antd";
+import { Avatar, Input, message } from "antd";
+import ShareIcon from "../assets/icons/share-icon.svg";
 import moment from "moment";
 import StarFilled from "../assets/icons/star-orange.svg";
 import StartTransparent from "../assets/icons/star-transparent.svg";
@@ -120,7 +121,7 @@ function TrainerProfile(props) {
               trainer.heroBanner
                 ? trainer.heroBanner.replaceAll(" ", "%20")
                 : ""
-            }`
+            }`,
           )}
           <div className="profile-box">
             <div className="profile-box-row1">
@@ -144,12 +145,43 @@ function TrainerProfile(props) {
                 </h2>
 
                 <div style={{ paddingTop: "20px" }}>
-                  <p
-                    className="font-paragraph-white"
-                    style={{ margin: "0", padding: "0" }}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                    }}
                   >
-                    {trainer.country ? trainer.country : ""}
-                  </p>
+                    <p
+                      className="font-paragraph-white"
+                      style={{ margin: "0", padding: "0" }}
+                    >
+                      {trainer.country ? trainer.country : ""}
+                    </p>
+                    <img
+                      src={ShareIcon}
+                      alt="share"
+                      style={{
+                        width: "24px",
+                        height: "24px",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => {
+                        const url = `${window.location.origin}/trainer/${slug(
+                          trainer.firstName || "",
+                        )}/${trainer._id}`;
+                        navigator.clipboard
+                          .writeText(url)
+                          .then(() => {
+                            message.success("Profile link copied!");
+                          })
+                          .catch(() => {
+                            message.error("Failed to copy link");
+                          });
+                      }}
+                      title="Copy profile link"
+                    />
+                  </div>
                   {new Array(calculatedRating ? calculatedRating : 0)
                     .fill(0)
                     .map(() => (
@@ -247,7 +279,7 @@ function TrainerProfile(props) {
                   const g = challenges.filter((c) =>
                     c.challengeName
                       .toLowerCase()
-                      .includes(e.target.value.toLowerCase())
+                      .includes(e.target.value.toLowerCase()),
                   );
                   setFilterChallenges(g);
                 }}

@@ -147,13 +147,13 @@ function AdminDashboard(props) {
         await updateUserProfileByAdmin(
           { motto: newMotto },
           trainerId,
-          adminInfo.role
+          adminInfo.role,
         );
       } catch (error) {
         console.error("Failed to update motto:", error);
       }
     }, 1000),
-    []
+    [],
   );
 
   const handleMottoChange = (e) => {
@@ -170,13 +170,13 @@ function AdminDashboard(props) {
         await updateUserProfileByAdmin(
           { bio: newBio },
           trainerId,
-          adminInfo.role
+          adminInfo.role,
         );
       } catch (error) {
         console.error("Failed to update bio:", error);
       }
     }, 1000),
-    []
+    [],
   );
 
   const handleBioChange = (e) => {
@@ -193,13 +193,13 @@ function AdminDashboard(props) {
         await updateUserProfileByAdmin(
           { country: newCountry },
           trainerId,
-          adminInfo.role
+          adminInfo.role,
         );
       } catch (error) {
         console.error("Failed to update country:", error);
       }
     }, 1000),
-    []
+    [],
   );
 
   const handleCountryChange = (value) => {
@@ -215,13 +215,13 @@ function AdminDashboard(props) {
         await updateUserProfileByAdmin(
           { heroBanner: newHeroBanner },
           trainerId,
-          adminInfo.role
+          adminInfo.role,
         );
       } catch (error) {
         console.error("Failed to update hero banner:", error);
       }
     }, 1000),
-    []
+    [],
   );
 
   const debouncedUpdateAvatar = useCallback(
@@ -230,13 +230,13 @@ function AdminDashboard(props) {
         await updateUserProfileByAdmin(
           { avatarLink: newAvatar },
           trainerId,
-          adminInfo.role
+          adminInfo.role,
         );
       } catch (error) {
         console.error("Failed to update avatar:", error);
       }
     }, 1000),
-    []
+    [],
   );
 
   const debouncedUpdateTrailer = useCallback(
@@ -245,13 +245,13 @@ function AdminDashboard(props) {
         await updateUserProfileByAdmin(
           { videoTrailerLink: newTrailer },
           trainerId,
-          adminInfo.role
+          adminInfo.role,
         );
       } catch (error) {
         console.error("Failed to update trailer:", error);
       }
     }, 1000),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -375,7 +375,7 @@ function AdminDashboard(props) {
     window.open(
       `/admin/v2/challenge-studio/${challengeId}`,
       "_blank",
-      "noopener,noreferrer"
+      "noopener,noreferrer",
     );
   };
   return loading ? (
@@ -528,28 +528,39 @@ function AdminDashboard(props) {
                       src={ShareIcon}
                       alt="share"
                       style={{
-                        width: "24px",
-                        height: "24px",
+                        width: "32px",
+                        height: "32px",
                         cursor: "pointer",
                       }}
                       onClick={() => {
                         const url = `${window.location.origin}/trainer/${slug(
-                          trainer.firstName || ""
+                          trainer.firstName || "",
                         )}/${trainer._id}`;
-                        navigator.clipboard.writeText(url).then(() => {
-                          message.success(
-                            get(strings, "adminv2.link_copied", "Profile link copied!")
-                          );
-                        }).catch(() => {
-                          message.error(
-                            get(strings, "adminv2.link_copy_failed", "Failed to copy link")
-                          );
-                        });
+                        navigator.clipboard
+                          .writeText(url)
+                          .then(() => {
+                            message.success(
+                              get(
+                                strings,
+                                "adminv2.link_copied",
+                                "Profile link copied!",
+                              ),
+                            );
+                          })
+                          .catch(() => {
+                            message.error(
+                              get(
+                                strings,
+                                "adminv2.link_copy_failed",
+                                "Failed to copy link",
+                              ),
+                            );
+                          });
                       }}
                       title={get(
                         strings,
                         "adminv2.copy_profile_link",
-                        "Copy profile link"
+                        "Copy profile link",
                       )}
                     />
                   )}
@@ -828,7 +839,7 @@ function AdminDashboard(props) {
                 searchPlaceholder={get(
                   strings,
                   "adminv2.search_exercise",
-                  "Search by exercise name"
+                  "Search by exercise name",
                 )}
                 searchKeys={["title"]}
                 type={"exercise"}
@@ -881,7 +892,7 @@ function AdminDashboard(props) {
                 searchPlaceholder={get(
                   strings,
                   "adminv2.search_challenge",
-                  "Search by challenge name"
+                  "Search by challenge name",
                 )}
                 searchKeys={["challengeName"]}
                 type="challenge"
