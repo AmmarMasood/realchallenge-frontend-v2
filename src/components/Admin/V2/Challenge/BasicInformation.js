@@ -28,6 +28,7 @@ import {
   notification,
   Alert,
   message,
+  Radio,
 } from "antd";
 
 import { userInfoContext } from "../../../../contexts/UserStore";
@@ -70,6 +71,7 @@ import {
   updateChallenge,
   updateWorkoutOnBackend,
   getAllUserChallenges,
+  getIntensityGroups,
 } from "../../../../services/createChallenge/main";
 import { useBrowserEvents } from "../../../../helpers/useBrowserEvents";
 import { hasAnyRole } from "../../../../helpers/roleHelpers";
@@ -167,6 +169,14 @@ function BasicInformation(props) {
     setIsFirstRender,
     points,
     setPoints,
+    multipleIntensities,
+    setMultipleIntensities,
+    intensityGroupId,
+    setIntensityGroupId,
+    intensity,
+    setIntensity,
+    isGroupHead,
+    groupHeadName,
   } = useChallenge();
   const [dataLoaded, setDataLoaded] = useState(false); // Track when all setters are done
 
@@ -197,6 +207,13 @@ function BasicInformation(props) {
   const [isDraggingWorkout, setIsDraggingWorkout] = useState(false);
   const [draggedWorkoutId, setDraggedWorkoutId] = useState(null);
   const [coverVideoLoading, setCoverVideoLoading] = useState(true);
+  const [groupMode, setGroupMode] = useState("new"); // "new" | "existing"
+  const [trainerGroups, setTrainerGroups] = useState([]);
+  const [priceInheritedFromGroup, setPriceInheritedFromGroup] = useState(false);
+
+  // Hide price/package for non-head group siblings
+  const isNonHeadSibling =
+    (isUpdate && intensityGroupId && !isGroupHead) || priceInheritedFromGroup;
   // Translation support - for linking challenges across languages
   const [allChallengesFromOtherLanguage, setAllChallengesFromOtherLanguage] =
     useState([]);
@@ -296,6 +313,22 @@ function BasicInformation(props) {
 
     setLoading(false);
   };
+
+  // Set groupMode to "existing" if editing a challenge that already has a group
+  useEffect(() => {
+    if (intensityGroupId) {
+      setGroupMode("existing");
+    }
+  }, [intensityGroupId]);
+
+  // Fetch trainer groups when multipleIntensities is enabled
+  useEffect(() => {
+    if (multipleIntensities) {
+      getIntensityGroups(seletedTrainers || []).then((res) => {
+        setTrainerGroups(res.groups || []);
+      });
+    }
+  }, [multipleIntensities, seletedTrainers]);
 
   // Handle selecting a challenge to translate
   const handleSelectChallengeForTranslation = (challengeId) => {
@@ -622,6 +655,20 @@ function BasicInformation(props) {
     //   errors.push("Duration is required");
     // }
     // if (!difficulty) errors.push("Difficulty is required");
+    if (!intensity) {
+      errors.push(
+        get(
+          strings,
+          "challengeStudio.intensity_required",
+          "Intensity is required",
+        ),
+      );
+      errorToShow.intensity = get(
+        strings,
+        "challengeStudio.intensity_required",
+        "Intensity is required",
+      );
+    }
     if (!seletedTrainers || seletedTrainers.length === 0) {
       errors.push(
         get(
@@ -685,7 +732,7 @@ function BasicInformation(props) {
             return s;
           }
         }),
-        difficulty: difficulty,
+        difficulty: "",
         body: selectedBodyFocus,
         access: pack,
         duration: duration,
@@ -711,6 +758,20 @@ function BasicInformation(props) {
         isPublic: makePublic,
         ...(hasAnyRole(userInfo, ["admin"]) && { adminApproved }),
       };
+
+      // Intensity is always set (replaces difficulty)
+      obj.intensity = intensity || "";
+      // Grouping fields only when multiple intensities is checked
+      if (multipleIntensities) {
+        obj.multipleIntensities = true;
+        if (intensityGroupId) {
+          obj.intensityGroupId = intensityGroupId;
+        } else {
+          // No existing group selected — backend will auto-generate
+        }
+      } else {
+        obj.intensityGroupId = "";
+      }
 
       // Add translationKey for linking with other language versions
       if (translationKey) {
@@ -747,6 +808,27 @@ function BasicInformation(props) {
             "A challenge with this name already exists",
           ),
         }));
+      }
+
+      // Check if it's a duplicate intensity in group error
+      if (
+        err.response?.status === 409 &&
+        err.response?.data?.error === "DUPLICATE_INTENSITY"
+      ) {
+        setErrors((prev) => ({
+          ...prev,
+          intensity: get(
+            strings,
+            "challengeStudio.duplicate_intensity",
+            "This intensity already exists in the selected group",
+          ),
+        }));
+        notification.error({
+          message: get(strings, "challengeStudio.duplicate_intensity_title", "Duplicate Intensity"),
+          description:
+            err.response.data.message ||
+            "A challenge with this intensity already exists in the group.",
+        });
       }
 
       // Check if it's a duplicate translation link error
@@ -1448,7 +1530,6 @@ function BasicInformation(props) {
             <div
               className="profile-box adminV2-bi-profile-box"
               onClick={(e) => {
-                e.preventDefault();
                 e.stopPropagation();
               }}
               style={{ position: "relative", zIndex: 2 }}
@@ -1503,37 +1584,31 @@ function BasicInformation(props) {
                 {props.match.params.challengeId && <></>}
               </div>
               <div className="challenge-profile-box-2 adminV2-bi-challenge-profile-box-2">
+                {/* Challenge Points + Duration */}
                 <div
                   className="challenge-profile-box-2-info"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
+                    gridTemplateColumns: props.match.params.challengeId
+                      ? "1fr 1fr 1fr"
+                      : "1fr 1fr",
                     gridGap: "8px",
                     alignItems: "inherit",
                   }}
                 >
-                  <Select
-                    defaultValue={difficulty}
-                    style={{ width: "100%" }}
+                  <input
                     placeholder={get(
                       strings,
-                      "challengeStudio.please_select",
-                      "Please select",
+                      "challengeStudio.challenge_points",
+                      "Challenge Points",
                     )}
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e)}
                     className="font-paragraph-white adminV2-bi-input"
-                  >
-                    <Select.Option value="high">
-                      <T>challengeStudio.high</T>
-                    </Select.Option>
-                    <Select.Option value="medium">
-                      <T>challengeStudio.medium</T>
-                    </Select.Option>
-                    <Select.Option value="low">
-                      <T>challengeStudio.low</T>
-                    </Select.Option>
-                  </Select>
+                    onChange={(e) => {
+                      setPoints(e.target.value);
+                    }}
+                    value={points}
+                    type="number"
+                  />
 
                   <input
                     placeholder={get(
@@ -1557,89 +1632,217 @@ function BasicInformation(props) {
                       border: errors.duration && "2px solid red",
                     }}
                   />
-                </div>
-                <div
-                  className="challenge-profile-box-2-info"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gridGap: "8px",
-                    alignItems: "inherit",
-                  }}
-                >
-                  <input
-                    placeholder={get(
-                      strings,
-                      "challengeStudio.challenge_points",
-                      "Challenge Points",
-                    )}
-                    className="font-paragraph-white adminV2-bi-input"
-                    onChange={(e) => {
-                      setPoints(e.target.value);
-                    }}
-                    value={points}
-                    type="number"
-                  />
-                  {props.match.params.challengeId && (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "flex-end",
-                        gap: "8px",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <img
-                        src={ShareIcon}
-                        alt="share"
-                        style={{
-                          width: "34px",
-                          height: "34px",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => {
-                          const url = `${window.location.origin}/challenge/${slug(
-                            challengeName || "",
-                          )}/${props.match.params.challengeId}`;
-                          navigator.clipboard
-                            .writeText(url)
-                            .then(() => {
-                              message.success("Challenge link copied!");
-                            })
-                            .catch(() => {
-                              message.error("Failed to copy link");
-                            });
-                        }}
-                        title="Copy challenge link"
-                      />
-                      <img
-                        src={FavIcon}
-                        alt="fav"
-                        style={{
-                          width: "34px",
-                          height: "34px",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => {
-                          message.success(
-                            get(
-                              strings,
-                              "challenge_profile.added_to_favourites",
-                              "Added to favourites!",
-                            ),
-                          );
-                        }}
-                        title={get(
-                          strings,
-                          "challenge_profile.added_to_favourites",
-                          "Add to favourites",
-                        )}
-                      />
-                    </div>
-                  )}
-                </div>
 
+                  <div
+                    className="challenge-profile-box-2-info"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    {props.match.params.challengeId && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "flex-end",
+                          gap: "8px",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <img
+                          src={ShareIcon}
+                          alt="share"
+                          style={{
+                            width: "34px",
+                            height: "34px",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => {
+                            const url = `${window.location.origin}/challenge/${slug(
+                              challengeName || "",
+                            )}/${props.match.params.challengeId}`;
+                            navigator.clipboard
+                              .writeText(url)
+                              .then(() => {
+                                message.success("Challenge link copied!");
+                              })
+                              .catch(() => {
+                                message.error("Failed to copy link");
+                              });
+                          }}
+                          title="Copy challenge link"
+                        />
+                        <img
+                          src={FavIcon}
+                          alt="fav"
+                          style={{
+                            width: "34px",
+                            height: "34px",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => {
+                            message.success(
+                              get(
+                                strings,
+                                "challenge_profile.added_to_favourites",
+                                "Added to favourites!",
+                              ),
+                            );
+                          }}
+                          title={get(
+                            strings,
+                            "challenge_profile.added_to_favourites",
+                            "Add to favourites",
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* Intensity + Multiple intensity grouping */}
+                <div
+                  style={{
+                    border: "2px dashed #fff",
+                    borderRadius: "2px",
+                    padding: "5px 12px 5px 5px",
+                    margin: "5px"
+
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div
+                    className="challenge-profile-box-2-info"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr",
+                      gridGap: "8px",
+                      alignItems: "inherit",
+                    }}
+                  >
+                    <Select
+                      style={{
+                        width: "100%",
+                        border: errors.intensity ? "2px solid red" : undefined,
+                        borderRadius: errors.intensity ? "6px" : undefined,
+                      }}
+                      placeholder={get(
+                        strings,
+                        "challengeStudio.select_intensity",
+                        "Select intensity",
+                      )}
+                      value={intensity || undefined}
+                      onChange={(val) => {
+                        if (errors.intensity) {
+                          setErrors((prev) => ({ ...prev, intensity: "" }));
+                        }
+                        setIntensity(val);
+                      }}
+                      className="font-paragraph-white adminV2-bi-input"
+                    >
+                      <Select.Option value="Easy">
+                        <T>challengeStudio.intensity_easy</T>
+                      </Select.Option>
+                      <Select.Option value="Medium">
+                        <T>challengeStudio.intensity_medium</T>
+                      </Select.Option>
+                      <Select.Option value="Hard">
+                        <T>challengeStudio.intensity_hard</T>
+                      </Select.Option>
+                    </Select>
+                  </div>
+                  <div style={{ marginTop: "6px" }}>
+                    <Checkbox
+                      checked={multipleIntensities}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setMultipleIntensities(checked);
+                        if (!checked) {
+                          setIntensityGroupId("");
+                          setGroupMode("new");
+                        }
+                      }}
+                      style={{ color: "#ccc" }}
+                    >
+                      <span className="font-paragraph-white">
+                        <T>challengeStudio.multiple_intensity_levels</T>
+                      </span>
+                    </Checkbox>
+                    {multipleIntensities && (
+                      <div style={{ marginTop: "8px" }}>
+                        <Radio.Group
+                          value={groupMode}
+                          onChange={(e) => {
+                            setGroupMode(e.target.value);
+                            if (e.target.value === "new") {
+                              setIntensityGroupId("");
+                              setPriceInheritedFromGroup(false);
+                            }
+                          }}
+                          style={{ marginBottom: "8px" }}
+                        >
+                          <Radio value="new" style={{ color: "#ccc" }}>
+                            <T>challengeStudio.create_new_group</T>
+                          </Radio>
+                          <Radio value="existing" style={{ color: "#ccc" }}>
+                            <T>challengeStudio.add_to_existing_group</T>
+                          </Radio>
+                        </Radio.Group>
+                        {groupMode === "existing" && (
+                          <Select
+                            style={{ width: "100%" }}
+                            value={intensityGroupId || undefined}
+                            onChange={(val) => {
+                              setIntensityGroupId(val);
+                              // Auto-fill price/currency/access from group
+                              const group = trainerGroups.find(
+                                (g) => g.groupId === val,
+                              );
+                              if (group) {
+                                if (group.price !== undefined)
+                                  setCustomPrice(group.price);
+                                if (group.access) setPack(group.access);
+                                setPriceInheritedFromGroup(true);
+                              }
+                            }}
+                            placeholder={get(
+                              strings,
+                              "challengeStudio.select_a_group",
+                              "Select a group",
+                            )}
+                            className="font-paragraph-white adminV2-bi-input"
+                          >
+                            {trainerGroups.map((g) => (
+                              <Select.Option key={g.groupId} value={g.groupId}>
+                                {g.challenges
+                                  .map((c) => c.challengeName)
+                                  .join(", ")}{" "}
+                                (
+                                {g.challenges
+                                  .map((c) => c.intensity)
+                                  .join(", ")}
+                                )
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        )}
+                        {priceInheritedFromGroup &&
+                          groupMode === "existing" && (
+                            <div
+                              style={{
+                                color: "#ff7700",
+                                fontSize: "11px",
+                                marginTop: "4px",
+                              }}
+                            >
+                              Price & access inherited from group
+                            </div>
+                          )}
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <textarea
                   rows={4}
                   placeholder={get(
@@ -2742,7 +2945,37 @@ function BasicInformation(props) {
               <div className="font-paragraph-white">
                 <T>challengeStudio.choose_your_prices</T>
               </div>
-              <div className="unlock-challenge-packages">
+              {isNonHeadSibling ? (
+                <div
+                  style={{
+                    padding: "16px",
+                    background: "#2a2f36",
+                    borderRadius: "8px",
+                    color: "#ff7700",
+                    marginBottom: "16px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "bold",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Price is managed by the group head
+                  </div>
+                  {groupHeadName && (
+                    <div style={{ fontSize: "12px", color: "#aaa" }}>
+                      Group head: "{groupHeadName}"
+                    </div>
+                  )}
+                </div>
+              ) : null}
+              <div
+                className="unlock-challenge-packages"
+                style={isNonHeadSibling ? { display: "none" } : {}}
+              >
                 <div
                   className="unlock-challenge-pack font-paragraph-white"
                   onClick={() => {

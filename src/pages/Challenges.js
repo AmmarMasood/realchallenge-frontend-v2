@@ -38,6 +38,13 @@ const getThumbnailLink = (thumbnail) => {
   return "";
 };
 
+const cleanIntensityName = (name, hasGroup) => {
+  if (!hasGroup) return name;
+  return name
+    .replace(/\s*[\(\[](Easy|Medium|Hard)[\)\]]\s*$/i, "")
+    .replace(/\s+(Easy|Medium|Hard)\s*$/i, "");
+};
+
 function Challenges() {
   // eslint-disable-next-line
   const [loading, setLoading] = useState(false);
@@ -238,9 +245,14 @@ function Challenges() {
                   <ChallengeCard
                     picture={getThumbnailLink(challenge.thumbnailLink)}
                     rating={challenge.rating}
-                    name={challenge.challengeName}
+                    name={cleanIntensityName(
+                      challenge.challengeName,
+                      !!challenge.intensityGroupId || !!challenge.intensityVariants
+                    )}
                     newc={true}
                     key={challenge._id}
+                    hasIntensityGroup={!!challenge.intensityGroupId || !!challenge.intensityVariants}
+                    intensityLevels={challenge.intensityVariants?.length}
                   />
                 </Link>
               ))

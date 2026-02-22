@@ -28,6 +28,13 @@ const getThumbnailLink = (thumbnail) => {
   return "";
 };
 
+const cleanIntensityName = (name, hasGroup) => {
+  if (!hasGroup) return name;
+  return name
+    .replace(/\s*[\(\[](Easy|Medium|Hard)[\)\]]\s*$/i, "")
+    .replace(/\s+(Easy|Medium|Hard)\s*$/i, "");
+};
+
 const filterTextStyle = {
   margin: 0,
   padding: 0,
@@ -314,13 +321,18 @@ function AllChallenges() {
             filterChallenges.map((challenge) => (
               <Link
                 to={`challenge/${challenge.challengeName}/${challenge._id}`}
+                key={challenge._id}
               >
                 <ChallengeCard
                   picture={getThumbnailLink(challenge.thumbnailLink)}
                   rating={challenge.rating}
-                  name={challenge.challengeName}
+                  name={cleanIntensityName(
+                    challenge.challengeName,
+                    !!challenge.intensityGroupId || !!challenge.intensityVariants
+                  )}
                   newc={true}
-                  key={challenge._id}
+                  hasIntensityGroup={!!challenge.intensityGroupId || !!challenge.intensityVariants}
+                  intensityLevels={challenge.intensityVariants?.length}
                 />
               </Link>
             ))

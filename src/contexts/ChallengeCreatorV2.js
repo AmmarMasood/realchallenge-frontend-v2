@@ -38,6 +38,12 @@ export function ChallengeProvider({ children }) {
   const [allExercises, setAllExercises] = useState([]);
   const [isFirstRender, setIsFirstRender] = useState(false);
   const [musics, setMusics] = useState([]);
+  // Intensity grouping
+  const [multipleIntensities, setMultipleIntensities] = useState(false);
+  const [intensityGroupId, setIntensityGroupId] = useState("");
+  const [intensity, setIntensity] = useState("");
+  const [isGroupHead, setIsGroupHead] = useState(true);
+  const [groupHeadName, setGroupHeadName] = useState("");
 
   const populateChallengeInfo = (challengeData) => {
     if (!challengeData) return;
@@ -80,6 +86,21 @@ export function ChallengeProvider({ children }) {
 
     // Set trainers
     setSelectedTrainers(challengeData.trainers || []);
+
+    // Set intensity grouping
+    if (challengeData.intensityGroupId) {
+      setMultipleIntensities(true);
+      setIntensityGroupId(challengeData.intensityGroupId);
+      setIntensity(challengeData.intensity || "");
+      setIsGroupHead(challengeData.isGroupHead !== false);
+      setGroupHeadName(challengeData.groupHeadName || "");
+    } else {
+      setMultipleIntensities(false);
+      setIntensityGroupId("");
+      setIntensity(challengeData.intensity || "");
+      setIsGroupHead(true);
+      setGroupHeadName("");
+    }
 
     const customWeeks = challengeData.weeks.map((week) => ({
       ...week,
@@ -234,6 +255,16 @@ export function ChallengeProvider({ children }) {
         setIsFirstRender,
         points,
         setPoints,
+        multipleIntensities,
+        setMultipleIntensities,
+        intensityGroupId,
+        setIntensityGroupId,
+        intensity,
+        setIntensity,
+        isGroupHead,
+        setIsGroupHead,
+        groupHeadName,
+        setGroupHeadName,
       }}
     >
       {children}

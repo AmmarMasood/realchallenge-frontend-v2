@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import "../assets/trainerprofile.css";
 import "../assets/home.css";
 import "../assets/challengeProfile.css";
@@ -16,6 +16,7 @@ import {
   addComment,
   getChallengeById,
   getChallengeByTranslationKey,
+  getChallengesByGroup,
 } from "../services/createChallenge/main";
 import { Link, withRouter } from "react-router-dom";
 // import ModalVideo from "react-modal-video";
@@ -36,6 +37,7 @@ import ChallengeProfileSubtract from "../assets/icons/challenge-profile-subtract
 import StarFilled from "../assets/icons/star-orange.svg";
 import StartTransparent from "../assets/icons/star-transparent.svg";
 import ForwardWhite from "../assets/icons/forward-white.png";
+import IntensityIcon from "../components/Common/IntensityIcon";
 import ChallengeCompleteModal from "../components/Challenge/ChallengeCompleteModal";
 import ReplaceFreeChallengePopup from "../components/Challenge/ReplaceFreeChallengePopup";
 import ChallengeReviewModal from "../components/Challenge/ChallengeReviewModal";
@@ -60,7 +62,7 @@ function ChallengeProfile(props) {
 
   const [challenge, setChallenge] = useState({});
   const [usereDtails, setUserDetails] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [userInfo, setUserInfo] = useContext(userInfoContext);
   const [pack, setPack] = useState("");
   const [selectedChallenge, setSelectedChallenge] = useContext(
@@ -81,6 +83,9 @@ function ChallengeProfile(props) {
     setReplaceFreeChallengePopupVisible,
   ] = useState(false);
   const [coverVideoLoading, setCoverVideoLoading] = useState(true);
+  const [intensityVariants, setIntensityVariants] = useState([]);
+  const [intensityDropdownOpen, setIntensityDropdownOpen] = useState(false);
+  const intensityDropdownRef = useRef(null);
 
   const fetchChallengeData = async () => {
     setLoading(true);
@@ -89,6 +94,15 @@ function ChallengeProfile(props) {
       setChallenge(res);
       setAllComments(res.comments);
       updateLanguage(res.language);
+      // Fetch intensity variants if this challenge belongs to a group
+      if (res.intensityGroupId) {
+        const groupData = await getChallengesByGroup(res.intensityGroupId);
+        if (groupData && groupData.challenges) {
+          setIntensityVariants(groupData.challenges);
+        }
+      } else {
+        setIntensityVariants([]);
+      }
     }
 
     if (localStorage.getItem("jwtToken") && userInfo.id) {
@@ -99,9 +113,13 @@ function ChallengeProfile(props) {
         uInfo &&
         uInfo.customer &&
         uInfo.customer.customerDetails &&
-        uInfo.customer.customerDetails.challenges.find(
+        (uInfo.customer.customerDetails.challenges.find(
           (f) => f._id === res._id,
-        );
+        ) ||
+        // Fallback: check if user owns any challenge in the same intensity group
+        (res.intensityGroupId && uInfo.customer.customerDetails.challenges.find(
+          (f) => f.intensityGroupId === res.intensityGroupId,
+        )));
       // console.log("check", check, uInfo, res);
       // if user is admin or trainer and creater of his own callenge
       if (uInfo && uInfo.customer && uInfo.customer.role === "admin") {
@@ -144,6 +162,17 @@ function ChallengeProfile(props) {
   useEffect(() => {
     fetchData();
   }, [userInfo, language]);
+
+  // Close intensity dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (intensityDropdownRef.current && !intensityDropdownRef.current.contains(e.target)) {
+        setIntensityDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const fetchData = async () => {
     if (challenge && Object.keys(challenge).length > 0) {
@@ -1004,13 +1033,115 @@ function ChallengeProfile(props) {
               </div>
               <div className="challenge-profile-box-2-info">
                 <div style={{ display: "flex", gap: "8px" }}>
-                  <div className="challenge-profile-box-2-container">
-                    <img src={ForwardWhite} alt="" />{" "}
-                    {challenge.difficulty ? challenge.difficulty : ""}
-                  </div>
-                  <div className="challenge-profile-box-2-container">
-                    {challenge.duration ? `${challenge.duration} mins` : ""}
-                  </div>
+                  {challenge.intensityGroupId && intensityVariants.length > 1 ? (
+                    <div
+                      ref={intensityDropdownRef}
+                      className="challenge-profile-box-2-container"
+                      style={{ position: "relative", cursor: "pointer", userSelect: "none", display:"flex", alignItems:"center",height:"40px" }}
+                      onClick={() => setIntensityDropdownOpen((prev) => !prev)}
+                    >
+                      <IntensityIcon intensity={challenge.intensity} style={{ marginRight: "10px",fontSize:"20px", display: "block", paddingBottom:"4px"}} />
+                      <div>
+                      {challenge.intensity === "Easy"
+                        ? get(strings, "challengeStudio.intensity_easy", "Easy")
+                        : challenge.intensity === "Medium"
+                        ? get(strings, "challengeStudio.intensity_medium", "Medium")
+                        : challenge.intensity === "Hard"
+                        ? get(strings, "challengeStudio.intensity_hard", "Hard")
+                        : challenge.intensity || challenge.difficulty || ""}
+                        </div>
+                      <span style={{ marginLeft: "15px", fontSize: "10px", color: "#aaa", display:"block", paddingTop:"4px" }}>▼</span>
+                      <div style={{ position: "absolute", top: "100%", left: 0, marginTop: "2px", fontSize: "11px", color: "#ff7700", whiteSpace: "nowrap" }}>
+                        <T>challenge_profile.multiple_intensities_available</T>
+                      </div>
+                      {intensityDropdownOpen && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "calc(100% + 4px)",
+                            left: "0",
+                            zIndex: 9999999,
+                            background: "#1e2228",
+                            border: "1px solid #434343",
+                            borderRadius: "8px",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                            overflow: "hidden",
+                            minWidth: "180px",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {intensityVariants.map((variant) => {
+                            const isCurrent = variant._id === challenge._id;
+                            const translatedIntensity = variant.intensity === "Easy"
+                              ? get(strings, "challengeStudio.intensity_easy", "Easy")
+                              : variant.intensity === "Medium"
+                              ? get(strings, "challengeStudio.intensity_medium", "Medium")
+                              : variant.intensity === "Hard"
+                              ? get(strings, "challengeStudio.intensity_hard", "Hard")
+                              : variant.intensity || variant.difficulty || "Unknown";
+                            return (
+                              <div
+                                key={variant._id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!isCurrent) {
+                                    props.history.push(
+                                      `/challenge/${slug(variant.challengeName)}/${variant._id}`
+                                    );
+                                    window.location.reload();
+                                  }
+                                  setIntensityDropdownOpen(false);
+                                }}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                  padding: "10px 14px",
+                                  cursor: isCurrent ? "default" : "pointer",
+                                  background: isCurrent ? "rgba(255, 119, 0, 0.15)" : "transparent",
+                                  color: isCurrent ? "#ff7700" : "#ccc",
+                                  fontSize: "14px",
+                                  transition: "background 0.15s",
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isCurrent) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isCurrent) e.currentTarget.style.background = "transparent";
+                                }}
+                              >
+                                <IntensityIcon intensity={variant.intensity} style={{ opacity: isCurrent ? 1 : 0.6, minWidth: "20px" }} />
+                                <span style={{ fontWeight: isCurrent ? "bold" : "normal" }}>
+                                  {translatedIntensity}
+                                </span>
+                                {isCurrent && (
+                                  <span style={{ marginLeft: "auto", fontSize: "14px", color: "#ff7700" }}>✓</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="challenge-profile-box-2-container" style={{display:"flex", alignItems:"center", height:"40px"}}>
+                      <IntensityIcon intensity={challenge.intensity} style={{ marginRight: "10px",fontSize:"20px", display:'block' }} />
+                      <div>
+                      {challenge.intensity === "Easy"
+                        ? get(strings, "challengeStudio.intensity_easy", "Easy")
+                        : challenge.intensity === "Medium"
+                        ? get(strings, "challengeStudio.intensity_medium", "Medium")
+                        : challenge.intensity === "Hard"
+                        ? get(strings, "challengeStudio.intensity_hard", "Hard")
+                        : challenge.intensity || challenge.difficulty || ""}
+                        </div>
+                    </div>
+                  )}
+                  {challenge.duration ? (
+                    <div className="challenge-profile-box-2-container" style={{height:"40px"}}>
+                      {challenge.duration} mins
+                    </div>
+                  ) : null}
                 </div>
                 {challenge._id && (
                   <div style={{ display: "flex", gap: "8px" }}>

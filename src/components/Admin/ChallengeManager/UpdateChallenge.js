@@ -75,6 +75,12 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
 
   //fitness interest
   const [selectedFitnessInterest, setSelectedFitnessInterest] = useState([]);
+  // intensity grouping
+  const [multipleIntensities, setMultipleIntensities] = useState(false);
+  const [intensityGroupId, setIntensityGroupId] = useState("");
+  const [intensity, setIntensity] = useState("");
+  const [isGroupHead, setIsGroupHead] = useState(true);
+  const [groupHeadName, setGroupHeadName] = useState("");
 
   // state of main tab ends
 
@@ -185,6 +191,14 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
     } = selectedChallengeForUpdate;
 
     console.log(selectedChallengeForUpdate);
+    // Populate intensity grouping fields
+    if (selectedChallengeForUpdate.intensityGroupId) {
+      setMultipleIntensities(true);
+      setIntensityGroupId(selectedChallengeForUpdate.intensityGroupId);
+      setIntensity(selectedChallengeForUpdate.intensity || "");
+      setIsGroupHead(selectedChallengeForUpdate.isGroupHead !== false);
+      setGroupHeadName(selectedChallengeForUpdate.groupHeadName || "");
+    }
     // translationKey is preserved automatically during updates
     setName(challengeName);
     setAccess(access);
@@ -363,7 +377,7 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
       body: bodyFocus,
       access: access,
       duration: duration,
-      difficulty: difficulty,
+      difficulty: "",
       videoTrailer: typeof videoTrailer === "object" ? videoTrailer.link : "",
       weeks: parseWeeksForBackend(weeks),
       music: musics.map((m) => ({
@@ -384,6 +398,8 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
       allowReviews,
       isPublic: makePublic,
       // alternativeLanguage removed - using translationKey for multi-language support
+      intensity: intensity || "",
+      intensityGroupId: multipleIntensities && intensityGroupId ? intensityGroupId : "",
     };
     console.log("JASON", obj, selectedChallengeForUpdate._id);
     // return;
@@ -526,6 +542,14 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
               showTagModal={showTagModal}
               setShowTagModal={setShowTagModal}
               update={true}
+              multipleIntensities={multipleIntensities}
+              setMultipleIntensities={setMultipleIntensities}
+              intensityGroupId={intensityGroupId}
+              setIntensityGroupId={setIntensityGroupId}
+              intensity={intensity}
+              setIntensity={setIntensity}
+              isGroupHead={isGroupHead}
+              groupHeadName={groupHeadName}
             />
           </TabPane>
           <TabPane tab={get(strings, "admin.tab_workouts", "Workouts")} key="2">

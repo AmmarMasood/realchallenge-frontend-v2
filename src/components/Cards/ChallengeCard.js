@@ -23,6 +23,8 @@ function ChallengeCard({
   newc,
   preprationTime,
   recipe,
+  hasIntensityGroup,
+  intensityLevels,
 }) {
   const [videoLoading, setVideoLoading] = useState(true);
   const isVideo = isVideoFile(picture);
@@ -98,6 +100,25 @@ function ChallengeCard({
       <div className="challenge-card-basic-overlay"></div>
       {newc && (
         <div className="challenge-card-new-tag font-paragraph-white">New</div>
+      )}
+      {hasIntensityGroup && (
+        <div
+          style={{
+            position: "absolute",
+            top: newc ? "36px" : "8px",
+            left: "8px",
+            backgroundColor: "#ff7700",
+            color: "#fff",
+            fontSize: "10px",
+            fontWeight: "bold",
+            padding: "2px 8px",
+            borderRadius: "4px",
+            zIndex: 3,
+          }}
+          className="font-paragraph-white"
+        >
+          {intensityLevels || 3} Levels
+        </div>
       )}
       <div className="challenge-card-basic-textbox" style={{ position: "relative", zIndex: 2 }}>
         <h3

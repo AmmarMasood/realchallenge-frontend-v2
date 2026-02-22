@@ -106,6 +106,7 @@
   cursor: pointer;
   z-index: 1000;
   cursor: initial;
+  margin-bottom: 40px !important;
 }
 
 .adminV2-bi-challenge-profile-box-1 {
@@ -167,6 +168,9 @@
 .adminV2-bi-challenge-profile-box-2 {
 }
 .challenge-profile-box-2-info > div > .ant-select-selector {
+  background-color: transparent !important;
+}
+.challenge-profile-box-2 .ant-select-selector {
   background-color: transparent !important;
 }
 

@@ -141,6 +141,9 @@ function NewChallenge() {
   const [allChallenges, setAllChallenges] = useState([]);
   const [selectedChallenge, setSelectedChallenge] = useState("");
   const [translationKey, setTranslationKey] = useState(null);
+  const [multipleIntensities, setMultipleIntensities] = useState(false);
+  const [intensityGroupId, setIntensityGroupId] = useState("");
+  const [intensity, setIntensity] = useState("");
 
   async function fethData() {
     const bodyFocus = await getAllBodyFocus(language);
@@ -204,7 +207,7 @@ function NewChallenge() {
       trainersFitnessInterest: selectedFitnessInterest,
       challengeGoals: goals,
       tags: tags,
-      difficulty: difficulty,
+      difficulty: "",
       body: bodyFocus,
       access: access,
       duration: duration,
@@ -264,6 +267,15 @@ function NewChallenge() {
       allowReviews,
       isPublic: makePublic,
     };
+    // Intensity is always set (replaces difficulty)
+    obj.intensity = intensity || "";
+    // Grouping fields only when multiple intensities is checked
+    if (multipleIntensities) {
+      obj.multipleIntensities = true;
+      if (intensityGroupId) {
+        obj.intensityGroupId = intensityGroupId;
+      }
+    }
     console.log("create object", obj);
     // Use translationKey to link translations (alternativeLanguage removed)
     if (translationKey) {
@@ -396,6 +408,12 @@ function NewChallenge() {
               setNewTagName={setNewTagName}
               showTagModal={showTagModal}
               setShowTagModal={setShowTagModal}
+              multipleIntensities={multipleIntensities}
+              setMultipleIntensities={setMultipleIntensities}
+              intensityGroupId={intensityGroupId}
+              setIntensityGroupId={setIntensityGroupId}
+              intensity={intensity}
+              setIntensity={setIntensity}
             />
           </TabPane>
           <TabPane tab={get(strings, "admin.tab_workouts", "Workouts")} key="2">

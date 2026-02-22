@@ -8,6 +8,7 @@ import {
   Checkbox,
   List,
   InputNumber,
+  Radio,
 } from "antd";
 import { LoadingOutlined, CloseSquareOutlined } from "@ant-design/icons";
 import RemoteMediaManager from "../MediaManager/RemoteMediaManager";
@@ -33,6 +34,7 @@ import {
   getAllTrainerGoals,
   getAllTrainers,
 } from "../../../services/trainers";
+import { getIntensityGroups } from "../../../services/createChallenge/main";
 import EditTypeName from "./EditTypeName";
 import { LanguageContext } from "../../../contexts/LanguageContext";
 import LanguageSelector from "../../LanguageSelector/LanguageSelector";
@@ -98,6 +100,14 @@ function NewChallengeMainTab({
   showTagModal,
   setShowTagModal,
   update,
+  multipleIntensities,
+  setMultipleIntensities,
+  intensityGroupId,
+  setIntensityGroupId,
+  intensity,
+  setIntensity,
+  isGroupHead = true,
+  groupHeadName = "",
 }) {
   // media manager stuff
   const [mediaManagerVisible, setMediaManagerVisible] = useState(false);
@@ -117,7 +127,13 @@ function NewChallengeMainTab({
   const [newTrainerFitnessInterest, setNewTrainerFitnessInterest] =
     useState("");
   const [filteredTrainers, setFilteredTrainers] = useState([]);
+  const [groupMode, setGroupMode] = useState("new"); // "new" | "existing"
+  const [trainerGroups, setTrainerGroups] = useState([]);
+  const [priceInheritedFromGroup, setPriceInheritedFromGroup] = useState(false);
   const { language } = useContext(LanguageContext);
+
+  // Hide price/currency/access for non-head group siblings
+  const isNonHeadSibling = (update && intensityGroupId && !isGroupHead) || priceInheritedFromGroup;
 
   useEffect(() => {
     fethData();
@@ -137,6 +153,22 @@ function NewChallengeMainTab({
     setFilteredTrainers(trainers.trainers);
     setAllTrainerGoals(res.goals);
   }
+
+  // Set groupMode to "existing" if editing a challenge that already has a group
+  useEffect(() => {
+    if (intensityGroupId) {
+      setGroupMode("existing");
+    }
+  }, [intensityGroupId]);
+
+  // Fetch trainer groups when multipleIntensities is enabled
+  useEffect(() => {
+    if (multipleIntensities) {
+      getIntensityGroups(trainers || []).then((res) => {
+        setTrainerGroups(res.groups || []);
+      });
+    }
+  }, [multipleIntensities, trainers]);
 
   const onFinish = (values) => {
     console.log("Success:", values);
@@ -591,44 +623,53 @@ function NewChallengeMainTab({
             onChange={(e) => setDescription(e.target.value)}
           />
         </Form.Item>
-        <Form.Item label="Currency" name="currency">
-          <Select
-            defaultValue="$"
-            className="select-before"
-            value={currency}
-            onChange={(e) => setCurrency(e)}
-            name="currency"
-          >
-            <Option value="$">$</Option>
-            <Option value="€">€</Option>
-          </Select>
-        </Form.Item>
-        <Form.Item label="Price" name="price">
-          <InputNumber
-            // addonBefore={selectBefore}
-            min={0.1}
-            style={{ width: "100%" }}
-            disabled={isFree}
-            value={price}
-            onChange={(e) => setPrice(e)}
-          />
-        </Form.Item>
-        <Form.Item name="isFree">
-          <Checkbox
-            value={isFree}
-            onChange={(e) => {
-              setIsFree(e.target.checked);
-              setPrice(0);
-              setAccess(["FREE"]);
-              // form.setFieldValue({
-              //   access: ["FREE"],
-              // });
-            }}
-          >
-            Free Challenge
-          </Checkbox>
-          {/* <span></span> */}
-        </Form.Item>
+        {isNonHeadSibling ? (
+          <Form.Item label="Price & Currency">
+            <div style={{ padding: "8px 12px", background: "#2a2f36", borderRadius: "4px", color: "#ff7700" }}>
+              {groupHeadName
+                ? `Price is managed by the group head: "${groupHeadName}"`
+                : "Price is inherited from the group head"}
+            </div>
+          </Form.Item>
+        ) : (
+          <>
+            <Form.Item label="Currency" name="currency">
+              <Select
+                defaultValue="$"
+                className="select-before"
+                value={currency}
+                onChange={(e) => setCurrency(e)}
+                name="currency"
+              >
+                <Option value="$">$</Option>
+                <Option value="€">€</Option>
+              </Select>
+            </Form.Item>
+            <Form.Item label="Price" name="price">
+              <InputNumber
+                min={0.1}
+                style={{ width: "100%" }}
+                disabled={isFree}
+                value={price}
+                onChange={(e) => setPrice(e)}
+              />
+            </Form.Item>
+          </>
+        )}
+        {!isNonHeadSibling && (
+          <Form.Item name="isFree">
+            <Checkbox
+              value={isFree}
+              onChange={(e) => {
+                setIsFree(e.target.checked);
+                setPrice(0);
+                setAccess(["FREE"]);
+              }}
+            >
+              Free Challenge
+            </Checkbox>
+          </Form.Item>
+        )}
         <Form.Item label="Points" name="points">
           <Input
             type="number"
@@ -744,41 +785,91 @@ function NewChallengeMainTab({
             ))}
           </Select>
         </Form.Item>
-        <Form.Item label="Access" name="access">
+        {!isNonHeadSibling && (
+          <Form.Item label="Access" name="access">
+            <Select
+              mode="multiple"
+              allowClear
+              style={{ width: "100%" }}
+              placeholder="Please select"
+              disabled={isFree}
+              value={access}
+              onChange={(e) => setAccess(e)}
+            >
+              {/* <Option value="FREE">FREE</Option> */}
+              <Option value="CHALLENGE-3">CHALLENGE-3</Option>
+              <Option value="CHALLENGE-12">CHALLENGE-12</Option>
+              <Option value="CHALLENGE-1">CHALLENGE-1</Option>
+            </Select>
+          </Form.Item>
+        )}
+        <Form.Item label="Intensity" name="intensity">
           <Select
-            mode="multiple"
             allowClear
             style={{ width: "100%" }}
-            placeholder="Please select"
-            disabled={isFree}
-            value={access}
-            onChange={(e) => setAccess(e)}
+            placeholder="Select intensity"
+            value={intensity || undefined}
+            onChange={(val) => setIntensity(val || "")}
           >
-            {/* <Option value="FREE">FREE</Option> */}
-            <Option value="CHALLENGE-3">CHALLENGE-3</Option>
-            <Option value="CHALLENGE-12">CHALLENGE-12</Option>
-            <Option value="CHALLENGE-1">CHALLENGE-1</Option>
-          </Select>
-        </Form.Item>
-        <Form.Item label="Difficulty" name="difficulty">
-          <Select
-            allowClear
-            style={{ width: "100%" }}
-            placeholder="Please select"
-            value={difficulty}
-            onChange={(e) => setDifficulty(e)}
-          >
-            <Option value="high">High</Option>
-            <Option value="medium">Medium</Option>
-            <Option value="low">Low</Option>
+            <Option value="Easy">Easy</Option>
+            <Option value="Medium">Medium</Option>
+            <Option value="Hard">Hard</Option>
           </Select>
           <Checkbox
-            // checked={}
-            // onChange={(e) => setRenderWorkout(e.target.checked)}
+            checked={multipleIntensities}
+            onChange={(e) => {
+              setMultipleIntensities(e.target.checked);
+              if (!e.target.checked) {
+                setIntensityGroupId("");
+              }
+            }}
             className="font-paragraph-black"
           >
-            This challenge contains more intensities levels
+            This challenge has multiple intensity levels
           </Checkbox>
+          {multipleIntensities && (
+            <div style={{ marginTop: "10px" }}>
+              <Radio.Group
+                value={groupMode}
+                onChange={(e) => {
+                  setGroupMode(e.target.value);
+                  if (e.target.value === "new") {
+                    setIntensityGroupId("");
+                    setPriceInheritedFromGroup(false);
+                  }
+                }}
+                style={{ marginBottom: "10px" }}
+              >
+                <Radio value="new">Create new group</Radio>
+                <Radio value="existing">Add to existing group</Radio>
+              </Radio.Group>
+              {groupMode === "existing" && (
+                <Select
+                  style={{ width: "100%" }}
+                  value={intensityGroupId || undefined}
+                  onChange={(val) => {
+                    setIntensityGroupId(val);
+                    // Auto-fill price/currency/access from group
+                    const group = trainerGroups.find((g) => g.groupId === val);
+                    if (group) {
+                      if (group.price !== undefined) setPrice(group.price);
+                      if (group.currency) setCurrency(group.currency);
+                      if (group.access) setAccess(group.access);
+                      setPriceInheritedFromGroup(true);
+                    }
+                  }}
+                  placeholder="Select a group"
+                >
+                  {trainerGroups.map((g) => (
+                    <Option key={g.groupId} value={g.groupId}>
+                      {g.challenges.map((c) => c.challengeName).join(", ")}{" "}
+                      ({g.challenges.map((c) => c.intensity).join(", ")})
+                    </Option>
+                  ))}
+                </Select>
+              )}
+            </div>
+          )}
         </Form.Item>
 
         <Form.Item label="Goals" name="goals">

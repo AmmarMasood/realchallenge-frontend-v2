@@ -358,6 +358,32 @@ export function getChallengeByTranslationKey(translationKey, language) {
     });
 }
 
+// Get intensity groups scoped to selected trainers (requires auth)
+export function getIntensityGroups(trainerIds) {
+  const raw = Array.isArray(trainerIds) ? trainerIds : trainerIds ? [trainerIds] : [];
+  // Extract _id if trainers are objects
+  const ids = raw.map((t) => (typeof t === "object" && t !== null ? t._id : t)).filter(Boolean);
+  const params = ids.length > 0 ? `?trainerIds=${ids.map(encodeURIComponent).join(",")}` : "";
+  return axios
+    .get(`${process.env.REACT_APP_SERVER}/api/challenges/intensity-groups${params}`)
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+      return { groups: [] };
+    });
+}
+
+// Get all challenges in an intensity group
+export function getChallengesByGroup(groupId) {
+  return axios
+    .get(`${process.env.REACT_APP_SERVER}/api/challenges/group/${encodeURIComponent(groupId)}`)
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+      return { challenges: [] };
+    });
+}
+
 // Get all translations of an exercise by translationKey
 export function getExerciseTranslationsByKey(translationKey, excludeLanguage = null) {
   const params = new URLSearchParams();

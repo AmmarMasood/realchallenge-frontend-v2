@@ -77,14 +77,23 @@ const checkIfUserAlreadyHaveAFreeChallenge = (customer) => {
   if (!customer?.customerDetails?.challenges || customer.customerDetails.challenges.length <= 0) {
     return false;
   } else {
-    const c = customer.customerDetails.challenges.filter((c) =>
+    const freeChallenges = customer.customerDetails.challenges.filter((c) =>
       c.access?.includes("FREE")
     );
-    if (c.length > 0) {
-      return true;
-    } else {
-      return false;
+    // Count intensity groups as 1 free challenge
+    const counted = new Set();
+    let units = 0;
+    for (const c of freeChallenges) {
+      if (c.intensityGroupId) {
+        if (!counted.has(c.intensityGroupId)) {
+          counted.add(c.intensityGroupId);
+          units++;
+        }
+      } else {
+        units++;
+      }
     }
+    return units > 0;
   }
 };
 
@@ -95,14 +104,23 @@ const alreadySubscribedToSpecificNumberOfChallenges = (
   if (!customer?.customerDetails?.challenges || customer.customerDetails.challenges.length <= 0) {
     return false;
   } else {
-    const c = customer.customerDetails.challenges.filter(
+    const paidChallenges = customer.customerDetails.challenges.filter(
       (c) => !c.access?.includes("FREE")
     );
-    if (c.length >= noOfChallengesAllowed) {
-      return true;
-    } else {
-      return false;
+    // Count intensity groups as 1 unit each
+    const counted = new Set();
+    let units = 0;
+    for (const c of paidChallenges) {
+      if (c.intensityGroupId) {
+        if (!counted.has(c.intensityGroupId)) {
+          counted.add(c.intensityGroupId);
+          units++;
+        }
+      } else {
+        units++;
+      }
     }
+    return units >= noOfChallengesAllowed;
   }
 };
 
