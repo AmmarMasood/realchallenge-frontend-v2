@@ -2861,14 +2861,16 @@ function BasicInformation(props) {
                                                 const weekIndex =
                                                   newWeeks.findIndex(
                                                     (week) =>
-                                                      week._id === w._id,
+                                                      (week._id && week._id === w._id) ||
+                                                      (week.id && week.id === w.id),
                                                   );
                                                 if (weekIndex !== -1) {
                                                   const workoutIndex = newWeeks[
                                                     weekIndex
                                                   ].workouts.findIndex(
                                                     (item) =>
-                                                      item._id === workout._id,
+                                                      (item._id && item._id === workout._id) ||
+                                                      (item.id && item.id === workout.id),
                                                   );
                                                   if (workoutIndex !== -1) {
                                                     newWeeks[
