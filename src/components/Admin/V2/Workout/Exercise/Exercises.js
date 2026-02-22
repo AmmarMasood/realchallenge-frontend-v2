@@ -290,6 +290,7 @@ function Exercises({
       id: v4(),
       title: exercise.title || "",
       videoURL: exercise.videoURL || "",
+      videoThumbnailURL: exercise.videoThumbnailURL || "",
       voiceOverLink: exercise.voiceOverLink || "",
       break: exercise.break || 0,
       exerciseGroupName: exercise.exerciseGroupName || "",
