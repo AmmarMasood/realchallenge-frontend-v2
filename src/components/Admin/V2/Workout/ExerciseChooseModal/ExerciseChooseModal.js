@@ -170,7 +170,7 @@ function ExerciseChooseModal({
             className="exercise-selector__list"
             style={{
               height: responsiveDimensions.listHeight,
-              maxHeight: responsiveDimensions.maxListHeight,
+              maxHeight: "300px"
             }}
           >
             {filteredExercises.map((exercise, index) => (

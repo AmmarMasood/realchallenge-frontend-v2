@@ -6,6 +6,7 @@ import BreakTimer from "./BreakTimer";
 import PlayerControls from "./PlayerControls";
 import { playBreakStart, unlockAudio } from "../../utils/audioHelper";
 import PlayerPlayIcon from "../../assets/icons/player-play-icon.svg";
+import { T } from "../Translate";
 import {
   breakContext,
   exerciseWorkoutTimeTrackContext,
@@ -246,7 +247,7 @@ function RenderedVideoPlayer({
               onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
             />
             <span style={{ color: "#fff", fontSize: "16px", fontWeight: "500", textTransform: "uppercase", letterSpacing: "1px" }}>
-              {exercise?.title || "Start Workout"}
+              <T>player.start_exercise</T>
             </span>
           </div>
         </div>

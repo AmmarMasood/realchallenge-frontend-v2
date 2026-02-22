@@ -32,6 +32,7 @@ function UpdateExercise({
     setVideoLink({
       link: exerciseValues.videoURL,
       name: exerciseValues.videoURL,
+      thumbnailUrl: exerciseValues.videoThumbnailURL,
     });
     setTrainer(exerciseValues.trainer);
     setVoiceOverLink({
@@ -45,6 +46,7 @@ function UpdateExercise({
     if (videoLink && trainer) {
       const data = {
         videoURL: videoLink.link,
+        videoThumbnailURL: videoLink.thumbnailUrl,
         voiceOverLink: voiceOverLink.link,
         trainer: trainer,
         ...values,

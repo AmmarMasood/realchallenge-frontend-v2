@@ -77,7 +77,7 @@ function ExerciseCreatorPopup({
         setExerciseDescription(selectedExerciseForEdit.description || "");
         setVideoFile(
           selectedExerciseForEdit.videoURL
-            ? { link: selectedExerciseForEdit.videoURL }
+            ? { link: selectedExerciseForEdit.videoURL, thumbnailUrl: selectedExerciseForEdit.videoThumbnailURL }
             : null
         );
         setAudioFile(

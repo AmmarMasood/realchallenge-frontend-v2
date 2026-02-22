@@ -453,7 +453,8 @@
     "workout_title": "Workout Title",
     "today_workout_attachment": " Today's Workout Attachment",
     "today_equipment": "Today's Equipments",
-    "related": "RELATED PRODUCT FROM E-SHOP"
+    "related": "RELATED PRODUCT FROM E-SHOP",
+    "start_exercise": "Start"
   },
   "admin": {
     "profile_setting": "Profile Setting",

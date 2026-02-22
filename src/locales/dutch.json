@@ -453,7 +453,8 @@
     "workout_title": "Trainingstitel",
     "today_workout_attachment": " De trainingsbijlage van vandaag",
     "today_equipment": "De uitrusting van vandaag",
-    "related": "Gerelateerd product van e-shop"
+    "related": "Gerelateerd product van e-shop",
+    "start_exercise": "Starten"
   },
   "admin": {
     "profile_setting": "Profielinstelling",
