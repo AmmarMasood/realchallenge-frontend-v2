@@ -454,7 +454,9 @@
     "today_workout_attachment": " Today's Workout Attachment",
     "today_equipment": "Today's Equipments",
     "related": "RELATED PRODUCT FROM E-SHOP",
-    "start_exercise": "Start"
+    "start_exercise": "Start",
+    "first_exercise": "First Exercise",
+    "next_exercise": "Next Exercise"
   },
   "admin": {
     "profile_setting": "Profile Setting",

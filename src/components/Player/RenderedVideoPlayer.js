@@ -261,6 +261,7 @@ function RenderedVideoPlayer({
           timerVisible={timerVisible}
           setTimerVisible={setTimerVisible}
           isLastExercise={false}
+          isFirstExercise={true}
         />
       )}
 
@@ -273,6 +274,7 @@ function RenderedVideoPlayer({
           setTimerVisible={setTimerVisible}
           isLastExercise={isLastExercise}
           onWorkoutComplete={onWorkoutComplete}
+          isFirstExercise={currentExercise.index === 0}
         />
       )}
 

@@ -7,8 +7,9 @@ import {
   playerStateContext,
   timerVisibleContext,
 } from "../../contexts/PlayerState";
+import { T } from "../Translate";
 
-function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExercise, onWorkoutComplete }) {
+function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExercise, onWorkoutComplete, isFirstExercise }) {
   const [, setCurrentBreak] = useContext(breakContext);
   const [, setPlayerState] = useContext(playerStateContext);
   const [, setTimerVisible] = useContext(timerVisibleContext);
@@ -94,9 +95,9 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
           {nextExerciseTitle ? (
             <>
               <span>
-                {exerciseGroupName === "Introduction"
-                  ? "First Exercise"
-                  : "Next Exercise"}
+                {isFirstExercise
+                  ? <T>player.first_exercise</T>
+                  : <T>player.next_exercise</T>}
               </span>{" "}
               <span>{nextExerciseTitle}</span>
             </>
@@ -106,7 +107,7 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
         </div>
       </div>
     );
-  }, [breakDuration, nextExerciseTitle, exerciseGroupName]);
+  }, [breakDuration, nextExerciseTitle, isFirstExercise]);
 
   return (
     <div className="break-layout-for-player">

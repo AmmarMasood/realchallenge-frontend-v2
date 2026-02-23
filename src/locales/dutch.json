@@ -454,7 +454,9 @@
     "today_workout_attachment": " De trainingsbijlage van vandaag",
     "today_equipment": "De uitrusting van vandaag",
     "related": "Gerelateerd product van e-shop",
-    "start_exercise": "Starten"
+    "start_exercise": "Starten",
+    "first_exercise": "Eerste oefening",
+    "next_exercise": "Volgende oefening"
   },
   "admin": {
     "profile_setting": "Profielinstelling",
