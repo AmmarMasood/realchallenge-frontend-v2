@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { Modal, Input, Select, Tag } from "antd";
+import moment from "moment";
 import { Link } from "react-router-dom";
 import "../Workout/ExerciseChooseModal/ExerciseChooseModal.css";
 import { EditFilled, EyeOutlined } from "@ant-design/icons";
@@ -7,6 +8,7 @@ import { userInfoContext } from "../../../../contexts/UserStore";
 import { LanguageContext } from "../../../../contexts/LanguageContext";
 import { get } from "lodash";
 import slug from "elegant-slug";
+import { T } from "../../../../components/Translate";
 
 function ModalForEditList({
   open,
@@ -233,7 +235,22 @@ function ModalForEditList({
             className={`exercise-selector__item`}
             style={{ cursor: "default" }}
           >
-            <p>{d.name || d.title || d.challengeName || get(strings, "adminv2.unnamed", "Unnamed")}</p>
+            <p>
+              {d.name || d.title || d.challengeName || get(strings, "adminv2.unnamed", "Unnamed")}
+              {type === "challenge" && d.intensity && {
+                Easy: "challengeStudio.intensity_easy",
+                Medium: "challengeStudio.intensity_medium",
+                Hard: "challengeStudio.intensity_hard",
+              }[d.intensity] && (
+                <span style={{ marginLeft: 8, color: "#888", fontSize: 12 }}>
+                  (<T>{{
+                    Easy: "challengeStudio.intensity_easy",
+                    Medium: "challengeStudio.intensity_medium",
+                    Hard: "challengeStudio.intensity_hard",
+                  }[d.intensity]}</T>)
+                </span>
+              )}
+            </p>
             <div
               style={{
                 display: "flex",
@@ -296,6 +313,19 @@ function ModalForEditList({
                         (trainer) => `${trainer.firstName} ${trainer.lastName}`
                       )
                       .join(", ")}
+                  </div>
+                )}
+                {showMetadata && d.createdAt && (
+                  <div
+                    style={{
+                      fontWeight: 400,
+                      fontSize: "11px",
+                      lineHeight: "140%",
+                      color: "#6B7280",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {get(strings, "adminv2.created_at", "Created at")}: {moment(d.createdAt).format("DD/MM/YYYY")}
                   </div>
                 )}
                 {(type === "challenge" || type === "recipe" || type === "blog") && d.adminApproved !== undefined && (

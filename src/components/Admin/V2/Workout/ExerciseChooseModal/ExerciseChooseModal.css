@@ -17,6 +17,27 @@
   margin: 0;
 }
 
+.exercise-selector__search {
+  width: 100%;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: #222935;
+  border: 1px solid #465060;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 15px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.exercise-selector__search::placeholder {
+  color: #465060;
+}
+
+.exercise-selector__search:focus {
+  border-color: var(--color-orange-light);
+}
+
 .exercise-selector__list {
   display: flex;
   flex-direction: column;

@@ -1151,6 +1151,8 @@ function BasicInformation(props) {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
+                  flexWrap:"wrap",
+                  gap:"5px"
                 }}
               >
                 <span>{g.name}</span>
@@ -1264,6 +1266,8 @@ function BasicInformation(props) {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
+                      flexWrap:"wrap",
+                  gap:"5px"
                 }}
               >
                 <span>{g.name}</span>
@@ -1348,6 +1352,8 @@ function BasicInformation(props) {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
+                      flexWrap:"wrap",
+                  gap:"5px"
                 }}
               >
                 <span>{g.name}</span>
@@ -1401,6 +1407,8 @@ function BasicInformation(props) {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
+                      flexWrap:"wrap",
+                  gap:"5px"
                 }}
               >
                 <span>
@@ -1873,7 +1881,7 @@ function BasicInformation(props) {
           </div>
           <div className="trainer-profile-container-column2">
             {/* Translation selector - shown for both new and existing challenges */}
-            {allChallengesFromOtherLanguage.length > 0 && (
+            {(
               <div
                 className="trainer-profile-goals"
                 style={{ marginBottom: "20px" }}
@@ -1924,10 +1932,21 @@ function BasicInformation(props) {
                       }}
                     >
                       {selectedChallengeForTranslation
-                        ? allChallengesFromOtherLanguage.find(
-                            (c) => c._id === selectedChallengeForTranslation,
-                          )?.challengeName +
-                          ` (${allChallengesFromOtherLanguage.find((c) => c._id === selectedChallengeForTranslation)?.language})`
+                        ? (() => {
+                            const found = allChallengesFromOtherLanguage.find(
+                              (c) => c._id === selectedChallengeForTranslation,
+                            );
+                            const intensityLabel = found?.intensity
+                              ? get(strings, {
+                                  Easy: "challengeStudio.intensity_easy",
+                                  Medium: "challengeStudio.intensity_medium",
+                                  Hard: "challengeStudio.intensity_hard",
+                                }[found.intensity], found.intensity)
+                              : "";
+                            return found?.challengeName +
+                              (intensityLabel ? ` - ${intensityLabel}` : "") +
+                              ` (${found?.language})`;
+                          })()
                         : get(
                             strings,
                             "challengeStudio.select_challenge_to_translate",
@@ -2071,7 +2090,21 @@ function BasicInformation(props) {
                                       "transparent";
                                 }}
                               >
-                                {c.challengeName} ({c.language})
+                                {c.challengeName}
+                                {c.intensity && {
+                                  Easy: "challengeStudio.intensity_easy",
+                                  Medium: "challengeStudio.intensity_medium",
+                                  Hard: "challengeStudio.intensity_hard",
+                                }[c.intensity] && (
+                                  <span style={{ color: "#888" }}>
+                                    {" "}- <T>{{
+                                      Easy: "challengeStudio.intensity_easy",
+                                      Medium: "challengeStudio.intensity_medium",
+                                      Hard: "challengeStudio.intensity_hard",
+                                    }[c.intensity]}</T>
+                                  </span>
+                                )}
+                                {" "}({c.language})
                                 {alreadyLinked && (
                                   <span
                                     style={{

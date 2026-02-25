@@ -92,14 +92,34 @@ function AllRequests() {
     {
       title: <T>admin.name</T>,
       key: "bang",
-      render: (text, record) =>
-        text.name
-          ? text.name
-          : text.challengeName
-          ? text.challengeName
-          : text.title
-          ? text.title
-          : "",
+      render: (text, record) => {
+        const name = text.name || text.challengeName || text.title || "";
+        const intensityKey = {
+          Easy: "challengeStudio.intensity_easy",
+          Medium: "challengeStudio.intensity_medium",
+          Hard: "challengeStudio.intensity_hard",
+        }[text.intensity];
+        return (
+          <span className="font-paragraph-black">
+            {name}
+            {intensityKey && (
+              <span style={{ marginLeft: 8, color: "#888", fontSize: 12 }}>
+                (<T>{intensityKey}</T>)
+              </span>
+            )}
+          </span>
+        );
+      },
+    },
+    {
+      title: <T>admin.language</T>,
+      dataIndex: "language",
+      key: "language",
+      render: (text) => (
+        <span className="font-paragraph-black" style={{ textTransform: "capitalize" }}>
+          {text || "-"}
+        </span>
+      ),
     },
     {
       title: <T>admin.is_public</T>,

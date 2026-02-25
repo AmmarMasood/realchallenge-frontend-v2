@@ -18,6 +18,7 @@ function ExerciseChooseModal({
   const [currentStep, setCurrentStep] = React.useState(1);
   const [selectedDuration, setSelectedDuration] = React.useState("");
   const [selectedBreak, setSelectedBreak] = React.useState("");
+  const [searchQuery, setSearchQuery] = React.useState("");
   const [dimensions, setDimensions] = React.useState({
     width: window.innerWidth,
     height: window.innerHeight,
@@ -57,6 +58,7 @@ function ExerciseChooseModal({
     setSelectedExercise(null);
     setSelectedDuration("");
     setSelectedBreak("");
+    setSearchQuery("");
   }, [open]);
 
   // Calculate responsive dimensions
@@ -91,6 +93,11 @@ function ExerciseChooseModal({
   };
 
   const responsiveDimensions = getResponsiveDimensions();
+
+  const searchedExercises = filteredExercises.filter((exercise) => {
+    const name = (exercise.name || exercise.title || "").toLowerCase();
+    return name.includes(searchQuery.toLowerCase());
+  });
 
   const handleExerciseSelect = (exercise) => {
     setSelectedExercise(
@@ -153,6 +160,14 @@ function ExerciseChooseModal({
             <h2 className="exercise-selector__title">Choose Exercise</h2>
           </div>
 
+          <input
+            type="text"
+            className="exercise-selector__search"
+            placeholder="Search exercise by name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+
           {seletedTrainers.length === 0 && (
             <div className="exercise-selector__no-exercise">
               <p className="font-paragraph-white">
@@ -160,7 +175,7 @@ function ExerciseChooseModal({
               </p>
             </div>
           )}
-          {seletedTrainers.length > 0 && filteredExercises.length === 0 && (
+          {seletedTrainers.length > 0 && searchedExercises.length === 0 && (
             <div className="exercise-selector__no-exercise">
               <p className="font-paragraph-white">No exercises available </p>
             </div>
@@ -173,7 +188,7 @@ function ExerciseChooseModal({
               maxHeight: "300px"
             }}
           >
-            {filteredExercises.map((exercise, index) => (
+            {searchedExercises.map((exercise, index) => (
               <div
                 key={index}
                 className={`exercise-selector__item ${
