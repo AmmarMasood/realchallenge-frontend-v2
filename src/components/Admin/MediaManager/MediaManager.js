@@ -138,6 +138,7 @@ const openNotificationWithIcon = (type, message, description) => {
 
 // Video Processing Badge Component
 const VideoProcessingBadge = ({ status, fileId, onRetrySuccess }) => {
+  const { strings } = useContext(LanguageContext);
   const [retrying, setRetrying] = useState(false);
 
   if (!status || status === "none") return null;
@@ -184,7 +185,7 @@ const VideoProcessingBadge = ({ status, fileId, onRetrySuccess }) => {
         {cfg.text}
       </Tag>
       {status === "failed" && (
-        <Tooltip title="Retry optimization">
+        <Tooltip title={get(strings, "mediaManager.retry_optimization", "Retry Optimization")}>
           <ReloadOutlined
             spin={retrying}
             onClick={handleRetry}

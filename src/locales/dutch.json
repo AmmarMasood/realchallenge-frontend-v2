@@ -1218,6 +1218,7 @@
     "actions": "Acties",
     "cut": "Knippen",
     "paste_move": "Plakken (Verplaatsen)",
-    "rename": "Hernoemen"
+    "rename": "Hernoemen",
+    "retry_optimization": "Optimalisatie opnieuw proberen"
   }
 }

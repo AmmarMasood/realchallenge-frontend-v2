@@ -1218,6 +1218,7 @@
     "actions": "Actions",
     "cut": "Cut",
     "paste_move": "Paste (Move)",
-    "rename": "Rename"
+    "rename": "Rename",
+    "retry_optimization": "Retry Optimization"
   }
 }
