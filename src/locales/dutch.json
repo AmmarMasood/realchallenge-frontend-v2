@@ -1137,7 +1137,12 @@
     "select_audio": "Selecteer Audio",
     "exercise_description_optional": "Oefening Beschrijving (Optioneel)",
     "duplicate_exercise_error": "Een oefening met deze naam bestaat al voor deze trainer. Kies een andere naam.",
-    "save_exercise_error": "Oefening opslaan mislukt. Probeer het opnieuw."
+    "save_exercise_error": "Oefening opslaan mislukt. Probeer het opnieuw.",
+    "last_modified_at": "Laatst gewijzigd op",
+    "last_modified_by": "Laatst gewijzigd door",
+    "version_conflict_title": "Bewerkingsconflict",
+    "version_conflict_message": "Deze challenge is laatst gewijzigd door {name}, op {date}. Ververs de pagina om de laatste versie te krijgen voordat je verder gaat met bewerken.",
+    "reload": "Ververs"
   },
   "payment": {
     "error_title": "Fout",

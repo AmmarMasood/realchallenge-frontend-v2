@@ -1137,7 +1137,12 @@
     "select_audio": "Select Audio",
     "exercise_description_optional": "Exercise Description (Optional)",
     "duplicate_exercise_error": "An exercise with this name already exists for this trainer. Please choose a different name.",
-    "save_exercise_error": "Failed to save exercise. Please try again."
+    "save_exercise_error": "Failed to save exercise. Please try again.",
+    "last_modified_at": "Last modified at",
+    "last_modified_by": "Last modified by",
+    "version_conflict_title": "Edit Conflict",
+    "version_conflict_message": "This challenge was last modified by {name}, on {date}. Please refresh the page to get latest version before continuing editing.",
+    "reload": "Refresh"
   },
   "payment": {
     "error_title": "Error",

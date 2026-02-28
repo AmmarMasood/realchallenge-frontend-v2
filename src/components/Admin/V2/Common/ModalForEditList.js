@@ -325,7 +325,33 @@ function ModalForEditList({
                       marginTop: "4px",
                     }}
                   >
-                    {get(strings, "adminv2.created_at", "Created at")}: {moment(d.createdAt).format("DD/MM/YYYY")}
+                    {get(strings, "adminv2.created_at", "Created at")}: {moment(d.createdAt).format("DD/MM/YYYY HH:mm")}
+                  </div>
+                )}
+                {showMetadata && d.updatedAt && (
+                  <div
+                    style={{
+                      fontWeight: 400,
+                      fontSize: "11px",
+                      lineHeight: "140%",
+                      color: "#6B7280",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {get(strings, "adminv2.last_modified_at", "Last modified at")}: {moment(d.updatedAt).format("DD/MM/YYYY HH:mm")}
+                  </div>
+                )}
+                {showMetadata && d.updatedBy && (
+                  <div
+                    style={{
+                      fontWeight: 400,
+                      fontSize: "11px",
+                      lineHeight: "140%",
+                      color: "#6B7280",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {get(strings, "adminv2.last_modified_by", "Last modified by")}: {d.updatedBy.firstName} {d.updatedBy.lastName}
                   </div>
                 )}
                 {(type === "challenge" || type === "recipe" || type === "blog") && d.adminApproved !== undefined && (

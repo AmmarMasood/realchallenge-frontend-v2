@@ -27,6 +27,7 @@ import { createPost } from "../../../services/posts";
 import { LanguageContext } from "../../../contexts/LanguageContext";
 import { T } from "../../Translate";
 import { get } from "lodash";
+import VersionConflictModal from "../../Common/VersionConflictModal";
 
 const { TabPane } = Tabs;
 
@@ -151,6 +152,8 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
   const [selectedChallenge, setSelectedChallenge] = useState("");
   const [allChallenges, setAllChallenges] = useState([]);
   const { language, strings } = useContext(LanguageContext);
+  const [versionConflict, setVersionConflict] = useState(false);
+  const [conflictDetails, setConflictDetails] = useState(null);
 
   useEffect(() => {
     setAuthToken(localStorage.getItem("jwtToken"));
@@ -400,18 +403,22 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
       // alternativeLanguage removed - using translationKey for multi-language support
       intensity: intensity || "",
       intensityGroupId: multipleIntensities && intensityGroupId ? intensityGroupId : "",
+      __v: selectedChallengeForUpdate.__v,
     };
     console.log("JASON", obj, selectedChallengeForUpdate._id);
     // return;
-    const res = await updateChallenge(obj, selectedChallengeForUpdate._id);
-    // alternativeLanguage update removed - translationKey handles multi-language linking
-    console.log("response", res);
-    console.log("weeks", workoutIdsThatNeedToBeUpdated);
-    // updateWorkouts(obj.weeks);
-    // if (res) {
-    //   setCreatePostModalVisible(true);
-    // }
-    console.log(obj);
+    try {
+      const res = await updateChallenge(obj, selectedChallengeForUpdate._id);
+      // alternativeLanguage update removed - translationKey handles multi-language linking
+      console.log("response", res);
+      console.log("weeks", workoutIdsThatNeedToBeUpdated);
+      console.log(obj);
+    } catch (err) {
+      if (err.response?.status === 409 && err.response?.data?.error === "VERSION_CONFLICT") {
+        setConflictDetails(err.response.data);
+        setVersionConflict(true);
+      }
+    }
   };
 
   const createAPost = async () => {
@@ -635,6 +642,15 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
           </TabPane>
         </Tabs>
       </div>
+      <VersionConflictModal
+        visible={versionConflict}
+        conflictDetails={conflictDetails}
+        onReload={() => {
+          setVersionConflict(false);
+          // Go back to challenge list so user re-selects with fresh data
+          setCurrentSelection(6.1);
+        }}
+      />
     </div>
   );
 }

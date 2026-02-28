@@ -14,6 +14,9 @@ import {
   DeleteFilled,
   DownOutlined,
   UpOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
 import { withRouter, Link } from "react-router-dom";
 import {
@@ -68,6 +71,7 @@ import {
   getAllExercises,
   getAllUserExercises,
   getChallengeById,
+  getChallengeVersion,
   updateChallenge,
   updateWorkoutOnBackend,
   getAllUserChallenges,
@@ -94,6 +98,7 @@ import {
 import { debounce } from "lodash";
 import { createPost } from "../../../../services/posts.js";
 import { getDefaultGoals } from "../../../../constants/goals.js";
+import VersionConflictModal from "../../../Common/VersionConflictModal";
 
 // tooltipText is resolved inside the component via strings
 const iconStyle = {
@@ -222,6 +227,9 @@ function BasicInformation(props) {
   const [translationDropdownOpen, setTranslationDropdownOpen] = useState(false);
   const [translationSearch, setTranslationSearch] = useState("");
   const translationDropdownRef = useRef(null);
+  const [challengeVersion, setChallengeVersion] = useState(undefined);
+  const [versionConflict, setVersionConflict] = useState(false);
+  const [conflictDetails, setConflictDetails] = useState(null);
   // Store the challenge's original language to prevent global language changes from affecting updates
   const [challengeLanguage, setChallengeLanguage] = useState(null);
   const { reloadWithoutConfirmation } = useBrowserEvents({
@@ -383,6 +391,11 @@ function BasicInformation(props) {
         }
 
         populateChallengeInfo(challenge);
+
+        // Store version for optimistic locking
+        if (challenge.__v !== undefined) {
+          setChallengeVersion(challenge.__v);
+        }
 
         // Set additional states from challenge data
         if (challenge.allowComments !== undefined) {
@@ -709,6 +722,22 @@ function BasicInformation(props) {
 
     try {
       setLoading(true);
+
+      // Pre-flight version check: catch conflicts before workout/exercise updates
+      if (isUpdate && challengeVersion !== undefined) {
+        const versionData = await getChallengeVersion(props.match.params.challengeId);
+        if (versionData && versionData.__v !== challengeVersion) {
+          setConflictDetails({
+            updatedBy: versionData.updatedBy || "Someone",
+            updatedAt: versionData.updatedAt,
+            currentVersion: versionData.__v,
+          });
+          setVersionConflict(true);
+          setLoading(false);
+          return;
+        }
+      }
+
       // Use challenge's original language for updates, global language for new challenges
       const effectiveLanguage =
         isUpdate && challengeLanguage ? challengeLanguage : language;
@@ -779,6 +808,11 @@ function BasicInformation(props) {
         obj.translationKey = null; // Allow clearing the connection
       }
 
+      // Include version for optimistic locking
+      if (isUpdate && challengeVersion !== undefined) {
+        obj.__v = challengeVersion;
+      }
+
       console.log("us update", isUpdate);
       if (isUpdate) {
         await updateChallenge(obj, props.match.params.challengeId);
@@ -793,6 +827,17 @@ function BasicInformation(props) {
       setLoading(false);
     } catch (err) {
       console.log("Error saving challenge:", err);
+
+      // Check if it's a version conflict error
+      if (
+        err.response?.status === 409 &&
+        err.response?.data?.error === "VERSION_CONFLICT"
+      ) {
+        setConflictDetails(err.response.data);
+        setVersionConflict(true);
+        setLoading(false);
+        return;
+      }
 
       // Check if it's a duplicate challenge name error
       if (
@@ -1156,60 +1201,58 @@ function BasicInformation(props) {
               >
                 <span>{g.name}</span>
 
-                <span>
-                  <Button
-                    onClick={() => {
-                      setSelectedFitnessInterest((prev) => {
-                        const isExist = prev.find((item) => item._id === g._id);
-                        if (isExist) {
-                          return prev.filter((item) => item._id !== g._id);
-                        } else {
-                          return [...prev, g];
-                        }
-                      });
-                    }}
-                    style={{ marginRight: "10px" }}
-                    type="primary"
-                  >
-                    {selectedFitnessInterest.find(
-                      (item) => item._id === g._id,
-                    ) ? (
-                      <T>challengeStudio.unselect</T>
-                    ) : (
-                      <T>challengeStudio.select</T>
-                    )}
-                  </Button>
+                <span style={{ display: "flex", gap: "6px" }}>
+                  <Tooltip title={selectedFitnessInterest.find((item) => item._id === g._id) ? get(strings, "challengeStudio.unselect", "Unselect") : get(strings, "challengeStudio.select", "Select")}>
+                    <Button
+                      onClick={() => {
+                        setSelectedFitnessInterest((prev) => {
+                          const isExist = prev.find((item) => item._id === g._id);
+                          if (isExist) {
+                            return prev.filter((item) => item._id !== g._id);
+                          } else {
+                            return [...prev, g];
+                          }
+                        });
+                      }}
+                      type="primary"
+                      icon={selectedFitnessInterest.find((item) => item._id === g._id) ? <CloseOutlined /> : <CheckOutlined />}
+                      size="small"
+                    />
+                  </Tooltip>
 
-                  <Button
-                    onClick={async () => {
-                      await deleteTrainerGoals(g._id);
-                      setSelectedFitnessInterest((prev) =>
-                        prev.filter((item) => item._id !== g._id),
-                      );
-                      fetchDataV2();
-                    }}
-                    style={{ marginRight: "10px" }}
-                    type="primary"
-                    danger
-                  >
-                    <T>admin.delete</T>
-                  </Button>
-                  <Button
-                    type="primary"
-                    onClick={() => {
-                      setSelectedItemForUpdateTitle(
-                        get(
-                          strings,
-                          "challengeStudio.update_fitness_interest",
-                          "Update Fitness Interest",
-                        ),
-                      );
-                      setSelectedItemForUpdate(g);
-                      setEditItemNameModalVisible(true);
-                    }}
-                  >
-                    <T>admin.edit</T>
-                  </Button>
+                  <Tooltip title={get(strings, "admin.delete", "Delete")}>
+                    <Button
+                      onClick={async () => {
+                        await deleteTrainerGoals(g._id);
+                        setSelectedFitnessInterest((prev) =>
+                          prev.filter((item) => item._id !== g._id),
+                        );
+                        fetchDataV2();
+                      }}
+                      type="primary"
+                      danger
+                      icon={<DeleteFilled />}
+                      size="small"
+                    />
+                  </Tooltip>
+                  <Tooltip title={get(strings, "admin.edit", "Edit")}>
+                    <Button
+                      type="primary"
+                      onClick={() => {
+                        setSelectedItemForUpdateTitle(
+                          get(
+                            strings,
+                            "challengeStudio.update_fitness_interest",
+                            "Update Fitness Interest",
+                          ),
+                        );
+                        setSelectedItemForUpdate(g);
+                        setEditItemNameModalVisible(true);
+                      }}
+                      icon={<EditOutlined />}
+                      size="small"
+                    />
+                  </Tooltip>
                 </span>
               </List.Item>
             )}
@@ -1271,58 +1314,58 @@ function BasicInformation(props) {
               >
                 <span>{g.name}</span>
 
-                <span>
-                  <Button
-                    onClick={() => {
-                      setSelectedBodyFocus((prev) => {
-                        const isExist = prev.find((item) => item._id === g._id);
-                        if (isExist) {
-                          return prev.filter((item) => item._id !== g._id);
-                        } else {
-                          return [...prev, g];
-                        }
-                      });
-                    }}
-                    style={{ marginRight: "10px" }}
-                    type="primary"
-                  >
-                    {selectedBodyFocus.find((item) => item._id === g._id) ? (
-                      <T>challengeStudio.unselect</T>
-                    ) : (
-                      <T>challengeStudio.select</T>
-                    )}
-                  </Button>
+                <span style={{ display: "flex", gap: "6px" }}>
+                  <Tooltip title={selectedBodyFocus.find((item) => item._id === g._id) ? get(strings, "challengeStudio.unselect", "Unselect") : get(strings, "challengeStudio.select", "Select")}>
+                    <Button
+                      onClick={() => {
+                        setSelectedBodyFocus((prev) => {
+                          const isExist = prev.find((item) => item._id === g._id);
+                          if (isExist) {
+                            return prev.filter((item) => item._id !== g._id);
+                          } else {
+                            return [...prev, g];
+                          }
+                        });
+                      }}
+                      type="primary"
+                      icon={selectedBodyFocus.find((item) => item._id === g._id) ? <CloseOutlined /> : <CheckOutlined />}
+                      size="small"
+                    />
+                  </Tooltip>
 
-                  <Button
-                    onClick={async () => {
-                      await deleteChallengeBodyfocus(g._id);
-                      setSelectedBodyFocus((prev) =>
-                        prev.filter((item) => item._id !== g._id),
-                      );
-                      fetchDataV2();
-                    }}
-                    style={{ marginRight: "10px" }}
-                    type="primary"
-                    danger
-                  >
-                    <T>admin.delete</T>
-                  </Button>
-                  <Button
-                    type="primary"
-                    onClick={() => {
-                      setSelectedItemForUpdateTitle(
-                        get(
-                          strings,
-                          "challengeStudio.update_body_focus",
-                          "Update Body Focus",
-                        ),
-                      );
-                      setSelectedItemForUpdate(g);
-                      setEditItemNameModalVisible(true);
-                    }}
-                  >
-                    <T>admin.edit</T>
-                  </Button>
+                  <Tooltip title={get(strings, "admin.delete", "Delete")}>
+                    <Button
+                      onClick={async () => {
+                        await deleteChallengeBodyfocus(g._id);
+                        setSelectedBodyFocus((prev) =>
+                          prev.filter((item) => item._id !== g._id),
+                        );
+                        fetchDataV2();
+                      }}
+                      type="primary"
+                      danger
+                      icon={<DeleteFilled />}
+                      size="small"
+                    />
+                  </Tooltip>
+                  <Tooltip title={get(strings, "admin.edit", "Edit")}>
+                    <Button
+                      type="primary"
+                      onClick={() => {
+                        setSelectedItemForUpdateTitle(
+                          get(
+                            strings,
+                            "challengeStudio.update_body_focus",
+                            "Update Body Focus",
+                          ),
+                        );
+                        setSelectedItemForUpdate(g);
+                        setEditItemNameModalVisible(true);
+                      }}
+                      icon={<EditOutlined />}
+                      size="small"
+                    />
+                  </Tooltip>
                 </span>
               </List.Item>
             )}
@@ -1357,27 +1400,24 @@ function BasicInformation(props) {
               >
                 <span>{g.name}</span>
 
-                <span>
-                  <Button
-                    onClick={() => {
-                      setSelectedGoals((prev) => {
-                        const isExist = prev.find((item) => item._id === g._id);
-                        if (isExist) {
-                          return prev.filter((item) => item._id !== g._id);
-                        } else {
-                          return [...prev, g];
-                        }
-                      });
-                    }}
-                    style={{ marginRight: "10px" }}
-                    type="primary"
-                  >
-                    {selectedGoals.find((item) => item._id === g._id) ? (
-                      <T>challengeStudio.unselect</T>
-                    ) : (
-                      <T>challengeStudio.select</T>
-                    )}
-                  </Button>
+                <span style={{ display: "flex", gap: "6px" }}>
+                  <Tooltip title={selectedGoals.find((item) => item._id === g._id) ? get(strings, "challengeStudio.unselect", "Unselect") : get(strings, "challengeStudio.select", "Select")}>
+                    <Button
+                      onClick={() => {
+                        setSelectedGoals((prev) => {
+                          const isExist = prev.find((item) => item._id === g._id);
+                          if (isExist) {
+                            return prev.filter((item) => item._id !== g._id);
+                          } else {
+                            return [...prev, g];
+                          }
+                        });
+                      }}
+                      type="primary"
+                      icon={selectedGoals.find((item) => item._id === g._id) ? <CloseOutlined /> : <CheckOutlined />}
+                      size="small"
+                    />
+                  </Tooltip>
                 </span>
               </List.Item>
             )}
@@ -1414,32 +1454,29 @@ function BasicInformation(props) {
                   {g.firstName} {g.lastName}
                 </span>
 
-                <span>
+                <span style={{ display: "flex", gap: "6px" }}>
                   {!(
                     g._id === usereDtails._id && userInfo.role === "trainer"
                   ) && (
-                    <Button
-                      onClick={() => {
-                        setSelectedTrainers((prev) => {
-                          const isExist = prev.find(
-                            (item) => item._id === g._id,
-                          );
-                          if (isExist) {
-                            return prev.filter((item) => item._id !== g._id);
-                          } else {
-                            return [...prev, g];
-                          }
-                        });
-                      }}
-                      style={{ marginRight: "10px" }}
-                      type="primary"
-                    >
-                      {seletedTrainers.find((item) => item._id === g._id) ? (
-                        <T>challengeStudio.unselect</T>
-                      ) : (
-                        <T>challengeStudio.select</T>
-                      )}
-                    </Button>
+                    <Tooltip title={seletedTrainers.find((item) => item._id === g._id) ? get(strings, "challengeStudio.unselect", "Unselect") : get(strings, "challengeStudio.select", "Select")}>
+                      <Button
+                        onClick={() => {
+                          setSelectedTrainers((prev) => {
+                            const isExist = prev.find(
+                              (item) => item._id === g._id,
+                            );
+                            if (isExist) {
+                              return prev.filter((item) => item._id !== g._id);
+                            } else {
+                              return [...prev, g];
+                            }
+                          });
+                        }}
+                        type="primary"
+                        icon={seletedTrainers.find((item) => item._id === g._id) ? <CloseOutlined /> : <CheckOutlined />}
+                        size="small"
+                      />
+                    </Tooltip>
                   )}
                 </span>
               </List.Item>
@@ -3344,6 +3381,24 @@ function BasicInformation(props) {
           </div>
         </div>
       </div>
+      <VersionConflictModal
+        visible={versionConflict}
+        conflictDetails={conflictDetails}
+        onReload={async () => {
+          setVersionConflict(false);
+          setLoading(true);
+          const challenge = await getChallengeById(props.match.params.challengeId);
+          if (challenge) {
+            populateChallengeInfo(challenge);
+            if (challenge.__v !== undefined) setChallengeVersion(challenge.__v);
+            if (challenge.allowComments !== undefined) setAllowComments(challenge.allowComments);
+            if (challenge.allowReviews !== undefined) setAllowReviews(challenge.allowReviews);
+            if (challenge.isPublic !== undefined) setMakePublic(challenge.isPublic);
+            if (challenge.adminApproved !== undefined) setAdminApproved(challenge.adminApproved);
+          }
+          setLoading(false);
+        }}
+      />
     </div>
   );
 }

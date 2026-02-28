@@ -95,7 +95,7 @@ function AllExercises(props) {
       dataIndex: "trainer",
       key: "trainer",
       render: (text) => (
-        <span className="font-paragraph-black">{text.username}</span>
+        <span className="font-paragraph-black">{text && text.username}</span>
       ),
     },
     {
@@ -114,6 +114,16 @@ function AllExercises(props) {
       key: "user",
       render: (text) => (
         <span className="font-paragraph-black">{text && text.username}</span>
+      ),
+    },
+    {
+      title: "Updated By",
+      dataIndex: "updatedBy",
+      key: "updatedBy",
+      render: (text) => (
+        <span className="font-paragraph-black">
+          {text ? text.username || text.firstName || text : "-"}
+        </span>
       ),
     },
     {

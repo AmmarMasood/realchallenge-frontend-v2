@@ -67,6 +67,11 @@ export function updateChallenge(challenge, id) {
     .catch((err) => {
       console.log(err);
 
+      // Version conflict — re-throw without notification so the component can show the modal
+      if (err.response?.status === 409 && err.response?.data?.error === "VERSION_CONFLICT") {
+        throw err;
+      }
+
       // Check for duplicate challenge name error
       if (err.response?.status === 409 && err.response?.data?.error === "DUPLICATE_CHALLENGE_NAME") {
         openNotificationWithIcon(
@@ -326,6 +331,17 @@ export function addFreeChallenge(challenge) {
       console.log(err);
       openNotificationWithIcon("error", "Unable to add the challenge", "");
       return { success: false, data: err };
+    });
+}
+
+// Lightweight version check for optimistic locking
+export function getChallengeVersion(id) {
+  return axios
+    .get(`${process.env.REACT_APP_SERVER}/api/challenges/${id}/version`)
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+      return null;
     });
 }
 

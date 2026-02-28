@@ -84,6 +84,16 @@ function AllRecipes() {
       ),
     },
     {
+      title: "Updated By",
+      dataIndex: "updatedBy",
+      key: "updatedBy",
+      render: (text) => (
+        <span className="font-paragraph-black">
+          {text ? text.username || text.firstName || text : "-"}
+        </span>
+      ),
+    },
+    {
       title: <T>admin.status</T>,
       key: "adminApproved",
       dataIndex: "adminApproved",
