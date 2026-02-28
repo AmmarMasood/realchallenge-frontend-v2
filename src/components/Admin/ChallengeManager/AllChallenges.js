@@ -71,6 +71,14 @@ function AllChallenges({ setCurrentSelection, setSelectedChallengeForUpdate }) {
       render: (text) => <span className="font-paragraph-black">{text}</span>,
     },
     {
+      title: "Intensity",
+      dataIndex: "intensity",
+      key: "intensity",
+      render: (text) => (
+        <span className="font-paragraph-black">{text || "-"}</span>
+      ),
+    },
+    {
       title: "Language",
       dataIndex: "language",
       key: "language",

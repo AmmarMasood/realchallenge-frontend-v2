@@ -18,6 +18,13 @@ import { getAllChallenges } from "../services/createChallenge/main";
 import slug from "elegant-slug";
 import { T } from "../components/Translate";
 import { LanguageContext } from "../contexts/LanguageContext";
+import { get } from "lodash";
+
+const INTENSITY_KEYS = {
+  easy: "adminv2.intensity_easy",
+  medium: "adminv2.intensity_medium",
+  hard: "adminv2.intensity_hard",
+};
 
 const VIDEO_EXTENSIONS = [
   "m4v", "avi", "mpg", "mp4", "mov", "wmv", "flv", "webm", "mkv",
@@ -48,7 +55,7 @@ const cleanIntensityName = (name, hasGroup) => {
 function Challenges() {
   // eslint-disable-next-line
   const [loading, setLoading] = useState(false);
-  const { language } = useContext(LanguageContext);
+  const { language, strings } = useContext(LanguageContext);
   const [challenges, setChallenges] = useState([]);
   const ref = useRef(null);
 
@@ -120,6 +127,27 @@ function Challenges() {
                       overflow: "hidden",
                     }}
                   >
+                    {(challenge.intensityVariants?.length > 1 || challenge.intensity) && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "8px",
+                          left: "8px",
+                          backgroundColor: "#ff7700",
+                          color: "#fff",
+                          fontSize: "10px",
+                          fontWeight: "bold",
+                          padding: "2px 8px",
+                          borderRadius: "4px",
+                          zIndex: 3,
+                        }}
+                        className="font-paragraph-white"
+                      >
+                        {challenge.intensityVariants?.length > 1
+                          ? `${challenge.intensityVariants.length} Levels`
+                          : get(strings, INTENSITY_KEYS[challenge.intensity?.toLowerCase()], challenge.intensity)}
+                      </div>
+                    )}
                     {isVideoFile(challenge.thumbnailLink) && (
                       <>
                         <video
@@ -249,10 +277,11 @@ function Challenges() {
                       challenge.challengeName,
                       !!challenge.intensityGroupId || !!challenge.intensityVariants
                     )}
-                    newc={true}
+                    newc={false}
                     key={challenge._id}
                     hasIntensityGroup={!!challenge.intensityGroupId || !!challenge.intensityVariants}
                     intensityLevels={challenge.intensityVariants?.length}
+                    intensity={challenge.intensity}
                   />
                 </Link>
               ))

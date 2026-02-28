@@ -68,8 +68,9 @@ const ChallengeCompleteNextModal = ({
                   picture={`${challenge.thumbnailLink}`}
                   rating={challenge.rating}
                   name={challenge.challengeName}
-                  newc={true}
+                  newc={false}
                   key={challenge._id}
+                  intensity={challenge.intensity}
                 />
               </Link>
             ))}

@@ -21,6 +21,20 @@ import { Helmet } from "react-helmet";
 import { T } from "../components/Translate";
 import { LanguageContext } from "../contexts/LanguageContext";
 
+const getThumbnailLink = (thumbnail) => {
+  if (!thumbnail) return "";
+  if (typeof thumbnail === "string") return thumbnail.replace(/ /g, "%20");
+  if (thumbnail.link) return thumbnail.link.replace(/ /g, "%20");
+  return "";
+};
+
+const cleanIntensityName = (name, hasGroup) => {
+  if (!hasGroup) return name;
+  return name
+    .replace(/\s*[\(\[](Easy|Medium|Hard)[\)\]]\s*$/i, "")
+    .replace(/\s+(Easy|Medium|Hard)\s*$/i, "");
+};
+
 function TrainerProfile(props) {
   const { language } = useContext(LanguageContext);
   const [open, setOpen] = useState(false);
@@ -321,13 +335,16 @@ function TrainerProfile(props) {
                   key={challenge._id}
                 >
                   <ChallengeCard
-                    picture={`${
-                      challenge.thumbnailLink
-                        ? challenge.thumbnailLink.replaceAll(" ", "%20")
-                        : ""
-                    }`}
-                    name={challenge.challengeName}
+                    picture={getThumbnailLink(challenge.thumbnailLink)}
+                    name={cleanIntensityName(
+                      challenge.challengeName,
+                      !!challenge.intensityGroupId || !!challenge.intensityVariants
+                    )}
                     rating={challenge.rating}
+                    newc={false}
+                    hasIntensityGroup={!!challenge.intensityGroupId || !!challenge.intensityVariants}
+                    intensityLevels={challenge.intensityVariants?.length}
+                    intensity={challenge.intensity}
                   />
                 </Link>
               ))}

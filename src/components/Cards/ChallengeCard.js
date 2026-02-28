@@ -1,9 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import star from "../../assets/icons/star-orange.svg";
 import forward from "../../assets/icons/forward-white.png";
 import { LoadingOutlined } from "@ant-design/icons";
+import { LanguageContext } from "../../contexts/LanguageContext";
+import { get } from "lodash";
 
 import "../../assets/challengecard.css";
+
+const INTENSITY_KEYS = {
+  easy: "adminv2.intensity_easy",
+  medium: "adminv2.intensity_medium",
+  hard: "adminv2.intensity_hard",
+};
 
 const VIDEO_EXTENSIONS = [
   "m4v", "avi", "mpg", "mp4", "mov", "wmv", "flv", "webm", "mkv",
@@ -25,9 +33,18 @@ function ChallengeCard({
   recipe,
   hasIntensityGroup,
   intensityLevels,
+  intensity,
 }) {
   const [videoLoading, setVideoLoading] = useState(true);
   const isVideo = isVideoFile(picture);
+  const { strings } = useContext(LanguageContext);
+
+  const translatedIntensity = intensity
+    ? get(strings, INTENSITY_KEYS[intensity.toLowerCase()], intensity)
+    : null;
+
+  const showLevelsBadge = hasIntensityGroup && intensityLevels > 1;
+  const showIntensityBadge = !showLevelsBadge && translatedIntensity;
 
   return (
     <div
@@ -101,7 +118,7 @@ function ChallengeCard({
       {newc && (
         <div className="challenge-card-new-tag font-paragraph-white">New</div>
       )}
-      {hasIntensityGroup && (
+      {(showLevelsBadge || showIntensityBadge) && (
         <div
           style={{
             position: "absolute",
@@ -117,7 +134,7 @@ function ChallengeCard({
           }}
           className="font-paragraph-white"
         >
-          {intensityLevels || 3} Levels
+          {showLevelsBadge ? `${intensityLevels} Levels` : translatedIntensity}
         </div>
       )}
       <div className="challenge-card-basic-textbox" style={{ position: "relative", zIndex: 2 }}>

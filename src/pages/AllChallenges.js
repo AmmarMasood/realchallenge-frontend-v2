@@ -330,9 +330,10 @@ function AllChallenges() {
                     challenge.challengeName,
                     !!challenge.intensityGroupId || !!challenge.intensityVariants
                   )}
-                  newc={true}
+                  newc={false}
                   hasIntensityGroup={!!challenge.intensityGroupId || !!challenge.intensityVariants}
                   intensityLevels={challenge.intensityVariants?.length}
+                  intensity={challenge.intensity}
                 />
               </Link>
             ))

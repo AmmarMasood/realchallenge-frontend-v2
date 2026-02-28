@@ -451,7 +451,7 @@ function SearchNutrition({
                   }/uploads/${meal.image.replaceAll(" ", "%20")}`}
                   name={meal.name}
                   rating={meal.rating}
-                  newc={true}
+                  newc={false}
                   preprationTime={meal.prepTime}
                   recipe={true}
                 />
