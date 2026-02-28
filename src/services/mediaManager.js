@@ -357,6 +357,21 @@ export function searchMyMediaFiles(searchParams) {
     });
 }
 
+// --- Retry video optimization ---
+export function retryVideoOptimization(fileId) {
+  return axios
+    .post(`${process.env.REACT_APP_SERVER}/api/media/retry-optimization/${fileId}`)
+    .then((res) => res.data)
+    .catch((err) => {
+      openNotificationWithIcon(
+        "error",
+        "Retry failed",
+        err?.response?.data?.message || "Unable to retry optimization"
+      );
+      throw err;
+    });
+}
+
 // --- Search media files (admin only) ---
 export function searchMediaFiles(searchParams) {
   const { filename, userId, mediaType, page = 1, limit = 20 } = searchParams;

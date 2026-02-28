@@ -14,6 +14,7 @@ import { showActionNotification } from "./mediaManagerUtils";
 import MediaFileUploader from "./MediaFileUploader";
 import AdminSearchPanel from "./AdminSearchPanel";
 import { useMediaManager } from "../../../contexts/MediaManagerContext";
+import { retryVideoOptimization } from "../../../services/mediaManager";
 import setAuthToken from "../../../helpers/setAuthToken";
 import {
   Button,
@@ -47,6 +48,7 @@ import {
   LoadingOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import { userInfoContext } from "../../../contexts/UserStore";
 import { LanguageContext } from "../../../contexts/LanguageContext";
@@ -135,8 +137,25 @@ const openNotificationWithIcon = (type, message, description) => {
 };
 
 // Video Processing Badge Component
-const VideoProcessingBadge = ({ status }) => {
+const VideoProcessingBadge = ({ status, fileId, onRetrySuccess }) => {
+  const [retrying, setRetrying] = useState(false);
+
   if (!status || status === "none") return null;
+
+  const handleRetry = async (e) => {
+    e.stopPropagation();
+    if (!fileId || retrying) return;
+    setRetrying(true);
+    try {
+      await retryVideoOptimization(fileId);
+      message.success("Optimization retry started");
+      if (onRetrySuccess) onRetrySuccess();
+    } catch (err) {
+      // notification already shown by service
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   const config = {
     processing: {
@@ -160,9 +179,24 @@ const VideoProcessingBadge = ({ status }) => {
   if (!cfg) return null;
 
   return (
-    <Tag color={cfg.color} icon={cfg.icon} style={{ marginLeft: 8, fontSize: 11 }}>
-      {cfg.text}
-    </Tag>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+      <Tag color={cfg.color} icon={cfg.icon} style={{ marginLeft: 8, fontSize: 11 }}>
+        {cfg.text}
+      </Tag>
+      {status === "failed" && (
+        <Tooltip title="Retry optimization">
+          <ReloadOutlined
+            spin={retrying}
+            onClick={handleRetry}
+            style={{
+              color: "#ff7700",
+              fontSize: 14,
+              cursor: "pointer",
+            }}
+          />
+        </Tooltip>
+      )}
+    </span>
   );
 };
 
@@ -889,6 +923,7 @@ const useCustomFileMap = () => {
     cutFilesToClipboard,
     pasteFilesFromClipboard,
     clearClipboard,
+    fetchFiles,
   };
 };
 
@@ -953,7 +988,7 @@ export const useFolderChain = (fileMap, currentFolderId) => {
 };
 
 // Preview Modal Component for files
-export const PreviewModal = ({ visible, onClose, file }) => {
+export const PreviewModal = ({ visible, onClose, file, onRetrySuccess }) => {
   const [loading, setLoading] = useState(true);
 
   console.log("ammar", file);
@@ -1057,7 +1092,7 @@ export const PreviewModal = ({ visible, onClose, file }) => {
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <h3 style={{ color: "white", margin: 0 }}>{file.rawName || file.name}</h3>
-          <VideoProcessingBadge status={file.processingStatus} />
+          <VideoProcessingBadge status={file.processingStatus} fileId={file.id} onRetrySuccess={onRetrySuccess} />
         </div>
         <CloseOutlined
           style={{
@@ -1181,7 +1216,8 @@ export const useFileActionHandler = (
   clearClipboard,
   currentFolderId,
   fileMap,
-  setSearchMode
+  setSearchMode,
+  fetchFiles
 ) => {
   const { deleteMediaFile, deleteMediaFolder, updateMediaFile } =
     useMediaManager();
@@ -1503,6 +1539,17 @@ export const useFileActionHandler = (
         const targetFolderId =
           currentFolderId === "root" ? null : currentFolderId;
         await handlePasteFiles(targetFolderId);
+      } else if (data.id === "retry_optimization") {
+        const item = data.state.selectedFilesForAction[0];
+        if (item && item.processingStatus === "failed") {
+          try {
+            await retryVideoOptimization(item.id);
+            message.success("Optimization retry started");
+            if (fetchFiles) fetchFiles(currentFolderId, true);
+          } catch (err) {
+            // notification already shown by service
+          }
+        }
       }
     },
     [
@@ -1521,6 +1568,7 @@ export const useFileActionHandler = (
       handleCutFiles,
       handlePasteFiles,
       currentFolderId,
+      fetchFiles,
     ]
   );
 };
@@ -1833,6 +1881,7 @@ export const VFSBrowser = React.memo((props) => {
     cutFilesToClipboard,
     pasteFilesFromClipboard,
     clearClipboard,
+    fetchFiles,
   } = useCustomFileMap();
 
   const files = useFiles(fileMap, currentFolderId);
@@ -1995,7 +2044,8 @@ export const VFSBrowser = React.memo((props) => {
     clearClipboard,
     currentFolderId,
     fileMap,
-    setSearchMode
+    setSearchMode,
+    fetchFiles
   );
 
   // Enhanced file actions with depth-aware logic and drag and drop
@@ -2122,6 +2172,18 @@ export const VFSBrowser = React.memo((props) => {
         group: actionsGroup,
         icon: ChonkyActions.CopyFiles.button.icon, // Reuse copy icon for now
       },
+    });
+
+    // Add retry optimization action (only for failed video files)
+    actions.push({
+      id: "retry_optimization",
+      button: {
+        name: get(strings, "mediaManager.retry_optimization", "Retry Optimization"),
+        toolbar: false,
+        contextMenu: true,
+        group: actionsGroup,
+      },
+      fileFilter: (file) => !file.isDir && file.processingStatus === "failed",
     });
 
     // Add rename action (always available)
@@ -2400,6 +2462,7 @@ export const VFSBrowser = React.memo((props) => {
               visible={showPreviewModal}
               onClose={() => setShowPreviewModal(false)}
               file={previewFile}
+              onRetrySuccess={() => fetchFiles(currentFolderId, true)}
             />
 
             {loading && (
