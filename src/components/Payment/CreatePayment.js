@@ -402,6 +402,8 @@ import { Collapse, Input } from "antd";
 
 import { userInfoContext, userPointsContext } from "../../contexts/UserStore";
 import { selectedChallengeContext } from "../../contexts/PaymentProcessStore";
+import { LanguageContext } from "../../contexts/LanguageContext";
+import { get } from "lodash";
 
 import "../../assets/createPayment.css";
 import VerifyUser from "../UserDashboard/VerifyUser";
@@ -411,6 +413,7 @@ import { redeemPoints } from "../../services/users";
 import { usePackageConfig } from "../../contexts/PackageConfigContext";
 
 function CreatePayment(props) {
+  const { strings } = useContext(LanguageContext);
   const { getPackage } = usePackageConfig();
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
@@ -656,11 +659,11 @@ function CreatePayment(props) {
           left: "0",
         }}
       >
-        <ArrowLeftOutlined /> Back
+        <ArrowLeftOutlined /> {get(strings, "payment.back", "Back")}
       </button>
       <div className="create-payment-overlap-group-1">
         <h1 className="font-heading-white" style={{ marginBottom: "40px" }}>
-          Overview
+          {get(strings, "payment.overview", "Overview")}
         </h1>
         {/* ---- */}
         <div className="create-payment-undercover">
@@ -697,19 +700,15 @@ function CreatePayment(props) {
           >
             {packInfo.noOfChallenges === "1"
               ? selectedChallenge.challengeName
-              : packInfo.noOfChallenges === "3"
-              ? "Unlock all features for 3 months"
-              : packInfo.noOfChallenges === "12"
-              ? "Unlock all features for 12 months"
-              : ""}
+              : get(strings, "payment.unlock_features_months", "Unlock all features for {{months}} months").replace("{{months}}", packInfo.noOfChallenges === "3" ? "3" : "12")}
           </div>
           <div
             className="font-paragraph-white"
             style={{ color: "rgba(196, 196, 196, 1)" }}
           >
             {packInfo.noOfChallenges === "1"
-              ? "One Time Payment"
-              : "Automatically Monthly Payment"}
+              ? get(strings, "payment.one_time_payment", "One Time Payment")
+              : get(strings, "payment.auto_monthly_payment", "Automatically Monthly Payment")}
           </div>
         </div>
         {/* ---- */}
@@ -725,20 +724,20 @@ function CreatePayment(props) {
           }}
         >
           <div className="font-paragraph-white" style={{ fontWeight: "600" }}>
-            Challenge Points
+            {get(strings, "payment.challenge_points", "Challenge Points")}
           </div>
           <div
             className="font-paragraph-white"
             style={{ color: "rgba(196, 196, 196, 1)", fontSize: "14px" }}
           >
             <span>
-              Your balance is <img src={PaymentPoints} alt="" /> {userPoints}{" "}
-              points
+              {get(strings, "payment.your_balance_is", "Your balance is")} <img src={PaymentPoints} alt="" /> {userPoints}{" "}
+              {get(strings, "payment.points", "points")}
               {userPoints > 0 &&
                 `(€${userPoints / 100} or $${userPoints / 100})`}
             </span>{" "}
             <br />
-            <span> Minimum Balance in order to redeem: 100</span>
+            <span> {get(strings, "payment.min_balance_redeem", "Minimum Balance in order to redeem: 100")}</span>
           </div>
         </div>
         <button
@@ -754,7 +753,7 @@ function CreatePayment(props) {
           }}
           onClick={() => getDiscountFromPoints()}
         >
-          Redeem Points
+          {get(strings, "payment.redeem_points", "Redeem Points")}
         </button>
         {/* ---- */}
 
@@ -781,7 +780,7 @@ function CreatePayment(props) {
                   }}
                   className="font-paragraph-white"
                 >
-                  <span>Coupon Code</span>
+                  <span>{get(strings, "payment.coupon_code", "Coupon Code")}</span>
                   <span>
                     {showCouponModal.length > 0 ? (
                       <DownOutlined />
@@ -806,7 +805,7 @@ function CreatePayment(props) {
               <Input
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value)}
-                placeholder="Enter Voucher"
+                placeholder={get(strings, "payment.enter_voucher", "Enter Voucher")}
                 style={{ width: "70%" }}
               />
               {couponButtonLoading ? (
@@ -825,7 +824,7 @@ function CreatePayment(props) {
                   }}
                   onClick={() => checkCouponCode()}
                 >
-                  Redeem Code
+                  {get(strings, "payment.redeem_code", "Redeem Code")}
                 </button>
               )}
             </div>
@@ -840,7 +839,7 @@ function CreatePayment(props) {
             marginTop: "30px",
           }}
         >
-          SUMMARY
+          {get(strings, "payment.summary", "SUMMARY")}
         </div>
         <div
           style={{
@@ -853,7 +852,7 @@ function CreatePayment(props) {
             lineHeight: "20px",
           }}
         >
-          <div className="font-paragraph-white">Order Total</div>
+          <div className="font-paragraph-white">{get(strings, "payment.order_total", "Order Total")}</div>
           <div className="font-paragraph-white">
             {packInfo.noOfChallenges === "1"
               ? `${selectedChallenge.currency} ${parseFloat(selectedChallenge.price || 0).toFixed(2)}`
@@ -889,7 +888,7 @@ function CreatePayment(props) {
                 className="font-paragraph-white"
                 style={{ fontSize: "18px", fontWeight: "600" }}
               >
-                Check out
+                {get(strings, "payment.check_out", "Check out")}
               </span>
               <ArrowRightOutlined
                 style={{ color: "#fff", fontSize: "20px", marginLeft: "10px" }}

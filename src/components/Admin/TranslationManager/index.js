@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useContext, useMemo } from "react";
+import React, { useState, useEffect, useContext, useMemo, useRef } from "react";
 import {
   Table,
   Input,
   Tabs,
-  Select,
   Tag,
   Space,
   Spin,
@@ -14,6 +13,7 @@ import {
   SearchOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
+  DownOutlined,
 } from "@ant-design/icons";
 import {
   getAllTranslationsAdmin,
@@ -24,7 +24,6 @@ import { T } from "../../Translate";
 import { get } from "lodash";
 
 const { TabPane } = Tabs;
-const { Option } = Select;
 const { Text } = Typography;
 
 /**
@@ -112,6 +111,149 @@ function EditableCell({ value, onSave, language, translationKey }) {
         <Text type="secondary" italic>
           Click to add translation
         </Text>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Custom Dropdown Component
+ */
+function CustomDropdown({ value, options, onChange, placeholder, style }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = options.filter((opt) =>
+    opt.label.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const selectedLabel =
+    options.find((opt) => opt.value === value)?.label || placeholder || "";
+
+  return (
+    <div ref={ref} style={{ position: "relative", ...style }}>
+      <div
+        onClick={() => setOpen(!open)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "4px 11px",
+          border: "1px solid #d9d9d9",
+          borderRadius: 6,
+          cursor: "pointer",
+          background: "#fff",
+          height: 32,
+          fontSize: 14,
+          transition: "border-color 0.2s",
+          borderColor: open ? "#4096ff" : "#d9d9d9",
+        }}
+      >
+        <span
+          style={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {selectedLabel}
+        </span>
+        <DownOutlined
+          style={{
+            fontSize: 10,
+            color: "#bfbfbf",
+            marginLeft: 4,
+            transition: "transform 0.2s",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        />
+      </div>
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            right: 0,
+            zIndex: 1050,
+            background: "#fff",
+            border: "1px solid #d9d9d9",
+            borderRadius: 6,
+            boxShadow: "0 6px 16px rgba(0, 0, 0, 0.08)",
+            marginTop: 4,
+            maxHeight: 300,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div style={{ padding: "8px 8px 4px" }}>
+            <Input
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+              size="small"
+              allowClear
+              autoFocus
+            />
+          </div>
+          <div style={{ overflowY: "auto", maxHeight: 240, padding: "4px 0" }}>
+            {filtered.length === 0 ? (
+              <div
+                style={{
+                  padding: "8px 12px",
+                  color: "#bfbfbf",
+                  textAlign: "center",
+                  fontSize: 13,
+                }}
+              >
+                No matches
+              </div>
+            ) : (
+              filtered.map((opt) => (
+                <div
+                  key={opt.value}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                    setSearch("");
+                  }}
+                  style={{
+                    padding: "5px 12px",
+                    cursor: "pointer",
+                    background:
+                      opt.value === value ? "#e6f4ff" : "transparent",
+                    fontWeight: opt.value === value ? 600 : 400,
+                    fontSize: 14,
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (opt.value !== value)
+                      e.currentTarget.style.background = "#f5f5f5";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background =
+                      opt.value === value ? "#e6f4ff" : "transparent";
+                  }}
+                >
+                  {opt.label}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -318,20 +460,19 @@ function TranslationManager() {
           allowClear
         />
 
-        <Select
+        <CustomDropdown
           value={selectedSection}
           onChange={setSelectedSection}
           style={{ width: 200 }}
           placeholder={get(strings, "admin.filter_by_section", "Filter by section")}
-        >
-          {sections.map((section) => (
-            <Option key={section} value={section}>
-              {section === "all"
+          options={sections.map((section) => ({
+            value: section,
+            label:
+              section === "all"
                 ? get(strings, "admin.all_sections", "All Sections")
-                : section}
-            </Option>
-          ))}
-        </Select>
+                : section,
+          }))}
+        />
 
         <Text type="secondary">
           {get(strings, "admin.showing", "Showing")} {filteredTranslations.length}{" "}

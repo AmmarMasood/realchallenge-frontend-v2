@@ -105,17 +105,14 @@ function AdminDashboard(props) {
     setAllCountries(countries);
   }, [language]);
 
+  // Load the correct language version of motto/bio when trainer data or language changes
   useEffect(() => {
-    if (trainer.motto !== undefined) {
-      setMotto(trainer.motto || "");
+    if (trainer._id) {
+      const suffix = language === "dutch" ? "_nl" : "_en";
+      setMotto(trainer[`motto${suffix}`] || trainer.motto || "");
+      setBio(trainer[`bio${suffix}`] || trainer.bio || "");
     }
-  }, [trainer.motto]);
-
-  useEffect(() => {
-    if (trainer.bio !== undefined) {
-      setBio(trainer.bio || "");
-    }
-  }, [trainer.bio]);
+  }, [trainer._id, trainer.motto, trainer.motto_en, trainer.motto_nl, trainer.bio, trainer.bio_en, trainer.bio_nl, language]);
 
   useEffect(() => {
     if (trainer.country !== undefined) {
@@ -142,10 +139,11 @@ function AdminDashboard(props) {
   }, [trainer.videoTrailerLink]);
 
   const debouncedUpdateMotto = useCallback(
-    debounce(async (newMotto, trainerId) => {
+    debounce(async (newMotto, trainerId, lang) => {
       try {
+        const field = lang === "dutch" ? "motto_nl" : "motto_en";
         await updateUserProfileByAdmin(
-          { motto: newMotto },
+          { [field]: newMotto, motto: lang === "dutch" ? undefined : newMotto },
           trainerId,
           adminInfo.role,
         );
@@ -160,15 +158,16 @@ function AdminDashboard(props) {
     const newMotto = e.target.value;
     setMotto(newMotto);
     if (trainer._id) {
-      debouncedUpdateMotto(newMotto, trainer._id);
+      debouncedUpdateMotto(newMotto, trainer._id, language);
     }
   };
 
   const debouncedUpdateBio = useCallback(
-    debounce(async (newBio, trainerId) => {
+    debounce(async (newBio, trainerId, lang) => {
       try {
+        const field = lang === "dutch" ? "bio_nl" : "bio_en";
         await updateUserProfileByAdmin(
-          { bio: newBio },
+          { [field]: newBio, bio: lang === "dutch" ? undefined : newBio },
           trainerId,
           adminInfo.role,
         );
@@ -183,7 +182,7 @@ function AdminDashboard(props) {
     const newBio = e.target.value;
     setBio(newBio);
     if (trainer._id) {
-      debouncedUpdateBio(newBio, trainer._id);
+      debouncedUpdateBio(newBio, trainer._id, language);
     }
   };
 
@@ -631,10 +630,10 @@ function AdminDashboard(props) {
                 <input
                   value={motto}
                   onChange={handleMottoChange}
-                  placeholder="Add your motto"
+                  placeholder={language === "dutch" ? "Voeg je motto toe" : "Add your motto"}
                   className="font-paragraph-white adminV2-bi-input"
                   style={{
-                    marginLeft: "10px",
+                    marginLeft: "6px",
                     flex: 1,
                   }}
                 />
@@ -669,7 +668,7 @@ function AdminDashboard(props) {
               rows={4}
               value={bio}
               onChange={handleBioChange}
-              placeholder="Add your bio"
+              placeholder={language === "dutch" ? "Voeg je bio toe" : "Add your bio"}
               className="font-paragraph-white adminV2-bi-input"
               style={{
                 width: "100%",

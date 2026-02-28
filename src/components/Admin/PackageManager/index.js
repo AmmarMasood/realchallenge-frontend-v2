@@ -75,7 +75,14 @@ function PackageManager() {
   const save = async (packageId) => {
     setSaving(true);
     try {
-      await updatePackage(packageId, editedData);
+      // Sync legacy displayName with EN value for backward compatibility
+      const dataToSave = {
+        ...editedData,
+        displayName: editedData.displayName_en || editedData.displayName,
+        description: editedData.description_en || editedData.description,
+        priceDisplayText: editedData.priceDisplayText_en || editedData.priceDisplayText,
+      };
+      await updatePackage(packageId, dataToSave);
       setEditingKey("");
       setEditedData({});
       fetchData();
@@ -110,19 +117,38 @@ function PackageManager() {
     },
     {
       title: get(strings, "admin.display_name", "Display Name"),
-      dataIndex: "displayName",
       key: "displayName",
-      width: 200,
-      render: (text, record) => {
+      width: 280,
+      render: (_, record) => {
         const editable = isEditing(record);
         return editable ? (
-          <Input
-            value={editedData.displayName}
-            onChange={(e) => handleFieldChange("displayName", e.target.value)}
-            style={{ width: "100%" }}
-          />
+          <Space direction="vertical" size={4} style={{ width: "100%" }}>
+            <Input
+              value={editedData.displayName_en}
+              onChange={(e) =>
+                handleFieldChange("displayName_en", e.target.value)
+              }
+              prefix={<Tag color="blue" style={{ margin: 0 }}>EN</Tag>}
+              style={{ width: "100%" }}
+            />
+            <Input
+              value={editedData.displayName_nl}
+              onChange={(e) =>
+                handleFieldChange("displayName_nl", e.target.value)
+              }
+              prefix={<Tag color="orange" style={{ margin: 0 }}>NL</Tag>}
+              style={{ width: "100%" }}
+            />
+          </Space>
         ) : (
-          <Text strong>{text}</Text>
+          <Space direction="vertical" size={0}>
+            <Text strong>{record.displayName_en || record.displayName}</Text>
+            {record.displayName_nl && (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                NL: {record.displayName_nl}
+              </Text>
+            )}
+          </Space>
         );
       },
     },
@@ -157,25 +183,43 @@ function PackageManager() {
     },
     {
       title: get(strings, "admin.price_display", "Price Display Text"),
-      dataIndex: "priceDisplayText",
       key: "priceDisplayText",
-      width: 150,
-      render: (text, record) => {
+      width: 220,
+      render: (_, record) => {
         const editable = isEditing(record);
         if (record.packageId === "CHALLENGE_1") {
           return <Text type="secondary">-</Text>;
         }
         return editable ? (
-          <Input
-            value={editedData.priceDisplayText}
-            onChange={(e) =>
-              handleFieldChange("priceDisplayText", e.target.value)
-            }
-            placeholder="e.g. €4.5 /Week"
-            style={{ width: "100%" }}
-          />
+          <Space direction="vertical" size={4} style={{ width: "100%" }}>
+            <Input
+              value={editedData.priceDisplayText_en}
+              onChange={(e) =>
+                handleFieldChange("priceDisplayText_en", e.target.value)
+              }
+              prefix={<Tag color="blue" style={{ margin: 0 }}>EN</Tag>}
+              placeholder="e.g. €4.5 /Week"
+              style={{ width: "100%" }}
+            />
+            <Input
+              value={editedData.priceDisplayText_nl}
+              onChange={(e) =>
+                handleFieldChange("priceDisplayText_nl", e.target.value)
+              }
+              prefix={<Tag color="orange" style={{ margin: 0 }}>NL</Tag>}
+              placeholder="e.g. €4,5 /Week"
+              style={{ width: "100%" }}
+            />
+          </Space>
         ) : (
-          <Text>{text || "-"}</Text>
+          <Space direction="vertical" size={0}>
+            <Text>{record.priceDisplayText_en || record.priceDisplayText || "-"}</Text>
+            {record.priceDisplayText_nl && (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                NL: {record.priceDisplayText_nl}
+              </Text>
+            )}
+          </Space>
         );
       },
     },
@@ -356,7 +400,7 @@ function PackageManager() {
           rowKey="packageId"
           pagination={false}
           bordered
-          scroll={{ x: 1200 }}
+          scroll={{ x: 1400 }}
         />
       )}
     </div>

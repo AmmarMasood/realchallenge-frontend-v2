@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { CheckOutlined, EuroOutlined } from "@ant-design/icons";
 import "../../assets/packageSelector.css";
 import { usePackageConfig } from "../../contexts/PackageConfigContext";
+import { LanguageContext } from "../../contexts/LanguageContext";
+import { get } from "lodash";
 
 const checkStyle = {
   color: "#ff7700",
@@ -10,6 +12,7 @@ const checkStyle = {
 };
 
 function PackageSelector({ onChoosePlan }) {
+  const { strings } = useContext(LanguageContext);
   const { getPackage } = usePackageConfig();
   const [pack, setPack] = useState("CHALLENGE_12");
 
@@ -70,27 +73,29 @@ function PackageSelector({ onChoosePlan }) {
               </span>
               <p className="font-subheading-white">
                 {" "}
-                Starting from €29 / Challenge
+                {get(strings, "payment.starting_from", "Starting from €29 / Challenge")}
               </p>
               <span className="font-paragraph-white">
-                Choose your challenge from our library.
+                {get(strings, "payment.choose_from_library", "Choose your challenge from our library.")}
               </span>
             </div>
             <ul className="features">
               <li>
                 <CheckOutlined style={checkStyle} />
                 <span className="font-paragraph-white">
-                  No subscription needed
+                  {get(strings, "payment.no_subscription_needed", "No subscription needed")}
                 </span>
               </li>
               <li>
                 <CheckOutlined style={checkStyle} />
-                <span className="font-paragraph-white">Billed once</span>
+                <span className="font-paragraph-white">
+                  {get(strings, "payment.billed_once", "Billed once")}
+                </span>
               </li>
               <li>
                 <CheckOutlined style={checkStyle} />
                 <span className="font-paragraph-white">
-                  Unlock all features
+                  {get(strings, "payment.unlock_all_features", "Unlock all features")}
                 </span>
               </li>
             </ul>
@@ -114,7 +119,7 @@ function PackageSelector({ onChoosePlan }) {
                     padding: "5px",
                   }}
                 >
-                  Save up to {pkg12?.savingsPercent}
+                  {get(strings, "payment.save_up_to", "Save up to")} {pkg12?.savingsPercent}
                 </span>
               )}
             </div>
@@ -122,17 +127,19 @@ function PackageSelector({ onChoosePlan }) {
               <li>
                 <CheckOutlined style={checkStyle} />
                 <span className="font-paragraph-white">
-                  Unlock any challenge
+                  {get(strings, "payment.unlock_any_challenge", "Unlock any challenge")}
                 </span>
               </li>
               <li>
                 <CheckOutlined style={checkStyle} />
-                <span className="font-paragraph-white">Billed monthly</span>
+                <span className="font-paragraph-white">
+                  {get(strings, "payment.billed_monthly", "Billed monthly")}
+                </span>
               </li>
               <li>
                 <CheckOutlined style={checkStyle} />
                 <span className="font-paragraph-white">
-                  Menu tailored to your goals
+                  {get(strings, "payment.menu_tailored", "Menu tailored to your goals")}
                 </span>
               </li>
             </ul>
@@ -156,7 +163,7 @@ function PackageSelector({ onChoosePlan }) {
                     padding: "5px",
                   }}
                 >
-                  Save up to {pkg3?.savingsPercent}
+                  {get(strings, "payment.save_up_to", "Save up to")} {pkg3?.savingsPercent}
                 </span>
               )}
             </div>
@@ -164,17 +171,19 @@ function PackageSelector({ onChoosePlan }) {
               <li>
                 <CheckOutlined style={checkStyle} />
                 <span className="font-paragraph-white">
-                  Unlock any challenge
+                  {get(strings, "payment.unlock_any_challenge", "Unlock any challenge")}
                 </span>
               </li>
               <li>
                 <CheckOutlined style={checkStyle} />
-                <span className="font-paragraph-white">Billed monthly</span>
+                <span className="font-paragraph-white">
+                  {get(strings, "payment.billed_monthly", "Billed monthly")}
+                </span>
               </li>
               <li>
                 <CheckOutlined style={checkStyle} />
                 <span className="font-paragraph-white">
-                  Menu tailored to your goals
+                  {get(strings, "payment.menu_tailored", "Menu tailored to your goals")}
                 </span>
               </li>
             </ul>
@@ -185,10 +194,10 @@ function PackageSelector({ onChoosePlan }) {
         className="package-selector-button"
         onClick={() => onChoosePlan(pack)}
       >
-        Choose plan
+        {get(strings, "payment.choose_plan", "Choose plan")}
       </button>
       <div className="money-back-guarantee font-paragraph-white">
-        <EuroOutlined /> 7 days money back guarantee
+        <EuroOutlined /> {get(strings, "payment.money_back_guarantee", "7 days money back guarantee")}
       </div>
     </div>
   );

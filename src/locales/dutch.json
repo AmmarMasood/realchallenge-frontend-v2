@@ -222,7 +222,8 @@
   "trainer_profile": {
     "my_goal": "Mijn doelgebieden",
     "about_me": "Over mij",
-    "challenges": "Uitdagingen"
+    "challenges": "Uitdagingen",
+    "fitness_interests": "Fitness Interesses"
   },
   "signup": {
     "join": "Start Real Challenge vandaag",
@@ -1035,6 +1036,7 @@
     "pwvi": "Even geduld a.u.b. terwijl we uw e-mail verifiëren."
   },
   "newWelcome": {
+    "welcome": "Welkom",
     "skip": "Overslaan",
     "tyfjr": "Bedankt voor je deelname aan REAL CHALLENGE",
     "getAccess": "Krijg toegang tot al onze functies",
@@ -1145,7 +1147,37 @@
     "challenge_1_limit": "Je hebt al een challenge gekocht. Je kunt pas een nieuwe challenge kopen als die challenge is verlopen.",
     "challenge_3_limit": "Je bent al ingeschreven voor 2 challenges. Je kunt je pas voor een nieuwe challenge inschrijven als die challenges zijn verlopen.",
     "challenge_12_limit": "Je bent al ingeschreven voor 3 challenges. Je kunt je pas voor een nieuwe challenge inschrijven als die challenges zijn verlopen.",
-    "challenge_limit_reached": "Je hebt het maximale aantal challenges voor je abonnement bereikt. Wacht tot je huidige challenges verlopen."
+    "challenge_limit_reached": "Je hebt het maximale aantal challenges voor je abonnement bereikt. Wacht tot je huidige challenges verlopen.",
+    "billed_once": "Eenmalig gefactureerd",
+    "billed_monthly": "Maandelijks gefactureerd",
+    "no_subscription": "Geen abonnement",
+    "save_up_to": "Bespaar tot",
+    "months_plan": "maanden abonnement",
+    "starting_from": "Vanaf €29 / Challenge",
+    "choose_from_library": "Kies je challenge uit onze bibliotheek.",
+    "no_subscription_needed": "Geen abonnement nodig",
+    "unlock_all_features": "Ontgrendel alle functies",
+    "unlock_any_challenge": "Ontgrendel elke challenge",
+    "menu_tailored": "Menu afgestemd op jouw doelen",
+    "choose_plan": "Kies abonnement",
+    "money_back_guarantee": "7 dagen geld-terug-garantie",
+    "overview": "Overzicht",
+    "unlock_features_months": "Ontgrendel alle functies voor {{months}} maanden",
+    "one_time_payment": "Eenmalige betaling",
+    "auto_monthly_payment": "Automatische maandelijkse betaling",
+    "challenge_points": "Challenge Punten",
+    "your_balance_is": "Je saldo is",
+    "points": "punten",
+    "min_balance_redeem": "Minimaal saldo om in te wisselen: 100",
+    "redeem_points": "Punten inwisselen",
+    "coupon_code": "Kortingscode",
+    "enter_voucher": "Voer code in",
+    "redeem_code": "Code inwisselen",
+    "summary": "SAMENVATTING",
+    "order_total": "Totaalbedrag",
+    "check_out": "Afrekenen",
+    "back": "Terug",
+    "tooltip_no_plan": "Als je geen abonnement kiest en op start drukt, kun je de wizard doorlopen, je gratis intake doen, een gratis account aanmaken en genieten van onze gratis challenges en een week maaltijdplan."
   },
   "goals": {
     "get_fit": "Word Fit",

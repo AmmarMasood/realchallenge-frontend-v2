@@ -222,7 +222,8 @@
   "trainer_profile": {
     "my_goal": "My Goals Areas",
     "about_me": "About Me",
-    "challenges": "Challenges"
+    "challenges": "Challenges",
+    "fitness_interests": "Fitness Interests"
   },
   "signup": {
     "join": "JOIN REALCHALLENGE TODAY",
@@ -1035,6 +1036,7 @@
     "pwvi": "Please wait while we verify your email."
   },
   "newWelcome": {
+    "welcome": "Welcome",
     "skip": "Skip",
     "tyfjr": "THANK YOU FOR JOINING REALCHALLENGE",
     "getAccess": "Get Access To All Our Features",
@@ -1145,7 +1147,37 @@
     "challenge_1_limit": "You have already bought a challenge. You can only buy a new challenge once that challenge expires.",
     "challenge_3_limit": "You are already enrolled in 2 challenges. You can only enroll in a new challenge once those challenges expire.",
     "challenge_12_limit": "You are already enrolled in 3 challenges. You can only enroll in a new challenge once those challenges expire.",
-    "challenge_limit_reached": "You have reached the maximum number of challenges for your plan. Please wait until your current challenges expire."
+    "challenge_limit_reached": "You have reached the maximum number of challenges for your plan. Please wait until your current challenges expire.",
+    "billed_once": "Billed once",
+    "billed_monthly": "Billed monthly",
+    "no_subscription": "No subscription",
+    "save_up_to": "Save up to",
+    "months_plan": "months plan",
+    "starting_from": "Starting from €29 / Challenge",
+    "choose_from_library": "Choose your challenge from our library.",
+    "no_subscription_needed": "No subscription needed",
+    "unlock_all_features": "Unlock all features",
+    "unlock_any_challenge": "Unlock any challenge",
+    "menu_tailored": "Menu tailored to your goals",
+    "choose_plan": "Choose plan",
+    "money_back_guarantee": "7 days money back guarantee",
+    "overview": "Overview",
+    "unlock_features_months": "Unlock all features for {{months}} months",
+    "one_time_payment": "One Time Payment",
+    "auto_monthly_payment": "Automatically Monthly Payment",
+    "challenge_points": "Challenge Points",
+    "your_balance_is": "Your balance is",
+    "points": "points",
+    "min_balance_redeem": "Minimum Balance in order to redeem: 100",
+    "redeem_points": "Redeem Points",
+    "coupon_code": "Coupon Code",
+    "enter_voucher": "Enter Voucher",
+    "redeem_code": "Redeem Code",
+    "summary": "SUMMARY",
+    "order_total": "Order Total",
+    "check_out": "Check out",
+    "back": "Back",
+    "tooltip_no_plan": "If you don't choose any plan and hit start now, you can go through the wizard, get your free intake, make a free account and enjoy our free challenges collection and one week meal plan."
   },
   "goals": {
     "get_fit": "Get Fit",

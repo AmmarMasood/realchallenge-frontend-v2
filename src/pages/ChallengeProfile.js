@@ -49,12 +49,11 @@ import { LanguageContext } from "../contexts/LanguageContext";
 import PopupPlayer from "../components/PopupPlayer/PopupPlayer";
 import { usePackageConfig } from "../contexts/PackageConfigContext";
 
-const tooltipText = `
-If you don’t choose any plan and hit start now, you can go through the wizard, get your free intake, make a free account and enjoy our free challenges collection and one week meal plan. 
-`;
+// tooltipText is resolved inside the component via strings
 function ChallengeProfile(props) {
   const { language, updateLanguage, strings } = useContext(LanguageContext);
   const { packages, getPackage } = usePackageConfig();
+  const tooltipText = get(strings, "payment.tooltip_no_plan", "If you don't choose any plan and hit start now, you can go through the wizard, get your free intake, make a free account and enjoy our free challenges collection and one week meal plan.");
   const [reviewOpen, setReviewOpen] = useState(false);
   const [openPopupPlayer, setOpenPopupPlayer] = useState(false);
   const [open, setOpen] = useState(false);
@@ -434,9 +433,9 @@ function ChallengeProfile(props) {
                   <span
                     style={{ fontSize: "26px", fontWeight: "600" }}
                   >{`${challenge.currency}${challenge.price}`}</span>
-                  <span style={{ margin: "15px 0" }}>No subscription</span>
+                  <span style={{ margin: "15px 0" }}>{get(strings, "payment.no_subscription", "No subscription")}</span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
-                    Billed Once
+                    {get(strings, "payment.billed_once", "Billed Once")}
                   </span>
                 </div>
                 {/* CHALLENGE_12 - 12 Months */}
@@ -479,7 +478,7 @@ function ChallengeProfile(props) {
                         marginBottom: "10px",
                       }}
                     >
-                      Save up to {getPackage("CHALLENGE_12")?.savingsPercent}
+                      {get(strings, "payment.save_up_to", "Save up to")} {getPackage("CHALLENGE_12")?.savingsPercent}
                     </span>
                   )}
                   <span style={{ fontSize: "26px", fontWeight: "600" }}>
@@ -487,10 +486,10 @@ function ChallengeProfile(props) {
                       `€${getPackage("CHALLENGE_12")?.price}`}
                   </span>
                   <span style={{ margin: "15px 0" }}>
-                    {getPackage("CHALLENGE_12")?.billingInterval} months plan
+                    {getPackage("CHALLENGE_12")?.billingInterval} {get(strings, "payment.months_plan", "months plan")}
                   </span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
-                    Billed Monthly
+                    {get(strings, "payment.billed_monthly", "Billed Monthly")}
                   </span>
                 </div>
                 {/* CHALLENGE_3 - 3 Months */}
@@ -532,7 +531,7 @@ function ChallengeProfile(props) {
                         marginBottom: "10px",
                       }}
                     >
-                      Save up to {getPackage("CHALLENGE_3")?.savingsPercent}
+                      {get(strings, "payment.save_up_to", "Save up to")} {getPackage("CHALLENGE_3")?.savingsPercent}
                     </span>
                   )}
                   <span style={{ fontSize: "26px", fontWeight: "600" }}>
@@ -540,10 +539,10 @@ function ChallengeProfile(props) {
                       `€${getPackage("CHALLENGE_3")?.price}`}
                   </span>
                   <span style={{ margin: "15px 0" }}>
-                    {getPackage("CHALLENGE_3")?.billingInterval} months plan
+                    {getPackage("CHALLENGE_3")?.billingInterval} {get(strings, "payment.months_plan", "months plan")}
                   </span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
-                    Billed Monthly
+                    {get(strings, "payment.billed_monthly", "Billed Monthly")}
                   </span>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import "../assets/trainerprofile.css";
 import "../assets/home.css";
 import Navbar from "../components/Navbar";
@@ -8,7 +8,7 @@ import { Link, withRouter } from "react-router-dom";
 // import ModalVideo from "react-modal-video";
 // import "react-modal-video/scss/modal-video.scss";
 import ChallengeCard from "../components/Cards/ChallengeCard";
-import { addCommentToTrainer, getTrainerById } from "../services/trainers";
+import { addCommentToTrainer, getTrainerById, getTrainerGoalsByTrainerId } from "../services/trainers";
 import QuoteIcon from "../assets/icons/quote-icon.png";
 import ChallengeProfileSubtract from "../assets/icons/challenge-profile-subtract.svg";
 import { Avatar, Input, message } from "antd";
@@ -19,8 +19,10 @@ import StartTransparent from "../assets/icons/star-transparent.svg";
 import slug from "elegant-slug";
 import { Helmet } from "react-helmet";
 import { T } from "../components/Translate";
+import { LanguageContext } from "../contexts/LanguageContext";
 
 function TrainerProfile(props) {
+  const { language } = useContext(LanguageContext);
   const [open, setOpen] = useState(false);
 
   // eslint-disable-next-line
@@ -33,6 +35,7 @@ function TrainerProfile(props) {
   const [allComments, setAllComments] = useState([]);
   const [commentText, setCommentText] = useState("");
   const [commentButtonLoading, setCommentButtonLoading] = useState(false);
+  const [fitnessInterests, setFitnessInterests] = useState([]);
 
   async function fetchData() {
     setLoading(true);
@@ -48,14 +51,39 @@ function TrainerProfile(props) {
     setCalculatedRating(overR / c.length);
     setTrainer(res.trainer);
     setChallenges(res.challenges);
-    setFilterChallenges(res.challenges);
+    // Filter by current language
+    const langFiltered = res.challenges.filter(
+      (c) => !c.language || c.language === language
+    );
+    setFilterChallenges(langFiltered);
     setAllComments(res.trainer.comments);
+    // Fetch fitness interests by trainer ID and language
+    const goalsRes = await getTrainerGoalsByTrainerId(id, language);
+    setFitnessInterests(goalsRes.goals || []);
     setLoading(false);
   }
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Re-filter challenges when language changes
+  useEffect(() => {
+    const langFiltered = challenges.filter(
+      (c) => !c.language || c.language === language
+    );
+    setFilterChallenges(langFiltered);
+  }, [language, challenges]);
+
+  // Re-fetch fitness interests when language changes
+  useEffect(() => {
+    const id = props.match.params.id;
+    if (id) {
+      getTrainerGoalsByTrainerId(id, language).then((res) => {
+        setFitnessInterests(res.goals || []);
+      });
+    }
+  }, [language]);
 
   const postCommentToBackend = async () => {
     setCommentButtonLoading(true);
@@ -221,7 +249,7 @@ function TrainerProfile(props) {
               <div className="profile-box-row2-quote font-paragraph-white">
                 <img src={QuoteIcon} alt="" />
                 <span style={{ marginLeft: "10px" }}>
-                  {trainer.motto ? trainer.motto : ""}
+                  {(language === "dutch" ? trainer.motto_nl : trainer.motto_en) || trainer.motto || ""}
                 </span>
               </div>
             </div>
@@ -233,20 +261,18 @@ function TrainerProfile(props) {
               className="trainer-profile-goals-heading font-paragraph-white"
               style={{ color: "#333b44", textTransform: "uppercase" }}
             >
-              Fitness Interests
+              <T>trainer_profile.fitness_interests</T>
             </div>
             <div className="trainer-profile-goals-container">
               {/* TODO */}
-              {trainer.trainersFitnessInterest
-                ? trainer.trainersFitnessInterest.map((goal) => (
+              {fitnessInterests.map((goal) => (
                     <div
                       className="trainer-profile-goal font-paragraph-white"
                       key={goal._id}
                     >
                       {goal.name}
                     </div>
-                  ))
-                : ""}
+                  ))}
             </div>
           </div>
 
@@ -258,7 +284,7 @@ function TrainerProfile(props) {
               <T>trainer_profile.about_me</T>
             </div>
             <div className="trainer-profile-aboutme-container font-paragraph-white">
-              {trainer.bio ? trainer.bio : ""}
+              {(language === "dutch" ? trainer.bio_nl : trainer.bio_en) || trainer.bio || ""}
             </div>
           </div>
           <div className="trainer-profile-challenges">
@@ -276,10 +302,11 @@ function TrainerProfile(props) {
                   color: "#fff",
                 }}
                 onChange={(e) => {
-                  const g = challenges.filter((c) =>
-                    c.challengeName
-                      .toLowerCase()
-                      .includes(e.target.value.toLowerCase()),
+                  const searchVal = e.target.value.toLowerCase();
+                  const g = challenges.filter(
+                    (c) =>
+                      (!c.language || c.language === language) &&
+                      c.challengeName.toLowerCase().includes(searchVal),
                   );
                   setFilterChallenges(g);
                 }}

@@ -95,9 +95,7 @@ import { debounce } from "lodash";
 import { createPost } from "../../../../services/posts.js";
 import { getDefaultGoals } from "../../../../constants/goals.js";
 
-const tooltipText = `
-If you don’t choose any plan and hit start now, you can go through the wizard, get your free intake, make a free account and enjoy our free challenges collection and one week meal plan. 
-`;
+// tooltipText is resolved inside the component via strings
 const iconStyle = {
   cursor: "pointer",
   height: "20px",
@@ -107,6 +105,7 @@ const iconStyle = {
 function BasicInformation(props) {
   const { language, updateLanguage, strings } = useContext(LanguageContext);
   const { getPackage } = usePackageConfig();
+  const tooltipText = get(strings, "payment.tooltip_no_plan", "If you don't choose any plan and hit start now, you can go through the wizard, get your free intake, make a free account and enjoy our free challenges collection and one week meal plan.");
   const [userInfo, setUserInfo] = useContext(userInfoContext);
   const [isUpdate, setIsUpdate] = useState(false);
   const {
@@ -3137,7 +3136,7 @@ function BasicInformation(props) {
                       `€${getPackage("CHALLENGE_12")?.price}`}
                   </span>
                   <span style={{ margin: "15px 0" }}>
-                    {getPackage("CHALLENGE_12")?.billingInterval} months plan
+                    {getPackage("CHALLENGE_12")?.billingInterval} {get(strings, "payment.months_plan", "months plan")}
                   </span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
                     <T>challengeStudio.billed_monthly</T>
@@ -3195,7 +3194,7 @@ function BasicInformation(props) {
                       `€${getPackage("CHALLENGE_3")?.price}`}
                   </span>
                   <span style={{ margin: "15px 0" }}>
-                    {getPackage("CHALLENGE_3")?.billingInterval} months plan
+                    {getPackage("CHALLENGE_3")?.billingInterval} {get(strings, "payment.months_plan", "months plan")}
                   </span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
                     <T>challengeStudio.billed_monthly</T>

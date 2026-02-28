@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Form, Input, Button, Select, Modal } from "antd";
+import { Form, Input, Button, Select, Modal, Tag } from "antd";
 import {
   LoadingOutlined,
   CloseSquareOutlined,
@@ -44,7 +44,11 @@ function UpdateUser({
   const [hero, setHero] = useState("");
   const [videoTrailer, setVideoTrailer] = useState("");
   const [motto, setMotto] = useState("");
+  const [motto_en, setMottoEn] = useState("");
+  const [motto_nl, setMottoNl] = useState("");
   const [bio, setBio] = useState("");
+  const [bio_en, setBioEn] = useState("");
+  const [bio_nl, setBioNl] = useState("");
   const [country, setCountry] = useState("");
   const [allCountries, setAllCountries] = useState([]);
   const [goals, setGoals] = useState([]);
@@ -83,6 +87,8 @@ function UpdateUser({
     setFirstName(userInfo.firstName);
     setLastName(userInfo.lastName);
     setBio(userInfo.bio);
+    setBioEn(userInfo.bio_en || "");
+    setBioNl(userInfo.bio_nl || "");
     setGender(userInfo.gender);
     userInfo.avatarLink &&
       setAvatar({ name: userInfo.avatarLink, link: userInfo.avatarLink });
@@ -90,6 +96,8 @@ function UpdateUser({
     userInfo.heroBanner &&
       setHero({ name: userInfo.heroBanner, link: userInfo.heroBanner });
     setMotto(userInfo.motto);
+    setMottoEn(userInfo.motto_en || "");
+    setMottoNl(userInfo.motto_nl || "");
     setGoals(userInfo.goals ? userInfo.goals : []);
     userInfo.videoTrailerLink &&
       setVideoTrailer({
@@ -184,8 +192,12 @@ function UpdateUser({
           heroBanner: typeof hero === "object" ? hero.link : hero,
           videoTrailerLink:
             typeof videoTrailer === "object" ? videoTrailer.link : videoTrailer,
-          motto,
-          bio,
+          motto: motto_en || motto,
+          motto_en,
+          motto_nl,
+          bio: bio_en || bio,
+          bio_en,
+          bio_nl,
           country,
           gender,
           trainersFitnessInterest: selectedFitnessInterest,
@@ -207,8 +219,12 @@ function UpdateUser({
           hero: typeof hero === "object" ? hero.link : hero,
           videoTrailer:
             typeof videoTrailer === "object" ? videoTrailer.link : videoTrailer,
-          motto,
-          bio,
+          motto: motto_en || motto,
+          motto_en,
+          motto_nl,
+          bio: bio_en || bio,
+          bio_en,
+          bio_nl,
           country,
           avatar: typeof avatar === "object" ? avatar.link : avatar,
         };
@@ -514,17 +530,34 @@ function UpdateUser({
                   </div>
                 )}
               </Form.Item>
-              <Form.Item label={<T>admin.motto</T>} name="motto">
+              <Form.Item label={<><T>admin.motto</T> <Tag color="blue">EN</Tag></>}>
                 <Input
-                  value={motto}
-                  onChange={(e) => setMotto(e.target.value)}
+                  value={motto_en}
+                  onChange={(e) => setMottoEn(e.target.value)}
+                  placeholder="Motto (English)"
                 />
               </Form.Item>
-              <Form.Item label={<T>admin.bio</T>} name="bio">
+              <Form.Item label={<><T>admin.motto</T> <Tag color="orange">NL</Tag></>}>
+                <Input
+                  value={motto_nl}
+                  onChange={(e) => setMottoNl(e.target.value)}
+                  placeholder="Motto (Nederlands)"
+                />
+              </Form.Item>
+              <Form.Item label={<><T>admin.bio</T> <Tag color="blue">EN</Tag></>}>
                 <Input.TextArea
-                  rows={8}
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
+                  rows={6}
+                  value={bio_en}
+                  onChange={(e) => setBioEn(e.target.value)}
+                  placeholder="Bio (English)"
+                />
+              </Form.Item>
+              <Form.Item label={<><T>admin.bio</T> <Tag color="orange">NL</Tag></>}>
+                <Input.TextArea
+                  rows={6}
+                  value={bio_nl}
+                  onChange={(e) => setBioNl(e.target.value)}
+                  placeholder="Bio (Nederlands)"
                 />
               </Form.Item>
               <Form.Item label={<T>admin.country</T>} name="country">

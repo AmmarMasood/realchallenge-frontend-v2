@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import "../assets/newWelcome.css";
 import { RightOutlined, CheckOutlined, EuroOutlined } from "@ant-design/icons";
+import { get } from "lodash";
 
 import { withRouter, Link, useHistory } from "react-router-dom";
 
@@ -9,9 +10,11 @@ import { userInfoContext } from "../contexts/UserStore";
 import { selectedChallengeContext } from "../contexts/PaymentProcessStore";
 import { addFreeChallenge } from "../services/createChallenge/main";
 import { T } from "../components/Translate";
+import { LanguageContext } from "../contexts/LanguageContext";
 import { usePackageConfig } from "../contexts/PackageConfigContext";
 
 function NewWelcome(props) {
+  const { strings } = useContext(LanguageContext);
   const { getPackage } = usePackageConfig();
   const history = useHistory();
   const userInfo = useContext(userInfoContext)[0];
@@ -93,7 +96,7 @@ function NewWelcome(props) {
             className="font-heading-white"
             style={{ fontSize: props.onPricingPage ? "25px" : "" }}
           >
-            {props.onPricingPage ? <T>pricing.great</T> : "Welcome"}
+            {props.onPricingPage ? <T>pricing.great</T> : <T>newWelcome.welcome</T>}
           </h1>
           <h3
             className="font-subheading-white"
@@ -202,7 +205,7 @@ function NewWelcome(props) {
                 className="font-paragraph-white"
                 style={{ color: "#969696", textAlign: "left" }}
               >
-                {getPackage("CHALLENGE_12")?.billingInterval} months plan
+                {getPackage("CHALLENGE_12")?.billingInterval} {get(strings, "payment.months_plan", "months plan")}
               </span>
               <ul
                 className="features"
@@ -270,7 +273,7 @@ function NewWelcome(props) {
                 className="font-paragraph-white"
                 style={{ color: "#969696", textAlign: "left" }}
               >
-                {getPackage("CHALLENGE_3")?.billingInterval} months plan
+                {getPackage("CHALLENGE_3")?.billingInterval} {get(strings, "payment.months_plan", "months plan")}
               </span>
               <ul
                 className="features"
