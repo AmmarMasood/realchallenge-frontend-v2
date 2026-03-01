@@ -15,9 +15,12 @@ import SmPlayerChromeIcon from "../../assets/icons/sm-chrome-tv-icon.svg";
 import SmPlayerMusicIcon from "../../assets/icons/sm-player-music-icon.svg";
 import SmPlayerFullscreenIcon from "../../assets/icons/sm-player-fullscreen-icon.svg";
 import {
+  breakContext,
+  breakPausedContext,
   exerciseWorkoutTimeTrackContext,
   playerFullscreenContext,
   playerStateContext,
+  timerVisibleContext,
 } from "../../contexts/PlayerState";
 import screenfull from "screenfull";
 import MusicPlayer from "./MusicPlayer";
@@ -81,6 +84,9 @@ function PlayerControls(
   const [exerciseWorkoutTimeTrack, setExerciseWorkoutTimeTrack] = useContext(
     exerciseWorkoutTimeTrackContext
   );
+  const [currentBreak, setCurrentBreak] = useContext(breakContext);
+  const [, setTimerVisible] = useContext(timerVisibleContext);
+  const [breakPaused, setBreakPaused] = useContext(breakPausedContext);
   const { height, width } = useWindowDimensions();
 
   // Chromecast states
@@ -190,11 +196,21 @@ function PlayerControls(
   const elapsedTime = formatTime(currentTime);
   const totalDuration = formatTime(duration);
 
+  const dismissBreak = () => {
+    setCurrentBreak(false);
+    setTimerVisible(false);
+    setBreakPaused(false);
+  };
+
   const onMute = () => {
     setPlayerState({ ...playerState, muted: !playerState.muted });
   };
 
   const onPlayPause = () => {
+    if (currentBreak) {
+      setBreakPaused(!breakPaused);
+      return;
+    }
     setPlayerState({ ...playerState, playing: !playerState.playing });
   };
 
@@ -348,7 +364,7 @@ function PlayerControls(
           )}
         </div>
       </div>
-      <div className="controls-wrapper" ref={ref}>
+      <div className="controls-wrapper" ref={ref} style={currentBreak ? { zIndex: 20 } : undefined}>
         {fullscreen && (
           <FullScreenPlayerVideosBrowser
             showVideos={true}
@@ -608,20 +624,18 @@ function PlayerControls(
                   style={{ cursor: "pointer" }}
                   onClick={() => {
                     if (currentExercise && currentExercise.index !== 0) {
-                      const s =
-                        parseInt(exerciseLength) - parseInt(exerciseSeconds);
-                      // console.log("exerciseSeconds",totalDurationTimer,s, parseInt(workout.exercises[currentExercise.index - 1].exerciseLength))
-                      // setTotalDurationTimer(totalDurationTimer - s - parseInt(workout.exercises[currentExercise.index - 1].exerciseLength));
+                      if (currentBreak) dismissBreak();
                       moveToPrevExercise();
+                      setPlayerState((prev) => ({ ...prev, playing: true }));
                     }
                   }}
                 />
                 {/* PlayerPlayIcon */}
                 <div className="player-play-pause-icon-box">
-                  {playerState.playing ? (
+                  {(currentBreak ? !breakPaused : playerState.playing) ? (
                     <img
                       src={PlayerPauseIcon}
-                      alt="skip-left-icon"
+                      alt="pause-icon"
                       style={{ cursor: "pointer" }}
                       className="controls-wrapper-bottom-icons"
                       onClick={onPlayPause}
@@ -629,7 +643,7 @@ function PlayerControls(
                   ) : (
                     <img
                       src={PlayerPlayIcon}
-                      alt="skip-left-icon"
+                      alt="play-icon"
                       style={{ cursor: "pointer" }}
                       className="controls-wrapper-bottom-icons"
                       onClick={onPlayPause}
@@ -645,10 +659,9 @@ function PlayerControls(
                       currentExercise &&
                       currentExercise.index !== workout.exercises.length - 1
                     ) {
-                      // const s = parseInt(exerciseLength);
-                      // console.log("exerciseSeconds",totalDurationTimer,s)
-                      // setTotalDurationTimer(totalDurationTimer + s);
+                      if (currentBreak) dismissBreak();
                       moveToNextExercise();
+                      setPlayerState((prev) => ({ ...prev, playing: true }));
                     }
                   }}
                 />

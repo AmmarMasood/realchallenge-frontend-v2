@@ -5,6 +5,7 @@ export const playerFullscreenContext = React.createContext();
 export const breakContext = React.createContext();
 export const timerVisibleContext = React.createContext();
 export const exerciseWorkoutTimeTrackContext = React.createContext();
+export const breakPausedContext = React.createContext();
 
 
 const PlayerState = ({ children }) => {
@@ -21,13 +22,16 @@ const PlayerState = ({ children }) => {
   const [currentBreak, setCurrentBreak] = useState(false);
   const [timerVisible, setTimerVisible] = useState(false);
   const [exerciseWorkoutTimeTrack, setExerciseWorkoutTimeTrack] = useState({current: 0, total: 0});
+  const [breakPaused, setBreakPaused] = useState(false);
   return (
     <playerStateContext.Provider value={[playerState, setPlayerState]}>
       <playerFullscreenContext.Provider value={[fullscreen, setFullscreen]}>
         <breakContext.Provider value={[currentBreak, setCurrentBreak]}>
           <timerVisibleContext.Provider value={[timerVisible, setTimerVisible]}>
             <exerciseWorkoutTimeTrackContext.Provider value={[exerciseWorkoutTimeTrack, setExerciseWorkoutTimeTrack]}>
-            {children}
+              <breakPausedContext.Provider value={[breakPaused, setBreakPaused]}>
+                {children}
+              </breakPausedContext.Provider>
             </exerciseWorkoutTimeTrackContext.Provider>
           </timerVisibleContext.Provider>
         </breakContext.Provider>

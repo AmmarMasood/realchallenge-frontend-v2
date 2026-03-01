@@ -147,10 +147,21 @@ function RenderedVideoPlayer({
     setPlayerState((prev) => ({ ...prev, progress: changeState }));
   };
 
+  const hideTimeoutRef = useRef(null);
+
   const handleMouseMove = () => {
     controlsRef.current.style.visibility = "visible";
     descriptionRef.current.style.visibility = "hidden";
     count = 0;
+
+    // Auto-hide after 3 seconds of no interaction
+    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    hideTimeoutRef.current = setTimeout(() => {
+      if (controlsRef.current) {
+        controlsRef.current.style.visibility = "hidden";
+        descriptionRef.current.style.visibility = "visible";
+      }
+    }, 3000);
   };
 
   // Show timer if timerVisible is true and current exercise exists

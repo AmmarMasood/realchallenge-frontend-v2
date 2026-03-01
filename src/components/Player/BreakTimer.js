@@ -4,6 +4,7 @@ import { Progress } from "antd";
 import { playBreakEnd } from "../../utils/audioHelper";
 import {
   breakContext,
+  breakPausedContext,
   playerStateContext,
   timerVisibleContext,
 } from "../../contexts/PlayerState";
@@ -13,6 +14,9 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
   const [, setCurrentBreak] = useContext(breakContext);
   const [, setPlayerState] = useContext(playerStateContext);
   const [, setTimerVisible] = useContext(timerVisibleContext);
+  const [breakPaused] = useContext(breakPausedContext);
+
+  const countdownRef = useRef(null);
 
   // Store the target date ONCE when component mounts - this prevents re-calculation on re-renders
   const targetDate = useMemo(() => {
@@ -37,6 +41,17 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
       setCurrentBreak(true);
     }
   }, []);
+
+  // Pause/resume countdown when breakPaused changes
+  useEffect(() => {
+    const api = countdownRef.current?.getApi?.();
+    if (!api) return;
+    if (breakPaused) {
+      api.pause();
+    } else {
+      api.start();
+    }
+  }, [breakPaused]);
 
   const playAudio = useCallback(() => {
     playBreakEnd();
@@ -112,6 +127,7 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
   return (
     <div className="break-layout-for-player">
       <Countdown
+        ref={countdownRef}
         key={targetDate}
         date={targetDate}
         renderer={CountdownDisplay}

@@ -11,7 +11,7 @@
   width: 100%;
   max-width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: 550px;
+  max-height: 450px;
   margin: 0 auto;
   box-sizing: border-box;
   overflow: hidden;
@@ -336,13 +336,13 @@
 }
 
 .challenge-player-container-exercies-box-imagebox {
-  width: 250px;
+  width: 213px;
   height: 200px;
   overflow: hidden;
   position: relative;
   background-color: #1a1f26;
   border-radius: 4px;
-  flex-shrink: 0; /* Prevent shrinking in flex containers */
+  flex-shrink: 0;
 }
 
 .challenge-player-container-exercies-box-imagebox img,

@@ -1,6 +1,4 @@
 import React, { useContext } from "react";
-
-import Carousel from "react-multi-carousel";
 import VideoThumbnail from "react-video-thumbnail";
 import {
   exerciseWorkoutTimeTrackContext,
@@ -73,7 +71,7 @@ function Exercises({
   const [playerState, setPlayerState] = useContext(playerStateContext);
   const [fullscreen, setFullscreen] = useContext(playerFullscreenContext);
   const [exerciseWorkoutTimeTrack, setExerciseWorkoutTimeTrack] = useContext(
-    exerciseWorkoutTimeTrackContext
+    exerciseWorkoutTimeTrackContext,
   );
   const [exerciseIdToUpdate, setExerciseIdToUpdate] = React.useState(null);
   const [isDragging, setIsDragging] = React.useState(false);
@@ -82,7 +80,7 @@ function Exercises({
 
   const handleOpenExerciseForHelp = (e) => {
     const exercise = allExercises.find(
-      (exercise) => exercise._id === e.exerciseId
+      (exercise) => exercise._id === e.exerciseId,
     );
     setPlayerState({ ...playerState, playing: false, muted: true });
     setExerciseForHelpModal({ ...e, description: exercise?.description || "" });
@@ -101,8 +99,16 @@ function Exercises({
 
     if (hasValidationError) {
       notification.error({
-        message: get(strings, "workoutStudio.duration_required", "Duration Required"),
-        description: get(strings, "workoutStudio.enter_duration_intro", "Please enter a duration for the intro exercise before playing it."),
+        message: get(
+          strings,
+          "workoutStudio.duration_required",
+          "Duration Required",
+        ),
+        description: get(
+          strings,
+          "workoutStudio.enter_duration_intro",
+          "Please enter a duration for the intro exercise before playing it.",
+        ),
         placement: "topRight",
       });
     }
@@ -123,7 +129,7 @@ function Exercises({
         .slice(0, index)
         .reduce(
           (a, b) => parseInt(a, 0) + (parseInt(b["exerciseLength"]) || 0),
-          0
+          0,
         );
       const allBreaksBeforeTheNextExercise = workout.exercises
         .slice(0, index)
@@ -177,7 +183,7 @@ function Exercises({
 
     const updatedExercise = { ...exercise, exerciseLength: finalValue };
     const updatedExercises = workout.exercises.map((exercise) =>
-      exercise.id === id ? updatedExercise : exercise
+      exercise.id === id ? updatedExercise : exercise,
     );
     setWorkout({ ...workout, exercises: updatedExercises });
 
@@ -207,7 +213,7 @@ function Exercises({
     const exercise = workout.exercises.find((exercise) => exercise.id === id);
     const updatedExercise = { ...exercise, break: parseInt(value) };
     const updatedExercises = workout.exercises.map((exercise) =>
-      exercise.id === id ? updatedExercise : exercise
+      exercise.id === id ? updatedExercise : exercise,
     );
 
     setWorkout({ ...workout, exercises: updatedExercises });
@@ -219,7 +225,7 @@ function Exercises({
     const exercise = workout.exercises.find((exercise) => exercise.id === id);
     const updatedExercise = { ...exercise, title: value };
     const updatedExercises = workout.exercises.map((exercise) =>
-      exercise.id === id ? updatedExercise : exercise
+      exercise.id === id ? updatedExercise : exercise,
     );
     setWorkout({ ...workout, exercises: updatedExercises });
   };
@@ -230,7 +236,7 @@ function Exercises({
     const exercise = workout.exercises.find((exercise) => exercise.id === id);
     const updatedExercise = { ...exercise, exerciseGroupName: value };
     const updatedExercises = workout.exercises.map((exercise) =>
-      exercise.id === id ? updatedExercise : exercise
+      exercise.id === id ? updatedExercise : exercise,
     );
     setWorkout({ ...workout, exercises: updatedExercises });
   };
@@ -264,7 +270,7 @@ function Exercises({
     e.stopPropagation();
     e.preventDefault();
     const updatedExercises = workout.exercises.filter(
-      (ex) => ex.id !== exercise.id
+      (ex) => ex.id !== exercise.id,
     );
     setWorkout({ ...workout, exercises: updatedExercises });
   };
@@ -281,7 +287,7 @@ function Exercises({
             exerciseLength: 0,
             break: 0,
           }
-        : ex
+        : ex,
     );
     setWorkout({ ...workout, exercises: updatedExercises });
   };
@@ -334,7 +340,7 @@ function Exercises({
 
     //  remove undefined ids
     const filteredOrder = newOrder.filter(
-      (item) => item && item.id !== undefined
+      (item) => item && item.id !== undefined,
     );
     // console.log("filteredOrder:", filteredOrder);
 
@@ -387,7 +393,7 @@ function Exercises({
               flex: 1,
               overflowX: "auto",
               overflowY: "hidden",
-              position: "relative",  // For scroll zone overlays
+              position: "relative", // For scroll zone overlays
               touchAction: isDragging ? "none" : "pan-x",
               WebkitOverflowScrolling: "touch",
             }}

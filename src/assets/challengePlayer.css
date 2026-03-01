@@ -45,7 +45,11 @@
   position: relative;
   width: fit-content;
   padding: 6px;
-  margin: 0 5px 0 0;
+  margin: 0;
+  flex-shrink: 0;
+}
+.exercise-browser-card:last-child {
+  margin-right: 0;
 }
 
 .exercise-browser-card:hover {
@@ -53,8 +57,51 @@
   /* border: 1px solid red; */
   background-color: rgba(216, 216, 216, 0.15);
 }
-.react-multi-carousel-item {
-  width: fit-content !important;
+.custom-carousel-wrapper {
+  display: flex;
+  align-items: center;
+  width: calc(100% + 80px);
+  margin-left: -40px;
+}
+.custom-carousel-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  gap: 0;
+  padding: 4px 0;
+  flex: 1;
+  min-width: 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overflow-y: hidden;
+}
+.custom-carousel-track::-webkit-scrollbar {
+  display: none;
+}
+.custom-carousel-arrow {
+  flex-shrink: 0;
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  line-height: 0;
+}
+.custom-carousel-arrow img {
+  height: 57px;
+  width: 32px;
+}
+.custom-carousel-arrow:hover {
+  opacity: 0.8;
+}
+@media screen and (max-width: 768px) {
+  .custom-carousel-wrapper {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 .challenge-player-container-exercies-box {
   height: 100%;
@@ -193,7 +240,7 @@
   .challenge-player-container-exercies {
     padding: 0 5px;
   }
-  
+
   .workout-info {
     padding: 5px;
   }
