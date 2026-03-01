@@ -52,3 +52,42 @@ export function playBreakStart() {
   audio.currentTime = 0;
   audio.play().catch((err) => console.warn("breakStart audio play failed:", err));
 }
+
+export function pauseBreakAudio() {
+  ensureElements();
+  audioElements.breakEnd.pause();
+  audioElements.breakStart.pause();
+}
+
+export function resumeBreakAudio() {
+  ensureElements();
+  // Resume only if audio was playing (currentTime > 0 and not ended)
+  const end = audioElements.breakEnd;
+  if (end.currentTime > 0 && !end.ended) {
+    end.play().catch(() => {});
+  }
+}
+
+export function stopBreakAudio() {
+  ensureElements();
+  audioElements.breakEnd.pause();
+  audioElements.breakEnd.currentTime = 0;
+  audioElements.breakStart.pause();
+  audioElements.breakStart.currentTime = 0;
+}
+
+export function isBreakAudioPlaying() {
+  ensureElements();
+  const end = audioElements.breakEnd;
+  return !end.paused && !end.ended && end.currentTime > 0;
+}
+
+export function onBreakAudioEnded(callback) {
+  ensureElements();
+  const end = audioElements.breakEnd;
+  const handler = () => {
+    end.removeEventListener('ended', handler);
+    callback();
+  };
+  end.addEventListener('ended', handler);
+}

@@ -1,7 +1,7 @@
 import React, { useEffect, useContext, useMemo, useRef, useCallback } from "react";
 import Countdown from "react-countdown";
 import { Progress } from "antd";
-import { playBreakEnd } from "../../utils/audioHelper";
+import { playBreakEnd, pauseBreakAudio, resumeBreakAudio, stopBreakAudio, isBreakAudioPlaying, onBreakAudioEnded } from "../../utils/audioHelper";
 import {
   breakContext,
   breakPausedContext,
@@ -42,16 +42,23 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
     }
   }, []);
 
-  // Pause/resume countdown when breakPaused changes
+  // Pause/resume countdown and audio together
   useEffect(() => {
     const api = countdownRef.current?.getApi?.();
     if (!api) return;
     if (breakPaused) {
       api.pause();
+      pauseBreakAudio();
     } else {
       api.start();
+      resumeBreakAudio();
     }
   }, [breakPaused]);
+
+  // Stop audio when break is skipped (component unmounts)
+  useEffect(() => {
+    return () => stopBreakAudio();
+  }, []);
 
   const playAudio = useCallback(() => {
     playBreakEnd();
@@ -73,25 +80,31 @@ function BreakTimer({ exercise, nextExerciseTitle, moveToNextExercise, isLastExe
     }
   }, [playAudio]);
 
-  const handleComplete = useCallback(() => {
+  const proceedAfterBreak = useCallback(() => {
     setTimerVisible(false);
     setCurrentBreak(false);
 
     if (isLastExercise) {
-      // Last exercise completed, update progress first then show success popup
       setPlayerState((prevState) => ({ ...prevState, playing: false }));
-      moveToNextExercise(); // This updates backend progress
+      moveToNextExercise();
       if (onWorkoutComplete) {
         setTimeout(() => {
           onWorkoutComplete();
         }, 100);
       }
     } else {
-      // Move to next exercise and resume playing
       moveToNextExercise();
       setPlayerState((prevState) => ({ ...prevState, playing: true }));
     }
   }, [isLastExercise, moveToNextExercise, onWorkoutComplete, setCurrentBreak, setPlayerState, setTimerVisible]);
+
+  const handleComplete = useCallback(() => {
+    if (isBreakAudioPlaying()) {
+      onBreakAudioEnded(proceedAfterBreak);
+    } else {
+      proceedAfterBreak();
+    }
+  }, [proceedAfterBreak]);
 
   // Memoized renderer to prevent re-creation on each render
   const CountdownDisplay = useCallback(({ total }) => {
