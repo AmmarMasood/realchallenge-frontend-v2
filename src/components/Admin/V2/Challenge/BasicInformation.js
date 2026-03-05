@@ -221,11 +221,15 @@ function BasicInformation(props) {
   // Translation support - for linking challenges across languages
   const [allChallengesFromOtherLanguage, setAllChallengesFromOtherLanguage] =
     useState([]);
+  // Set of translationKeys already used by OTHER challenges in the same language (for "already linked" check)
+  const [sameLanguageTranslationKeys, setSameLanguageTranslationKeys] =
+    useState(new Set());
   const [selectedChallengeForTranslation, setSelectedChallengeForTranslation] =
     useState("");
   const [translationKey, setTranslationKey] = useState(null);
   const [translationDropdownOpen, setTranslationDropdownOpen] = useState(false);
   const [translationSearch, setTranslationSearch] = useState("");
+  const [translationLinkDirty, setTranslationLinkDirty] = useState(false);
   const translationDropdownRef = useRef(null);
   const [challengeVersion, setChallengeVersion] = useState(undefined);
   const [versionConflict, setVersionConflict] = useState(false);
@@ -308,13 +312,24 @@ function BasicInformation(props) {
 
     // Fetch challenges from other language for translation linking
     const otherLanguage = langToUse === "dutch" ? "english" : "dutch";
-    const challengesFromOtherLang = await getAllUserChallenges(
-      otherLanguage,
-      true,
-    );
+    const currentId = props.match.params.challengeId;
+    const [challengesFromOtherLang, challengesFromSameLang] = await Promise.all([
+      getAllUserChallenges(otherLanguage, true),
+      getAllUserChallenges(langToUse, true),
+    ]);
+    // Filter out the current challenge in case it appears (e.g. wrong language on initial fetch)
     setAllChallengesFromOtherLanguage(
-      challengesFromOtherLang?.challenges || [],
+      (challengesFromOtherLang?.challenges || []).filter(
+        (c) => c._id !== currentId,
+      ),
     );
+    // Build set of translationKeys used by OTHER challenges in same language (exclude current)
+    const sameLangKeys = new Set(
+      (challengesFromSameLang?.challenges || [])
+        .filter((c) => c._id !== currentId && c.translationKey)
+        .map((c) => c.translationKey),
+    );
+    setSameLanguageTranslationKeys(sameLangKeys);
 
     setDataLoaded(true); // Set dataLoaded to true after all setters are done
 
@@ -338,19 +353,24 @@ function BasicInformation(props) {
   }, [multipleIntensities, seletedTrainers]);
 
   // Handle selecting a challenge to translate
-  const handleSelectChallengeForTranslation = (challengeId) => {
+  const handleSelectChallengeForTranslation = (challengeId, isUserAction = true) => {
     setSelectedChallengeForTranslation(challengeId);
+    if (isUserAction) {
+      setTranslationLinkDirty(true);
+    }
     if (challengeId) {
       const challenge = allChallengesFromOtherLanguage.find(
         (c) => c._id === challengeId,
       );
       if (challenge && challenge.translationKey) {
         setTranslationKey(challenge.translationKey);
-      } else {
+      } else if (isUserAction) {
+        // Only clear if user explicitly picked a challenge with no key
         setTranslationKey(null);
       }
-    } else {
-      setTranslationKey(null);
+    } else if (isUserAction) {
+      // User explicitly cleared — set to "unlink" sentinel
+      setTranslationKey("__unlink__");
     }
   };
 
@@ -411,7 +431,9 @@ function BasicInformation(props) {
           setAdminApproved(challenge.adminApproved);
         }
 
-        setLoading(false);
+        // Don't setLoading(false) here — the challengeLanguage effect will trigger
+        // fetchDataV2(challengeLanguage) which owns the loader lifecycle.
+        // The loader stays on until ALL data (including correct-language challenges) is loaded.
         setIsFirstRender(true);
       };
       fetchChallenge();
@@ -420,12 +442,13 @@ function BasicInformation(props) {
 
   useEffect(() => {
     if (userInfo) {
-      // For updates, only fetch data once with the challenge's language
-      // For new challenges, fetch data when global language changes
       if (props.match.params.challengeId) {
-        // Update mode: only fetch once, use challenge's language
+        // Update mode: skip initial fetch — wait for challengeLanguage to be set,
+        // then the effect below will call fetchDataV2(challengeLanguage) with the correct language.
+        // This prevents fetching "other language" challenges using the wrong global language.
         if (!challengeLanguage) {
-          // Initial load - will be called again after challengeLanguage is set
+          // Still need an initial fetch to load the challenge data and set challengeLanguage.
+          // But don't set allChallengesFromOtherLanguage yet — it may use the wrong language.
           fetchDataV2();
         }
       } else {
@@ -438,14 +461,18 @@ function BasicInformation(props) {
   // Refetch data with correct language once challengeLanguage is set (for updates)
   useEffect(() => {
     if (challengeLanguage && props.match.params.challengeId && userInfo) {
+      // Clear stale dropdown selection from the initial (possibly wrong-language) fetch
+      setSelectedChallengeForTranslation("");
       fetchDataV2(challengeLanguage);
     }
   }, [challengeLanguage]);
 
   // Pre-populate translation link when editing an existing challenge
+  // Gate on challengeLanguage so we only run after the correct "other language" list is loaded
   useEffect(() => {
     if (
       dataLoaded &&
+      challengeLanguage &&
       props.match.params.challengeId &&
       allChallengesFromOtherLanguage.length > 0
     ) {
@@ -454,18 +481,21 @@ function BasicInformation(props) {
           props.match.params.challengeId,
         );
         if (challenge?.translationKey) {
+          // Always restore the challenge's own translationKey
           setTranslationKey(challenge.translationKey);
+          // Try to find the linked challenge in the other language for the dropdown
           const linked = allChallengesFromOtherLanguage.find(
             (c) => c.translationKey === challenge.translationKey,
           );
           if (linked) {
-            setSelectedChallengeForTranslation(linked._id);
+            // Use isUserAction=false so we don't mark dirty
+            handleSelectChallengeForTranslation(linked._id, false);
           }
         }
       };
       fetchAndSetTranslation();
     }
-  }, [dataLoaded, allChallengesFromOtherLanguage]);
+  }, [dataLoaded, challengeLanguage, allChallengesFromOtherLanguage]);
 
   // Close translation dropdown on outside click
   useEffect(() => {
@@ -802,11 +832,22 @@ function BasicInformation(props) {
       }
 
       // Add translationKey for linking with other language versions
-      if (translationKey) {
-        obj.translationKey = translationKey;
-      } else if (isUpdate) {
-        obj.translationKey = null; // Allow clearing the connection
+      // Only include in payload if user explicitly changed the dropdown
+      if (!isUpdate) {
+        // New challenge: send translationKey if user linked to another challenge
+        if (translationKey && translationKey !== "__unlink__") {
+          obj.translationKey = translationKey;
+        }
+      } else if (translationLinkDirty) {
+        // Update: only send if user explicitly changed the link
+        if (translationKey === "__unlink__") {
+          obj.translationKey = null; // User explicitly unlinked — backend will regenerate a standalone key
+        } else if (translationKey) {
+          obj.translationKey = translationKey;
+        }
+        // If translationKey is null/falsy and dirty, don't send — backend keeps existing
       }
+      // If not dirty on update, translationKey is omitted entirely — backend preserves existing
 
       // Include version for optimistic locking
       if (isUpdate && challengeVersion !== undefined) {
@@ -1941,8 +1982,15 @@ function BasicInformation(props) {
                   }}
                 >
                   {/* Selected value / trigger */}
+                  {(() => {
+                    const translationDropdownDisabled = isUpdate && !challengeLanguage;
+                    return (
                   <div
-                    onClick={() => setTranslationDropdownOpen((prev) => !prev)}
+                    onClick={() => {
+                      if (!translationDropdownDisabled) {
+                        setTranslationDropdownOpen((prev) => !prev);
+                      }
+                    }}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -1950,9 +1998,10 @@ function BasicInformation(props) {
                       padding: "8px 12px",
                       border: "1px solid #434343",
                       borderRadius: "6px",
-                      cursor: "pointer",
+                      cursor: translationDropdownDisabled ? "not-allowed" : "pointer",
                       background: "#1a1a2e",
                       minHeight: "38px",
+                      opacity: translationDropdownDisabled ? 0.5 : 1,
                     }}
                   >
                     <span
@@ -1967,27 +2016,30 @@ function BasicInformation(props) {
                         flex: 1,
                       }}
                     >
-                      {selectedChallengeForTranslation
-                        ? (() => {
-                            const found = allChallengesFromOtherLanguage.find(
-                              (c) => c._id === selectedChallengeForTranslation,
-                            );
-                            const intensityLabel = found?.intensity
-                              ? get(strings, {
-                                  Easy: "challengeStudio.intensity_easy",
-                                  Medium: "challengeStudio.intensity_medium",
-                                  Hard: "challengeStudio.intensity_hard",
-                                }[found.intensity], found.intensity)
-                              : "";
-                            return found?.challengeName +
-                              (intensityLabel ? ` - ${intensityLabel}` : "") +
-                              ` (${found?.language})`;
-                          })()
-                        : get(
-                            strings,
-                            "challengeStudio.select_challenge_to_translate",
-                            "Select a challenge to translate (optional)",
-                          )}
+                      {translationDropdownDisabled
+                        ? get(strings, "challengeStudio.loading_translations", "Loading translations...")
+                        : selectedChallengeForTranslation
+                          ? (() => {
+                              const found = allChallengesFromOtherLanguage.find(
+                                (c) => c._id === selectedChallengeForTranslation,
+                              );
+                              if (!found) return get(strings, "challengeStudio.loading_translation", "Loading...");
+                              const intensityLabel = found.intensity
+                                ? get(strings, {
+                                    Easy: "challengeStudio.intensity_easy",
+                                    Medium: "challengeStudio.intensity_medium",
+                                    Hard: "challengeStudio.intensity_hard",
+                                  }[found.intensity], found.intensity)
+                                : "";
+                              return found.challengeName +
+                                (intensityLabel ? ` - ${intensityLabel}` : "") +
+                                ` (${found.language})`;
+                            })()
+                          : get(
+                              strings,
+                              "challengeStudio.select_challenge_to_translate",
+                              "Select a challenge to translate (optional)",
+                            )}
                     </span>
                     <span
                       style={{
@@ -2030,6 +2082,8 @@ function BasicInformation(props) {
                       </span>
                     </span>
                   </div>
+                    );
+                  })()}
 
                   {/* Dropdown panel */}
                   {translationDropdownOpen && (
@@ -2083,9 +2137,10 @@ function BasicInformation(props) {
                               .includes(translationSearch.toLowerCase()),
                           )
                           .map((c) => {
+                            // "Already linked" = another challenge in YOUR language already uses this translationKey
                             const alreadyLinked =
                               c.translationKey &&
-                              c.translationKey !== translationKey;
+                              sameLanguageTranslationKeys.has(c.translationKey);
                             const isSelected =
                               c._id === selectedChallengeForTranslation;
                             return (
