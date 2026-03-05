@@ -343,14 +343,16 @@ function BasicInformation(props) {
     }
   }, [intensityGroupId]);
 
-  // Fetch trainer groups when multipleIntensities is enabled
+  // Fetch trainer groups when multipleIntensities is enabled (filtered by language)
   useEffect(() => {
     if (multipleIntensities) {
-      getIntensityGroups(seletedTrainers || []).then((res) => {
+      // Use challenge's language for updates, global language for new challenges
+      const langToUse = isUpdate && challengeLanguage ? challengeLanguage : language;
+      getIntensityGroups(seletedTrainers || [], langToUse).then((res) => {
         setTrainerGroups(res.groups || []);
       });
     }
-  }, [multipleIntensities, seletedTrainers]);
+  }, [multipleIntensities, seletedTrainers, challengeLanguage, language]);
 
   // Handle selecting a challenge to translate
   const handleSelectChallengeForTranslation = (challengeId, isUserAction = true) => {
@@ -913,6 +915,19 @@ function BasicInformation(props) {
           description:
             err.response.data.message ||
             "A challenge with this intensity already exists in the group.",
+        });
+      }
+
+      // Check if it's an intensity group language mismatch error
+      if (
+        err.response?.status === 409 &&
+        err.response?.data?.error === "INTENSITY_GROUP_LANGUAGE_MISMATCH"
+      ) {
+        notification.error({
+          message: get(strings, "challengeStudio.language_mismatch_title", "Language Mismatch"),
+          description:
+            err.response.data.message ||
+            "Intensity groups can only contain challenges in the same language.",
         });
       }
 

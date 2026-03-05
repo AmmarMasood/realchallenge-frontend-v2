@@ -374,12 +374,15 @@ export function getChallengeByTranslationKey(translationKey, language) {
     });
 }
 
-// Get intensity groups scoped to selected trainers (requires auth)
-export function getIntensityGroups(trainerIds) {
+// Get intensity groups scoped to selected trainers and language (requires auth)
+export function getIntensityGroups(trainerIds, language) {
   const raw = Array.isArray(trainerIds) ? trainerIds : trainerIds ? [trainerIds] : [];
   // Extract _id if trainers are objects
   const ids = raw.map((t) => (typeof t === "object" && t !== null ? t._id : t)).filter(Boolean);
-  const params = ids.length > 0 ? `?trainerIds=${ids.map(encodeURIComponent).join(",")}` : "";
+  const queryParams = new URLSearchParams();
+  if (ids.length > 0) queryParams.set("trainerIds", ids.join(","));
+  if (language) queryParams.set("language", language);
+  const params = queryParams.toString() ? `?${queryParams.toString()}` : "";
   return axios
     .get(`${process.env.REACT_APP_SERVER}/api/challenges/intensity-groups${params}`)
     .then((res) => res.data)
