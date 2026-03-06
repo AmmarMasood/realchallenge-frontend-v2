@@ -17,6 +17,8 @@ import {
   CheckOutlined,
   CloseOutlined,
   EditOutlined,
+  InfoCircleOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
 import { withRouter, Link } from "react-router-dom";
 import {
@@ -234,6 +236,8 @@ function BasicInformation(props) {
   const [challengeVersion, setChallengeVersion] = useState(undefined);
   const [versionConflict, setVersionConflict] = useState(false);
   const [conflictDetails, setConflictDetails] = useState(null);
+  const [lastModifiedInfo, setLastModifiedInfo] = useState(null);
+  const [showConflictWarning, setShowConflictWarning] = useState(false);
   // Store the challenge's original language to prevent global language changes from affecting updates
   const [challengeLanguage, setChallengeLanguage] = useState(null);
   const { reloadWithoutConfirmation } = useBrowserEvents({
@@ -417,6 +421,19 @@ function BasicInformation(props) {
         // Store version for optimistic locking
         if (challenge.__v !== undefined) {
           setChallengeVersion(challenge.__v);
+        }
+
+        // Store last modified info for proactive awareness banner
+        if (challenge.updatedBy || challenge.updatedAt) {
+          const name = challenge.updatedBy
+            ? (challenge.updatedBy.firstName
+              ? `${challenge.updatedBy.firstName} ${challenge.updatedBy.lastName || ""}`.trim()
+              : challenge.updatedBy.username || "Someone")
+            : null;
+          setLastModifiedInfo({
+            name,
+            date: challenge.updatedAt,
+          });
         }
 
         // Set additional states from challenge data
@@ -755,21 +772,6 @@ function BasicInformation(props) {
     try {
       setLoading(true);
 
-      // Pre-flight version check: catch conflicts before workout/exercise updates
-      if (isUpdate && challengeVersion !== undefined) {
-        const versionData = await getChallengeVersion(props.match.params.challengeId);
-        if (versionData && versionData.__v !== challengeVersion) {
-          setConflictDetails({
-            updatedBy: versionData.updatedBy || "Someone",
-            updatedAt: versionData.updatedAt,
-            currentVersion: versionData.__v,
-          });
-          setVersionConflict(true);
-          setLoading(false);
-          return;
-        }
-      }
-
       // Use challenge's original language for updates, global language for new challenges
       const effectiveLanguage =
         isUpdate && challengeLanguage ? challengeLanguage : language;
@@ -1020,12 +1022,12 @@ function BasicInformation(props) {
           const transformedWorkout = transformWorkout(workout);
 
           if (workout._id) {
-            await updateWorkoutOnBackend([transformedWorkout]);
+            await updateWorkoutOnBackend([transformedWorkout], { silent: true });
             return workout._id;
           } else {
             const newWorkout = await updateWorkoutOnBackend([
               transformedWorkout,
-            ]);
+            ], { silent: true });
             const ids = newWorkout.map((w) => w.data.data);
             return ids[0];
           }
@@ -3429,6 +3431,55 @@ function BasicInformation(props) {
                 style={{ margin: "10px" }}
               />
             )}
+
+            {/* Last modified & draft awareness banners */}
+            {isUpdate && lastModifiedInfo && (
+              <div style={{ margin: "10px" }}>
+                <div
+                  style={{
+                    background: "#1e2530",
+                    borderLeft: "3px solid #60a5fa",
+                    borderRadius: "6px",
+                    padding: "10px 16px",
+                    marginBottom: "10px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                  }}
+                >
+                  <InfoCircleOutlined style={{ color: "#60a5fa", fontSize: "16px", flexShrink: 0 }} />
+                  <span className="font-paragraph-white" style={{ fontSize: "13px" }}>
+                    {get(strings, "challengeStudio.last_modified_by", "Last modified by")}{" "}
+                    <strong>{lastModifiedInfo.name || "Unknown"}</strong>{" "}
+                    {get(strings, "challengeStudio.on", "on")}{" "}
+                    <strong>{lastModifiedInfo.date ? new Date(lastModifiedInfo.date).toLocaleString() : "—"}</strong>
+                  </span>
+                </div>
+                {showConflictWarning && lastModifiedInfo.name && (
+                  <div
+                    style={{
+                      background: "#2a2317",
+                      borderLeft: "3px solid #f59e0b",
+                      borderRadius: "6px",
+                      padding: "10px 16px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                    }}
+                  >
+                    <WarningOutlined style={{ color: "#f59e0b", fontSize: "16px", flexShrink: 0 }} />
+                    <span className="font-paragraph-white" style={{ fontSize: "13px" }}>
+                      {get(
+                        strings,
+                        "challengeStudio.conflict_warning",
+                        "This challenge was recently edited by {name}. Proceed with caution.",
+                      ).replace("{name}", lastModifiedInfo.name)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
             <button
               style={{
                 background: "#f37720",
@@ -3456,6 +3507,7 @@ function BasicInformation(props) {
         conflictDetails={conflictDetails}
         onReload={async () => {
           setVersionConflict(false);
+          setShowConflictWarning(true);
           setLoading(true);
           const challenge = await getChallengeById(props.match.params.challengeId);
           if (challenge) {
@@ -3465,6 +3517,14 @@ function BasicInformation(props) {
             if (challenge.allowReviews !== undefined) setAllowReviews(challenge.allowReviews);
             if (challenge.isPublic !== undefined) setMakePublic(challenge.isPublic);
             if (challenge.adminApproved !== undefined) setAdminApproved(challenge.adminApproved);
+            if (challenge.updatedBy || challenge.updatedAt) {
+              const name = challenge.updatedBy
+                ? (challenge.updatedBy.firstName
+                  ? `${challenge.updatedBy.firstName} ${challenge.updatedBy.lastName || ""}`.trim()
+                  : challenge.updatedBy.username || "Someone")
+                : null;
+              setLastModifiedInfo({ name, date: challenge.updatedAt });
+            }
           }
           setLoading(false);
         }}

@@ -101,7 +101,7 @@ export function updateExercise(e, id) {
     });
 }
 
-export function updateWorkoutOnBackend(workout) {
+export function updateWorkoutOnBackend(workout, { silent = false } = {}) {
   let promises = [];
   let responses = [];
 
@@ -121,7 +121,9 @@ export function updateWorkoutOnBackend(workout) {
         for (let i = 0; i < res.length; i++) {
           responses.push(res[i]);
         }
-        openNotificationWithIcon("success", "Successfully updated workout", "");
+        if (!silent) {
+          openNotificationWithIcon("success", "Successfully updated workout", "");
+        }
         return responses;
         // use/access the results
       })
@@ -129,7 +131,9 @@ export function updateWorkoutOnBackend(workout) {
     .catch((errors) => {
       // react on errors.
       console.log(errors);
-      openNotificationWithIcon("error", "Unable to update workout", "");
+      if (!silent) {
+        openNotificationWithIcon("error", "Unable to update workout", "");
+      }
     });
 }
 
