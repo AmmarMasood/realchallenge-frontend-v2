@@ -49,6 +49,8 @@ import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   ReloadOutlined,
+  CopyOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
 import { userInfoContext } from "../../../contexts/UserStore";
 import { LanguageContext } from "../../../contexts/LanguageContext";
@@ -1218,7 +1220,9 @@ export const useFileActionHandler = (
   currentFolderId,
   fileMap,
   setSearchMode,
-  fetchFiles
+  fetchFiles,
+  setPropertiesFile,
+  setShowPropertiesModal
 ) => {
   const { deleteMediaFile, deleteMediaFolder, updateMediaFile } =
     useMediaManager();
@@ -1551,6 +1555,12 @@ export const useFileActionHandler = (
             // notification already shown by service
           }
         }
+      } else if (data.id === "show_properties") {
+        const item = data.state.selectedFilesForAction[0];
+        if (item && !item.isDir) {
+          setPropertiesFile(item);
+          setShowPropertiesModal(true);
+        }
       }
     },
     [
@@ -1570,6 +1580,8 @@ export const useFileActionHandler = (
       handlePasteFiles,
       currentFolderId,
       fetchFiles,
+      setPropertiesFile,
+      setShowPropertiesModal,
     ]
   );
 };
@@ -1849,6 +1861,8 @@ export const VFSBrowser = React.memo((props) => {
   const [renameTarget, setRenameTarget] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
+  const [showPropertiesModal, setShowPropertiesModal] = useState(false);
+  const [propertiesFile, setPropertiesFile] = useState(null);
 
   const {
     fileMap,
@@ -2046,7 +2060,9 @@ export const VFSBrowser = React.memo((props) => {
     currentFolderId,
     fileMap,
     setSearchMode,
-    fetchFiles
+    fetchFiles,
+    setPropertiesFile,
+    setShowPropertiesModal
   );
 
   // Enhanced file actions with depth-aware logic and drag and drop
@@ -2175,17 +2191,18 @@ export const VFSBrowser = React.memo((props) => {
       },
     });
 
-    // Add retry optimization action (only for failed video files)
-    actions.push({
-      id: "retry_optimization",
-      button: {
-        name: get(strings, "mediaManager.retry_optimization", "Retry Optimization"),
-        toolbar: false,
-        contextMenu: true,
-        group: actionsGroup,
-      },
-      fileFilter: (file) => !file.isDir && file.processingStatus === "failed",
-    });
+    // Add retry optimization action — only register if there are failed files visible
+    if (filesForBrowser.some(f => f.processingStatus === "failed")) {
+      actions.push({
+        id: "retry_optimization",
+        button: {
+          name: get(strings, "mediaManager.retry_optimization", "Retry Optimization"),
+          toolbar: false,
+          contextMenu: true,
+          group: actionsGroup,
+        },
+      });
+    }
 
     // Add rename action (always available)
     actions.push({
@@ -2199,6 +2216,18 @@ export const VFSBrowser = React.memo((props) => {
       hotkeys: ["F2"],
     });
 
+    // Add properties action (files only)
+    actions.push({
+      id: "show_properties",
+      button: {
+        name: get(strings, "mediaManager.properties", "Properties"),
+        toolbar: false,
+        contextMenu: true,
+        group: actionsGroup,
+      },
+      fileFilter: (file) => !file.isDir,
+    });
+
     return actions;
   }, [
     strings,
@@ -2210,6 +2239,7 @@ export const VFSBrowser = React.memo((props) => {
     clipboardFiles,
     searchMode,
     responsiveGridAction,
+    filesForBrowser,
   ]);
 
   const thumbnailGenerator = useCallback(
@@ -2465,6 +2495,107 @@ export const VFSBrowser = React.memo((props) => {
               file={previewFile}
               onRetrySuccess={() => fetchFiles(currentFolderId, true)}
             />
+
+            {/* File Properties Modal */}
+            <Modal
+              title={
+                <span>
+                  <InfoCircleOutlined style={{ marginRight: 8 }} />
+                  {get(strings, "mediaManager.file_properties", "File Properties")}
+                </span>
+              }
+              open={showPropertiesModal}
+              onCancel={() => {
+                setShowPropertiesModal(false);
+                setPropertiesFile(null);
+              }}
+              footer={[
+                <Button
+                  key="close"
+                  onClick={() => {
+                    setShowPropertiesModal(false);
+                    setPropertiesFile(null);
+                  }}
+                >
+                  {get(strings, "common.close", "Close")}
+                </Button>,
+              ]}
+              width={520}
+            >
+              {propertiesFile && (() => {
+                const fileName = propertiesFile.rawName || propertiesFile.name || "";
+                const ext = fileName.includes(".")
+                  ? fileName.split(".").pop().toLowerCase()
+                  : "—";
+                const fileSizeBytes = propertiesFile.size || 0;
+                const formatSize = (bytes) => {
+                  if (!bytes) return "—";
+                  if (bytes < 1024) return `${bytes} B`;
+                  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+                  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+                  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+                };
+
+                const rows = [
+                  { label: get(strings, "mediaManager.prop_name", "Name"), value: fileName },
+                  { label: get(strings, "mediaManager.prop_extension", "Extension"), value: ext ? `.${ext}` : "—" },
+                  { label: get(strings, "mediaManager.prop_type", "Type"), value: propertiesFile.mediaType || ext || "—" },
+                  { label: get(strings, "mediaManager.prop_size", "Size"), value: formatSize(fileSizeBytes) },
+                  { label: get(strings, "mediaManager.prop_url", "URL"), value: propertiesFile.link || "—", copyable: true },
+                  { label: get(strings, "mediaManager.prop_uploaded", "Uploaded"), value: propertiesFile.createdAt ? new Date(propertiesFile.createdAt).toLocaleString() : "—" },
+                ];
+
+                if (propertiesFile.processingStatus && propertiesFile.processingStatus !== "none") {
+                  rows.push({
+                    label: get(strings, "mediaManager.prop_processing", "Processing"),
+                    value: propertiesFile.processingStatus,
+                  });
+                }
+
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {rows.map((row) => (
+                      <div key={row.label} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                        <Text strong className="font-paragraph-white" style={{ minWidth: 90, flexShrink: 0 }}>
+                          {row.label}:
+                        </Text>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          {row.copyable ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <Text
+                                className="font-paragraph-white"
+                                style={{
+                                  wordBreak: "break-all",
+                                  fontSize: 13,
+                                  color: "#1890ff",
+                                  cursor: "pointer",
+                                }}
+                                onClick={() => window.open(row.value, "_blank")}
+                              >
+                                {row.value}
+                              </Text>
+                              <Tooltip title={get(strings, "mediaManager.copy_url", "Copy URL")}>
+                                <Button
+                                  type="text"
+                                  size="small"
+                                  icon={<CopyOutlined style={{ color: "#fff" }} />}
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(row.value);
+                                    message.success(get(strings, "mediaManager.url_copied", "URL copied to clipboard"));
+                                  }}
+                                />
+                              </Tooltip>
+                            </div>
+                          ) : (
+                            <Text className="font-paragraph-white" style={{ wordBreak: "break-all" }}>{row.value}</Text>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </Modal>
 
             {loading && (
               <div className="loading-overlay">
