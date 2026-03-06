@@ -85,9 +85,11 @@ function ChallengeProfile(props) {
   const [intensityVariants, setIntensityVariants] = useState([]);
   const [intensityDropdownOpen, setIntensityDropdownOpen] = useState(false);
   const intensityDropdownRef = useRef(null);
+  const [translationNotAvailable, setTranslationNotAvailable] = useState(false);
 
   const fetchChallengeData = async () => {
     setLoading(true);
+    setTranslationNotAvailable(false);
     const res = await getChallengeById(props.match.params.id);
     if (res) {
       setChallenge(res);
@@ -177,6 +179,7 @@ function ChallengeProfile(props) {
     if (challenge && Object.keys(challenge).length > 0) {
       if (challenge.language === language) {
         // Language matches, no need to redirect
+        setTranslationNotAvailable(false);
       } else {
         // Try to find the challenge in the current language using translationKey
         if (challenge.translationKey) {
@@ -185,12 +188,19 @@ function ChallengeProfile(props) {
             language,
           );
           if (translatedChallenge) {
+            setTranslationNotAvailable(false);
             window.location.href = `${
               process.env.REACT_APP_FRONTEND_SERVER
             }/challenge/${slug(translatedChallenge.challengeName)}/${
               translatedChallenge._id
             }`;
+          } else {
+            // No translation available — show banner
+            setTranslationNotAvailable(true);
           }
+        } else {
+          // No translationKey at all — no linked translation exists
+          setTranslationNotAvailable(true);
         }
       }
     } else {
@@ -880,6 +890,74 @@ function ChallengeProfile(props) {
         <meta name="author" content="Realchallenge" />
       </Helmet>
       <Navbar />
+      {translationNotAvailable && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 9999,
+            background: "#2D3239",
+            borderLeft: "3px solid #f37720",
+            borderRadius: "6px",
+            padding: "10px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+            maxWidth: "fit-content",
+          }}
+        >
+          <span className="font-paragraph-white" style={{ fontSize: "13px", whiteSpace: "nowrap" }}>
+            {language === "dutch"
+              ? `Alleen beschikbaar in het ${
+                  challenge.language === "english" ? "Engels" : "Nederlands"
+                }`
+              : `Only available in ${
+                  challenge.language === "dutch" ? "Dutch" : challenge.language
+                }`}
+          </span>
+          <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+            <button
+              onClick={() => props.history.push("/challenges")}
+              style={{
+                background: "transparent",
+                border: "1px solid #72777B",
+                color: "#fff",
+                padding: "4px 10px",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
+              }}
+              className="font-paragraph-white"
+            >
+              {language === "dutch" ? "Overzicht" : "Overview"}
+            </button>
+            <button
+              onClick={() => updateLanguage(challenge.language)}
+              style={{
+                background: "#f37720",
+                border: "none",
+                color: "#fff",
+                padding: "4px 10px",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
+              }}
+              className="font-paragraph-white"
+            >
+              {language === "dutch"
+                ? `Bekijk in ${
+                    challenge.language === "english" ? "Engels" : "Nederlands"
+                  }`
+                : `View in ${
+                    challenge.language === "dutch" ? "Dutch" : challenge.language
+                  }`}
+            </button>
+          </div>
+        </div>
+      )}
       {/* video modal */}
       {/* todo do later */}
       {/* <ModalVideo
