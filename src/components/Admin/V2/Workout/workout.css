@@ -23,10 +23,9 @@
   margin-top: 10px;
 }
 .v2challenge-player-container {
-  /* width: 1024px; */
-  /* margin-top: 10px; */
-  max-width: 1400px;
-  width: calc(100vw - 350px);
+  max-width: 921px;
+  width: 100%;
+  margin: 0 auto;
 }
 .v2workout-studio-top {
   display: flex;
@@ -69,25 +68,11 @@
   top: -35px; */
 }
 
-@media (min-width: 1400px) {
-  .v2challenge-player-container {
-    /* max-width: 1200px; */
-    margin: 0 auto;
-  }
-}
-
 /* Responsive Styles */
 @media screen and (max-width: 1000px) {
-    .v2challenge-player-container{
-    width: calc(100vw - 150px);
-  }
-
 }
 
 @media screen and (max-width: 768px) {
-  .v2challenge-player-container{
-    width: 100%;
-  }
   .v2workout-studio-top {
     padding: 0 10px;
     margin-bottom: 15px;
@@ -119,9 +104,6 @@
 }
 
 @media screen and (max-width: 600px) {
-  .v2challenge-player-container{
-    width: calc(100vw - 10px);
-  }
 
   .v2workout-studio-top {
     padding: 0 8px;
@@ -138,9 +120,6 @@
 }
 
 @media screen and (max-width: 550px) {
-    .v2challenge-player-container{
-    width: 100%;
-  }
 
   .v2workout-studio-top {
     padding: 0 5px;

@@ -3,6 +3,10 @@
   min-height: 100vh;
   width: 100%;
 }
+.fullplayer-container {
+  width: 100%;
+  max-width: 921px;
+}
 .challenge-player-container-nav {
   padding: clamp(5px, 2vw, 10px) clamp(10px, 2vw, 20px);
   color: var(--color-orange);

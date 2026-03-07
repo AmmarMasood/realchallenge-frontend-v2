@@ -9,9 +9,8 @@
 
 .player-wrapper {
   width: 100%;
-  max-width: 100%;
-  aspect-ratio: 16 / 9;
-  max-height: 450px;
+  max-width: 921px;
+  height: 523px;
   margin: 0 auto;
   box-sizing: border-box;
   overflow: hidden;
@@ -132,9 +131,8 @@
   height: 100% !important;
 }
 .react-player > video {
-  object-fit: contain !important;
+  object-fit: cover !important;
   max-width: 100% !important;
-  /* height: auto !important; */
 }
 
 /* Fullscreen video handling */
@@ -337,7 +335,7 @@
 
 .challenge-player-container-exercies-box-imagebox {
   width: 213px;
-  height: 200px;
+  height: 251px;
   overflow: hidden;
   position: relative;
   background-color: #1a1f26;
@@ -361,12 +359,6 @@
   .player-page {
     min-height: 60vh;
   }
-  .player-wrapper {
-    max-width: 100%;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    margin: 0 auto;
-  }
   .helpPopOut-player-wrapper {
     max-width: 900px;
     width: 100%;
@@ -377,11 +369,6 @@
 @media screen and (max-width: 1650px) {
   .player-page {
     min-height: 40vh;
-  }
-  .player-wrapper {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    margin: 0 auto;
   }
   .helpPopOut-player-wrapper {
     max-width: 800px;
@@ -395,11 +382,6 @@
   .player-page {
     min-height: 40vh;
   }
-  .player-wrapper {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    margin: 0 auto;
-  }
   .helpPopOut-player-wrapper {
     max-width: 700px;
     width: 100%;
@@ -410,11 +392,6 @@
 @media screen and (max-width: 1300px) {
   .player-page {
     height: fit-content;
-  }
-  .player-wrapper {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    margin: 0 auto;
   }
   .helpPopOut-player-wrapper {
     max-width: 650px;
@@ -427,11 +404,6 @@
   .player-page {
     min-height: 35vh;
   }
-  .player-wrapper {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    margin: 0 auto;
-  }
   .helpPopOut-player-wrapper {
     max-width: 600px;
     width: 95%;
@@ -443,11 +415,6 @@
   .player-page {
     min-height: 30vh;
   }
-  .player-wrapper {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    margin: 0 auto;
-  }
   .helpPopOut-player-wrapper {
     max-width: 550px;
     width: 95%;
@@ -457,11 +424,6 @@
 }
 
 @media screen and (max-width: 1000px) {
-  .player-wrapper {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    margin: 0 auto;
-  }
   .helpPopOut-player-wrapper {
     max-width: 500px;
     width: 95%;
@@ -553,10 +515,14 @@
 
 @media screen and (max-width: 768px) {
   .player-wrapper {
-    width: 100vw;
-    aspect-ratio: 16 / 9;
+    width: 100%;
+    max-width: 100%;
     margin: 0 auto;
-    height: 800px;
+    height: 818px;
+  }
+  .challenge-player-container-exercies-box-imagebox {
+    width: 188px;
+    height: 176px;
   }
   .helpPopOut-player-wrapper {
     max-width: 100%;
@@ -566,6 +532,10 @@
   }
   .controls-wrapper-bottom > div {
     width: 150px;
+  }
+  .challenge-player-container-exercies-heading,
+  .challenge-player-container-exercies-subheading {
+    display: none;
   }
 }
 
@@ -604,11 +574,14 @@
     height: auto;
   }
   .player-wrapper {
-    /* max-width: 100%; */
-    /* width: 95%; */
-    aspect-ratio: 0;
+    width: 100%;
+    max-width: 100%;
     margin: 0 auto;
-    height: 600px;
+    height: 656px;
+  }
+  .challenge-player-container-exercies-box-imagebox {
+    width: 136px;
+    height: 128px;
   }
   .helpPopOut-player-wrapper {
     max-width: 100%;
