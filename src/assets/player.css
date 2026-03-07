@@ -537,6 +537,12 @@
   .challenge-player-container-exercies-subheading {
     display: none;
   }
+  .exercise-browser-card {
+    max-width: 200px;
+  }
+  .challenge-player-container-exercies-box-details p {
+    width: auto !important;
+  }
 }
 
 @media screen and (max-width: 600px) {
@@ -582,6 +588,13 @@
   .challenge-player-container-exercies-box-imagebox {
     width: 136px;
     height: 128px;
+  }
+  .exercise-browser-card {
+    max-width: 148px;
+  }
+  .challenge-player-container-exercies-box-details p {
+    width: auto !important;
+    font-size: 13px !important;
   }
   .helpPopOut-player-wrapper {
     max-width: 100%;
