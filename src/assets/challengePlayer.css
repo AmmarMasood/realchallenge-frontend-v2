@@ -51,6 +51,7 @@
   padding: 6px;
   margin: 0;
   flex-shrink: 0;
+  scroll-snap-align: start;
 }
 .exercise-browser-card:last-child {
   margin-right: 0;
@@ -71,6 +72,7 @@
   display: flex;
   overflow-x: auto;
   scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
   gap: 0;
   padding: 4px 0;
   flex: 1;
@@ -78,6 +80,7 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
   overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 .custom-carousel-track::-webkit-scrollbar {
   display: none;

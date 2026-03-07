@@ -69,7 +69,9 @@ function PlayerVideoBrowser({
 
   const scrollCarousel = (direction) => {
     if (trackRef.current) {
-      trackRef.current.scrollBy({ left: direction * 280, behavior: "smooth" });
+      const firstCard = trackRef.current.querySelector('.exercise-browser-card');
+      const cardWidth = firstCard ? firstCard.offsetWidth : 200;
+      trackRef.current.scrollBy({ left: direction * cardWidth * 2, behavior: "smooth" });
     }
   };
 
@@ -214,7 +216,7 @@ function PlayerVideoBrowser({
                           <p
                             style={{
                               lineHeight: "20px",
-                              width: "200px",
+                              width: "100%",
                               fontSize: "16px",
                               marginBottom: "10px",
                             }}
@@ -292,7 +294,7 @@ function PlayerVideoBrowser({
                           <p
                             style={{
                               lineHeight: "20px",
-                              width: "200px",
+                              width: "100%",
                               fontSize: "16px",
                               padding: 0,
                               marginBottom: "10px",
