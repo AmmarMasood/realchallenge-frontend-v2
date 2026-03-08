@@ -47,11 +47,19 @@
 }
 .exercise-browser-card {
   position: relative;
-  width: fit-content;
+  width: 23%;
+  min-width: 120px;
+  max-width: 213px;
   padding: 6px;
   margin: 0;
   flex-shrink: 0;
   scroll-snap-align: start;
+}
+.exercise-browser-card-update {
+  width: 200px;
+  min-width: 200px;
+  max-width: 200px;
+  box-sizing: border-box;
 }
 .exercise-browser-card:last-child {
   margin-right: 0;
@@ -104,7 +112,7 @@
 .custom-carousel-arrow:hover {
   opacity: 0.8;
 }
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 830px) {
   .custom-carousel-wrapper {
     width: 100%;
     margin-left: 0;
@@ -118,6 +126,7 @@
   align-items: center;
   flex-direction: column;
   cursor: pointer;
+  box-sizing: border-box;
 }
 .challenge-player-container-exercies-box--currentRunning {
   border-bottom: 2px solid var(--color-orange);
@@ -144,7 +153,13 @@
 .challenge-player-container-exercies-box-details {
   text-align: left;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   line-height: 10px;
+}
+.challenge-player-container-exercies-box-details input {
+  max-width: calc(100% - 23px) !important;
+  box-sizing: border-box;
 }
 .challenge-player-container-exercies-box-details p:first-child {
   font-size: 17px;
@@ -224,12 +239,31 @@
   opacity: 0.6;
 }
 
-@media screen and (max-width: 768px) {
+/* Tablet landscape: desktop-like but still tablet proportions */
+@media screen and (min-width: 831px) and (max-width: 1024px) and (orientation: landscape) {
+  .exercise-browser-card {
+    max-width: 180px;
+  }
+}
+
+@media screen and (max-width: 830px) {
   .challenge-player-container-exercies {
     padding: 0 10px;
   }
   .video-browser-container {
-    margin: 15px 0 0 0;
+    margin: 10px 0 0 0;
+  }
+  .exercise-browser-card {
+    min-width: 188px;
+    max-width: 200px;
+  }
+  .exercise-browser-card-update {
+    width: 180px;
+    min-width: 180px;
+    max-width: 180px;
+  }
+  .challenge-player-container-exercies-round {
+    margin-bottom: 5px;
   }
 }
 

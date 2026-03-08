@@ -404,8 +404,8 @@ function Exercises({
                 aria-label={`Exercise 0`}
                 className={`${
                   currentExercise.index === 0
-                    ? "exercise-browser-card challenge-player-container-exercies-box--currentRunning"
-                    : "exercise-browser-card"
+                    ? "exercise-browser-card exercise-browser-card-update challenge-player-container-exercies-box--currentRunning"
+                    : "exercise-browser-card exercise-browser-card-update"
                 }`}
                 style={{
                   backgroundColor:
@@ -577,8 +577,8 @@ function Exercises({
                         <div
                           className={`${
                             currentExercise.index === i
-                              ? "exercise-browser-card challenge-player-container-exercies-box--currentRunning"
-                              : "exercise-browser-card"
+                              ? "exercise-browser-card exercise-browser-card-update challenge-player-container-exercies-box--currentRunning"
+                              : "exercise-browser-card exercise-browser-card-update"
                           }`}
                           style={{
                             backgroundColor:
@@ -646,7 +646,8 @@ function Exercises({
                                   placeholder="Group 1/3"
                                   style={{
                                     paddingLeft: "5px",
-                                    width: "160px",
+                                    width: "100%",
+                                    boxSizing: "border-box",
                                   }}
                                 />
                               </h4>
@@ -730,7 +731,7 @@ function Exercises({
                                 disabled={workout.renderWorkout}
                                 style={{
                                   paddingLeft: "5px",
-                                  width: "fit-content",
+                                  width: "100%",
                                 }}
                               />
                               {workout.renderWorkout && (

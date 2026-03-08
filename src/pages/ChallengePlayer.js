@@ -323,7 +323,7 @@ function ChallengePlayer(props) {
           }
         }
       >
-        {width > 768 && (
+        {width > 830 && (
           <div
             className="challenge-player-container-exercies challenge-player-container-nav"
             style={{ marginTop: "0" }}

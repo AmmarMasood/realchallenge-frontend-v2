@@ -10,7 +10,7 @@
 .player-wrapper {
   width: 100%;
   max-width: 921px;
-  height: 523px;
+  aspect-ratio: 16 / 9;
   margin: 0 auto;
   box-sizing: border-box;
   overflow: hidden;
@@ -131,7 +131,7 @@
   height: 100% !important;
 }
 .react-player > video {
-  object-fit: cover !important;
+  object-fit: contain !important;
   max-width: 100% !important;
 }
 
@@ -334,8 +334,8 @@
 }
 
 .challenge-player-container-exercies-box-imagebox {
-  width: 213px;
-  height: 251px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   position: relative;
   background-color: #1a1f26;
@@ -423,6 +423,11 @@
   }
 }
 
+@media screen and (max-width: 1025px) {
+  .challenge-player-container-exercies-box-details input {
+    max-width: 165px;
+  }
+}
 @media screen and (max-width: 1000px) {
   .helpPopOut-player-wrapper {
     max-width: 500px;
@@ -513,16 +518,17 @@
   }
 }
 
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 830px) {
   .player-wrapper {
     width: 100%;
     max-width: 100%;
     margin: 0 auto;
-    height: 818px;
+    aspect-ratio: auto;
+    height: 60dvh;
+    max-height: 60dvh;
   }
-  .challenge-player-container-exercies-box-imagebox {
-    width: 188px;
-    height: 176px;
+  .react-player > video {
+    object-fit: cover !important;
   }
   .helpPopOut-player-wrapper {
     max-width: 100%;
@@ -537,11 +543,8 @@
   .challenge-player-container-exercies-subheading {
     display: none;
   }
-  .exercise-browser-card {
-    max-width: 200px;
-  }
-  .challenge-player-container-exercies-box-details p {
-    width: auto !important;
+  .challenge-player-container-exercies-box-details input {
+    max-width: 150px;
   }
 }
 
@@ -583,18 +586,24 @@
     width: 100%;
     max-width: 100%;
     margin: 0 auto;
-    height: 656px;
-  }
-  .challenge-player-container-exercies-box-imagebox {
-    width: 136px;
-    height: 128px;
+    aspect-ratio: auto;
+    height: 55dvh;
+    max-height: 55dvh;
   }
   .exercise-browser-card {
-    max-width: 148px;
+    min-width: 136px;
+    max-width: 150px;
+  }
+  .challenge-player-container-exercies-box-asktrainerbtn {
+    width: 26px;
+    height: 26px;
+    padding: 3px;
   }
   .challenge-player-container-exercies-box-details p {
-    width: auto !important;
     font-size: 13px !important;
+  }
+  .challenge-player-container-exercies-box-details input {
+    max-width: 130px;
   }
   .helpPopOut-player-wrapper {
     max-width: 100%;
@@ -748,5 +757,18 @@
     justify-content: space-between;
     /* border: 1px solid red; */
     width: 130px;
+  }
+}
+
+/* Mobile landscape: allow scrolling, preserve healthy player proportions */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+  .player-wrapper {
+    height: auto;
+    max-height: none;
+    aspect-ratio: 16 / 9;
+    min-height: 250px;
+  }
+  .react-player > video {
+    object-fit: contain !important;
   }
 }
