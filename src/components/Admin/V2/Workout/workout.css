@@ -61,6 +61,8 @@
   cursor: pointer;
   margin-bottom: 10px;
   float: right;
+  z-index: 100000;
+  position: relative;
   /* position: absolute;
   right: 65px;
   z-index: 1000;
@@ -98,12 +100,9 @@
     grid-template-columns: 1fr;
     gap: 8px;
   }
-
-
 }
 
 @media screen and (max-width: 600px) {
-
   .v2workout-studio-top {
     padding: 0 8px;
     margin-bottom: 10px;
@@ -119,7 +118,6 @@
 }
 
 @media screen and (max-width: 550px) {
-
   .v2workout-studio-top {
     padding: 0 5px;
   }
