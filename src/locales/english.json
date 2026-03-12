@@ -1142,7 +1142,9 @@
     "last_modified_by": "Last modified by",
     "version_conflict_title": "Edit Conflict",
     "version_conflict_message": "This challenge was last modified by {name}, on {date}. Please refresh the page to get latest version before continuing editing.",
-    "reload": "Refresh"
+    "reload": "Refresh",
+    "challenge_locked_title": "Challenge Locked",
+    "challenge_locked_message": "This challenge is currently being edited by {name}. Please try again later."
   },
   "payment": {
     "error_title": "Error",

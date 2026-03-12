@@ -1142,7 +1142,9 @@
     "last_modified_by": "Laatst gewijzigd door",
     "version_conflict_title": "Bewerkingsconflict",
     "version_conflict_message": "Deze challenge is laatst gewijzigd door {name}, op {date}. Ververs de pagina om de laatste versie te krijgen voordat je verder gaat met bewerken.",
-    "reload": "Ververs"
+    "reload": "Ververs",
+    "challenge_locked_title": "Uitdaging Vergrendeld",
+    "challenge_locked_message": "Deze uitdaging wordt momenteel bewerkt door {name}. Probeer het later opnieuw."
   },
   "payment": {
     "error_title": "Fout",
