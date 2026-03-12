@@ -7,6 +7,13 @@
   width: 100%;
   max-width: 921px;
 }
+
+/* Desktop: fit header + player + carousel in viewport */
+@media screen and (min-width: 831px) {
+  .video-browser-container {
+    margin-top: clamp(8px, 1.5vw, 15px);
+  }
+}
 .challenge-player-container-nav {
   padding: clamp(5px, 2vw, 10px) clamp(10px, 2vw, 20px);
   color: var(--color-orange);
@@ -239,10 +246,20 @@
   opacity: 0.6;
 }
 
+/* Desktop: shrink exercise cards so carousel fits in viewport with player */
+@media screen and (min-width: 831px) {
+  .exercise-browser-card {
+    max-width: 160px;
+  }
+  .challenge-player-container-exercies-box-imagebox {
+    aspect-ratio: 4 / 3;
+  }
+}
+
 /* Tablet landscape: desktop-like but still tablet proportions */
 @media screen and (min-width: 831px) and (max-width: 1024px) and (orientation: landscape) {
   .exercise-browser-card {
-    max-width: 180px;
+    max-width: 150px;
   }
 }
 

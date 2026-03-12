@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Button, Tag, Table, Space, Input } from "antd";
+import { Button, Tag, Table, Space, Input, notification } from "antd";
 import moment from "moment";
 import {
   getAllUserChallenges,
   removeChallenge,
+  acquireChallengeLock,
 } from "../../../services/createChallenge/main";
 import { Select } from "antd";
 import UpdateChallenge from "./UpdateChallenge";
@@ -13,6 +14,7 @@ import slug from "elegant-slug";
 import { Link } from "react-router-dom";
 import { T } from "../../Translate";
 import { LanguageContext } from "../../../contexts/LanguageContext";
+import { LockOutlined } from "@ant-design/icons";
 
 function AllChallenges({ setCurrentSelection, setSelectedChallengeForUpdate }) {
   const [filterAllChallenges, setFilterAllChallenge] = useState([]);
@@ -21,7 +23,6 @@ function AllChallenges({ setCurrentSelection, setSelectedChallengeForUpdate }) {
   const [allTrainers, setAllTrainers] = useState([]);
   const userInfo = useContext(userInfoContext);
   const { language } = useContext(LanguageContext);
-
   useEffect(() => {
     if (filter === "all") {
       setFilterAllChallenge(allChallenges);
@@ -47,10 +48,26 @@ function AllChallenges({ setCurrentSelection, setSelectedChallengeForUpdate }) {
     setFilterAllChallenge(c.challenges);
   };
 
-  const openChallengeUpdater = (record) => {
-    setSelectedChallengeForUpdate(record);
-    setCurrentSelection(5.3);
-    // setShow(true);
+  const openChallengeUpdater = async (record) => {
+    try {
+      const result = await acquireChallengeLock(record._id);
+      if (result?.error === "CHALLENGE_LOCKED") {
+        notification.warning({
+          message: "Challenge Locked",
+          description: `This challenge is currently being edited by ${result.lockedBy || "someone"}. Please try again later.`,
+          icon: <LockOutlined style={{ color: "#ff4d4f" }} />,
+          duration: 5,
+        });
+        return;
+      }
+      setSelectedChallengeForUpdate(record);
+      setCurrentSelection(5.3);
+    } catch (err) {
+      notification.error({
+        message: "Error",
+        description: "Unable to open challenge for editing.",
+      });
+    }
   };
 
   const deleteChallenge = async (c) => {

@@ -20,6 +20,8 @@ import {
   getAllChallenges,
   getAllUserChallenges,
   updateChallenge,
+  releaseChallengeLock,
+  renewChallengeLock,
 } from "../../../services/createChallenge/main";
 import setAuthToken from "../../../helpers/setAuthToken";
 import { userInfoContext } from "../../../contexts/UserStore";
@@ -163,6 +165,40 @@ function UpdateChallenge({ selectedChallengeForUpdate, setCurrentSelection }) {
   useEffect(() => {
     fethData();
   }, []);
+
+  // Edit lock: heartbeat every 10s + release on unmount + multiple unload events
+  useEffect(() => {
+    const challengeId = selectedChallengeForUpdate?._id;
+    if (!challengeId) return;
+
+    // Heartbeat: renew lock every 10 seconds (lock expires after 30s on server)
+    const heartbeatInterval = setInterval(() => {
+      renewChallengeLock(challengeId);
+    }, 10 * 1000);
+
+    const sendUnlock = () => {
+      const url = `${process.env.REACT_APP_SERVER}/api/challenges/${challengeId}/unlock`;
+      const token = localStorage.getItem("jwtToken");
+      const blob = new Blob(
+        [JSON.stringify({ token })],
+        { type: "application/json" }
+      );
+      navigator.sendBeacon(url, blob);
+    };
+
+    const handlePageHide = () => { sendUnlock(); };
+    const handleBeforeUnload = () => { sendUnlock(); };
+
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      clearInterval(heartbeatInterval);
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      releaseChallengeLock(challengeId);
+    };
+  }, [selectedChallengeForUpdate?._id]);
   const addStuffToMainTabForm = () => {
     console.log("selected challenge", selectedChallengeForUpdate);
     const {

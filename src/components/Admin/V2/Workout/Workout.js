@@ -424,7 +424,7 @@ function Workout() {
             <img src={WorkoutStudio} alt="workout-studio" />
           </div>
 
-          <button className="music-icon-button" onClick={openMusicAdder}>
+          <button className="music-icon-button" style={musicChooseModalVisible ? { zIndex: 1 } : undefined} onClick={openMusicAdder}>
             <span><T>workoutStudio.add_background_music</T></span>
             <img src={MusicIcon} alt="music-icon" />
           </button>

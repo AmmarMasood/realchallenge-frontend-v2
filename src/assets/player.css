@@ -16,6 +16,13 @@
   overflow: hidden;
   background-color: #000;
 }
+
+/* Desktop: constrain player height so header + player + exercise carousel fit in viewport */
+@media screen and (min-width: 831px) {
+  .player-wrapper {
+    max-height: calc(100vh - 350px);
+  }
+}
 .helpPopOut-player-wrapper {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -131,7 +138,7 @@
   height: 100% !important;
 }
 .react-player > video {
-  object-fit: contain !important;
+  object-fit: cover !important;
   max-width: 100% !important;
 }
 

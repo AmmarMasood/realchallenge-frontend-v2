@@ -407,6 +407,40 @@ export function getChallengesByGroup(groupId) {
     });
 }
 
+// Edit lock: acquire lock before editing
+export function acquireChallengeLock(challengeId) {
+  return axios
+    .post(`${process.env.REACT_APP_SERVER}/api/challenges/${challengeId}/lock`)
+    .then((res) => res.data)
+    .catch((err) => {
+      // 423 = locked by someone else — return error data for the caller to handle
+      if (err.response?.status === 423) {
+        return { error: "CHALLENGE_LOCKED", ...err.response.data };
+      }
+      throw err;
+    });
+}
+
+// Edit lock: release lock when done editing
+export function releaseChallengeLock(challengeId) {
+  return axios
+    .delete(`${process.env.REACT_APP_SERVER}/api/challenges/${challengeId}/lock`)
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log("Failed to release lock:", err);
+    });
+}
+
+// Edit lock: heartbeat to keep lock alive
+export function renewChallengeLock(challengeId) {
+  return axios
+    .put(`${process.env.REACT_APP_SERVER}/api/challenges/${challengeId}/lock`)
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log("Failed to renew lock:", err);
+    });
+}
+
 // Get all translations of an exercise by translationKey
 export function getExerciseTranslationsByKey(translationKey, excludeLanguage = null) {
   const params = new URLSearchParams();

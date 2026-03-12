@@ -78,6 +78,8 @@ import {
   updateWorkoutOnBackend,
   getAllUserChallenges,
   getIntensityGroups,
+  releaseChallengeLock,
+  renewChallengeLock,
 } from "../../../../services/createChallenge/main";
 import { useBrowserEvents } from "../../../../helpers/useBrowserEvents";
 import { hasAnyRole } from "../../../../helpers/roleHelpers";
@@ -101,6 +103,8 @@ import { debounce } from "lodash";
 import { createPost } from "../../../../services/posts.js";
 import { getDefaultGoals } from "../../../../constants/goals.js";
 import VersionConflictModal from "../../../Common/VersionConflictModal";
+import ChallengeLockModal from "../../../Common/ChallengeLockModal";
+import { acquireChallengeLock } from "../../../../services/createChallenge/main";
 
 // tooltipText is resolved inside the component via strings
 const iconStyle = {
@@ -238,11 +242,13 @@ function BasicInformation(props) {
   const [conflictDetails, setConflictDetails] = useState(null);
   const [lastModifiedInfo, setLastModifiedInfo] = useState(null);
   const [showConflictWarning, setShowConflictWarning] = useState(false);
+  const [editLockBlocked, setEditLockBlocked] = useState(false);
+  const [editLockDetails, setEditLockDetails] = useState(null);
   // Store the challenge's original language to prevent global language changes from affecting updates
   const [challengeLanguage, setChallengeLanguage] = useState(null);
   const { reloadWithoutConfirmation } = useBrowserEvents({
-    enableBeforeUnloadConfirm: true,
-    hasUnsavedChanges: true,
+    enableBeforeUnloadConfirm: !editLockBlocked,
+    hasUnsavedChanges: !editLockBlocked,
     backForwardMessage: get(
       strings,
       "challengeStudio.unsaved_changes_warning",
@@ -529,6 +535,63 @@ function BasicInformation(props) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Edit lock: acquire lock on mount when editing (handles direct URL navigation)
+  useEffect(() => {
+    const challengeId = props.match.params.challengeId;
+    if (!challengeId) return;
+
+    const tryAcquireLock = async () => {
+      try {
+        const result = await acquireChallengeLock(challengeId);
+        if (result?.error === "CHALLENGE_LOCKED") {
+          setEditLockDetails(result);
+          setEditLockBlocked(true);
+        }
+      } catch (err) {
+        console.log("Failed to acquire edit lock:", err);
+      }
+    };
+    tryAcquireLock();
+  }, [props.match.params.challengeId]);
+
+  // Edit lock: heartbeat every 10s + release on unmount + multiple unload events
+  useEffect(() => {
+    const challengeId = props.match.params.challengeId;
+    if (!challengeId) return;
+
+    // Heartbeat: renew lock every 10 seconds (lock expires after 30s on server)
+    const heartbeatInterval = setInterval(() => {
+      renewChallengeLock(challengeId);
+    }, 10 * 1000);
+
+    // Send unlock via sendBeacon (works reliably during page unload)
+    const sendUnlock = () => {
+      const url = `${process.env.REACT_APP_SERVER}/api/challenges/${challengeId}/unlock`;
+      const token = localStorage.getItem("jwtToken");
+      const blob = new Blob(
+        [JSON.stringify({ token })],
+        { type: "application/json" }
+      );
+      navigator.sendBeacon(url, blob);
+    };
+
+    // pagehide is more reliable than beforeunload on modern browsers
+    const handlePageHide = () => { sendUnlock(); };
+    // beforeunload as fallback for older browsers
+    const handleBeforeUnload = () => { sendUnlock(); };
+
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Cleanup: release lock on unmount (navigating away within the app)
+    return () => {
+      clearInterval(heartbeatInterval);
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      releaseChallengeLock(challengeId);
+    };
+  }, [props.match.params.challengeId]);
 
   const openForThumbnail = () => {
     setErrors((prev) => ({
@@ -3502,6 +3565,10 @@ function BasicInformation(props) {
           </div>
         </div>
       </div>
+      <ChallengeLockModal
+        visible={editLockBlocked}
+        lockDetails={editLockDetails}
+      />
       <VersionConflictModal
         visible={versionConflict}
         conflictDetails={conflictDetails}

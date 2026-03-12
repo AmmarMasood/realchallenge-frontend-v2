@@ -138,6 +138,24 @@ function AllRequests() {
       ),
     },
     {
+      title: <T>admin.modified_by</T>,
+      key: "updatedBy",
+      render: (text, record) => {
+        const updater = record.updatedBy;
+        const creator = record.user;
+        const name = updater
+          ? updater.firstName
+            ? `${updater.firstName} ${updater.lastName || ""}`.trim()
+            : updater.username || "-"
+          : creator
+          ? creator.firstName
+            ? `${creator.firstName} ${creator.lastName || ""}`.trim()
+            : creator.username || "-"
+          : "-";
+        return <span className="font-paragraph-black">{name}</span>;
+      },
+    },
+    {
       title: <T>admin.updated_at</T>,
       key: "updatedAt",
       dataIndex: "updatedAt",
