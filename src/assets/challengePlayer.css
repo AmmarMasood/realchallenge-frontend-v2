@@ -165,7 +165,8 @@
   line-height: 10px;
 }
 .challenge-player-container-exercies-box-details input {
-  max-width: calc(100% - 23px) !important;
+  max-width: 100% !important;
+  width: 100% !important;
   box-sizing: border-box;
 }
 .challenge-player-container-exercies-box-details p:first-child {

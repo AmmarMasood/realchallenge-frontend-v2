@@ -531,8 +531,8 @@
     max-width: 100%;
     margin: 0 auto;
     aspect-ratio: auto;
-    height: 60dvh;
-    max-height: 60dvh;
+    height: 60svh;
+    max-height: 60svh;
   }
   .react-player > video {
     object-fit: cover !important;
@@ -594,8 +594,8 @@
     max-width: 100%;
     margin: 0 auto;
     aspect-ratio: auto;
-    height: 55dvh;
-    max-height: 55dvh;
+    height: 55svh;
+    max-height: 55svh;
   }
   .exercise-browser-card {
     min-width: 136px;

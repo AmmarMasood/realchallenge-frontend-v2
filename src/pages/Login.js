@@ -81,6 +81,10 @@ function Login(props) {
   const responseGoogle = async (response) => {
     // setLoading(true);
     console.log("response google");
+    if (!response || !response.profileObj) {
+      console.log("Google login failed or was cancelled", response);
+      return;
+    }
     const res = await loginUserWithGoogle({
       googleId: response.googleId,
       email: response.profileObj.email,

@@ -535,7 +535,8 @@ function Exercises({
                         style={{
                           marginTop: "-10px",
                           paddingLeft: "5px",
-                          width: "fit-content",
+                          width: "100%",
+                          boxSizing: "border-box",
                         }}
                       />
                     )}
@@ -566,7 +567,7 @@ function Exercises({
                   setDraggedItemId(draggedId);
                 }}
                 scrollContainerRef={scrollContainerRef}
-                autoScrollSpeed={18}
+                autoScrollSpeed={25}
                 autoScrollThreshold={500}
               >
                 {remainingExercises &&
@@ -746,7 +747,8 @@ function Exercises({
                                   type="number"
                                   style={{
                                     paddingLeft: "5px",
-                                    width: "fit-content",
+                                    width: "100%",
+                                    boxSizing: "border-box",
                                   }}
                                 />
                               )}
@@ -762,7 +764,8 @@ function Exercises({
                                   type="number"
                                   style={{
                                     paddingLeft: "5px",
-                                    width: "fit-content",
+                                    width: "100%",
+                                    boxSizing: "border-box",
                                   }}
                                 />
                               )}
