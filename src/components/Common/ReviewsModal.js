@@ -15,6 +15,7 @@ import { userInfoContext } from "../../contexts/UserStore";
 
 function ReviewsModal({ item, visible, setVisible, type, fetchData }) {
   const [alreadyReviewd, setAlreadyReviewd] = useState(false);
+  const [userReview, setUserReview] = useState(null);
   const [userInfo, setUserInfo] = useContext(userInfoContext);
   const [newReview, setNewReview] = useState({ text: "", rating: 1 });
   const [allReviews, setAllReviews] = useState([]);
@@ -37,8 +38,10 @@ function ReviewsModal({ item, visible, setVisible, type, fetchData }) {
       item.reviews && item.reviews.filter((f) => f.user._id === userInfo.id);
     if (g && g.length > 0) {
       setAlreadyReviewd(true);
+      setUserReview(g[0]);
     } else {
       setAlreadyReviewd(false);
+      setUserReview(null);
     }
     //   setAllComments(post.comments ? post.comments : []);
   }, [item]);
@@ -225,7 +228,30 @@ function ReviewsModal({ item, visible, setVisible, type, fetchData }) {
               </div>
             </div>
           ) : (
-            <p className="font-paragraph-white">{"Already Reviewed"}</p>
+            <div style={{ marginTop: "10px" }}>
+              <span style={{ display: "flex", alignItems: "center" }}>
+                <Avatar
+                  src={`${process.env.REACT_APP_SERVER}/${userInfo.avatar}`}
+                  shape="square"
+                  style={{ marginRight: "10px" }}
+                />
+                <span>
+                  <Rate value={userReview?.rating} disabled={true} />
+                  <div
+                    className="font-paragraph-white"
+                    style={{ fontSize: "14px", marginTop: "5px" }}
+                  >
+                    {userReview?.comment}
+                  </div>
+                  <div
+                    className="font-paragraph-white"
+                    style={{ color: "#82868b", fontSize: "12px", marginTop: "5px" }}
+                  >
+                    {moment(userReview?.createdAt).format("MMM, Do YYYY")}
+                  </div>
+                </span>
+              </span>
+            </div>
           )
         ) : (
           <p className="font-paragraph-white">

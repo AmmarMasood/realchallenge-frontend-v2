@@ -460,8 +460,8 @@ export function getRecipeById(id) {
 
 export function favouriteRecipeById(body, id) {
   return axios
-    .post(
-      `${process.env.REACT_APP_SERVER}/api/customerDetails/favouriteRecipe/${id}/update`,
+    .put(
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/favouriteRecipe/${id}`,
       body,
     )
     .then((res) => {
@@ -488,8 +488,8 @@ export function favouriteRecipeById(body, id) {
 
 export function unFavouriteRecipeById(body, id) {
   return axios
-    .post(
-      `${process.env.REACT_APP_SERVER}/api/customerDetails/unfavouriteRecipe/${id}/update`,
+    .put(
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/unfavouriteRecipe/${id}`,
       body,
     )
     .then((res) => {
@@ -580,5 +580,33 @@ export function addRecipeComment(recipeId, comment) {
         return;
       }
       openNotificationWithIcon("error", "Unable to add comment", "");
+    });
+}
+
+export function clapRecipe(id) {
+  return axios
+    .put(`${process.env.REACT_APP_SERVER}/api/recipes/recipe/${id}/clap`)
+    .then((res) => res.data)
+    .catch((err) => {
+      if (err.response && err.response.data && err.response.data.msg) {
+        openNotificationWithIcon("error", err.response.data.msg, "");
+        return;
+      }
+      openNotificationWithIcon("error", "Unable to clap the recipe.", "");
+      console.log(err);
+    });
+}
+
+export function unclapRecipe(id) {
+  return axios
+    .put(`${process.env.REACT_APP_SERVER}/api/recipes/recipe/${id}/unclap`)
+    .then((res) => res.data)
+    .catch((err) => {
+      if (err.response && err.response.data && err.response.data.msg) {
+        openNotificationWithIcon("error", err.response.data.msg, "");
+        return;
+      }
+      openNotificationWithIcon("error", "Unable to unclap the recipe.", "");
+      console.log(err);
     });
 }

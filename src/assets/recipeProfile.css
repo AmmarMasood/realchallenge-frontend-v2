@@ -9,8 +9,10 @@
 }
 .recipe-mealValues-heading {
   /* border: 1px solid yellow; */
-
   color: var(--color-orange) !important;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 400;
 }
 .recipe-mealValues-info {
   font-weight: 200;
@@ -19,18 +21,21 @@
 .recipe-mealValues-container-box {
   /* border: 1px solid black; */
 
-  margin-right: 20px;
+  margin-right: 30px;
   display: flex;
   flex-direction: column-reverse;
-  font-size: 1.6rem;
-  border-left: 2px solid var(--color-orange);
-  padding: 10px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color:#283443;
+  border-left: 3px solid var(--color-orange);
+  padding-left: 10px;
 }
 .recipe-profile-container-column2 {
   /* border: 1px solid yellow; */
   background: var(--color-white);
   /* overflow: scroll; */
-  padding: 100px 20px 20px 20px;
+  padding: 100px 60px 20px 60px;
   margin-left: 40%;
   width: 60%;
 }
@@ -93,7 +98,7 @@
   color: var(--color-orange);
   font-size: 2rem;
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: 1rem;
 }
 .recipe-highlight-content {
   flex: 1;
@@ -168,7 +173,7 @@
   font-weight: 500;
 }
 
-@media screen and (max-width: 800px) {
+@media screen and (max-width: 1200px) {
   .recipe-profile-container-column2 {
     margin: 0;
     width: 100%;
