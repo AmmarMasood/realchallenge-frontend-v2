@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RealChallenge Cast Receiver</title>
+  <script src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════
+       ROOT VARIABLES — copied from override.css
+    ═══════════════════════════════════════════ */
+    :root {
+      --color-orange-light: #ff950a;
+      --color-orange: #ff7700;
+      --color-gray-light: #2f3e50;
+      --color-gray: #232932;
+      --color-gray-dark: #171e27;
+      --color-black: #222222;
+      --color-white: #fff;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--color-gray-dark);
+      color: #fff;
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .font-paragraph-white {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 300;
+      color: var(--color-white);
+      line-height: 25px;
+    }
+    .font-heading-white {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      font-style: italic;
+      color: var(--color-white);
+      line-height: 40px;
+    }
+
+    /* ═══════════════════════════════════════════
+       PLAYER WRAPPER — fullscreen for TV
+       (same as .player-wrapper fullscreen mode)
+    ═══════════════════════════════════════════ */
+    .player-wrapper {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    /* ═══════════════════════════════════════════
+       VIDEO — copied from player.css .react-player
+    ═══════════════════════════════════════════ */
+    .react-player {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    .react-player > video,
+    #exercise-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain !important;
+      position: absolute;
+      top: 0; left: 0;
+      background: #000;
+    }
+
+    /* ═══════════════════════════════════════════
+       CONTROLS DETAILS — exercise title overlay
+       Copied exactly from player.css
+    ═══════════════════════════════════════════ */
+    .controls-details {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      z-index: 1;
+    }
+    .controls-details.active {
+      display: flex;
+    }
+    .controls-details-top-title {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: 800;
+      display: flex;
+      flex-direction: column;
+      margin-left: 30px;
+      text-shadow: 1px 1px 2px rgba(150, 150, 150, 0.6);
+    }
+    .controls-details-bottom-title {
+      text-align: right;
+      margin-bottom: 50px;
+      font-size: 18px;
+      font-weight: 800;
+      padding-right: 30px;
+      text-shadow: 1px 1px 2px rgba(150, 150, 150, 0.6);
+    }
+
+    /* ═══════════════════════════════════════════
+       CONTROLS WRAPPER — bottom overlay
+       Copied exactly from player.css
+    ═══════════════════════════════════════════ */
+    .controls-wrapper {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      z-index: 1;
+    }
+    .controls-wrapper.active {
+      display: flex;
+    }
+    .controls-wrapper-top {
+      display: flex;
+      justify-content: space-between;
+      padding: 20px 30px;
+      text-shadow: 1px 1px 2px rgba(150, 150, 150, 0.6);
+      align-items: center;
+    }
+    .controls-wrapper-middle {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-around;
+      align-items: center;
+      width: clamp(250px, 50%, 500px);
+      margin: 0 auto;
+      height: 100%;
+      padding: 16px;
+    }
+    .controls-wrapper-bottom {
+      padding: 0 20px 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .controls-wrapper-bottom > div {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 200px;
+    }
+    .controls-wrapper-bottom-icons {
+      height: 50px;
+      cursor: pointer;
+    }
+
+    .player-elasped-time-container {
+      padding-right: 10px;
+      padding-top: 10px;
+      font-size: clamp(14px, 2vw, 20px);
+      min-width: 60px;
+      width: auto;
+      font-weight: 600;
+    }
+
+    /* ═══════════════════════════════════════════
+       PLAY/PAUSE BOX — copied from player.css
+    ═══════════════════════════════════════════ */
+    .player-play-pause-icon-box {
+      background-color: var(--color-orange);
+      margin: 0px clamp(10px, 2vw, 25px) 0px clamp(15px, 3vw, 35px);
+      padding: clamp(6px, 1vw, 8px) clamp(8px, 1.5vw, 12px);
+      box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Inline SVG play/pause icons */
+    .icon-play, .icon-pause {
+      width: 40px;
+      height: 40px;
+    }
+    .icon-skip {
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      opacity: 0.8;
+    }
+    .icon-skip:hover { opacity: 1; }
+
+    /* ═══════════════════════════════════════════
+       STEPPER — copied from player.css
+    ═══════════════════════════════════════════ */
+    .react-player-stepper-container {
+      display: grid;
+      height: 5px;
+      padding: 0 30px;
+      margin-bottom: 20px;
+    }
+    .react-player-stepper {
+      margin: 0 3px;
+    }
+
+    /* ═══════════════════════════════════════════
+       BREAK OVERLAY — copied from player.css
+    ═══════════════════════════════════════════ */
+    .break-layout-for-player {
+      background-color: rgba(29, 36, 44, 0.8);
+      position: absolute;
+      top: 0px;
+      width: 100%;
+      z-index: 10;
+      opacity: 0.9;
+      height: 100%;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .break-layout-for-player.active {
+      display: flex;
+    }
+    .inner-layout-break {
+      margin: 0 30px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      flex-grow: 1;
+      justify-content: space-between;
+    }
+    .inner-layout-break-totalsecs {
+      font-size: 35px;
+      margin-right: 5px;
+    }
+    .inner-layout-break-sec {
+      font-size: 20px;
+    }
+    .inner-layout-break-text {
+      font-size: 20px;
+      display: flex;
+      flex-direction: column;
+      text-align: center;
+    }
+
+    /* Progress bar (mimics Ant Design Progress) */
+    .ant-progress-outer {
+      width: 100%;
+      margin-top: 8px;
+    }
+    .ant-progress-inner {
+      width: 100%;
+      height: 8px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .ant-progress-bg {
+      height: 100%;
+      background: var(--color-orange);
+      border-radius: 4px;
+      transition: width 1s linear;
+    }
+
+    /* ═══════════════════════════════════════════
+       IDLE & COMPLETE SCREENS
+    ═══════════════════════════════════════════ */
+    .screen-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 25;
+      background: var(--color-gray-dark);
+    }
+    .screen-overlay.active { display: flex; }
+
+    .idle-title { font-size: 48px; font-weight: 700; color: var(--color-orange); }
+    .idle-subtitle { font-size: 20px; color: rgba(255,255,255,0.5); margin-top: 12px; }
+
+    .complete-check { font-size: 70px; color: var(--color-orange); margin-bottom: 15px; }
+    .complete-title { font-size: 32px; font-weight: 700; color: var(--color-orange); }
+    .complete-subtitle { font-size: 18px; color: rgba(255,255,255,0.6); margin-top: 10px; }
+
+    /* ═══════════════════════════════════════════
+       PAUSED OVERLAY
+    ═══════════════════════════════════════════ */
+    .paused-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 15;
+    }
+    .paused-overlay.active { display: flex; }
+
+    /* Start exercise play icon (matches RenderedVideoPlayer "Start Exercise" screen) */
+    .start-play-icon {
+      width: 80px;
+      height: 80px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .start-play-icon:hover { transform: scale(1.15); }
+
+    /* Seek slider (mimics react-video-seek-slider) */
+    .seek-slider-wrap {
+      margin: 0 30px 0 35px;
+      padding-bottom: 20px;
+    }
+    .seek-slider {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 2px;
+      position: relative;
+    }
+    .seek-slider-fill {
+      height: 100%;
+      background: var(--color-orange);
+      border-radius: 2px;
+      transition: width 1s linear;
+    }
+
+    /* Workout title in top-right */
+    .player-workout-title {
+      position: absolute;
+      top: 20px; right: 30px;
+      font-size: 16px;
+      color: rgba(255,255,255,0.5);
+      z-index: 2;
+      display: none;
+    }
+    .player-workout-title.active { display: block; }
+  </style>
+</head>
+<body>
+  <div class="player-wrapper">
+
+    <!-- Idle Screen -->
+    <div id="idle-screen" class="screen-overlay active">
+      <div class="idle-title">RealChallenge</div>
+      <div class="idle-subtitle">Waiting for workout...</div>
+    </div>
+
+    <!-- Complete Screen -->
+    <div id="complete-screen" class="screen-overlay">
+      <div class="complete-check">&#10003;</div>
+      <div class="complete-title">Workout Complete!</div>
+      <div class="complete-subtitle" id="complete-workout-name"></div>
+    </div>
+
+    <!-- Video -->
+    <video id="exercise-video" playsinline></video>
+
+    <!-- Break / Get Ready overlay (matches .break-layout-for-player) -->
+    <div id="break-overlay" class="break-layout-for-player">
+      <div class="inner-layout-break">
+        <div style="width: 30%; text-align: center;">
+          <span style="margin-top: 10px;">
+            <span class="inner-layout-break-totalsecs" id="break-countdown"></span>
+            <span class="inner-layout-break-sec">Sec</span>
+          </span>
+          <!-- Progress bar (mimics Ant Design Progress) -->
+          <div class="ant-progress-outer">
+            <div class="ant-progress-inner">
+              <div class="ant-progress-bg" id="break-progress-bar" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="inner-layout-break-text">
+          <span id="break-label-text">Rest</span>
+          <span id="break-next-text"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paused overlay -->
+    <div id="paused-overlay" class="paused-overlay">
+      <svg class="start-play-icon" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="30" stroke="rgba(255,255,255,0.7)" stroke-width="3"/>
+        <polygon points="26,20 26,44 46,32" fill="rgba(255,255,255,0.8)"/>
+      </svg>
+    </div>
+
+    <!-- Workout title top-right -->
+    <div id="workout-title-bar" class="player-workout-title">
+      <span id="workout-title-text"></span>
+    </div>
+
+    <!-- Controls Details (exercise title + timer overlay) — matches controls-details -->
+    <div id="controls-details" class="controls-details">
+      <div class="controls-details-top-title font-paragraph-white">
+        <span id="exercise-title"></span>
+        <span id="exercise-timer-wrap" style="margin-top: 10px;">
+          <span id="exercise-timer" style="font-size: 26px; margin-right: 5px;"></span>
+          Sec
+        </span>
+      </div>
+      <div class="controls-details-bottom-title font-paragraph-white">
+        <span id="details-break-info"></span>
+      </div>
+    </div>
+
+    <!-- Controls Wrapper (play/pause, skip, stepper) — matches controls-wrapper -->
+    <div id="controls-wrapper" class="controls-wrapper">
+      <!-- Top: empty space (no back button or icons on TV) -->
+      <div class="controls-wrapper-top">
+        <div></div>
+        <div></div>
+      </div>
+
+      <!-- Middle: empty (same as original — just spacer) -->
+      <div class="controls-wrapper-middle"></div>
+
+      <!-- Bottom: time | skip | play/pause | skip | time -->
+      <div class="controls-wrapper-bottom">
+        <span class="font-paragraph-white player-elasped-time-container" id="elapsed-time">00:00</span>
+        <div>
+          <!-- Skip prev -->
+          <svg class="icon-skip" id="btn-prev" viewBox="0 0 24 24" fill="white">
+            <polygon points="11,5 2,12 11,19"/>
+            <polygon points="22,5 13,12 22,19"/>
+          </svg>
+
+          <!-- Play/Pause button -->
+          <div class="player-play-pause-icon-box" id="btn-play-pause">
+            <!-- Pause icon (two bars) -->
+            <svg id="icon-pause" class="icon-pause" viewBox="0 0 40 40" fill="white">
+              <rect x="10" y="8" width="6" height="24" rx="1"/>
+              <rect x="24" y="8" width="6" height="24" rx="1"/>
+            </svg>
+            <!-- Play icon (triangle) -->
+            <svg id="icon-play" class="icon-play" viewBox="0 0 40 40" fill="white" style="display:none;">
+              <polygon points="12,6 12,34 34,20"/>
+            </svg>
+          </div>
+
+          <!-- Skip next -->
+          <svg class="icon-skip" id="btn-next" viewBox="0 0 24 24" fill="white">
+            <polygon points="2,5 11,12 2,19"/>
+            <polygon points="13,5 22,12 13,19"/>
+          </svg>
+        </div>
+        <span class="font-paragraph-white player-elasped-time-container" id="total-time" style="text-align: right;">00:00</span>
+      </div>
+
+      <!-- Seek slider -->
+      <div class="seek-slider-wrap">
+        <div class="seek-slider">
+          <div class="seek-slider-fill" id="progress-bar" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Exercise stepper (matches .react-player-stepper-container) -->
+      <div class="react-player-stepper-container" id="exercise-stepper"></div>
+    </div>
+  </div>
+
+  <!-- Audio -->
+  <audio id="music-player" loop></audio>
+  <audio id="break-start-sound" preload="auto"></audio>
+  <audio id="break-end-sound" preload="auto"></audio>
+
+  <script>
+    'use strict';
+
+    const NAMESPACE = 'urn:x-cast:com.realchallenge.workout';
+    const GET_READY_SECONDS = 5;
+
+    const $ = (id) => document.getElementById(id);
+
+    const dom = {
+      idleScreen:        $('idle-screen'),
+      completeScreen:    $('complete-screen'),
+      completeWorkout:   $('complete-workout-name'),
+      video:             $('exercise-video'),
+      breakOverlay:      $('break-overlay'),
+      breakCountdown:    $('break-countdown'),
+      breakProgressBar:  $('break-progress-bar'),
+      breakLabelText:    $('break-label-text'),
+      breakNextText:     $('break-next-text'),
+      pausedOverlay:     $('paused-overlay'),
+      workoutTitleBar:   $('workout-title-bar'),
+      workoutTitle:      $('workout-title-text'),
+      controlsDetails:   $('controls-details'),
+      exerciseTitle:     $('exercise-title'),
+      exerciseTimer:     $('exercise-timer'),
+      exerciseTimerWrap: $('exercise-timer-wrap'),
+      detailsBreakInfo:  $('details-break-info'),
+      controlsWrapper:   $('controls-wrapper'),
+      stepper:           $('exercise-stepper'),
+      progressBar:       $('progress-bar'),
+      elapsedTime:       $('elapsed-time'),
+      totalTime:         $('total-time'),
+      btnPlayPause:      $('btn-play-pause'),
+      iconPause:         $('icon-pause'),
+      iconPlay:          $('icon-play'),
+      btnNext:           $('btn-next'),
+      btnPrev:           $('btn-prev'),
+      musicPlayer:       $('music-player'),
+      breakStartSound:   $('break-start-sound'),
+      breakEndSound:     $('break-end-sound'),
+    };
+
+    let workout = null;
+    let exercises = [];
+    let currentIndex = 0;
+    let phase = 'idle';
+    let isPaused = false;
+    let countdownValue = 0;
+    let countdownInterval = null;
+    let exerciseElapsed = 0;
+    let exerciseInterval = null;
+    let totalElapsed = 0;
+    let totalDuration = 0;
+
+    // Audio ducking: music volume during exercise vs break
+    let userMusicVolume = 0.3; // volume set by user
+    const DUCK_RATIO = 0.3;   // during video, music plays at 30% of user volume
+
+    /* ─── Helpers ─── */
+    function formatTime(seconds) {
+      if (isNaN(seconds) || seconds < 0) seconds = 0;
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = Math.floor(seconds % 60);
+      if (h) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+      return m + ':' + String(s).padStart(2,'0');
+    }
+
+    function clearTimers() {
+      if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+      if (exerciseInterval) { clearInterval(exerciseInterval); exerciseInterval = null; }
+    }
+
+    function calculateTotalDuration() {
+      let t = 0;
+      for (const ex of exercises) { t += (ex.exerciseLength || 0) + (ex.break || 0); }
+      return t;
+    }
+
+    function calculateElapsedAtIndex(idx) {
+      let e = 0;
+      for (let i = 0; i < idx && i < exercises.length; i++) {
+        e += (exercises[i].exerciseLength || 0) + (exercises[i].break || 0);
+      }
+      return e;
+    }
+
+    function buildStepper() {
+      dom.stepper.innerHTML = '';
+      dom.stepper.style.gridTemplateColumns = 'repeat(' + exercises.length + ', 1fr)';
+      for (let i = 0; i < exercises.length; i++) {
+        const d = document.createElement('div');
+        d.className = 'react-player-stepper';
+        d.style.background = i < currentIndex ? '#FB7600'
+          : (i === currentIndex ? '#fff' : 'rgba(255,255,255,0.25)');
+        dom.stepper.appendChild(d);
+      }
+    }
+
+    function updateProgressBar() {
+      const pct = totalDuration > 0 ? Math.min((totalElapsed / totalDuration) * 100, 100) : 0;
+      dom.progressBar.style.width = pct + '%';
+      dom.elapsedTime.textContent = formatTime(totalElapsed);
+      dom.totalTime.textContent = formatTime(totalDuration);
+    }
+
+    // Audio ducking: lower music when video is playing, restore during breaks
+    function duckMusic() {
+      dom.musicPlayer.volume = userMusicVolume * DUCK_RATIO;
+    }
+    function unduckMusic() {
+      dom.musicPlayer.volume = userMusicVolume;
+    }
+
+    function updatePlayPauseIcon() {
+      dom.iconPause.style.display = isPaused ? 'none' : '';
+      dom.iconPlay.style.display = isPaused ? '' : 'none';
+    }
+
+    function hideAll() {
+      dom.idleScreen.classList.remove('active');
+      dom.completeScreen.classList.remove('active');
+      dom.breakOverlay.classList.remove('active');
+      dom.controlsDetails.classList.remove('active');
+      dom.controlsWrapper.classList.remove('active');
+      dom.workoutTitleBar.classList.remove('active');
+      dom.pausedOverlay.classList.remove('active');
+    }
+
+    function sendState() {
+      try {
+        if (!castReceiverContext) return;
+        const ex = exercises[currentIndex];
+        castReceiverContext.sendCustomMessage(NAMESPACE, undefined, {
+          type: 'STATE_UPDATE',
+          data: {
+            phase, exerciseIndex: currentIndex,
+            exerciseTitle: ex ? (ex.title || '') : '',
+            exerciseTimeRemaining: phase === 'exercise' ? Math.max((ex?.exerciseLength || 0) - exerciseElapsed, 0) : 0,
+            breakTimeRemaining: phase === 'break' ? countdownValue : 0,
+            totalElapsed, totalDuration, isPaused,
+            totalExercises: exercises.length,
+          }
+        });
+      } catch (e) { console.warn('sendState error:', e); }
+    }
+
+    /* ─── LOAD WORKOUT ─── */
+    function loadWorkout(data) {
+      clearTimers();
+      workout = data;
+      exercises = data.exercises || [];
+      currentIndex = data.startIndex || 0;
+      totalDuration = calculateTotalDuration();
+      totalElapsed = calculateElapsedAtIndex(currentIndex);
+      isPaused = false;
+
+      dom.workoutTitle.textContent = data.title || 'Workout';
+      if (data.musicUrl) {
+        dom.musicPlayer.src = data.musicUrl;
+        userMusicVolume = data.musicVolume != null ? data.musicVolume : 0.3;
+        dom.musicPlayer.volume = userMusicVolume;
+      }
+      if (data.breakStartSoundUrl) dom.breakStartSound.src = data.breakStartSoundUrl;
+      if (data.breakEndSoundUrl) dom.breakEndSound.src = data.breakEndSoundUrl;
+
+      startGetReady();
+    }
+
+    /* ─── GET READY (uses break overlay with "Get Ready" text) ─── */
+    function startGetReady() {
+      phase = 'get_ready';
+      clearTimers();
+      hideAll();
+
+      const ex = exercises[currentIndex];
+      dom.breakLabelText.textContent = 'Get Ready';
+      dom.breakNextText.textContent = ex ? (ex.title || 'Exercise ' + (currentIndex + 1)) : '';
+      countdownValue = GET_READY_SECONDS;
+      dom.breakCountdown.textContent = countdownValue;
+      dom.breakProgressBar.style.width = '0%';
+
+      dom.breakOverlay.classList.add('active');
+      dom.workoutTitleBar.classList.add('active');
+
+      // Full music volume during get-ready (no video audio)
+      unduckMusic();
+
+      sendState();
+
+      countdownInterval = setInterval(() => {
+        if (isPaused) return;
+        countdownValue--;
+        dom.breakCountdown.textContent = Math.max(countdownValue, 0);
+        const pct = ((GET_READY_SECONDS - countdownValue) / GET_READY_SECONDS) * 100;
+        dom.breakProgressBar.style.width = pct + '%';
+
+        if (countdownValue <= 3 && countdownValue > 0) {
+          try { dom.breakEndSound.currentTime = 0; dom.breakEndSound.play(); } catch(e) {}
+        }
+        if (countdownValue <= 0) {
+          clearInterval(countdownInterval); countdownInterval = null;
+          startExercise();
+        }
+      }, 1000);
+    }
+
+    /* ─── EXERCISE ─── */
+    function startExercise() {
+      phase = 'exercise';
+      clearTimers();
+      hideAll();
+
+      const ex = exercises[currentIndex];
+      if (!ex) { finishWorkout(); return; }
+
+      // Show exercise UI (same layers as RenderedVideoPlayer)
+      dom.controlsDetails.classList.add('active');
+      dom.controlsWrapper.classList.add('active');
+      dom.workoutTitleBar.classList.add('active');
+
+      // Exercise title & countdown
+      dom.exerciseTitle.textContent = ex.title || 'Exercise ' + (currentIndex + 1);
+      exerciseElapsed = 0;
+      const exLen = ex.exerciseLength || 0;
+      dom.exerciseTimer.textContent = exLen > 0 ? exLen : '';
+      dom.exerciseTimerWrap.style.display = exLen > 0 ? '' : 'none';
+
+      // "Up next: Rest X sec" in bottom-right
+      const brk = ex.break || 0;
+      if (brk > 0) {
+        dom.detailsBreakInfo.innerHTML = 'Up next: Rest <span style="font-size:26px;margin:0 5px;">' + brk + '</span> sec';
+      } else {
+        dom.detailsBreakInfo.textContent = '';
+      }
+
+      buildStepper();
+      updateProgressBar();
+      updatePlayPauseIcon();
+
+      // Video
+      if (ex.videoURL) {
+        dom.video.src = ex.videoURL;
+        dom.video.load();
+        dom.video.play().catch(e => console.warn('Video play error:', e));
+      }
+
+      // Music — duck volume while video plays
+      duckMusic();
+      if (dom.musicPlayer.src && dom.musicPlayer.paused) {
+        dom.musicPlayer.play().catch(() => {});
+      }
+
+      sendState();
+
+      exerciseInterval = setInterval(() => {
+        if (isPaused) return;
+        exerciseElapsed++;
+        totalElapsed++;
+        const remaining = Math.max(exLen - exerciseElapsed, 0);
+        if (exLen > 0) dom.exerciseTimer.textContent = remaining;
+        updateProgressBar();
+        sendState();
+        if (exLen > 0 && exerciseElapsed >= exLen) {
+          clearInterval(exerciseInterval); exerciseInterval = null;
+          onExerciseEnd();
+        }
+      }, 1000);
+
+      if (!exLen || exLen <= 0) {
+        dom.video.onended = () => { clearInterval(exerciseInterval); exerciseInterval = null; onExerciseEnd(); };
+      } else {
+        dom.video.onended = null;
+      }
+    }
+
+    function onExerciseEnd() {
+      dom.video.pause();
+      const ex = exercises[currentIndex];
+      const brk = ex ? (ex.break || 0) : 0;
+      if (brk > 0) startBreak(brk); else advanceToNext();
+    }
+
+    /* ─── BREAK (uses same .break-layout-for-player overlay) ─── */
+    function startBreak(duration) {
+      phase = 'break';
+      clearTimers();
+      hideAll();
+
+      const breakTotal = duration;
+      countdownValue = duration;
+      dom.breakCountdown.textContent = countdownValue;
+      dom.breakProgressBar.style.width = '0%';
+      dom.breakLabelText.textContent = 'Rest';
+
+      const nextEx = exercises[currentIndex + 1];
+      dom.breakNextText.textContent = nextEx
+        ? 'Next Exercise: ' + (nextEx.title || 'Exercise ' + (currentIndex + 2))
+        : 'Finish';
+
+      dom.breakOverlay.classList.add('active');
+      dom.workoutTitleBar.classList.add('active');
+
+      // Restore music volume during rest (no video audio competing)
+      unduckMusic();
+
+      try { dom.breakStartSound.currentTime = 0; dom.breakStartSound.play(); } catch(e) {}
+      sendState();
+
+      countdownInterval = setInterval(() => {
+        if (isPaused) return;
+        countdownValue--;
+        totalElapsed++;
+        dom.breakCountdown.textContent = Math.max(countdownValue, 0);
+        dom.breakProgressBar.style.width = ((breakTotal - countdownValue) / breakTotal * 100) + '%';
+        updateProgressBar();
+        if (countdownValue <= 3 && countdownValue > 0) {
+          try { dom.breakEndSound.currentTime = 0; dom.breakEndSound.play(); } catch(e) {}
+        }
+        sendState();
+        if (countdownValue <= 0) { clearInterval(countdownInterval); countdownInterval = null; advanceToNext(); }
+      }, 1000);
+    }
+
+    /* ─── NAVIGATION ─── */
+    function advanceToNext() {
+      currentIndex++;
+      if (currentIndex >= exercises.length) finishWorkout(); else startExercise();
+    }
+    function skipNext() {
+      clearTimers();
+      currentIndex++;
+      if (currentIndex >= exercises.length) finishWorkout();
+      else { totalElapsed = calculateElapsedAtIndex(currentIndex); startExercise(); }
+    }
+    function skipPrev() {
+      clearTimers();
+      if (currentIndex > 0) currentIndex--;
+      totalElapsed = calculateElapsedAtIndex(currentIndex);
+      startExercise();
+    }
+
+    /* ─── COMPLETE ─── */
+    function finishWorkout() {
+      phase = 'complete';
+      clearTimers(); hideAll();
+      dom.video.pause();
+      dom.musicPlayer.pause();
+      dom.completeWorkout.textContent = workout ? (workout.title || '') : '';
+      dom.completeScreen.classList.add('active');
+      totalElapsed = totalDuration;
+      sendState();
+    }
+
+    /* ─── PAUSE / RESUME ─── */
+    function pause() {
+      isPaused = true;
+      dom.video.pause();
+      dom.musicPlayer.pause();
+      dom.pausedOverlay.classList.add('active');
+      updatePlayPauseIcon();
+      sendState();
+    }
+    function resume() {
+      isPaused = false;
+      dom.pausedOverlay.classList.remove('active');
+      if (phase === 'exercise' && dom.video.src) dom.video.play().catch(() => {});
+      if (dom.musicPlayer.src) dom.musicPlayer.play().catch(() => {});
+      updatePlayPauseIcon();
+      sendState();
+    }
+    function togglePause() { if (isPaused) resume(); else pause(); }
+
+    /* ─── MUSIC & VOLUME ─── */
+    function changeMusic(url, volume) {
+      if (url) { dom.musicPlayer.src = url; dom.musicPlayer.play().catch(() => {}); }
+      else { dom.musicPlayer.pause(); dom.musicPlayer.src = ''; }
+      if (volume != null) {
+        userMusicVolume = volume;
+        // Apply ducking if currently in exercise phase
+        dom.musicPlayer.volume = phase === 'exercise' ? volume * DUCK_RATIO : volume;
+      }
+    }
+    function setVolume(data) {
+      if (data.videoVolume != null) dom.video.volume = data.videoVolume;
+      if (data.musicVolume != null) {
+        userMusicVolume = data.musicVolume;
+        dom.musicPlayer.volume = phase === 'exercise' ? data.musicVolume * DUCK_RATIO : data.musicVolume;
+      }
+    }
+
+    /* ─── MESSAGE HANDLER ─── */
+    function handleMessage(msg) {
+      console.log('[Receiver]', msg.type, msg.data);
+      switch (msg.type) {
+        case 'LOAD_WORKOUT': loadWorkout(msg.data); break;
+        case 'PLAY': resume(); break;
+        case 'PAUSE': pause(); break;
+        case 'TOGGLE_PAUSE': togglePause(); break;
+        case 'SKIP_NEXT': skipNext(); break;
+        case 'SKIP_PREV': skipPrev(); break;
+        case 'CHANGE_MUSIC': changeMusic(msg.data.musicUrl, msg.data.musicVolume); break;
+        case 'SET_VOLUME': setVolume(msg.data); break;
+      }
+    }
+
+    /* ─── ON-SCREEN BUTTONS ─── */
+    dom.btnPlayPause.addEventListener('click', togglePause);
+    dom.btnNext.addEventListener('click', skipNext);
+    dom.btnPrev.addEventListener('click', skipPrev);
+
+    /* ─── CAST RECEIVER INIT ─── */
+    let castReceiverContext = null;
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceDebug = urlParams.has('debug');
+    const isCastEnvironment = !forceDebug
+      && navigator.userAgent.indexOf('CrKey') !== -1
+      && !!(window.cast && window.cast.framework && window.cast.framework.CastReceiverContext);
+
+    if (isCastEnvironment) {
+      castReceiverContext = cast.framework.CastReceiverContext.getInstance();
+      castReceiverContext.addCustomMessageListener(NAMESPACE, (e) => handleMessage(e.data));
+      castReceiverContext.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, () => {
+        if (castReceiverContext.getSenders().length === 0) {
+          clearTimers(); dom.video.pause(); dom.musicPlayer.pause(); window.close();
+        }
+      });
+      const opts = new cast.framework.CastReceiverOptions();
+      opts.disableIdleTimeout = true;
+      opts.skipPlayersLoad = true;
+      castReceiverContext.start(opts);
+    } else {
+      /* ─── BROWSER DEBUG MODE ─── */
+      console.log('[Receiver] BROWSER DEBUG MODE');
+
+      const panel = document.createElement('div');
+      panel.innerHTML = `
+        <style>
+          #dbg { position:fixed; top:10px; right:10px; z-index:9999; background:rgba(0,0,0,0.92);
+            border:2px solid var(--color-orange); border-radius:8px; padding:15px 18px;
+            font-family:monospace; font-size:13px; color:#fff; min-width:240px; }
+          #dbg h3 { margin:0 0 10px; color:var(--color-orange); font-size:14px; }
+          #dbg button { display:block; width:100%; margin:4px 0; padding:8px 12px;
+            background:#1d242c; color:#fff; border:1px solid #333;
+            border-radius:4px; cursor:pointer; font-size:13px; text-align:left; }
+          #dbg button:hover { background:var(--color-orange); color:#000; }
+          #dbg .st { color:#888; margin-top:10px; font-size:11px; line-height:1.5; }
+        </style>
+        <div id="dbg">
+          <h3>Cast Debug Panel</h3>
+          <button id="dbg-load">Load Demo Workout</button>
+          <button id="dbg-pause">Pause / Resume</button>
+          <button id="dbg-next">Skip Next</button>
+          <button id="dbg-prev">Skip Prev</button>
+          <div class="st" id="dbg-st">Status: idle</div>
+        </div>`;
+      document.body.appendChild(panel);
+
+      const demo = {
+        title: 'Demo Workout', subtitle: 'Cast Receiver Test',
+        exercises: [
+          { videoURL: '', title: 'Squat Jumps', exerciseLength: 8, break: 5 },
+          { videoURL: '', title: 'Push Ups', exerciseLength: 10, break: 5 },
+          { videoURL: '', title: 'Burpees', exerciseLength: 8, break: 0 },
+        ],
+        startIndex: 0, musicUrl: null, musicVolume: 0.3,
+        breakStartSoundUrl: null, breakEndSoundUrl: null,
+      };
+
+      const _ss = sendState;
+      sendState = function() {
+        _ss();
+        const el = $('dbg-st');
+        if (el) {
+          const labels = { idle:'Idle', get_ready:'Get Ready', exercise:'Exercise', break:'Rest', complete:'Complete' };
+          el.innerHTML = '<b>' + (labels[phase]||phase) + '</b> | '
+            + (exercises[currentIndex]?.title||'') + ' (' + (currentIndex+1) + '/' + exercises.length + ')'
+            + '<br>' + formatTime(totalElapsed) + ' / ' + formatTime(totalDuration);
+        }
+      };
+
+      $('dbg-load').onclick = () => loadWorkout(demo);
+      $('dbg-pause').onclick = togglePause;
+      $('dbg-next').onclick = skipNext;
+      $('dbg-prev').onclick = skipPrev;
+    }
+  </script>
+</body>
+</html>

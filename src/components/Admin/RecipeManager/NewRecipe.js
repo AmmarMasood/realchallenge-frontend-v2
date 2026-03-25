@@ -110,18 +110,32 @@ function NewRecipe({ setCurrentSelection }) {
   const [sendNotifications, setSendNotifications] = useState(false);
 
   async function fetchData() {
-    const diets = await getAllDietTypes(language);
-    const meals = await getAllMealTypes(language);
-    const foodTypes = await getAllFoodTypes(language);
-    const ingredients = await getAllIngredients(language);
-
+    const [diets, meals, foodTypes, ingredients] = await Promise.all([
+      getAllDietTypes(language),
+      getAllMealTypes(language),
+      getAllFoodTypes(language),
+      getAllIngredients(language),
+    ]);
     setAllDiets(diets.diets);
-    setAllMealTypes(
-      meals.mealTypes.map((f) => ({ ...f, name: f.name.split("___")[0] }))
-    );
-    setAllFoodTypes(
-      foodTypes.foodTypes.map((f) => ({ ...f, name: f.name.split("___")[0] }))
-    );
+    setAllMealTypes(meals.mealTypes);
+    setAllFoodTypes(foodTypes.foodTypes);
+    setAllIngredients(ingredients.ingredients);
+  }
+
+  async function fetchMealTypes() {
+    const meals = await getAllMealTypes(language);
+    setAllMealTypes(meals.mealTypes);
+  }
+  async function fetchFoodTypes() {
+    const foodTypes = await getAllFoodTypes(language);
+    setAllFoodTypes(foodTypes.foodTypes);
+  }
+  async function fetchDiets() {
+    const diets = await getAllDietTypes(language);
+    setAllDiets(diets.diets);
+  }
+  async function fetchIngredients() {
+    const ingredients = await getAllIngredients(language);
     setAllIngredients(ingredients.ingredients);
   }
 
@@ -398,12 +412,9 @@ function NewRecipe({ setCurrentSelection }) {
             htmlType="submit"
             onClick={async () => {
               if (newMealTypeName.length > 0) {
-                await createMealType(
-                  `${newMealTypeName}___${language}`,
-                  language
-                );
-                // setEquipmentModal(false);
-                fetchData();
+                await createMealType(newMealTypeName, language);
+                setNewMealTypeName("");
+                fetchMealTypes();
               }
             }}
             style={{
@@ -435,7 +446,7 @@ function NewRecipe({ setCurrentSelection }) {
                   <Button
                     onClick={async () => {
                       await removeMealType(cat._id);
-                      fetchData();
+                      fetchMealTypes();
                     }}
                     style={{ marginRight: "10px" }}
                     type="primary"
@@ -477,12 +488,9 @@ function NewRecipe({ setCurrentSelection }) {
             htmlType="submit"
             onClick={async () => {
               if (newFoodTypeName.length > 0) {
-                await createFoodType(
-                  `${newFoodTypeName}___${language}`,
-                  language
-                );
-                // setEquipmentModal(false);
-                fetchData();
+                await createFoodType(newFoodTypeName, language);
+                setNewFoodTypeName("");
+                fetchFoodTypes();
               }
             }}
             style={{
@@ -515,7 +523,7 @@ function NewRecipe({ setCurrentSelection }) {
                   <Button
                     onClick={async () => {
                       await removeFoodType(cat._id);
-                      fetchData();
+                      fetchFoodTypes();
                     }}
                     style={{ marginRight: "10px" }}
                     type="primary"
@@ -557,8 +565,8 @@ function NewRecipe({ setCurrentSelection }) {
             onClick={async () => {
               if (newDietName.length > 0) {
                 await createDiet(newDietName, language);
-                // setEquipmentModal(false);
-                fetchData();
+                setNewDietName("");
+                fetchDiets();
               }
             }}
             style={{
@@ -591,7 +599,7 @@ function NewRecipe({ setCurrentSelection }) {
                   <Button
                     onClick={async () => {
                       await removeDiet(cat._id);
-                      fetchData();
+                      fetchDiets();
                     }}
                     style={{ marginRight: "10px" }}
                     type="primary"
@@ -633,8 +641,8 @@ function NewRecipe({ setCurrentSelection }) {
             onClick={async () => {
               if (newIngredientName.length > 0) {
                 await createIngredient(newIngredientName, language);
-                // setEquipmentModal(false);
-                fetchData();
+                setNewIngredientName("");
+                fetchIngredients();
               }
             }}
             style={{
@@ -667,7 +675,7 @@ function NewRecipe({ setCurrentSelection }) {
                   <Button
                     onClick={async () => {
                       await removeIngredient(cat._id);
-                      fetchData();
+                      fetchIngredients();
                     }}
                     style={{ marginRight: "10px" }}
                     type="primary"

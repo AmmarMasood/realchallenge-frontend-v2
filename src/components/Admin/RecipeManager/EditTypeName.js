@@ -27,16 +27,10 @@ function EditTypeName({
   const updateItem = async () => {
     if (newCategoryName.length > 0) {
       if (titleName === "Update Meal Type") {
-        await updateMealType(
-          `${newCategoryName}___${language}`,
-          selectedForUpdate._id
-        );
+        await updateMealType(newCategoryName, selectedForUpdate._id);
       }
       if (titleName === "Update Food Type") {
-        await updateFoodType(
-          `${newCategoryName}___${language}`,
-          selectedForUpdate._id
-        );
+        await updateFoodType(newCategoryName, selectedForUpdate._id);
       }
       if (titleName === "Update Diet Type") {
         await updateDiet(newCategoryName, selectedForUpdate._id);

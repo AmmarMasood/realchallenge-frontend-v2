@@ -1,4 +1,4 @@
-import React, { forwardRef, useState, useContext, useEffect } from "react";
+import React, { forwardRef, useState, useContext, useEffect, useRef } from "react";
 import FullScreenPlayerVideosBrowser from "./FullScreenPlayerVideosBrowser";
 import { VideoSeekSlider } from "react-video-seek-slider";
 import { Link } from "react-router-dom";
@@ -30,6 +30,7 @@ import PlayerPlayIcon from "../../assets/icons/player-play-icon.svg";
 import PlayerPauseIcon from "../../assets/icons/player-pause-icon.svg";
 import BackButton from "../../assets/icons/big-back-button.svg";
 import useWindowDimensions from "../../helpers/useWindowDimensions";
+import useChromecast from "../../hooks/useChromecast";
 
 const playerIconStyle = {
   // width: "24px",
@@ -39,7 +40,6 @@ const playerIconStyle = {
 const formatTime = (seconds) => {
   if (isNaN(seconds)) {
     return "00:00";
-    // return "0 sec";
   }
 
   const date = new Date(seconds * 1000);
@@ -50,7 +50,6 @@ const formatTime = (seconds) => {
     return `${hh}:${mm.toString().padStart(2, "0")}:${ss}`;
   }
   return `${mm}:${ss}`;
-  // return `${Math.round(seconds)} sec`;
 };
 
 function PlayerControls(
@@ -89,110 +88,50 @@ function PlayerControls(
   const [breakPaused, setBreakPaused] = useContext(breakPausedContext);
   const { height, width } = useWindowDimensions();
 
-  // Chromecast states
-  const [castAvailable, setCastAvailable] = useState(false);
-  const [castConnected, setCastConnected] = useState(false);
-  const [castSession, setCastSession] = useState(null);
+  // Track current music selection for cast forwarding
+  const currentMusicRef = useRef({ url: null, volume: 0.3 });
+
+  // ─── Chromecast hook ───
+  const {
+    castAvailable,
+    castConnected,
+    receiverState,
+    toggleCast,
+    sendTogglePause,
+    sendSkipNext,
+    sendSkipPrev,
+    sendChangeMusic,
+    sendSetVolume,
+  } = useChromecast({ workout, currentExercise });
+
+  // Pause local player when casting starts
+  useEffect(() => {
+    if (castConnected) {
+      setPlayerState((prev) => ({ ...prev, playing: false }));
+    }
+  }, [castConnected]);
 
   useEffect(() => {
     console.log("lworkout", exerciseWorkoutTimeTrack);
   }, [exerciseWorkoutTimeTrack]);
+
   useEffect(() => {
     if (
       width === playerContainerRef.current.clientWidth &&
       height === playerContainerRef.current.clientHeight
     ) {
       setFullscreen(true);
-      console.log("in full screen");
     } else {
       setFullscreen(false);
     }
   });
 
-  // Initialize Chromecast
-  useEffect(() => {
-    const initializeCast = () => {
-      try {
-        // Check all required Cast SDK components are available
-        if (!window.cast?.framework?.CastContext) {
-          console.log("Cast framework not fully loaded yet");
-          return false;
-        }
-
-        const context = window.cast.framework.CastContext.getInstance();
-
-        // Use safe defaults - don't rely on chrome.cast being available
-        const options = {
-          receiverApplicationId: "CC1AD845", // Default Media Receiver
-          autoJoinPolicy: "origin_scoped",
-        };
-
-        // Only use chrome.cast values if they're fully available
-        if (window.chrome?.cast?.media?.DEFAULT_MEDIA_RECEIVER_APP_ID) {
-          options.receiverApplicationId = window.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID;
-        }
-        if (window.chrome?.cast?.AutoJoinPolicy?.ORIGIN_SCOPED) {
-          options.autoJoinPolicy = window.chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED;
-        }
-
-        context.setOptions(options);
-
-        // Listen for cast availability
-        context.addEventListener(
-          window.cast.framework.CastContextEventType.CAST_STATE_CHANGED,
-          (event) => {
-            setCastAvailable(
-              event.castState !==
-                window.cast.framework.CastState.NO_DEVICES_AVAILABLE
-            );
-          }
-        );
-
-        // Listen for session changes
-        context.addEventListener(
-          window.cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-          (event) => {
-            const session = context.getCurrentSession();
-            setCastSession(session);
-            setCastConnected(!!session);
-          }
-        );
-
-        return true;
-      } catch (error) {
-        console.warn("Failed to initialize Cast:", error);
-        return false;
-      }
-    };
-
-    // Wait for Cast SDK to load with timeout
-    let attempts = 0;
-    const maxAttempts = 50; // 5 seconds max
-
-    const checkCastSDK = setInterval(() => {
-      attempts++;
-      if (initializeCast() || attempts >= maxAttempts) {
-        clearInterval(checkCastSDK);
-        if (attempts >= maxAttempts) {
-          console.log("Cast SDK not available, skipping initialization");
-        }
-      }
-    }, 100);
-
-    return () => clearInterval(checkCastSDK);
-  }, []);
   const currentTime = playerRef.current
     ? playerRef.current.getCurrentTime()
     : "00:00";
-  // const currentTime = playerRef.current
-  //   ? playerRef.current.getCurrentTime()
-  //   : "0 sec";
   const duration = playerRef.current
     ? playerRef.current.getDuration()
     : "00:00";
-  // const duration = playerRef.current
-  //   ? playerRef.current.getDuration()
-  //   : "0 sec";
   const elapsedTime = formatTime(currentTime);
   const totalDuration = formatTime(duration);
 
@@ -204,9 +143,19 @@ function PlayerControls(
 
   const onMute = () => {
     setPlayerState({ ...playerState, muted: !playerState.muted });
+    // If casting, mute the TV video audio too
+    if (castConnected) {
+      sendSetVolume({
+        videoVolume: playerState.muted ? 1 : 0,
+      });
+    }
   };
 
   const onPlayPause = () => {
+    if (castConnected) {
+      sendTogglePause();
+      return;
+    }
     if (currentBreak) {
       setBreakPaused(!breakPaused);
       return;
@@ -222,7 +171,6 @@ function PlayerControls(
     }
 
     screenfull.toggle(playerContainerRef.current);
-    console.log(screenfull.isFullscreen, playerContainerRef.current);
   };
 
   const onSeek = (e) => {
@@ -241,130 +189,243 @@ function PlayerControls(
     playerRef.current.seekTo(playerRef.current.getCurrentTime() + 15);
   };
 
-  // Chromecast functions
-  const startCasting = () => {
-    if (
-      !castAvailable ||
-      !workout?.exercises ||
-      !currentExercise?.exercise?.videoURL
-    ) {
-      console.warn("Cast not available or no video to cast");
-      return;
-    }
-
-    const context = window.cast.framework.CastContext.getInstance();
-
-    if (castConnected) {
-      // Already connected, just load the current exercise
-      loadCurrentExerciseOnCast();
-    } else {
-      // Request session
-      context
-        .requestSession()
-        .then(() => {
-          console.log("Cast session started");
-          loadCurrentExerciseOnCast();
-        })
-        .catch((error) => {
-          console.error("Error starting cast session:", error);
-        });
-    }
-  };
-
-  const loadCurrentExerciseOnCast = () => {
-    if (!castSession || !currentExercise?.exercise?.videoURL) return;
-
-    const mediaInfo = new window.chrome.cast.media.MediaInfo(
-      currentExercise.exercise.videoURL,
-      "video/mp4"
-    );
-
-    mediaInfo.metadata = new window.chrome.cast.media.GenericMediaMetadata();
-    mediaInfo.metadata.title =
-      currentExercise.exercise.title || `Exercise ${currentExercise.index + 1}`;
-    mediaInfo.metadata.subtitle = workout.title || "";
-
-    const request = new window.chrome.cast.media.LoadRequest(mediaInfo);
-    request.currentTime = playerRef.current
-      ? playerRef.current.getCurrentTime()
-      : 0;
-    request.autoplay = playerState.playing;
-
-    castSession
-      .loadMedia(request)
-      .then(() => {
-        console.log("Media loaded on cast device");
-        // Pause local player when casting
-        setPlayerState((prev) => ({ ...prev, playing: false }));
-      })
-      .catch((error) => {
-        console.error("Error loading media on cast device:", error);
-      });
-  };
-
-  const stopCasting = () => {
-    if (castSession) {
-      castSession.endSession(true);
-    }
-  };
-
-  // Update cast when exercise changes
-  useEffect(() => {
-    if (castConnected && castSession && currentExercise?.exercise?.videoURL) {
-      loadCurrentExerciseOnCast();
-    }
-  }, [currentExercise?.index]);
-
   const handleCastButtonClick = () => {
+    toggleCast(currentMusicRef.current.url, currentMusicRef.current.volume);
+  };
+
+  // Callback for MusicPlayer to notify about music changes (forwarded to Cast receiver)
+  const handleMusicChange = (musicUrl, musicVolume) => {
+    currentMusicRef.current = { url: musicUrl, volume: musicVolume };
     if (castConnected) {
-      stopCasting();
-    } else {
-      startCasting();
+      sendChangeMusic(musicUrl, musicVolume);
     }
   };
 
-  return (
-    <div>
+  const handleCastSkipNext = () => {
+    sendSkipNext();
+  };
+
+  const handleCastSkipPrev = () => {
+    sendSkipPrev();
+  };
+
+  // ─── Cast icon rendering (shared between fullscreen and non-fullscreen) ───
+  const renderCastIcon = (iconSrc) => (
+    <img
+      src={iconSrc}
+      alt="player-chrome-icon"
+      style={{
+        ...playerIconStyle,
+        opacity: castAvailable ? 1 : 0.5,
+        filter: castConnected
+          ? "brightness(1.5) sepia(1) hue-rotate(45deg)"
+          : "none",
+      }}
+      onClick={castAvailable ? handleCastButtonClick : undefined}
+      title={
+        !castAvailable
+          ? "No cast devices available"
+          : castConnected
+          ? "Disconnect from cast device"
+          : "Cast to device"
+      }
+    />
+  );
+
+  // ─── Casting Remote UI (replaces normal controls when casting) ───
+  const renderCastingRemote = () => {
+    const rs = receiverState;
+    const phaseLabel = rs?.phase || "connecting";
+    const castElapsed = rs?.totalElapsed || 0;
+    const castTotal = rs?.totalDuration || 0;
+    const castPaused = rs?.isPaused || false;
+    const castProgress = castTotal > 0 ? (castElapsed / castTotal) * 100 : 0;
+
+    return (
+      <>
+        <div
+          className="controls-wrapper-bottom"
+          style={{ position: "relative" }}
+        >
+          <span className="font-paragraph-white player-elasped-time-container">
+            {formatTime(castElapsed)}
+          </span>
+          <div>
+            <img
+              src={SkipLeftIcon}
+              alt="skip-prev"
+              style={{ cursor: "pointer" }}
+              onClick={handleCastSkipPrev}
+            />
+            <div className="player-play-pause-icon-box">
+              {!castPaused ? (
+                <img
+                  src={PlayerPauseIcon}
+                  alt="pause"
+                  style={{ cursor: "pointer" }}
+                  className="controls-wrapper-bottom-icons"
+                  onClick={onPlayPause}
+                />
+              ) : (
+                <img
+                  src={PlayerPlayIcon}
+                  alt="play"
+                  style={{ cursor: "pointer" }}
+                  className="controls-wrapper-bottom-icons"
+                  onClick={onPlayPause}
+                />
+              )}
+            </div>
+            <img
+              src={SkipRightIcon}
+              alt="skip-next"
+              style={{ cursor: "pointer" }}
+              onClick={handleCastSkipNext}
+            />
+          </div>
+          <span
+            className="font-paragraph-white player-elasped-time-container"
+            style={{ textAlign: "right" }}
+          >
+            {formatTime(castTotal)}
+          </span>
+        </div>
+        {/* Progress bar */}
+        <div style={{ margin: "0 30px 10px 35px", paddingBottom: "10px" }}>
+          <div
+            style={{
+              width: "100%",
+              height: "4px",
+              background: "rgba(255,255,255,0.2)",
+              borderRadius: "2px",
+            }}
+          >
+            <div
+              style={{
+                width: `${Math.min(castProgress, 100)}%`,
+                height: "100%",
+                background: "#FF7700",
+                borderRadius: "2px",
+                transition: "width 1s linear",
+              }}
+            />
+          </div>
+        </div>
+        {/* Cast exercise stepper */}
+        {rs && rs.totalExercises > 0 && (
+          <div
+            className="react-player-stepper-container"
+            style={{
+              gridTemplateColumns: `repeat(${rs.totalExercises}, 1fr)`,
+            }}
+          >
+            {Array.from({ length: rs.totalExercises }).map((_, i) => (
+              <div
+                key={i}
+                className="react-player-stepper"
+                style={{
+                  background:
+                    i === rs.exerciseIndex
+                      ? "#fff"
+                      : i < rs.exerciseIndex
+                      ? "#FF7700"
+                      : "rgba(255,255,255,0.25)",
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </>
+    );
+  };
+
+  // ─── Cast status info for the description area ───
+  const renderCastDescription = () => {
+    const rs = receiverState;
+    const phaseLabel = rs?.phase;
+    const exerciseName = rs?.exerciseTitle || exerciseTitle || "";
+    const timeRemaining =
+      phaseLabel === "exercise"
+        ? rs?.exerciseTimeRemaining
+        : phaseLabel === "break"
+        ? rs?.breakTimeRemaining
+        : null;
+
+    return (
       <div className="controls-details" ref={descriptionRef}>
         <div className="controls-details-top-title font-paragraph-white">
-          <span>{exerciseTitle}</span>
-          {castConnected && (
-            <span
-              style={{
-                fontSize: "12px",
-                color: "#FF7700",
-                marginTop: "5px",
-                display: "flex",
-                alignItems: "center",
-                gap: "5px",
-              }}
-            >
-              📺 Casting to TV
-            </span>
-          )}
-          {(exerciseSeconds || exerciseLength) && (
+          <span>
+            {phaseLabel === "break" ? "Rest" : exerciseName}
+          </span>
+          <span
+            style={{
+              fontSize: "12px",
+              color: "#FF7700",
+              marginTop: "5px",
+              display: "flex",
+              alignItems: "center",
+              gap: "5px",
+            }}
+          >
+            Casting to TV
+            {phaseLabel === "get_ready" && " - Get Ready"}
+            {phaseLabel === "complete" && " - Workout Complete!"}
+          </span>
+          {timeRemaining != null && (
             <span style={{ marginTop: "10px" }}>
               <span style={{ fontSize: "26px", marginRight: "5px" }}>
-                {Math.round(exerciseSeconds)}
+                {Math.round(timeRemaining)}
               </span>
               Sec
             </span>
           )}
         </div>
-        {console.log(workout, currentExercise)}
         <div className="controls-details-bottom-title font-paragraph-white">
-          {breakTime && (
+          {phaseLabel === "break" && rs?.exerciseIndex != null && (
             <span>
-              Up next: Rest
-              <span style={{ fontSize: "26px", margin: "0 5px" }}>
-                {breakTime}
-              </span>
-              sec
+              Up next:{" "}
+              {workout?.exercises?.[rs.exerciseIndex + 1]?.title || "Finish"}
             </span>
           )}
         </div>
       </div>
-      <div className="controls-wrapper" ref={ref} style={currentBreak ? { zIndex: 20 } : undefined}>
+    );
+  };
+
+  return (
+    <div>
+      {/* Description area — cast vs local */}
+      {castConnected ? (
+        renderCastDescription()
+      ) : (
+        <div className="controls-details" ref={descriptionRef}>
+          <div className="controls-details-top-title font-paragraph-white">
+            <span>{exerciseTitle}</span>
+            {(exerciseSeconds || exerciseLength) && (
+              <span style={{ marginTop: "10px" }}>
+                <span style={{ fontSize: "26px", marginRight: "5px" }}>
+                  {Math.round(exerciseSeconds)}
+                </span>
+                Sec
+              </span>
+            )}
+          </div>
+          {console.log(workout, currentExercise)}
+          <div className="controls-details-bottom-title font-paragraph-white">
+            {breakTime && (
+              <span>
+                Up next: Rest
+                <span style={{ fontSize: "26px", margin: "0 5px" }}>
+                  {breakTime}
+                </span>
+                sec
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="controls-wrapper" ref={ref} style={currentBreak && !castConnected ? { zIndex: 20 } : undefined}>
         {fullscreen && (
           <FullScreenPlayerVideosBrowser
             showVideos={true}
@@ -380,6 +441,7 @@ function PlayerControls(
             musicList={musicList}
             setMusicPlayerVisible={setMusicPlayerVisible}
             visible={musicPlayerVisible}
+            onMusicChange={handleMusicChange}
           />
         </div>
 
@@ -428,25 +490,7 @@ function PlayerControls(
                     style={playerIconStyle}
                   />
                 )}
-                <img
-                  src={PlayerChromeIcon}
-                  alt="player-chrome-icon"
-                  style={{
-                    ...playerIconStyle,
-                    opacity: castAvailable ? 1 : 0.5,
-                    filter: castConnected
-                      ? "brightness(1.5) sepia(1) hue-rotate(45deg)"
-                      : "none",
-                  }}
-                  onClick={castAvailable ? handleCastButtonClick : undefined}
-                  title={
-                    !castAvailable
-                      ? "No cast devices available"
-                      : castConnected
-                      ? "Disconnect from cast device"
-                      : "Cast to device"
-                  }
-                />
+                {renderCastIcon(PlayerChromeIcon)}
                 <img
                   src={PlayerMusicIcon}
                   onClick={() => setMusicPlayerVisible(!musicPlayerVisible)}
@@ -477,25 +521,7 @@ function PlayerControls(
                     style={playerIconStyle}
                   />
                 )}
-                <img
-                  src={SmPlayerChromeIcon}
-                  alt="player-chrome-icon"
-                  style={{
-                    ...playerIconStyle,
-                    opacity: castAvailable ? 1 : 0.5,
-                    filter: castConnected
-                      ? "brightness(1.5) sepia(1) hue-rotate(45deg)"
-                      : "none",
-                  }}
-                  onClick={castAvailable ? handleCastButtonClick : undefined}
-                  title={
-                    !castAvailable
-                      ? "No cast devices available"
-                      : castConnected
-                      ? "Disconnect from cast device"
-                      : "Cast to device"
-                  }
-                />
+                {renderCastIcon(SmPlayerChromeIcon)}
                 <img
                   src={SmPlayerMusicIcon}
                   onClick={() => setMusicPlayerVisible(!musicPlayerVisible)}
@@ -515,203 +541,206 @@ function PlayerControls(
           </div>
         </div>
 
-        {/* middle controls */}
-        {playerState.loading ? (
-          <span
-            style={{
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <LoadingOutlined
-              style={{
-                color: "var(--color-orange)",
-              }}
-              className="middle-player-icons"
-            />
-          </span>
-        ) : (
-          <div className="controls-wrapper-middle">
-            <span className="controls-wrapper-middle-icons"></span>
-
-            <span className="controls-wrapper-middle-icons"></span>
-          </div>
-        )}
-
-        {!workout.renderWorkout ? (
-          <>
-            <div
-              className="controls-wrapper-bottom"
-              style={{ position: "relative" }}
-            >
-              <span className="font-paragraph-white player-elasped-time-container">
-                {elapsedTime}
-              </span>
-              <div>
-                <img
-                  src={SkipLeftIcon}
-                  alt="skip-left-icon"
-                  style={{ cursor: "pointer" }}
-                  onClick={handleRewind}
-                />
-                <span className="font-paragraph-white">15</span>
-                <div className="player-play-pause-icon-box">
-                  {playerState.playing ? (
-                    // PlayerPauseIcon
-                    <img
-                      src={PlayerPauseIcon}
-                      alt="skip-left-icon"
-                      style={{ cursor: "pointer" }}
-                      className="controls-wrapper-bottom-icons"
-                      onClick={onPlayPause}
-                    />
-                  ) : (
-                    <img
-                      src={PlayerPlayIcon}
-                      alt="skip-left-icon"
-                      style={{ cursor: "pointer" }}
-                      className="controls-wrapper-bottom-icons"
-                      onClick={onPlayPause}
-                    />
-                  )}
-                </div>
-                <span className="font-paragraph-white">15</span>
-                <img
-                  src={SkipRightIcon}
-                  alt="skip-left-icon"
-                  style={{ cursor: "pointer" }}
-                  onClick={handleFastforward}
-                />
-              </div>
-              <span
-                className="font-paragraph-white player-elasped-time-container"
-                style={{ textAlign: "right" }}
-              >
-                {totalDuration}
-              </span>
-            </div>
-            <div style={{ margin: "0 30px 0 35px", paddingBottom: "20px" }}>
-              <VideoSeekSlider
-                max={100}
-                currentTime={playerState.progress.played * 100}
-                progress={playerState.progress.loaded * 100}
-                onChange={onSeek}
-                offset={0}
-                limitTimeTooltipBySides={true}
-                hideSeekTimes={false}
-                secondsPrefix="00:00:"
-                minutesPrefix="00:"
-                tipFormatter={(v) => `${elapsedTime}`}
-              />
-            </div>
-          </>
+        {/* ─── Middle & Bottom Controls ─── */}
+        {castConnected ? (
+          /* Casting remote controls */
+          renderCastingRemote()
         ) : (
           <>
-            <div
-              className="controls-wrapper-bottom"
-              style={{ position: "relative" }}
-            >
-              <span className="font-paragraph-white player-elasped-time-container">
-                {/* {elapsedTime} */}
-                {formatTime(exerciseWorkoutTimeTrack.current)}
-              </span>
-              <div>
-                <img
-                  src={SkipLeftIcon}
-                  alt="skip-left-icon"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => {
-                    if (currentExercise && currentExercise.index !== 0) {
-                      if (currentBreak) dismissBreak();
-                      moveToPrevExercise();
-                      setPlayerState((prev) => ({ ...prev, playing: true }));
-                    }
-                  }}
-                />
-                {/* PlayerPlayIcon */}
-                <div className="player-play-pause-icon-box">
-                  {(currentBreak ? !breakPaused : playerState.playing) ? (
-                    <img
-                      src={PlayerPauseIcon}
-                      alt="pause-icon"
-                      style={{ cursor: "pointer" }}
-                      className="controls-wrapper-bottom-icons"
-                      onClick={onPlayPause}
-                    />
-                  ) : (
-                    <img
-                      src={PlayerPlayIcon}
-                      alt="play-icon"
-                      style={{ cursor: "pointer" }}
-                      className="controls-wrapper-bottom-icons"
-                      onClick={onPlayPause}
-                    />
-                  )}
-                </div>
-                <img
-                  src={SkipRightIcon}
-                  alt="skip-left-icon"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => {
-                    if (
-                      currentExercise &&
-                      currentExercise.index !== workout.exercises.length - 1
-                    ) {
-                      if (currentBreak) dismissBreak();
-                      moveToNextExercise();
-                      setPlayerState((prev) => ({ ...prev, playing: true }));
-                    }
-                  }}
-                />
-              </div>
+            {/* middle controls */}
+            {playerState.loading ? (
               <span
-                className="font-paragraph-white player-elasped-time-container"
-                style={{ textAlign: "right" }}
+                style={{
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
               >
-                {/* {totalDuration} */}
-                {formatTime(exerciseWorkoutTimeTrack.total)}
+                <LoadingOutlined
+                  style={{
+                    color: "var(--color-orange)",
+                  }}
+                  className="middle-player-icons"
+                />
               </span>
-            </div>
-            <div
-              className="react-player-stepper-container"
-              style={{
-                gridTemplateColumns: `repeat(${
-                  workout &&
-                  workout.exercises.filter(
-                    (ex, idx) =>
-                      idx !== 0 || ex.videoURL || ex.exerciseLength > 0
-                  ).length
-                }, 1fr)`,
-              }}
-            >
-              {workout &&
-                workout.exercises
-                  .map((ex, originalIndex) => ({ ex, originalIndex }))
-                  .filter(
-                    ({ ex, originalIndex }) =>
-                      originalIndex !== 0 ||
-                      ex.videoURL ||
-                      ex.exerciseLength > 0
-                  )
-                  .map(({ ex, originalIndex }) => {
-                    return (
-                      <div
-                        key={originalIndex}
-                        className="react-player-stepper"
-                        style={{
-                          background:
-                            currentExercise &&
-                            currentExercise.index === originalIndex &&
-                            currentExercise.index !== -1
-                              ? "#fff"
-                              : "#FB7600",
-                        }}
-                      ></div>
-                    );
-                  })}
-            </div>
+            ) : (
+              <div className="controls-wrapper-middle">
+                <span className="controls-wrapper-middle-icons"></span>
+                <span className="controls-wrapper-middle-icons"></span>
+              </div>
+            )}
+
+            {!workout.renderWorkout ? (
+              <>
+                <div
+                  className="controls-wrapper-bottom"
+                  style={{ position: "relative" }}
+                >
+                  <span className="font-paragraph-white player-elasped-time-container">
+                    {elapsedTime}
+                  </span>
+                  <div>
+                    <img
+                      src={SkipLeftIcon}
+                      alt="skip-left-icon"
+                      style={{ cursor: "pointer" }}
+                      onClick={handleRewind}
+                    />
+                    <span className="font-paragraph-white">15</span>
+                    <div className="player-play-pause-icon-box">
+                      {playerState.playing ? (
+                        <img
+                          src={PlayerPauseIcon}
+                          alt="skip-left-icon"
+                          style={{ cursor: "pointer" }}
+                          className="controls-wrapper-bottom-icons"
+                          onClick={onPlayPause}
+                        />
+                      ) : (
+                        <img
+                          src={PlayerPlayIcon}
+                          alt="skip-left-icon"
+                          style={{ cursor: "pointer" }}
+                          className="controls-wrapper-bottom-icons"
+                          onClick={onPlayPause}
+                        />
+                      )}
+                    </div>
+                    <span className="font-paragraph-white">15</span>
+                    <img
+                      src={SkipRightIcon}
+                      alt="skip-left-icon"
+                      style={{ cursor: "pointer" }}
+                      onClick={handleFastforward}
+                    />
+                  </div>
+                  <span
+                    className="font-paragraph-white player-elasped-time-container"
+                    style={{ textAlign: "right" }}
+                  >
+                    {totalDuration}
+                  </span>
+                </div>
+                <div style={{ margin: "0 30px 0 35px", paddingBottom: "20px" }}>
+                  <VideoSeekSlider
+                    max={100}
+                    currentTime={playerState.progress.played * 100}
+                    progress={playerState.progress.loaded * 100}
+                    onChange={onSeek}
+                    offset={0}
+                    limitTimeTooltipBySides={true}
+                    hideSeekTimes={false}
+                    secondsPrefix="00:00:"
+                    minutesPrefix="00:"
+                    tipFormatter={(v) => `${elapsedTime}`}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div
+                  className="controls-wrapper-bottom"
+                  style={{ position: "relative" }}
+                >
+                  <span className="font-paragraph-white player-elasped-time-container">
+                    {formatTime(exerciseWorkoutTimeTrack.current)}
+                  </span>
+                  <div>
+                    <img
+                      src={SkipLeftIcon}
+                      alt="skip-left-icon"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => {
+                        if (currentExercise && currentExercise.index !== 0) {
+                          if (currentBreak) dismissBreak();
+                          moveToPrevExercise();
+                          setPlayerState((prev) => ({ ...prev, playing: true }));
+                        }
+                      }}
+                    />
+                    <div className="player-play-pause-icon-box">
+                      {(currentBreak ? !breakPaused : playerState.playing) ? (
+                        <img
+                          src={PlayerPauseIcon}
+                          alt="pause-icon"
+                          style={{ cursor: "pointer" }}
+                          className="controls-wrapper-bottom-icons"
+                          onClick={onPlayPause}
+                        />
+                      ) : (
+                        <img
+                          src={PlayerPlayIcon}
+                          alt="play-icon"
+                          style={{ cursor: "pointer" }}
+                          className="controls-wrapper-bottom-icons"
+                          onClick={onPlayPause}
+                        />
+                      )}
+                    </div>
+                    <img
+                      src={SkipRightIcon}
+                      alt="skip-left-icon"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => {
+                        if (
+                          currentExercise &&
+                          currentExercise.index !== workout.exercises.length - 1
+                        ) {
+                          if (currentBreak) dismissBreak();
+                          moveToNextExercise();
+                          setPlayerState((prev) => ({ ...prev, playing: true }));
+                        }
+                      }}
+                    />
+                  </div>
+                  <span
+                    className="font-paragraph-white player-elasped-time-container"
+                    style={{ textAlign: "right" }}
+                  >
+                    {formatTime(exerciseWorkoutTimeTrack.total)}
+                  </span>
+                </div>
+                <div
+                  className="react-player-stepper-container"
+                  style={{
+                    gridTemplateColumns: `repeat(${
+                      workout &&
+                      workout.exercises.filter(
+                        (ex, idx) =>
+                          idx !== 0 || ex.videoURL || ex.exerciseLength > 0
+                      ).length
+                    }, 1fr)`,
+                  }}
+                >
+                  {workout &&
+                    workout.exercises
+                      .map((ex, originalIndex) => ({ ex, originalIndex }))
+                      .filter(
+                        ({ ex, originalIndex }) =>
+                          originalIndex !== 0 ||
+                          ex.videoURL ||
+                          ex.exerciseLength > 0
+                      )
+                      .map(({ ex, originalIndex }) => {
+                        return (
+                          <div
+                            key={originalIndex}
+                            className="react-player-stepper"
+                            style={{
+                              background:
+                                currentExercise &&
+                                currentExercise.index === originalIndex &&
+                                currentExercise.index !== -1
+                                  ? "#fff"
+                                  : "#FB7600",
+                            }}
+                          ></div>
+                        );
+                      })}
+                </div>
+              </>
+            )}
           </>
         )}
       </div>

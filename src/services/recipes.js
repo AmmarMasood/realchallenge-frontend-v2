@@ -148,6 +148,7 @@ export function createMealType(name, language) {
     })
     .then((res) => {
       openNotificationWithIcon("success", "Meal Type created successfully", "");
+      return res.data;
     })
     .catch((err) => {
       if (err.response.data.header && err.response.data.header.message) {
@@ -208,6 +209,7 @@ export function createFoodType(name, language) {
     })
     .then((res) => {
       openNotificationWithIcon("success", "Food Type created successfully", "");
+      return res.data;
     })
     .catch((err) => {
       if (err.response.data.header && err.response.data.header.message) {
@@ -279,6 +281,7 @@ export function createDiet(name, language) {
     })
     .then((res) => {
       openNotificationWithIcon("success", "Diet created successfully", "");
+      return res.data;
     })
     .catch((err) => {
       if (err.response.data.header && err.response.data.header.message) {
@@ -354,6 +357,7 @@ export function createIngredient(name, language) {
         "Ingredient created successfully",
         "",
       );
+      return res.data;
     })
     .catch((err) => {
       if (err.response.data.header && err.response.data.header.message) {

@@ -13,6 +13,8 @@ import {
   ClockCircleOutlined,
   LoadingOutlined,
   HeartFilled,
+  ShoppingCartOutlined,
+  FireOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import { Avatar, Input, Modal, Rate } from "antd";
@@ -32,10 +34,9 @@ import slug from "elegant-slug";
 import { Helmet } from "react-helmet";
 import { T } from "../components/Translate";
 import { LanguageContext } from "../contexts/LanguageContext";
-{
-  /* todo later */
-}
-// import ReactHtmlParser from "react-html-parser";
+// HTML content renderer (replaces ReactHtmlParser)
+const HtmlContent = ({ html }) =>
+  html ? <div dangerouslySetInnerHTML={{ __html: html }} /> : null;
 
 function RecipeProfile(props) {
   const { language, updateLanguage } = useContext(LanguageContext);
@@ -159,7 +160,6 @@ function RecipeProfile(props) {
             </div>
             <div className="challenge-profile-box-2">
               <div className="challenge-profile-box-2-rating">
-                {console.log("rating", recipe)}
                 <div style={{ padding: "5px" }}>
                   <Rate value={recipe.rating} allowHalf disabled={true} />
                   {/* {new Array(recipe.rating ? recipe.rating : 1)
@@ -242,25 +242,32 @@ function RecipeProfile(props) {
             <div className="recipe-mealValues-container">
               {[
                 {
-                  type: "Carbohydrates",
-                  quantity: recipe.carbohydrate ? recipe.carbohydrate : "",
+                  type: "Protein",
+                  quantity: recipe.protein,
+                  icon: <FireOutlined />,
                 },
                 {
-                  type: "Protein",
-                  quantity: recipe.protein ? recipe.protein : "",
+                  type: "Carbohydrates",
+                  quantity: recipe.carbohydrate,
+                  icon: <FireOutlined />,
                 },
                 {
                   type: "Fat",
-                  quantity: recipe.fat ? recipe.fat : "",
+                  quantity: recipe.fat,
+                  icon: <FireOutlined />,
                 },
                 {
                   type: "Fiber",
-                  quantity: recipe.fiber ? recipe.fiber : "",
+                  quantity: recipe.fiber,
+                  icon: <FireOutlined />,
                 },
-              ].map((value) => (
-                <div className="recipe-mealValues-container-box">
+              ].map((value, i) => (
+                <div className="recipe-mealValues-container-box" key={i}>
                   <span>{value.type}</span>
-                  <span>{value.quantity} g</span>
+                  <span>
+                    <span className="recipe-mealValues-icon">{value.icon}</span>
+                    {value.quantity != null ? value.quantity : ""} g
+                  </span>
                 </div>
               ))}
             </div>
@@ -271,8 +278,7 @@ function RecipeProfile(props) {
               <T>recipe_profile.short_info</T>
             </div>
             <div className="recipe-mealValues-info">
-              {/* todo later */}
-              {/* {recipe.description ? ReactHtmlParser(recipe.description) : ""} */}
+              <HtmlContent html={recipe.description} />
             </div>
           </div>
           {/* asdasdasd */}
@@ -289,9 +295,10 @@ function RecipeProfile(props) {
                       {line.method && `(${line.method})`}
                     </span>
                     <span>
-                      {line.weight ? `${line.weight}g` : line.weight}{" "}
-                      {line.volume ? `${line.volume}ml` : line.volume}
-                      {line.pieces ? ` ${line.pieces} piece` : line.pieces}
+                      {line.weight != null && line.weight !== "" ? `${line.weight} g` : ""}
+                      {line.volume != null && line.volume !== "" ? ` ${line.volume} ml` : ""}
+                      {line.pieces != null && line.pieces !== "" ? ` ${line.pieces} piece` : ""}
+                      {line.other ? ` ${line.other}` : ""}
                     </span>
                   </div>
                 ))}
@@ -321,15 +328,13 @@ function RecipeProfile(props) {
             <div className="recipe-mealValues-heading font-paragraph-white">
               <T>recipe_profile.tips</T>
             </div>
-            <div
-              className="recipe-mealValues-info"
-              style={{
-                backgroundColor: "#ffeee0",
-                minHeight: "100px",
-                padding: "10px",
-              }}
-            >
-              {/* {ReactHtmlParser(recipe?.tips)} */}
+            <div className="recipe-highlight-box recipe-tips-box">
+              <div className="recipe-highlight-icon">
+                <FireOutlined />
+              </div>
+              <div className="recipe-highlight-content">
+                <HtmlContent html={recipe?.tips} />
+              </div>
             </div>
           </div>
           {/* sdasdasdas */}
@@ -337,20 +342,35 @@ function RecipeProfile(props) {
             <div className="recipe-mealValues-heading font-paragraph-white">
               <T>recipe_profile.notes</T>
             </div>
-            <div
-              className="recipe-mealValues-info"
-              style={{
-                backgroundColor: "#ffeee0",
-                minHeight: "100px",
-                padding: "10px",
-                listStyle: "none",
-              }}
-            >
-              {/* todo later */}
-              {/* {ReactHtmlParser(recipe?.notes)} */}
+            <div className="recipe-highlight-box recipe-notes-box">
+              <div className="recipe-highlight-icon">
+                <FireOutlined />
+              </div>
+              <div className="recipe-highlight-content">
+                <HtmlContent html={recipe?.notes} />
+              </div>
             </div>
           </div>
-          {/* sdasdasdas */}
+          {/* Action Buttons */}
+          {localStorage.getItem("jwtToken") && (
+            <div className="recipe-action-buttons">
+              <button
+                className="recipe-love-button"
+                onClick={() => favouriteRecipe(recipe._id)}
+              >
+                <HeartFilled /> <T>recipe_profile.love</T>
+              </button>
+              <button className="recipe-shopping-button">
+                <ShoppingCartOutlined /> <T>recipe_profile.add_to_shopping_list</T>
+              </button>
+            </div>
+          )}
+          {/* Get Full Nutrition Advice CTA */}
+          <div className="recipe-nutrition-cta">
+            <Link to="/challenges" className="recipe-nutrition-cta-button">
+              <T>recipe_profile.get_full_nutrition_advice</T>
+            </Link>
+          </div>
           {/* <div className="trainer-profile-goals">
             <div className="recipe-mealValues-heading font-paragraph-white">
               <T>recipe_profile.comments</T>

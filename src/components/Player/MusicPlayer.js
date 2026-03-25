@@ -13,7 +13,7 @@ import PlayerState, {
   playerStateContext,
 } from "../../contexts/PlayerState";
 
-function MusicPlayer({ visible, setMusicPlayerVisible, musicList }) {
+function MusicPlayer({ visible, setMusicPlayerVisible, musicList, onMusicChange }) {
   const [playerState, setPlayerState] = useContext(playerStateContext);
   const [currentBreak, setCurrentBreak] = useContext(breakContext);
   const { height, width } = useWindowDimensions();
@@ -49,16 +49,22 @@ function MusicPlayer({ visible, setMusicPlayerVisible, musicList }) {
         url: "",
       });
       localStorage.removeItem("music-playing");
+      if (onMusicChange) onMusicChange(null, volume);
       return;
     }
 
     setCurrentPLaying(m);
     localStorage.setItem("music-playing", true);
+    if (onMusicChange) onMusicChange(m.url || m.link, volume);
     // setPlaying(true);
   };
   const onVolumeChange = (e) => {
     // volume needs to be between 0 and 1
-    setVolume(e / 100);
+    const newVol = e / 100;
+    setVolume(newVol);
+    if (onMusicChange && currentPlaying._id !== 12345) {
+      onMusicChange(currentPlaying.url || currentPlaying.link, newVol);
+    }
   };
   // const onPlayPause = () => {
   //   setPlaying((prev) => !prev);

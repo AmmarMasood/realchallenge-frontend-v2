@@ -33,6 +33,7 @@ import EditTypeName from "./EditTypeName";
 import TextEditor from "../../TextEditor";
 import { userInfoContext } from "../../../contexts/UserStore";
 import { LanguageContext } from "../../../contexts/LanguageContext";
+import { T } from "../../Translate";
 import { get } from "lodash";
 const { Option } = Select;
 
@@ -59,6 +60,7 @@ function UpdateRecipe(props) {
   const [isPublic, setIsPublic] = useState(false);
   const [allowComments, setAllowComments] = useState(false);
   const [allowReviews, setAllowReviews] = useState(false);
+  const [adminApproved, setAdminApproved] = useState(false);
   //meal type
   const [mealTypes, setMealTypes] = useState([]);
   const [allMealTypes, setAllMealTypes] = useState([]);
@@ -99,18 +101,32 @@ function UpdateRecipe(props) {
   const { language, strings } = useContext(LanguageContext);
 
   async function fetchData() {
-    const diets = await getAllDietTypes(language);
-    const meals = await getAllMealTypes(language);
-    const foodTypes = await getAllFoodTypes(language);
-    const ingredients = await getAllIngredients(language);
-
+    const [diets, meals, foodTypes, ingredients] = await Promise.all([
+      getAllDietTypes(language),
+      getAllMealTypes(language),
+      getAllFoodTypes(language),
+      getAllIngredients(language),
+    ]);
     setAllDiets(diets.diets);
-    setAllMealTypes(
-      meals.mealTypes.map((f) => ({ ...f, name: f.name.split("___")[0] }))
-    );
-    setAllFoodTypes(
-      foodTypes.foodTypes.map((f) => ({ ...f, name: f.name.split("___")[0] }))
-    );
+    setAllMealTypes(meals.mealTypes);
+    setAllFoodTypes(foodTypes.foodTypes);
+    setAllIngredients(ingredients.ingredients);
+  }
+
+  async function fetchMealTypes() {
+    const meals = await getAllMealTypes(language);
+    setAllMealTypes(meals.mealTypes);
+  }
+  async function fetchFoodTypes() {
+    const foodTypes = await getAllFoodTypes(language);
+    setAllFoodTypes(foodTypes.foodTypes);
+  }
+  async function fetchDiets() {
+    const diets = await getAllDietTypes(language);
+    setAllDiets(diets.diets);
+  }
+  async function fetchIngredients() {
+    const ingredients = await getAllIngredients(language);
     setAllIngredients(ingredients.ingredients);
   }
 
@@ -178,6 +194,7 @@ function UpdateRecipe(props) {
     setIsPublic(props.selectedProduct.isPublic);
     setAllowComments(props.selectedProduct.allowComments);
     setAllowReviews(props.selectedProduct.allowReviews);
+    setAdminApproved(props.selectedProduct.adminApproved);
     // alternativeLanguage removed - using translationKey for multi-language support
     fetchData();
     fetchAllRecipes();
@@ -216,6 +233,8 @@ function UpdateRecipe(props) {
       tips: tips,
       isPublic: isPublic,
       allowComments: allowComments,
+      allowReviews: allowReviews,
+      adminApproved: adminApproved,
     };
     // alternativeLanguage removed - using translationKey for multi-language support
     await updateRecipe(d, props.selectedProduct._id);
@@ -254,20 +273,18 @@ function UpdateRecipe(props) {
   const renderIngredientsList = (item) => (
     <List.Item style={{ display: "block", textAlign: "right" }}>
       <Button type="danger" onClick={() => removeIngredientListItem(item)}>
-        Remove
+        <T>admin.remove</T>
       </Button>
 
       <div className="new-recipe-ingredient-listitem">
         <div>
-          <span className="font-paragraph-black">Select Ingredient</span>
+          <span className="font-paragraph-black"><T>admin.select_ingredient</T></span>
           <Select
             style={{ width: "100%" }}
             value={item.name._id}
             onChange={(e) => changeIngredientValue("name", item._id, e)}
             showSearch
-            onSearch={(v) => console.log("value", v)}
             filterOption={(input, option) => {
-              // console.log("value", input,option);
               return (
                 option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               );
@@ -279,22 +296,21 @@ function UpdateRecipe(props) {
           </Select>
         </div>
         <div>
-          <span className="font-paragraph-black">Weight (gm)</span>
+          <span className="font-paragraph-black"><T>admin.weight_gm</T></span>
           <Input
             type="number"
-            placeholder="Enter Weight"
+            placeholder={get(strings, "admin.enter_weight", "Enter Weight")}
             value={item.weight}
-            onChange={(e) => {
-              console.log(item._id, e.target.value);
-              changeIngredientValue("weight", item._id, e.target.value);
-            }}
+            onChange={(e) =>
+              changeIngredientValue("weight", item._id, e.target.value)
+            }
           />
         </div>
         <div>
-          <span className="font-paragraph-black">Volume (ml)</span>
+          <span className="font-paragraph-black"><T>admin.volume_ml</T></span>
           <Input
             type="number"
-            placeholder="Enter Volume"
+            placeholder={get(strings, "admin.enter_volume", "Enter Volume")}
             value={item.volume}
             onChange={(e) =>
               changeIngredientValue("volume", item._id, e.target.value)
@@ -302,10 +318,10 @@ function UpdateRecipe(props) {
           />
         </div>
         <div>
-          <span className="font-paragraph-black">Pieces</span>
+          <span className="font-paragraph-black"><T>admin.pieces</T></span>
           <Input
             type="number"
-            placeholder="Enter Pieces"
+            placeholder={get(strings, "admin.enter_pieces", "Enter Pieces")}
             value={item.pieces}
             onChange={(e) =>
               changeIngredientValue("pieces", item._id, e.target.value)
@@ -313,9 +329,9 @@ function UpdateRecipe(props) {
           />
         </div>
         <div>
-          <span className="font-paragraph-black">Method</span>
+          <span className="font-paragraph-black"><T>admin.method</T></span>
           <Input
-            placeholder="Enter Method"
+            placeholder={get(strings, "admin.enter_method", "Enter Method")}
             value={item.method}
             onChange={(e) =>
               changeIngredientValue("method", item._id, e.target.value)
@@ -323,9 +339,9 @@ function UpdateRecipe(props) {
           />
         </div>
         <div>
-          <span className="font-paragraph-black">Other</span>
+          <span className="font-paragraph-black"><T>admin.other</T></span>
           <Input
-            placeholder="Enter Other"
+            placeholder={get(strings, "admin.enter_other", "Enter Other")}
             value={item.other}
             onChange={(e) =>
               changeIngredientValue("other", item._id, e.target.value)
@@ -362,7 +378,7 @@ function UpdateRecipe(props) {
         type="danger"
         onClick={() => removeCookingProcessItem(item, index)}
       >
-        Remove
+        <T>admin.remove</T>
       </Button>
     </List.Item>
   );
@@ -385,7 +401,7 @@ function UpdateRecipe(props) {
           footer={false}
           visible={mealTypeModalVisible}
         >
-          <p className="font-paragraph-white">Enter Meal Type</p>
+          <p className="font-paragraph-white"><T>admin.enter_meal_type</T></p>
           <div style={{ display: "flex", alignItems: "center" }}>
             <Input
               value={newMealTypeName}
@@ -396,12 +412,9 @@ function UpdateRecipe(props) {
               htmlType="submit"
               onClick={async () => {
                 if (newMealTypeName.length > 0) {
-                  await createMealType(
-                    `${newMealTypeName}___${language}`,
-                    language
-                  );
-                  // setEquipmentModal(false);
-                  fetchData();
+                  await createMealType(newMealTypeName, language);
+                  setNewMealTypeName("");
+                  fetchMealTypes();
                 }
               }}
               style={{
@@ -410,11 +423,11 @@ function UpdateRecipe(props) {
                 marginLeft: "5px",
               }}
             >
-              Create
+              <T>admin.create</T>
             </Button>
           </div>
           <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-            <span className="font-subheading-white">All Meal Types</span>
+            <span className="font-subheading-white"><T>admin.all_meal_types</T></span>
             <List
               size="small"
               bordered
@@ -433,23 +446,23 @@ function UpdateRecipe(props) {
                     <Button
                       onClick={async () => {
                         await removeMealType(cat._id);
-                        fetchData();
+                        fetchMealTypes();
                       }}
                       style={{ marginRight: "10px" }}
                       type="primary"
                       danger
                     >
-                      Delete
+                      <T>admin.delete</T>
                     </Button>
                     <Button
                       type="primary"
                       onClick={() => {
-                        setSelectedItemForUpdateTitle("Update Meal Type");
+                        setSelectedItemForUpdateTitle(get(strings, "admin.update_meal_type", "Update Meal Type"));
                         setSelectedItemForUpdate(cat);
                         setEditItemModelVisible(true);
                       }}
                     >
-                      Edit
+                      <T>admin.edit</T>
                     </Button>
                   </span>
                 </List.Item>
@@ -464,7 +477,7 @@ function UpdateRecipe(props) {
           footer={false}
           visible={foodTypeModalVisible}
         >
-          <p className="font-paragraph-white">Enter Food Type</p>
+          <p className="font-paragraph-white"><T>admin.enter_food_type</T></p>
           <div style={{ display: "flex", alignItems: "center" }}>
             <Input
               value={newFoodTypeName}
@@ -475,12 +488,9 @@ function UpdateRecipe(props) {
               htmlType="submit"
               onClick={async () => {
                 if (newFoodTypeName.length > 0) {
-                  await createFoodType(
-                    `${newFoodTypeName}___${language}`,
-                    language
-                  );
-                  // setEquipmentModal(false);
-                  fetchData();
+                  await createFoodType(newFoodTypeName, language);
+                  setNewFoodTypeName("");
+                  fetchFoodTypes();
                 }
               }}
               style={{
@@ -489,11 +499,11 @@ function UpdateRecipe(props) {
                 marginLeft: "5px",
               }}
             >
-              Create
+              <T>admin.create</T>
             </Button>
           </div>
           <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-            <span className="font-subheading-white">All Food Types</span>
+            <span className="font-subheading-white"><T>admin.all_food_types</T></span>
             <List
               size="small"
               bordered
@@ -513,23 +523,23 @@ function UpdateRecipe(props) {
                     <Button
                       onClick={async () => {
                         await removeFoodType(cat._id);
-                        fetchData();
+                        fetchFoodTypes();
                       }}
                       style={{ marginRight: "10px" }}
                       type="primary"
                       danger
                     >
-                      Delete
+                      <T>admin.delete</T>
                     </Button>
                     <Button
                       type="primary"
                       onClick={() => {
-                        setSelectedItemForUpdateTitle("Update Food Type");
+                        setSelectedItemForUpdateTitle(get(strings, "admin.update_food_type", "Update Food Type"));
                         setSelectedItemForUpdate(cat);
                         setEditItemModelVisible(true);
                       }}
                     >
-                      Edit
+                      <T>admin.edit</T>
                     </Button>
                   </span>
                 </List.Item>
@@ -543,7 +553,7 @@ function UpdateRecipe(props) {
           footer={false}
           visible={dietModalVisible}
         >
-          <p className="font-paragraph-white">Enter Diet</p>
+          <p className="font-paragraph-white"><T>admin.enter_diet</T></p>
           <div style={{ display: "flex", alignItems: "center" }}>
             <Input
               value={newDietName}
@@ -554,9 +564,9 @@ function UpdateRecipe(props) {
               htmlType="submit"
               onClick={async () => {
                 if (newDietName.length > 0) {
-                  await createDiet(newDietName);
-                  // setEquipmentModal(false);
-                  fetchData();
+                  await createDiet(newDietName, language);
+                  setNewDietName("");
+                  fetchDiets();
                 }
               }}
               style={{
@@ -565,11 +575,11 @@ function UpdateRecipe(props) {
                 marginLeft: "5px",
               }}
             >
-              Create
+              <T>admin.create</T>
             </Button>
           </div>
           <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-            <span className="font-subheading-white">All Diet Types</span>
+            <span className="font-subheading-white"><T>admin.all_diet_types</T></span>
             <List
               size="small"
               bordered
@@ -589,23 +599,23 @@ function UpdateRecipe(props) {
                     <Button
                       onClick={async () => {
                         await removeDiet(cat._id);
-                        fetchData();
+                        fetchDiets();
                       }}
                       style={{ marginRight: "10px" }}
                       type="primary"
                       danger
                     >
-                      Delete
+                      <T>admin.delete</T>
                     </Button>
                     <Button
                       type="primary"
                       onClick={() => {
-                        setSelectedItemForUpdateTitle("Update Diet Type");
+                        setSelectedItemForUpdateTitle(get(strings, "admin.update_diet_type", "Update Diet Type"));
                         setSelectedItemForUpdate(cat);
                         setEditItemModelVisible(true);
                       }}
                     >
-                      Edit
+                      <T>admin.edit</T>
                     </Button>
                   </span>
                 </List.Item>
@@ -619,7 +629,7 @@ function UpdateRecipe(props) {
           footer={false}
           visible={newIngredientModalVisible}
         >
-          <p className="font-paragraph-white">Enter Ingredient</p>
+          <p className="font-paragraph-white"><T>admin.enter_ingredient</T></p>
           <div style={{ display: "flex", alignItems: "center" }}>
             <Input
               value={newIngredientName}
@@ -630,9 +640,9 @@ function UpdateRecipe(props) {
               htmlType="submit"
               onClick={async () => {
                 if (newIngredientName.length > 0) {
-                  await createIngredient(newIngredientName);
-                  // setEquipmentModal(false);
-                  fetchData();
+                  await createIngredient(newIngredientName, language);
+                  setNewIngredientName("");
+                  fetchIngredients();
                 }
               }}
               style={{
@@ -641,11 +651,11 @@ function UpdateRecipe(props) {
                 marginLeft: "5px",
               }}
             >
-              Create
+              <T>admin.create</T>
             </Button>
           </div>
           <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-            <span className="font-subheading-white">All Ingredients</span>
+            <span className="font-subheading-white"><T>admin.all_ingredients</T></span>
             <List
               size="small"
               bordered
@@ -665,23 +675,23 @@ function UpdateRecipe(props) {
                     <Button
                       onClick={async () => {
                         await removeIngredient(cat._id);
-                        fetchData();
+                        fetchIngredients();
                       }}
                       style={{ marginRight: "10px" }}
                       type="primary"
                       danger
                     >
-                      Delete
+                      <T>admin.delete</T>
                     </Button>
                     <Button
                       type="primary"
                       onClick={() => {
-                        setSelectedItemForUpdateTitle("Update Ingredient");
+                        setSelectedItemForUpdateTitle(get(strings, "admin.update_ingredient", "Update Ingredient"));
                         setSelectedItemForUpdate(cat);
                         setEditItemModelVisible(true);
                       }}
                     >
-                      Edit
+                      <T>admin.edit</T>
                     </Button>
                   </span>
                 </List.Item>
@@ -704,7 +714,7 @@ function UpdateRecipe(props) {
           type={mediaManagerType}
           actions={mediaManagerActions}
         />
-        <h2 className="font-heading-white">Update Recipe</h2>
+        <h2 className="font-heading-white"><T>admin.update_recipe</T></h2>
 
         <div
           className="admin-newuser-container"
@@ -721,14 +731,14 @@ function UpdateRecipe(props) {
             form={form}
           >
             <Form.Item
-              label="Recipe Name"
+              label={<T>admin.recipe_name</T>}
               name="recipeName"
-              rules={[{ required: true, message: "Please input recipe name!" }]}
+              rules={[{ required: true, message: get(strings, "admin.please_input_recipe_name", "Please input recipe name!") }]}
             >
               <Input value={name} onChange={(e) => setName(e.target.value)} />
             </Form.Item>
             <Form.Item
-              label="Recipe Description"
+              label={<T>admin.recipe_description</T>}
               name="recipeDescription"
               rules={[{ required: true }]}
             >
@@ -742,7 +752,7 @@ function UpdateRecipe(props) {
                 onChange={(e) => setDescription(e.target.value)}
               /> */}
             </Form.Item>
-            <Form.Item label="Featured Image" name="featuredImage">
+            <Form.Item label={<T>admin.featured_image</T>} name="featuredImage">
               <Button
                 onClick={() => {
                   setMediaManagerVisible(true);
@@ -750,7 +760,7 @@ function UpdateRecipe(props) {
                   setMediaManagerActions([featuredImage, setFeaturedImage]);
                 }}
               >
-                Upload File
+                <T>admin.upload_file</T>
               </Button>
               {typeof featuredImage === "object" ? (
                 <div style={{ display: "flex" }}>
@@ -820,7 +830,7 @@ function UpdateRecipe(props) {
             <Form layout="vertical" form={form}>
               <div className="new-recipe-information-inputs-container">
                 <Form.Item
-                  label="Prepration Time"
+                  label={<T>admin.preparation_time</T>}
                   name="preprationTime"
                   // rules={[
                   //   {
@@ -836,7 +846,7 @@ function UpdateRecipe(props) {
                     style={{ width: "100%" }}
                   />
                 </Form.Item>
-                <Form.Item label="Persons" name="persons" type="number">
+                <Form.Item label={<T>admin.persons</T>} name="persons" type="number">
                   <InputNumber
                     value={persons}
                     onChange={(e) => setPersons(e)}
@@ -844,7 +854,7 @@ function UpdateRecipe(props) {
                   />
                 </Form.Item>
                 <Form.Item
-                  label="Kcal per person"
+                  label={<T>admin.kcal_per_person</T>}
                   name="kcalPerPerson"
                   // rules={[
                   //   {
@@ -861,7 +871,7 @@ function UpdateRecipe(props) {
                   />
                 </Form.Item>
                 <Form.Item
-                  label="Saturation Index"
+                  label={<T>admin.saturation_index</T>}
                   name="saturationIndex"
                   // rules={[
                   //   {
@@ -878,7 +888,7 @@ function UpdateRecipe(props) {
                   />
                 </Form.Item>
                 <Form.Item
-                  label="Protein"
+                  label={<T>admin.protein</T>}
                   name="protein"
                   // rules={[{ required: true, message: "Please input protein!" }]}
                   type="number"
@@ -890,7 +900,7 @@ function UpdateRecipe(props) {
                   />
                 </Form.Item>
                 <Form.Item
-                  label="Carbohydrates"
+                  label={<T>admin.carbohydrates</T>}
                   name="carbohydrates"
                   // rules={[
                   //   { required: true, message: "Please input carbohydrates!" },
@@ -904,7 +914,7 @@ function UpdateRecipe(props) {
                   />
                 </Form.Item>
                 <Form.Item
-                  label="Fat"
+                  label={<T>admin.fat</T>}
                   name="fat"
                   // rules={[{ required: true, message: "Please input fats!" }]}
                   type="number"
@@ -916,7 +926,7 @@ function UpdateRecipe(props) {
                   />
                 </Form.Item>
                 <Form.Item
-                  label="Fiber"
+                  label={<T>admin.fiber</T>}
                   name="fiber"
                   // rules={[{ required: true, message: "Please input fiber!" }]}
                   type="number"
@@ -929,7 +939,7 @@ function UpdateRecipe(props) {
                 </Form.Item>
               </div>
             </Form>
-            <Form.Item label="Meal Types" name="mealTypes">
+            <Form.Item label={<T>admin.meal_types</T>} name="mealTypes">
               <Select
                 mode="multiple"
                 allowClear
@@ -952,10 +962,10 @@ function UpdateRecipe(props) {
                 }}
                 onClick={() => setMealTypeModalVisible(true)}
               >
-                Manage Meal Type
+                <T>admin.manage_meal_type</T>
               </Button>
             </Form.Item>
-            <Form.Item label="Food Types" name="foodTypes">
+            <Form.Item label={<T>admin.food_types</T>} name="foodTypes">
               <Select
                 mode="multiple"
                 allowClear
@@ -978,10 +988,10 @@ function UpdateRecipe(props) {
                 }}
                 onClick={() => setFoodTypeModalVisible(true)}
               >
-                Manage Food Type
+                <T>admin.manage_food_type</T>
               </Button>
             </Form.Item>
-            <Form.Item label="Diet" name="diet">
+            <Form.Item label={<T>admin.diet</T>} name="diet">
               <Select
                 mode="multiple"
                 allowClear
@@ -1004,7 +1014,7 @@ function UpdateRecipe(props) {
                 }}
                 onClick={() => setDietModalVisible(true)}
               >
-                Manage Diet
+                <T>admin.manage_diet</T>
               </Button>
             </Form.Item>
             {/* ingredients */}
@@ -1015,20 +1025,20 @@ function UpdateRecipe(props) {
                   header={
                     <div className="new-recipe-ingredients-list-container-header">
                       <span className="font-heading-black">
-                        Add Ingredients
+                        <T>admin.add_ingredients</T>
                       </span>
                       <div>
                         <Button
                           className="hover-orange"
                           onClick={() => setIngredients([...ingredients, ing])}
                         >
-                          Add Ingredient
+                          <T>admin.add_ingredient</T>
                         </Button>
                         <Button
                           className="hover-orange"
                           onClick={() => setNewIngredientModlVisible(true)}
                         >
-                          Manage Ingredients
+                          <T>admin.manage_ingredients</T>
                         </Button>
                       </div>
                     </div>
@@ -1050,7 +1060,7 @@ function UpdateRecipe(props) {
                   header={
                     <div className="new-recipe-ingredients-list-container-header">
                       <span className="font-heading-black">
-                        Cooking Process
+                        <T>admin.cooking_process</T>
                       </span>
                       <div>
                         <Button
@@ -1059,7 +1069,7 @@ function UpdateRecipe(props) {
                             setCookingProcess([...cookingProcess, ""])
                           }
                         >
-                          Add Step
+                          <T>admin.add_step</T>
                         </Button>
                       </div>
                     </div>
@@ -1071,7 +1081,7 @@ function UpdateRecipe(props) {
               </div>
             }
 
-            <Form.Item label="Notes" name="notes" style={{ marginTop: "30px" }}>
+            <Form.Item label={<T>admin.notes</T>} name="notes" style={{ marginTop: "30px" }}>
               {/* <Input.TextArea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -1082,7 +1092,7 @@ function UpdateRecipe(props) {
                 setValue={setNotes}
               />
             </Form.Item>
-            <Form.Item label="Tips" name="tips">
+            <Form.Item label={<T>admin.tips</T>} name="tips">
               {/* <Input.TextArea
                 value={tips}
                 onChange={(e) => setTips(e.target.value)}
@@ -1101,7 +1111,7 @@ function UpdateRecipe(props) {
                     checked={isPublic}
                     onChange={(e) => setIsPublic(e.target.checked)}
                   >
-                    Make Public
+                    <T>admin.make_public</T>
                   </Checkbox>
                 </Form.Item>
                 <Form.Item>
@@ -1109,7 +1119,7 @@ function UpdateRecipe(props) {
                     checked={allowReviews}
                     onChange={(e) => setAllowReviews(e.target.checked)}
                   >
-                    Allow Reviews
+                    <T>admin.allow_reviews</T>
                   </Checkbox>
                 </Form.Item>
                 <Form.Item>
@@ -1117,12 +1127,22 @@ function UpdateRecipe(props) {
                     checked={allowComments}
                     onChange={(e) => setAllowComments(e.target.checked)}
                   >
-                    Allow Comments
+                    <T>admin.allow_comments</T>
                   </Checkbox>
                 </Form.Item>
               </>
             )}
-            {!props.selectedProduct.adminApproved && (
+            {userInfo.role === "admin" && (
+              <Form.Item>
+                <Checkbox
+                  checked={adminApproved}
+                  onChange={(e) => setAdminApproved(e.target.checked)}
+                >
+                  <T>admin.admin_approved</T>
+                </Checkbox>
+              </Form.Item>
+            )}
+            {!adminApproved && (
               <Alert
                 message={get(strings, "admin.approval_warning", "This content is pending admin approval and is not visible to the public.")}
                 type="warning"
@@ -1142,7 +1162,7 @@ function UpdateRecipe(props) {
                 }}
                 onClick={onFinish}
               >
-                Update
+                <T>admin.update</T>
               </Button>
             </Form.Item>
           </Form>
