@@ -34,6 +34,7 @@ function ModalForEditList({
   // Check if admin features should be shown
   const isAdmin = adminInfo?.role === "admin";
   const isTrainer = adminInfo?.role === "trainer";
+  const isNutrist = adminInfo?.role === "nutrist";
 
   // Only admins can see filter dropdown
   const showAdminFeatures =
@@ -54,6 +55,9 @@ function ModalForEditList({
     }
     if (isTrainer && item.trainers?.some((t) => (t._id || t) === adminInfo.id)) {
       return true; // Assigned trainers can edit
+    }
+    if (isNutrist && type === "recipe" && item.user && item.user._id === adminInfo.id) {
+      return true; // Nutrists can edit their own recipes
     }
     return false;
   };

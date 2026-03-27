@@ -38,6 +38,7 @@ import {
   getAllUserChallenges,
   getAllUserExercises,
 } from "../../services/createChallenge/main";
+import { getAllUserRecipes } from "../../services/recipes";
 import ModalForEditList from "../../components/Admin/V2/Common/ModalForEditList";
 import ExerciseCreatorPopup from "./ExerciseCreatorPopup";
 import RemoteMediaManager from "../../components/Admin/MediaManager/RemoteMediaManager";
@@ -59,6 +60,9 @@ function AdminDashboard(props) {
     useState(false);
   const [openChallengeEditListModal, setOpenChallengeEditListModal] =
     useState(false);
+  const [openRecipeEditListModal, setOpenRecipeEditListModal] =
+    useState(false);
+  const [recipes, setAllRecipes] = useState([]);
   const [openExerciseCreatorPopup, setOpenExerciseCreatorPopup] =
     useState(false);
   const [selectedExerciseForEdit, setSelectedExerciseForEdit] = useState(null);
@@ -88,12 +92,18 @@ function AdminDashboard(props) {
     const { exercises } = await getAllUserExercises(language, true);
     setAllExercises(exercises);
   };
+
+  const fetchRecipes = async () => {
+    const res = await getAllUserRecipes(language);
+    if (res && res.recipes) setAllRecipes(res.recipes);
+  };
   async function fetchData(id) {
     setLoading(true);
     const { user } = await getUsersProfile();
     await fetchTrainerGoals();
     await fetchChallenges();
     await fetchExercises();
+    await fetchRecipes();
     // await fetchExercises();
     setTrainer(user);
     setLoading(false);
@@ -343,7 +353,7 @@ function AdminDashboard(props) {
     props.history.push("/admin/v2/challenge-studio");
   };
   const goToRecipeCreator = () => {
-    props.history.push("/admin/dashboard?tab=new-recipe");
+    props.history.push("/admin/v2/recipe-studio");
   };
 
   const goToBlogCreator = () => {
@@ -373,6 +383,14 @@ function AdminDashboard(props) {
   const goToEditChallenge = (challengeId) => {
     window.open(
       `/admin/v2/challenge-studio/${challengeId}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
+  const goToEditRecipe = (recipeId) => {
+    window.open(
+      `/admin/v2/recipe-studio/${recipeId}`,
       "_blank",
       "noopener,noreferrer",
     );
@@ -910,7 +928,7 @@ function AdminDashboard(props) {
               <div
                 className="adminv2-selector"
                 style={{ cursor: "pointer" }}
-                onClick={goToAllRecipes}
+                onClick={() => setOpenRecipeEditListModal(true)}
               >
                 {hasRole(adminInfo, "admin") ? (
                   <h1
@@ -930,6 +948,25 @@ function AdminDashboard(props) {
                   </h1>
                 )}
               </div>
+              <ModalForEditList
+                data={recipes}
+                open={openRecipeEditListModal}
+                setOpen={setOpenRecipeEditListModal}
+                onClickEdit={goToEditRecipe}
+                title={
+                  hasRole(adminInfo, "admin")
+                    ? get(strings, "adminv2.all_recipes", "All Recipes")
+                    : get(strings, "adminv2.my_recipes", "My Recipes")
+                }
+                subtext={get(strings, "adminv2.recipe_id", "Recipe ID")}
+                searchPlaceholder={get(
+                  strings,
+                  "adminv2.search_recipe",
+                  "Search by recipe name",
+                )}
+                searchKeys={["name"]}
+                type="recipe"
+              />
             </div>
           )}
 

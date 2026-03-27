@@ -13,14 +13,14 @@ const customStyleSmall = {
   width: "fit-content",
   padding: "5px 10px",
 };
-function AddNewButton({ onClick, style, type = "big" }) {
+function AddNewButton({ onClick, style, type = "big", iconStyle }) {
   return type === "big" ? (
     <div onClick={onClick} style={{ ...customStyle, ...style }}>
-      <img src={PlusIcon} alt="plus icon" />
+      <img src={PlusIcon} alt="plus icon" style={iconStyle} />
     </div>
   ) : (
     <div onClick={onClick} style={{ ...customStyleSmall, ...style }}>
-      <img src={PlusIcon} alt="plus icon" />
+      <img src={PlusIcon} alt="plus icon" style={iconStyle} />
     </div>
   );
 }

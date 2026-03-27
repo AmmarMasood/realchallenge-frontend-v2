@@ -61,6 +61,7 @@ function RecipeProfile(props) {
   const [userInfo, serUserInfo] = useContext(userInfoContext);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [translationNotAvailable, setTranslationNotAvailable] = useState(false);
 
   // eslint-disable-next-line
   const [recipe, setRecipe] = useState({});
@@ -73,6 +74,7 @@ function RecipeProfile(props) {
     if (Object.keys(recipe).length > 0) {
       if (recipe.language === language) {
         // Language matches, re-fetch to get latest data (e.g. after review/comment)
+        setTranslationNotAvailable(false);
         const res = await getRecipeById(recipe._id);
         if (res) {
           setAllComments(res.comments);
@@ -86,12 +88,19 @@ function RecipeProfile(props) {
             language,
           );
           if (translatedRecipe && translatedRecipe.recipe) {
+            setTranslationNotAvailable(false);
             window.location.href = `${
               process.env.REACT_APP_FRONTEND_SERVER
             }/recipe/${slug(translatedRecipe.recipe.name)}/${
               translatedRecipe.recipe._id
             }`;
+          } else {
+            // No translation available — show banner
+            setTranslationNotAvailable(true);
           }
+        } else {
+          // No translationKey at all
+          setTranslationNotAvailable(true);
         }
       }
     } else {
@@ -169,6 +178,74 @@ function RecipeProfile(props) {
         <meta name="author" content="Realchallenge" />
       </Helmet>
       <Navbar color="dark" />
+      {translationNotAvailable && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 9999,
+            background: "#2D3239",
+            borderLeft: "3px solid #f37720",
+            borderRadius: "6px",
+            padding: "10px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+            maxWidth: "fit-content",
+          }}
+        >
+          <span className="font-paragraph-white" style={{ fontSize: "13px", whiteSpace: "nowrap" }}>
+            {language === "dutch"
+              ? `Alleen beschikbaar in het ${
+                  recipe.language === "english" ? "Engels" : "Nederlands"
+                }`
+              : `Only available in ${
+                  recipe.language === "dutch" ? "Dutch" : recipe.language
+                }`}
+          </span>
+          <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+            <button
+              onClick={() => props.history.push("/recipes")}
+              style={{
+                background: "transparent",
+                border: "1px solid #72777B",
+                color: "#fff",
+                padding: "4px 10px",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
+              }}
+              className="font-paragraph-white"
+            >
+              {language === "dutch" ? "Overzicht" : "Overview"}
+            </button>
+            <button
+              onClick={() => updateLanguage(recipe.language)}
+              style={{
+                background: "#f37720",
+                border: "none",
+                color: "#fff",
+                padding: "4px 10px",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
+              }}
+              className="font-paragraph-white"
+            >
+              {language === "dutch"
+                ? `Bekijk in ${
+                    recipe.language === "english" ? "Engels" : "Nederlands"
+                  }`
+                : `View in ${
+                    recipe.language === "dutch" ? "Dutch" : recipe.language
+                  }`}
+            </button>
+          </div>
+        </div>
+      )}
       <ReviewsModal
         visible={reviewOpen}
         setVisible={setReviewOpen}

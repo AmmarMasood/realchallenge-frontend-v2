@@ -74,15 +74,16 @@ export function createRecipe(values) {
 
 export function updateRecipe(values, id) {
   return axios
-    .post(
-      `${process.env.REACT_APP_SERVER}/api/recipes/recipe/${id}/update`,
+    .put(
+      `${process.env.REACT_APP_SERVER}/api/recipes/recipe/${id}`,
       values,
     )
     .then((res) => {
       openNotificationWithIcon("success", "Recipe updated successfully", "");
+      return res.data;
     })
     .catch((err) => {
-      if (err.response.data.header && err.response.data.header.message) {
+      if (err.response?.data?.header && err.response.data.header.message) {
         openNotificationWithIcon("error", err.response.data.header.message, "");
         return;
       }
@@ -580,6 +581,40 @@ export function addRecipeComment(recipeId, comment) {
         return;
       }
       openNotificationWithIcon("error", "Unable to add comment", "");
+    });
+}
+
+// Edit lock: acquire lock before editing
+export function acquireRecipeLock(recipeId) {
+  return axios
+    .post(`${process.env.REACT_APP_SERVER}/api/recipes/recipe/${recipeId}/lock`)
+    .then((res) => res.data)
+    .catch((err) => {
+      // 423 = locked by someone else — return error data for the caller to handle
+      if (err.response?.status === 423) {
+        return { error: "RECIPE_LOCKED", ...err.response.data };
+      }
+      throw err;
+    });
+}
+
+// Edit lock: release lock when done editing
+export function releaseRecipeLock(recipeId) {
+  return axios
+    .delete(`${process.env.REACT_APP_SERVER}/api/recipes/recipe/${recipeId}/lock`)
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log("Failed to release lock:", err);
+    });
+}
+
+// Edit lock: heartbeat to keep lock alive
+export function renewRecipeLock(recipeId) {
+  return axios
+    .put(`${process.env.REACT_APP_SERVER}/api/recipes/recipe/${recipeId}/lock`)
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log("Failed to renew lock:", err);
     });
 }
 

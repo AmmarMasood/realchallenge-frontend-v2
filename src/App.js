@@ -50,6 +50,7 @@ import MollieRedirectPage from "./components/Payment/MollieRedirectPage";
 import ChoosePlan from "./components/Payment/ChoosePlan";
 import { getUserPoints } from "./services/users";
 import ChallengeCreator from "./pages/v2/ChallengeCreator";
+import RecipeCreator from "./pages/v2/RecipeCreator";
 import Workout from "./components/Admin/V2/Workout/Workout";
 
 function App() {
@@ -182,6 +183,24 @@ function App() {
             role="admin trainer"
             path="/admin/v2/challenge-studio/:challengeId"
             component={ChallengeCreator}
+            userInfo={userInfo}
+          />
+        </Switch>
+        <Switch>
+          <PrivateRoute
+            exact
+            role="admin nutrist"
+            path="/admin/v2/recipe-studio"
+            component={RecipeCreator}
+            userInfo={userInfo}
+          />
+        </Switch>
+        <Switch>
+          <PrivateRoute
+            exact
+            role="admin nutrist"
+            path="/admin/v2/recipe-studio/:recipeId"
+            component={RecipeCreator}
             userInfo={userInfo}
           />
         </Switch>
