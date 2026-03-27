@@ -177,6 +177,7 @@
   .recipe-profile-container-column2 {
     margin: 0;
     width: 100%;
+    padding: 20px;
   }
   .recipe-action-buttons {
     flex-wrap: wrap;

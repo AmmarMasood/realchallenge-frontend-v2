@@ -1173,7 +1173,8 @@ function BasicInformation(props) {
                         }}
                         key={mt._id}
                       >
-                        {allMealTypes.find((a) => a._id === mt._id)?.name || mt.name}
+                        {allMealTypes.find((a) => a._id === mt._id)?.name ||
+                          mt.name}
                         <DeleteFilled
                           onClick={() =>
                             setSelectedMealTypes((prev) =>
@@ -1225,7 +1226,7 @@ function BasicInformation(props) {
                 {/* Prep Time + Persons - matching RecipeProfile layout */}
                 <div
                   className="challenge-profile-box-2-info"
-                  style={{ marginTop: "10px", marginBottom: "100px" }}
+                  style={{ marginTop: "10px" }}
                 >
                   <div
                     style={{
@@ -1482,12 +1483,28 @@ function BasicInformation(props) {
                       flexWrap: "wrap",
                     }}
                   >
-                    <div style={{ flex: "2", minWidth: "150px", display: "flex", alignItems: "center" }}>
+                    <div
+                      style={{
+                        flex: "2",
+                        minWidth: "150px",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
                       <span
                         className="adminV2-bi-input"
-                        style={{ width: "100%", color: "#283443", borderColor: "#ccc", padding: "6px 8px", fontWeight: 500 }}
+                        style={{
+                          width: "100%",
+                          color: "#283443",
+                          borderColor: "#ccc",
+                          padding: "6px 8px",
+                          fontWeight: 500,
+                        }}
                       >
-                        {ing.nameLabel || allIngredients.find((ai) => ai._id === ing.name)?.name || ing.name}
+                        {ing.nameLabel ||
+                          allIngredients.find((ai) => ai._id === ing.name)
+                            ?.name ||
+                          ing.name}
                       </span>
                     </div>
                     <input
@@ -1678,14 +1695,32 @@ function BasicInformation(props) {
               <div className="recipe-mealValues-heading font-paragraph-white">
                 Food Types
               </div>
-              <div style={{ display: "flex", gap: "5px", flexWrap: "wrap", alignItems: "center", marginTop: "8px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "5px",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  marginTop: "8px",
+                }}
+              >
                 {selectedFoodTypes.map((ft) => (
                   <div
                     className="challenge-profile-box-2-container"
-                    style={{ opacity: "0.7", display: "flex", alignItems: "center", gap: "5px", background: "#283443", opacity: 1 }}
+                    style={{
+                      opacity: "0.7",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      background: "#283443",
+                      opacity: 1,
+                    }}
                     key={ft._id}
                   >
-                    <span>{allFoodTypes.find((a) => a._id === ft._id)?.name || ft.name}</span>
+                    <span>
+                      {allFoodTypes.find((a) => a._id === ft._id)?.name ||
+                        ft.name}
+                    </span>
                     <DeleteFilled
                       onClick={() =>
                         setSelectedFoodTypes((prev) =>
@@ -1720,14 +1755,31 @@ function BasicInformation(props) {
               <div className="recipe-mealValues-heading font-paragraph-white">
                 Diet
               </div>
-              <div style={{ display: "flex", gap: "5px", flexWrap: "wrap", alignItems: "center", marginTop: "8px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "5px",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  marginTop: "8px",
+                }}
+              >
                 {selectedDiet.map((d) => (
                   <div
                     className="challenge-profile-box-2-container"
-                    style={{ opacity: "0.7", display: "flex", alignItems: "center", gap: "5px", background: "#283443", opacity: 1 }}
+                    style={{
+                      opacity: "0.7",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      background: "#283443",
+                      opacity: 1,
+                    }}
                     key={d._id}
                   >
-                    <span>{allDiets.find((a) => a._id === d._id)?.name || d.name}</span>
+                    <span>
+                      {allDiets.find((a) => a._id === d._id)?.name || d.name}
+                    </span>
                     <DeleteFilled
                       onClick={() =>
                         setSelectedDiet((prev) =>
