@@ -71,31 +71,39 @@ function Wizard({ setWizardCompleted }) {
           pal = 0;
           break;
       }
-      console.log(pal);
       return pal;
     };
+
+    // Convert imperial inputs to metric for calculations
+    const heightCm = details.metric
+      ? details.height
+      : (details.height || 0) * 30.48;
+    const weightKg = details.metric
+      ? details.weight
+      : (details.weight || 0) * 0.453592;
+
     let BMI = 0;
     let BMR = 0;
+    let bf = 0;
     let c = 0;
-    BMI = details.weight / ((details.height / 100) * 2);
-    console.log("BMI", BMI, getPal(), fitnessLevel);
+
+    if (heightCm && weightKg) {
+      // Fix: exponent (**) not multiplication (*)
+      BMI = weightKg / ((heightCm / 100) ** 2);
+    }
+
     if (gender === "male") {
-      BMR =
-        88.362 +
-        13.397 * details.weight +
-        4.799 * details.height -
-        5.677 * details.age;
+      BMR = 88.362 + 13.397 * weightKg + 4.799 * heightCm - 5.677 * details.age;
+      bf = 1.2 * BMI + 0.23 * details.age - 16.2;
     }
     if (gender === "female") {
-      BMR =
-        447.593 +
-        9.247 * details.weight +
-        3.098 * details.height -
-        4.33 * details.age;
+      BMR = 447.593 + 9.247 * weightKg + 3.098 * heightCm - 4.33 * details.age;
+      bf = 1.2 * BMI + 0.23 * details.age - 5.4;
     }
+
     c = getPal() * BMR;
     setCalories(c.toFixed(2));
-    setBodyFat(BMR.toFixed(2));
+    setBodyFat(bf.toFixed(2));
     setBmi(BMI.toFixed(2));
   }, [gender, details, fitnessLevel]);
 
@@ -118,9 +126,10 @@ function Wizard({ setWizardCompleted }) {
       gender,
       goals: [goal],
       currentFitnessLevel: [fitnessLevel],
+      fitnessInterests: selectedFitnessInterests,
       age: parseInt(details.age),
       weight: getWeightDependingOnCurrentMonth(details.weight),
-      measureSystem: "metrics",
+      measureSystem: details.metric ? "metrics" : "imperial",
       height: parseInt(details.height),
       bmi: parseInt(bmi),
       bmir: parseInt(bodyFat),
@@ -506,6 +515,15 @@ function Wizard({ setWizardCompleted }) {
           <p className="font-paragraph-white">
             <T>wizard.almost</T>
           </p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", marginBottom: "10px" }}>
+            <span className="font-paragraph-white" style={{ fontSize: "14px" }}>Imperial</span>
+            <Switch
+              checked={details.metric}
+              onChange={(checked) => setDetails({ ...details, metric: checked, height: null, weight: null })}
+              checkedChildren="Metric"
+              unCheckedChildren="Imperial"
+            />
+          </div>
           <div className="finaldetails-field-container">
             <InputNumber
               size="large"
@@ -521,7 +539,7 @@ function Wizard({ setWizardCompleted }) {
               value={details.height}
               style={{ width: "100%", marginTop: "10px" }}
               onChange={(e) => setDetails({ ...details, height: e })}
-              placeholder={`Height ${details.metric ? " (cm)" : " (ft)"}`}
+              placeholder={`Height ${details.metric ? "(cm)" : "(ft)"}`}
             />
             <InputNumber
               size="large"
@@ -529,7 +547,7 @@ function Wizard({ setWizardCompleted }) {
               value={details.weight}
               onChange={(e) => setDetails({ ...details, weight: e })}
               style={{ width: "100%", marginTop: "10px" }}
-              placeholder={`Weight ${details.metric ? " (kg)" : " (lb)"}`}
+              placeholder={`Weight ${details.metric ? "(kg)" : "(lb)"}`}
             />
           </div>
           <div
@@ -570,11 +588,7 @@ function Wizard({ setWizardCompleted }) {
               <T>wizard.bmi</T>: {bmi}
             </div>
             <div className="show-detail-field font-paragraph-white">
-              Your Body Fat is:{" "}
-              {gender === "female"
-                ? (1.2 * bmi + 0.23 * details.age - 5.4).toFixed(2)
-                : (1.2 * bmi + 0.23 * details.age - 16.2).toFixed(2)}{" "}
-              %
+              Your Body Fat is: {bodyFat} %
             </div>
             <div className="show-detail-field font-paragraph-white">
               <T>wizard.kal</T>: {calories}
