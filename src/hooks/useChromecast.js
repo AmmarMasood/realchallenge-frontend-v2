@@ -29,13 +29,9 @@ export default function useChromecast({ workout, currentExercise }) {
 
         const options = {
           receiverApplicationId: CAST_APP_ID,
-          autoJoinPolicy: "origin_scoped",
+          autoJoinPolicy: window.chrome?.cast?.AutoJoinPolicy?.ORIGIN_SCOPED || "origin_scoped",
+          androidReceiverCompatible: true,
         };
-
-        if (window.chrome?.cast?.AutoJoinPolicy?.ORIGIN_SCOPED) {
-          options.autoJoinPolicy =
-            window.chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED;
-        }
 
         context.setOptions(options);
 
