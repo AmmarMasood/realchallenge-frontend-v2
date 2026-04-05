@@ -3,13 +3,13 @@ import { Link } from "react-router-dom";
 import { FlagOutlined } from "@ant-design/icons";
 import MaleBody from "../../images/Asset-514@4x-1.png";
 import FemaleBody from "../../images/Group 9879.png";
-// import {
-//   VictoryPie,
-//   VictoryChart,
-//   VictoryBar,
-//   VictoryLabel,
-//   VictoryAxis,
-// } from "victory";
+import {
+  VictoryPie,
+  VictoryChart,
+  VictoryBar,
+  VictoryLabel,
+  VictoryAxis,
+} from "victory";
 // import { Scrollbars } from "react-custom-scrollbars";
 import "../../assets/userDashboard.css";
 
@@ -76,47 +76,45 @@ function Challenges({ userProfile, gender, recommandedChal }) {
     "Dec",
   ];
   useEffect(() => {
-    // -----------------------------------------------------------
-    console.log("recommadnchallnge", recommandedChal.recommendedchallenge);
-    console.log("user profile", userProfile);
-    // -----------------------------------------------------
-
+    if (!userProfile) return;
     setMyDevelopment({
-      weightChart: userProfile.weight.map((w, i) => ({ x: months[i], y: w })),
+      weightChart: Array.isArray(userProfile.weight)
+        ? userProfile.weight.map((w, i) => ({ x: months[i], y: w }))
+        : [],
       bodyFat: userProfile.bmir,
     });
     setPics([userProfile.beforeImageLink, userProfile.afterImageLink]);
     setMyChallenges(userProfile.challenges);
 
-    recommandedChal &&
+    if (recommandedChal) {
       setRecommandedChallenges(recommandedChal.recommendedchallenge);
+    }
     setMybody({
       gender: gender,
       waist: userProfile.waistSize,
       hip: userProfile.hipSize,
       breast: userProfile.chestSize,
       shoulders: userProfile.shoulderSize,
+      unit: userProfile.measureSystem === "imperial" ? "in" : "cm",
     });
-  }, [userProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userProfile, recommandedChal, gender]);
 
   useEffect(() => {
     async function getAllMyChallengeProgress() {
-      console.log("yallah", myChallenges);
+      if (!Array.isArray(myChallenges) || myChallenges.length === 0) return;
       const res = myChallenges.map(
-        async (c) => await getChallengeProgress(c._id)
+        async (c) => await getChallengeProgress(c._id),
       );
       const progress = await Promise.all(res);
       setChallengeProgress(progress);
-      console.log("yallah", progress);
-      console.log(myChallenges);
-      // const res = await getChallengeProgress()
     }
     getAllMyChallengeProgress();
   }, [myChallenges]);
 
   return (
     <div>
-      <div className="dashboard-feed-container">
+      <div className="dashboard-feed-container" style={{ display: "grid" }}>
         <div className="dashboard-challenges-row1">
           <div className="dashboard-challenges-mychallenge">
             <div
@@ -225,7 +223,9 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                     className="font-paragraph-white"
                     style={{ backgroundColor: "#2F3E50", height: "100%" }}
                   >
-                    <img src={`${pics[0]}`} alt="users-before" />
+                    {pics[0] ? (
+                      <img src={pics[0]} alt="users-before" />
+                    ) : null}
                   </div>
                 }
                 itemTwo={
@@ -233,7 +233,9 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                     className="font-paragraph-white"
                     style={{ backgroundColor: "#3C618F", height: "100%" }}
                   >
-                    <img src={`${pics[1]}`} alt="users-after" />
+                    {pics[1] ? (
+                      <img src={pics[1]} alt="users-after" />
+                    ) : null}
                   </div>
                 }
               />
@@ -251,8 +253,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
             {/* <VictoryContainer style={{ width: "50%" }}> */}
             {/* <svg viewBox="0 0 200 350"> */}
             <div style={{ width: "50%" }}>
-              {/* todo do later */}
-              {/* <VictoryPie
+              <VictoryPie
                 innerRadius={30}
                 padding={10}
                 height={200}
@@ -263,7 +264,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                   { x: "Body Weight", y: myDevelopment.bodyFat },
                   { x: "", y: 100 - myDevelopment.bodyFat },
                 ]}
-              /> */}
+              />
             </div>
             {/* </svg> */}
             {/* </VictoryContainer> */}
@@ -281,13 +282,8 @@ function Challenges({ userProfile, gender, recommandedChal }) {
             </div>
           </div>
           <div className="dashboard-challenges-row2-mydevelopment-insidebox-2">
-            {/* todo do later */}
-            {/* <VictoryChart
-              // domainPadding={10}
-              height={250}
-            >
+            <VictoryChart height={250}>
               <VictoryLabel
-                // text="Weight Chart"
                 x={225}
                 y={30}
                 textAnchor="middle"
@@ -307,43 +303,65 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                   },
                 }}
               />
-            </VictoryChart> */}
+            </VictoryChart>
           </div>
         </div>
         <div className="dashboard-challenges-row2-mybody">
-          <div className="user-update-container-box-row2-heading font-card-heading-light">
-            <T>userDashboard.challenges.mybody</T>
+          <div
+            className="dashboard-challenges-mychallenge-heading"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+            }}
+          >
+            <span className="user-update-container-box-row2-heading font-card-heading-light">
+              <T>userDashboard.challenges.mybody</T>
+            </span>
+
+            <div style={{ marginBottom: "10px" }}>
+              <Link
+                to="/user/update"
+                className="font-paragraph-white hover-orange"
+                style={{ fontSize: "15px" }}
+              >
+                <T>userDashboard.challenges.update</T>
+              </Link>
+            </div>
+            <div className="divider"></div>
           </div>
-          <div className="divider"></div>
           <div style={{ paddingTop: "30px" }}>
             <div style={{ textAlign: "center", position: "relative" }}>
               <img
-                src={gender === "male" ? MaleBody : FemaleBody}
+                src={gender === "female" ? FemaleBody : MaleBody}
                 alt="human-body"
               />
-              {console.log(gender)}
               <div className="body-line body-line1">
                 <span className="font-paragraph-white">
-                  <T>userDashboard.challenges.breast</T> ({myBody.breast})
+                  <T>userDashboard.challenges.breast</T>
+                  {myBody.breast > 0 ? ` (${myBody.breast} ${myBody.unit})` : ""}
                 </span>{" "}
                 <div></div>
               </div>
               <div className="body-line body-line2">
                 <span className="font-paragraph-white">
-                  <T>userDashboard.challenges.hips</T> ({myBody.hip})
+                  <T>userDashboard.challenges.hips</T>
+                  {myBody.hip > 0 ? ` (${myBody.hip} ${myBody.unit})` : ""}
                 </span>{" "}
                 <div></div>
               </div>
               <div className="body-line body-line3">
                 <div></div>
                 <span className="font-paragraph-white">
-                  <T>userDashboard.challenges.shoulders</T> ({myBody.shoulders})
+                  <T>userDashboard.challenges.shoulders</T>
+                  {myBody.shoulders > 0 ? ` (${myBody.shoulders} ${myBody.unit})` : ""}
                 </span>{" "}
               </div>
               <div className="body-line body-line4">
                 <div></div>
                 <span className="font-paragraph-white">
-                  <T>userDashboard.challenges.waist</T> ({myBody.waist})
+                  <T>userDashboard.challenges.waist</T>
+                  {myBody.waist > 0 ? ` (${myBody.waist} ${myBody.unit})` : ""}
                 </span>{" "}
               </div>
             </div>
@@ -383,10 +401,11 @@ function Challenges({ userProfile, gender, recommandedChal }) {
           <div className="divider"></div>
         </div>
         <div className="dashboard-challenges-row3-inbox">
-          {recommandedChallenges ? (
+          {recommandedChallenges && recommandedChallenges.length > 0 ? (
             <Carousel responsive={responsive}>
               {recommandedChallenges.map((challenge) => (
                 <Link
+                  key={challenge._id}
                   to={`/challenge/${slug(challenge.challengeName)}/${
                     challenge._id
                   }`}
@@ -428,8 +447,8 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                         />
                       </div>
                       <div>
-                        {new Array(challenge.rating).fill(0).map((c) => (
-                          <img src={StarOrange} alt="" />
+                        {new Array(challenge.rating).fill(0).map((_, i) => (
+                          <img key={i} src={StarOrange} alt="" />
                         ))}
                       </div>
                     </div>
@@ -454,7 +473,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
               className="font-paragraph-white"
               style={{ marginLeft: "10px" }}
             >
-              No challenges found
+              <T>userDashboard.challenges.nochal</T>
             </div>
           )}
         </div>

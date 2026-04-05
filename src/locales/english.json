@@ -1038,7 +1038,8 @@
       "waist": "Waist",
       "ccfy": "Challenge Choosen For You",
       "vac": "View all challenges",
-      "sp": "See Pricing"
+      "sp": "See Pricing",
+      "nochal": "No challenges found"
     }
   },
   "wizard": {
