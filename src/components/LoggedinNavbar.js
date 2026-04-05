@@ -8,7 +8,7 @@ import {
   CheckOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
-import { Badge, Avatar, Popover, Spin, Button } from "antd";
+import { Badge, Avatar, Popover, Spin, Button, Tooltip } from "antd";
 import { userInfoContext, userPointsContext } from "../contexts/UserStore";
 import Logo from "../images/logo_orange.png";
 
@@ -219,8 +219,11 @@ function stripHtml(html) {
           />
           <Popover placement="bottom" content={content} trigger="click">
             <div className="loggedin-nav-name font-paragraph-white">
-              <span>
-                {userInfo.username} <CaretDownOutlined />
+              <span className="username-row">
+                <Tooltip title={userInfo.username}>
+                  <span className="username-text">{userInfo.username}</span>
+                </Tooltip>
+                <CaretDownOutlined className="dropdown-arrow" />
               </span>
               <span style={{ color: "#677182", fontSize: "1.6rem" }}>
                 <img src={Coins} /> {userPoints}

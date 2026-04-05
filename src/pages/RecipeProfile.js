@@ -17,7 +17,7 @@ import {
   FireOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
-import { Avatar, Input, Modal, Rate, message } from "antd";
+import { Avatar, Input, Modal, Rate, message, Skeleton } from "antd";
 import ShareIcon from "../assets/icons/share-icon.svg";
 import ClapOrange from "../assets/icons/clap-orange.svg";
 import ClapGray from "../assets/icons/clap-gray.svg";
@@ -36,10 +36,15 @@ import { withRouter } from "react-router-dom";
 import {
   getRecipeById,
   favouriteRecipeById,
+  unFavouriteRecipeById,
+  getAllFavouriteRecipes,
   addRecipeComment,
   getRecipeByTranslationKey,
   clapRecipe as clapRecipeApi,
   unclapRecipe as unclapRecipeApi,
+  addToShoppingCart,
+  removeFromShoppingCart,
+  getShoppingCart,
 } from "../services/recipes";
 import { userInfoContext } from "../contexts/UserStore";
 import ChallengeReviewModal from "../components/Challenge/ChallengeReviewModal";
@@ -62,6 +67,9 @@ function RecipeProfile(props) {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [translationNotAvailable, setTranslationNotAvailable] = useState(false);
+  const [isFavourited, setIsFavourited] = useState(false);
+  const [isInCart, setIsInCart] = useState(false);
+  const [buttonsLoading, setButtonsLoading] = useState(true);
 
   // eslint-disable-next-line
   const [recipe, setRecipe] = useState({});
@@ -69,6 +77,31 @@ function RecipeProfile(props) {
   useEffect(() => {
     fetchData();
   }, [language]);
+
+  // Check if recipe is favourited or in shopping cart
+  useEffect(() => {
+    if (recipe._id && userInfo.authenticated) {
+      setButtonsLoading(true);
+      Promise.all([
+        getAllFavouriteRecipes(userInfo.id),
+        getShoppingCart(userInfo.id),
+      ]).then(([favRes, cartRes]) => {
+        if (favRes && favRes.favRecipes) {
+          setIsFavourited(
+            favRes.favRecipes.some((r) => r._id === recipe._id)
+          );
+        }
+        if (cartRes && cartRes.shoppingCart) {
+          setIsInCart(
+            cartRes.shoppingCart.some(
+              (r) => (typeof r === "object" ? r._id : r) === recipe._id
+            )
+          );
+        }
+        setButtonsLoading(false);
+      });
+    }
+  }, [recipe._id, userInfo.id]);
 
   const fetchData = async () => {
     if (Object.keys(recipe).length > 0) {
@@ -110,9 +143,8 @@ function RecipeProfile(props) {
       if (res) {
         setAllComments(res.comments);
         setRecipe(res);
-        setLoading(false);
         updateLanguage(res.language);
-        console.log(res);
+        setLoading(false);
       }
     }
   };
@@ -128,8 +160,24 @@ function RecipeProfile(props) {
     setCommentText("");
   };
 
-  const favouriteRecipe = async (id) => {
-    await favouriteRecipeById({ recipeId: id }, userInfo.id);
+  const toggleFavourite = async (id) => {
+    if (isFavourited) {
+      const res = await unFavouriteRecipeById({ recipeId: id }, userInfo.id);
+      if (res) setIsFavourited(false);
+    } else {
+      const res = await favouriteRecipeById({ recipeId: id }, userInfo.id);
+      if (res) setIsFavourited(true);
+    }
+  };
+
+  const toggleShoppingCart = async (id) => {
+    if (isInCart) {
+      const res = await removeFromShoppingCart({ recipeId: id }, userInfo.id);
+      if (res) setIsInCart(false);
+    } else {
+      const res = await addToShoppingCart({ recipeId: id }, userInfo.id);
+      if (res) setIsInCart(true);
+    }
   };
 
   const isCreator = () => {
@@ -555,19 +603,35 @@ function RecipeProfile(props) {
           {/* Action Buttons */}
           {localStorage.getItem("jwtToken") && !isCreator() && hasRole(userInfo, "customer") && (
             <div className="recipe-action-buttons">
-              <button
-                className="recipe-love-button"
-                onClick={() => favouriteRecipe(recipe._id)}
-              >
-                <img src={LoveIcon} alt="love" /> <T>recipe_profile.love</T>
-              </button>
-              <button
-                className="recipe-shopping-button"
-                style={{ background: "#19B97F" }}
-              >
-                <img src={ShoppingIcon} alt="tips" />{" "}
-                <T>recipe_profile.add_to_shopping_list</T>
-              </button>
+              {buttonsLoading ? (
+                <>
+                  <Skeleton.Button active size="large" style={{ width: 120, borderRadius: 8 }} />
+                  <Skeleton.Button active size="large" style={{ width: 180, borderRadius: 8 }} />
+                </>
+              ) : (
+                <>
+                  <button
+                    className="recipe-love-button"
+                    onClick={() => toggleFavourite(recipe._id)}
+                    style={isFavourited ? { background: "#e74c3c" } : {}}
+                  >
+                    <HeartFilled style={{ color: isFavourited ? "#fff" : undefined }} />{" "}
+                    {isFavourited
+                      ? <T>recipe_profile.unlove</T>
+                      : <T>recipe_profile.love</T>}
+                  </button>
+                  <button
+                    className="recipe-shopping-button"
+                    style={{ background: isInCart ? "#e74c3c" : "#19B97F" }}
+                    onClick={() => toggleShoppingCart(recipe._id)}
+                  >
+                    <ShoppingCartOutlined />{" "}
+                    {isInCart
+                      ? <T>recipe_profile.remove_from_shopping_list</T>
+                      : <T>recipe_profile.add_to_shopping_list</T>}
+                  </button>
+                </>
+              )}
             </div>
           )}
           {/* Get Full Nutrition Advice CTA */}

@@ -175,7 +175,15 @@
     "remove": "Verwijderen",
     "upload_before_image": "Upload je voor foto",
     "after": "Na",
-    "upload_after_image": "Upload je na foto"
+    "upload_after_image": "Upload je na foto",
+    "bmi": "BMI",
+    "body_fat": "Lichaamsvet %",
+    "shoulder_size": "Schoudermaat",
+    "chest_size": "Borstmaat",
+    "hip_size": "Heupmaat",
+    "waist_size": "Taille",
+    "update_success": "Informatie bijgewerkt!",
+    "update_error": "Kan waarden niet bijwerken"
   },
   "user_setting": {
     "account_setting": "Accountinstelling",
@@ -193,7 +201,14 @@
     "methods": "Methoden",
     "total": "Totaal",
     "status": "Status",
-    "invoice": "Factuur"
+    "invoice": "Factuur",
+    "enter_email_to_reset": "Voer je e-mail in om je wachtwoord te resetten",
+    "sending_reset_link": "Er wordt een wachtwoord reset link naar je e-mail gestuurd, even geduld..",
+    "invalid_email": "Voer een geldig e-mailadres in",
+    "no_subscription": "Geen",
+    "yes": "Ja",
+    "no": "Nee",
+    "error": "Fout"
   },
   "user_profile": {
     "about_me": "Over mij",
@@ -204,6 +219,15 @@
     "challenges": "Uitdagingen",
     "nutrients": "Voeding",
     "community": "Community"
+  },
+  "dashboard": {
+    "comments": "REACTIES",
+    "cancel": "Annuleren",
+    "new_comment": "Nieuwe reactie",
+    "enter_comment": "Voer een nieuwe reactie in",
+    "no_posts": "Geen berichten hier!",
+    "previous": "Vorige",
+    "next": "Volgende"
   },
   "trainers": {
     "skill": "Ervaren trainers en coaches",
@@ -261,7 +285,9 @@
     "comments": "Opmerkingen",
     "start_today": "Start vandaag",
     "love": "Liken",
+    "unlove": "Niet meer liken",
     "add_to_shopping_list": "Toevoegen aan boodschappenlijst",
+    "remove_from_shopping_list": "Verwijderen uit boodschappenlijst",
     "get_full_nutrition_advice": "ONTVANG VOLLEDIG VOEDINGSADVIES",
     "related_product": "GERELATEERD PRODUCT"
   },
@@ -949,7 +975,7 @@
       "bodyV": "Lichaamsoverzicht",
       "calories": "Calorieen",
       "your-bmi": "Je BMI",
-      "your-bmr": "Je BMR",
+      "your-body-fat": "Lichaamsvet %",
       "nr": "Nutrientenaanbeveling",
       "protein": "Eiwit",
       "carbohydrates": "Koolhydraten",
@@ -976,7 +1002,24 @@
       "ingredients": "Ingredienten",
       "pt": "Voorbereidingstijd",
       "diet": "Eetpatroon",
-      "raf": "Alle filters verwijderen"
+      "raf": "Alle filters verwijderen",
+      "eating_late": "Ik eet te laat",
+      "supplement_options": "Supplement opties",
+      "my_diet_setup": "Mijn dieet opstelling",
+      "no_recipes_found": "Sorry, we kunnen geen recepten vinden die bij je dieetplan passen. We werken aan nieuwe recepten!",
+      "complete_diet_setup": "Voltooi je dieet opstelling zodat we je aanbevolen recepten kunnen tonen.",
+      "min_supplements": "Voeg minimaal 2 supplementen toe",
+      "max_supplements": "Er kunnen maximaal 4 supplementen gekozen worden!",
+      "no_recipes_in_cart": "Nog geen recepten toegevoegd. Voeg recepten toe vanuit je favorieten of blader door recepten om te beginnen.",
+      "no_ingredients": "Nog geen ingrediënten.",
+      "already_in_cart": "Dit recept staat al in je boodschappenlijst.",
+      "cart_add_failed": "Kon recept niet toevoegen aan boodschappenlijst.",
+      "added_to_cart": "Toegevoegd aan boodschappenlijst.",
+      "recipe_swapped": "Recept succesvol verwisseld.",
+      "swap_failed": "Kon recept niet verwisselen.",
+      "select_diet": "Selecteer eerst een dieet.",
+      "diet_saved": "Dieet bijgewerkt.",
+      "diet_save_failed": "Kon dieet niet bijwerken."
     },
     "feed": {},
     "community": {

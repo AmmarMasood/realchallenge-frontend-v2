@@ -5,17 +5,26 @@ import { InputNumber, Upload, Button, Progress, notification } from "antd";
 import HumanVector from "../images/FreeVectorHumanSilhouette 1.png";
 // import ImgCrop from "antd-img-crop";
 
-import { getNotifications, getUserProfileInfo } from "../services/users";
+import { getUserProfileInfo } from "../services/users";
 import { userInfoContext } from "../contexts/UserStore";
-// import { uploadImage } from "../services/mediaManager";
+import { getPhotoUploadUrl } from "../services/customer";
 // icons
 import { getDefaultGoals } from "../constants/goals";
+import {
+  kgToLb,
+  lbToKg,
+  cmToFt,
+  ftToCm,
+  calculateBMI,
+  calculateBodyFat,
+  toMetric,
+} from "../helpers/fitnessCalculations";
 import ArrowOneActive from "../assets/icons/arrow-one-active.png";
 import ArrowForward from "../assets/icons/forward-arrows.png";
 import ArrowThreeActive from "../assets/icons/arrow-three-active.png";
 import { createCustomerDetails } from "../services/customer";
 import { LoadingOutlined } from "@ant-design/icons";
-import { T } from "../components/Translate";
+import { T, translate } from "../components/Translate";
 import { useHistory } from "react-router-dom";
 
 const iconsStyle = {
@@ -53,9 +62,9 @@ function UserUpdate() {
   const [chestSize, setChestSize] = useState("");
   const [hipSize, setHipSize] = useState("");
   const [waistSize, setWaistSize] = useState("");
+  const [gender, setGender] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
-  const [notifications, setNotifications] = useState([]);
 
   const openNotificationWithIcon = (type, message, description) => {
     notification[type]({
@@ -85,6 +94,7 @@ function UserUpdate() {
       afterImageLink,
       beforeImageLink,
     } = res.customer.customerDetails;
+    setGender(res.customer.gender);
     setGoal(goals[0]);
     setCurrentLevel(currentFitnessLevel[0]);
     setMetric(measureSystem === "metrics" ? true : false);
@@ -107,125 +117,116 @@ function UserUpdate() {
     fechUserInfo();
   }, []);
 
-  const dummyRequest = async ({ file, onSuccess }) => {
-    // const res = await uploadImage(file);
-    // console.log("please worl", res);
-    // setBeforePic(`${process.env.REACT_APP_SERVER}/api${res.file.filelink}`);
-    setBeforePic(file);
-    setTimeout(() => {
-      onSuccess("ok");
-    }, 0);
-  };
-  const dummyAfterPicRequest = async ({ file, onSuccess }) => {
-    // console.log(file);
-    // const res = await uploadImage(file);
-    // console.log("please worl", res);
-    // setAfterPic(`${process.env.REACT_APP_SERVER}/api${res.file.filelink}`);
-    setAfterPic(file);
-    setTimeout(() => {
-      onSuccess("ok");
-    }, 0);
+  // Auto-convert values when switching between metric and imperial
+  const handleMetricToggle = (isMetric) => {
+    if (isMetric === metric) return;
+    if (isMetric) {
+      // Imperial → Metric
+      setWeight(weight ? parseFloat(lbToKg(weight).toFixed(1)) : weight);
+      setHeight(height ? parseFloat(ftToCm(height).toFixed(1)) : height);
+    } else {
+      // Metric → Imperial
+      setWeight(weight ? parseFloat(kgToLb(weight).toFixed(1)) : weight);
+      setHeight(height ? parseFloat(cmToFt(height).toFixed(1)) : height);
+    }
+    setMetric(isMetric);
   };
 
-  const onChange = (info) => {
-    console.log(info);
+  // Auto-recalculate BMI and body fat when inputs change
+  useEffect(() => {
+    const { weightKg, heightCm } = toMetric(weight, height, metric);
+    if (weightKg && heightCm) {
+      const newBmi = calculateBMI(weightKg, heightCm);
+      setBmi(parseFloat(newBmi.toFixed(2)));
+      if (age && gender) {
+        setBmr(parseFloat(calculateBodyFat(newBmi, age, gender).toFixed(2)));
+      }
+    }
+  }, [weight, height, age, metric, gender]);
+
+  const uploadPhoto = async (file) => {
+    // 1. Get presigned URL + final CloudFront URL
+    const { presignedUrl, fileUrl } = await getPhotoUploadUrl({
+      filename: file.name,
+      mimeType: file.type,
+    });
+
+    // 2. Upload directly to S3
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", presignedUrl, true);
+      xhr.setRequestHeader("Content-Type", file.type);
+      xhr.onload = () => (xhr.status === 200 ? resolve() : reject(new Error("S3 upload failed")));
+      xhr.onerror = () => reject(new Error("S3 upload failed"));
+      xhr.send(file);
+    });
+
+    return fileUrl;
+  };
+
+  const dummyRequest = async ({ file, onSuccess }) => {
+    setBeforePic(file);
+    setTimeout(() => onSuccess("ok"), 0);
+  };
+
+  const dummyAfterPicRequest = async ({ file, onSuccess }) => {
+    setAfterPic(file);
+    setTimeout(() => onSuccess("ok"), 0);
   };
 
   const saveUserUpdate = async () => {
-    // setLoading(true);
-    // try {
-    //   const savedAfterePic = afterPic
-    //     ? typeof afterPic === "object"
-    //       ? await uploadImage(afterPic)
-    //       : afterPic
-    //     : "";
-    //   const savedBeforePic = beforePic
-    //     ? typeof beforePic === "object"
-    //       ? await uploadImage(beforePic)
-    //       : beforePic
-    //     : "";
-    //   const month = new Date().getMonth();
-    //   const w = weightArray;
-    //   w[month] = weight;
-    //   const values = {
-    //     goals: [goal],
-    //     currentFitnessLevel: [currentLevel],
-    //     measureSystem: metric ? "metrics" : "imperial",
-    //     height,
-    //     age,
-    //     weight: w,
-    //     bmi,
-    //     bmir: bmr,
-    //     waistSize,
-    //     shoulderSize,
-    //     hipSize,
-    //     chestSize,
-    //     afterImageLink:
-    //       typeof savedAfterePic === "string"
-    //         ? savedAfterePic
-    //         : savedAfterePic.file.filelink,
-    //     beforeImageLink:
-    //       typeof savedBeforePic === "string"
-    //         ? savedBeforePic
-    //         : savedBeforePic.file.filelink,
-    //   };
-    //   await createCustomerDetails(values, userInfo.id);
-    //   setLoading(false);
-    //   openNotificationWithIcon("success", "Information Updated!", "");
-    //   console.log("values to be saved", values);
-    // } catch (error) {
-    //   console.log(error, "afterPic", afterPic, "beforePic", beforePic);
-    //   setLoading(false);
-    //   openNotificationWithIcon("error", "Unable to updated values", "");
-    // }
-  };
+    setLoading(true);
+    try {
+      // Upload images if they are new File objects
+      const beforeLink =
+        typeof beforePic === "object" && beforePic
+          ? await uploadPhoto(beforePic)
+          : beforePic || "";
+      const afterLink =
+        typeof afterPic === "object" && afterPic
+          ? await uploadPhoto(afterPic)
+          : afterPic || "";
 
-  useEffect(() => {
-    async function fetchNotifications() {
-      try {
-        const res = await getNotifications();
-        setNotifications(res);
-      } catch (error) {
-        console.error("Failed to fetch notifications:", error);
-      }
+      const month = new Date().getMonth();
+      const w = [...weightArray];
+      w[month] = weight;
+
+      const { weightKg, heightCm } = toMetric(weight, height, metric);
+      const newBmi = calculateBMI(weightKg, heightCm);
+      const newBodyFat = gender && age ? calculateBodyFat(newBmi, age, gender) : bmr;
+
+      const values = {
+        goals: [goal],
+        currentFitnessLevel: [currentLevel],
+        measureSystem: metric ? "metrics" : "imperial",
+        height,
+        age,
+        weight: w,
+        bmi: parseFloat(newBmi.toFixed(2)),
+        bmir: parseFloat(newBodyFat.toFixed(2)),
+        waistSize,
+        shoulderSize,
+        hipSize,
+        chestSize,
+        beforeImageLink: beforeLink,
+        afterImageLink: afterLink,
+      };
+      await createCustomerDetails(values, userInfo.id);
+      // Update local state with the URLs so they display correctly after save
+      if (typeof beforePic === "object" && beforeLink) setBeforePic(beforeLink);
+      if (typeof afterPic === "object" && afterLink) setAfterPic(afterLink);
+      setLoading(false);
+      openNotificationWithIcon("success", translate("user_update.update_success"), "");
+    } catch (error) {
+      console.log(error);
+      setLoading(false);
+      openNotificationWithIcon("error", translate("user_update.update_error"), "");
     }
-
-    // Fetch notifications immediately and then every 1 minute
-    fetchNotifications();
-    const intervalId = setInterval(fetchNotifications, 60000);
-
-    // Cleanup interval on component unmount
-    return () => clearInterval(intervalId);
-  }, [userInfo.id]);
-
-  const markNotificationAsRead = (id, notification) => {
-    history.push(notification.onClick);
-    if (!notifications.notifications) return;
-    // notification is already read
-    if (
-      notifications.notifications.find(
-        (notification) => notification._id === id
-      ).read
-    )
-      return;
-    setNotifications({
-      notifications: notifications.notifications.map((notification) => {
-        if (notification._id === id) {
-          return { ...notification, read: true };
-        }
-        return notification;
-      }),
-      unreadNotifications: notifications.unreadNotifications - 1,
-    });
-    console.log("markNotificationAsRead", id);
   };
 
   return (
     <div style={{ backgroundColor: "var(--color-gray-dark)" }}>
-      <LoggedinNavbar
-        notifications={notifications}
-        markNotificationAsRead={markNotificationAsRead}
-      />
+      <LoggedinNavbar />
 
       <div className="user-update-container">
         <div className="user-update-container-heading font-card-heading">
@@ -351,7 +352,7 @@ function UserUpdate() {
                     ? "var(--color-orange)"
                     : "var(--color-gray-light)",
                 }}
-                onClick={() => setMetric(true)}
+                onClick={() => handleMetricToggle(true)}
               >
                 <T>user_update.metric</T>
               </button>
@@ -362,7 +363,7 @@ function UserUpdate() {
                     ? "var(--color-orange)"
                     : "var(--color-gray-light)",
                 }}
-                onClick={() => setMetric(false)}
+                onClick={() => handleMetricToggle(false)}
               >
                 <T>user_update.imperial</T>
               </button>
@@ -429,7 +430,7 @@ function UserUpdate() {
                 />
               </div>
               <div>
-                <span className="font-paragraph-white">BMI: </span>
+                <span className="font-paragraph-white"><T>user_update.bmi</T>: </span>
                 <InputNumber
                   className="font-paragraph-white"
                   style={{
@@ -443,7 +444,7 @@ function UserUpdate() {
                 />
               </div>
               <div>
-                <span className="font-paragraph-white">BMR: </span>
+                <span className="font-paragraph-white"><T>user_update.body_fat</T>: </span>
                 <InputNumber
                   className="font-paragraph-white"
                   style={{
@@ -457,7 +458,7 @@ function UserUpdate() {
                 />
               </div>
               <div>
-                <span className="font-paragraph-white">Shoulder Size: </span>
+                <span className="font-paragraph-white"><T>user_update.shoulder_size</T>: </span>
                 <InputNumber
                   className="font-paragraph-white"
                   style={{
@@ -469,9 +470,12 @@ function UserUpdate() {
                   value={shoulderSize}
                   onChange={(e) => setShoulderSize(e)}
                 />
+                <span className="font-paragraph-white" style={{ marginLeft: "5px" }}>
+                  {metric ? "cm" : "in"}
+                </span>
               </div>
               <div>
-                <span className="font-paragraph-white">Chest Size: </span>
+                <span className="font-paragraph-white"><T>user_update.chest_size</T>: </span>
                 <InputNumber
                   className="font-paragraph-white"
                   style={{
@@ -483,9 +487,12 @@ function UserUpdate() {
                   value={chestSize}
                   onChange={(e) => setChestSize(e)}
                 />
+                <span className="font-paragraph-white" style={{ marginLeft: "5px" }}>
+                  {metric ? "cm" : "in"}
+                </span>
               </div>
               <div>
-                <span className="font-paragraph-white">Hip Size: </span>
+                <span className="font-paragraph-white"><T>user_update.hip_size</T>: </span>
                 <InputNumber
                   className="font-paragraph-white"
                   style={{
@@ -497,9 +504,12 @@ function UserUpdate() {
                   value={hipSize}
                   onChange={(e) => setHipSize(e)}
                 />
+                <span className="font-paragraph-white" style={{ marginLeft: "5px" }}>
+                  {metric ? "cm" : "in"}
+                </span>
               </div>
               <div>
-                <span className="font-paragraph-white">Waist Size:</span>
+                <span className="font-paragraph-white"><T>user_update.waist_size</T>:</span>
                 <InputNumber
                   className="font-paragraph-white"
                   style={{
@@ -511,6 +521,9 @@ function UserUpdate() {
                   value={waistSize}
                   onChange={(e) => setWaistSize(e)}
                 />
+                <span className="font-paragraph-white" style={{ marginLeft: "5px" }}>
+                  {metric ? "cm" : "in"}
+                </span>
               </div>
             </div>
           </div>
@@ -543,39 +556,29 @@ function UserUpdate() {
                   alt="human-vector"
                 />
                 {beforePic ? (
-                  <span className="font-paragraph-white">
-                    {/* {beforePic ? beforePic.name : ""} */}
-                    <div
-                      className="user-image-remove font-paragraph-white"
-                      onClick={() => setBeforePic("")}
-                    >
-                      <T>user_update.remove</T>
-                    </div>
-                  </span>
+                  <div
+                    className="user-image-remove font-paragraph-white"
+                    onClick={() => setBeforePic("")}
+                  >
+                    <T>user_update.remove</T>
+                  </div>
                 ) : (
-                  <div></div>
-                  // todo do later
-                  // <ImgCrop rotate>
-                  //   <Upload
-                  //     aspect="3/2"
-                  //     customRequest={dummyRequest}
-                  //     multiple={false}
-                  //     onChange={onChange}
-                  //     showUploadList={false}
-                  //     progress={<Progress type="line" />}
-                  //     // onPreview={onPreview}
-                  //   >
-                  //     <Button
-                  //       className="font-paragraph-white hover-orange"
-                  //       style={{
-                  //         backgroundColor: "var(--color-gray-light)",
-                  //         border: "none",
-                  //       }}
-                  //     >
-                  //       <T>user_update.upload_before_image</T>
-                  //     </Button>
-                  //   </Upload>
-                  // </ImgCrop>
+                  <Upload
+                    accept="image/*"
+                    customRequest={dummyRequest}
+                    multiple={false}
+                    showUploadList={false}
+                  >
+                    <Button
+                      className="font-paragraph-white hover-orange"
+                      style={{
+                        backgroundColor: "var(--color-gray-light)",
+                        border: "none",
+                      }}
+                    >
+                      <T>user_update.upload_before_image</T>
+                    </Button>
+                  </Upload>
                 )}
               </div>
               <div className="user-update-uploadimage-container-box">
@@ -600,62 +603,51 @@ function UserUpdate() {
                   alt="human-vector"
                 />
                 {afterPic ? (
-                  <span className="font-paragraph-white">
-                    {/* {afterPic ? afterPic : ""} */}
-                    <div
-                      className="user-image-remove font-paragraph-white"
-                      onClick={() => setAfterPic("")}
-                    >
-                      <T>user_update.remove</T>
-                    </div>
-                  </span>
+                  <div
+                    className="user-image-remove font-paragraph-white"
+                    onClick={() => setAfterPic("")}
+                  >
+                    <T>user_update.remove</T>
+                  </div>
                 ) : (
-                  <div></div>
-                  // todo do later
-                  // <ImgCrop rotate>
-                  //   <Upload
-                  //     aspect="3/2"
-                  //     customRequest={dummyAfterPicRequest}
-                  //     multiple={false}
-                  //     onChange={onChange}
-                  //     showUploadList={false}
-                  //     progress={<Progress type="line" />}
-                  //     // onPreview={onPreview}
-                  //   >
-                  //     <Button
-                  //       className="font-paragraph-white hover-orange"
-                  //       style={{
-                  //         backgroundColor: "var(--color-gray-light)",
-                  //         border: "none",
-                  //       }}
-                  //     >
-                  //       <T>user_update.upload_after_image</T>
-                  //     </Button>
-                  //   </Upload>
-                  // </ImgCrop>
+                  <Upload
+                    accept="image/*"
+                    customRequest={dummyAfterPicRequest}
+                    multiple={false}
+                    showUploadList={false}
+                  >
+                    <Button
+                      className="font-paragraph-white hover-orange"
+                      style={{
+                        backgroundColor: "var(--color-gray-light)",
+                        border: "none",
+                      }}
+                    >
+                      <T>user_update.upload_after_image</T>
+                    </Button>
+                  </Upload>
                 )}
               </div>
             </div>
           </div>
 
-          {loading ? (
-            <LoadingOutlined style={{ fontSize: "30px" }} />
-          ) : (
-            <button
-              className="font-paragraph-white"
-              style={{
-                backgroundColor: "var(--color-orange)",
-                padding: "10px 40px",
-                border: "none",
-                margin: "20px",
-                fontSize: "1.8rem",
-                cursor: "pointer",
-              }}
-              onClick={() => saveUserUpdate("save")}
-            >
-              <T>user_update.save</T>
-            </button>
-          )}
+          <button
+            className="font-paragraph-white"
+            style={{
+              backgroundColor: loading ? "var(--color-gray-light)" : "var(--color-orange)",
+              padding: "10px 40px",
+              border: "none",
+              margin: "20px",
+              fontSize: "1.8rem",
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.7 : 1,
+            }}
+            onClick={() => saveUserUpdate("save")}
+            disabled={loading}
+          >
+            {loading ? <LoadingOutlined style={{ color: "#fff", marginRight: "8px" }} /> : null}
+            <T>user_update.save</T>
+          </button>
         </div>
       </div>
     </div>

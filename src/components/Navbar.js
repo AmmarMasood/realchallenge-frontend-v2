@@ -11,7 +11,7 @@ import {
 } from "@ant-design/icons";
 import Logo from "../images/logo.png";
 import { userInfoContext, userPointsContext } from "../contexts/UserStore";
-import { Avatar, Popover, Badge, Spin, Button } from "antd";
+import { Avatar, Popover, Badge, Spin, Button, Tooltip } from "antd";
 import { logoutUser } from "../services/authentication";
 import { withRouter } from "react-router-dom";
 import Coins from "../assets/icons/coins.svg";
@@ -366,7 +366,9 @@ function Navbar({ color, history }) {
               >
                 <div className="loggedin-nav-name font-paragraph-white">
                   <span className="username-row">
-                    <span className="username-text">{userInfo.username}</span>
+                    <Tooltip title={userInfo.username}>
+                      <span className="username-text">{userInfo.username}</span>
+                    </Tooltip>
                     <CaretDownOutlined className="dropdown-arrow" />
                   </span>
                   <span className="points-row">

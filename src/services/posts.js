@@ -53,7 +53,7 @@ export function getPostsWithPagination(number, language) {
 
 export function addLikeToPost(id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/posts/like/${id}/update`)
+    .put(`${process.env.REACT_APP_SERVER}/api/posts/like/${id}`)
     .then((res) => res.data)
     .catch((err) => {
       openNotificationWithIcon("error", "Unable to like the post.", "");
@@ -63,7 +63,7 @@ export function addLikeToPost(id) {
 
 export function addUnlikePost(id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/posts/unlike/${id}/update`)
+    .put(`${process.env.REACT_APP_SERVER}/api/posts/unlike/${id}`)
     .then((res) => res.data)
     .catch((err) => {
       openNotificationWithIcon("error", "Unable to unlike the post.", "");
@@ -83,7 +83,7 @@ export function addNewComment(id, obj) {
 
 export function deletePostById(id) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/posts/${id}/delete`)
+    .delete(`${process.env.REACT_APP_SERVER}/api/posts/${id}`)
     .then((res) => {
       openNotificationWithIcon("success", "Successfully deleted the post.", "");
     })
@@ -95,7 +95,7 @@ export function deletePostById(id) {
 
 export function updatePostById(id, values) {
   return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/posts/${id}/update`, values)
+    .put(`${process.env.REACT_APP_SERVER}/api/posts/${id}`, values)
     .then((res) => {
       openNotificationWithIcon("success", "Successfully updated the post.", "");
     })

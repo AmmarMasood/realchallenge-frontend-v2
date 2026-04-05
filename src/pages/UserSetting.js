@@ -4,17 +4,16 @@ import "../assets/userSetting.css";
 import {
   UserOutlined,
   MailOutlined,
-  LockOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
-import { Input } from "antd";
+import { Input, notification } from "antd";
 import moment from "moment";
-import { getNotifications, getUserProfileInfo } from "../services/users";
+import { getUserProfileInfo } from "../services/users";
 import { userInfoContext } from "../contexts/UserStore";
 import { getSubscribtionInformation } from "../services/payment";
 import { logoutUser, resetPassword } from "../services/authentication";
 import { useHistory } from "react-router";
-import { T } from "../components/Translate";
+import { T, translate } from "../components/Translate";
 import { usePackageConfig } from "../contexts/PackageConfigContext";
 
 const emailIconStyle = {
@@ -24,12 +23,6 @@ const emailIconStyle = {
   backgroundColor: "var(--color-orange-light)",
 };
 
-const passwordIconStyle = {
-  fontSize: "5rem",
-  color: "var(--color-orange-light)",
-  padding: "8px",
-  border: "1px solid var(--color-orange-light)",
-};
 
 function UserSetting() {
   const { getPackage } = usePackageConfig();
@@ -50,92 +43,63 @@ function UserSetting() {
     date: null,
   });
   const [userInfo, setUserInfo] = useContext(userInfoContext);
-  const [notifications, setNotifications] = useState([]);
-
-  useEffect(() => {
-    async function fetchNotifications() {
-      try {
-        const res = await getNotifications();
-        setNotifications(res);
-      } catch (error) {
-        console.error("Failed to fetch notifications:", error);
-      }
-    }
-
-    // Fetch notifications immediately and then every 1 minute
-    fetchNotifications();
-    const intervalId = setInterval(fetchNotifications, 60000);
-
-    // Cleanup interval on component unmount
-    return () => clearInterval(intervalId);
-  }, [userInfo.id]);
 
   const fetchData = async () => {
-    const res = await getUserProfileInfo(userInfo.id);
-    const subInfo =
-      res.customer.mollieId &&
-      (await getSubscribtionInformation(res.customer.mollieId));
-    setUserEmail(res.customer.email);
-    if (res && subInfo && subInfo.response) {
-      const f = JSON.parse(subInfo.response)._embedded.subscriptions[0];
-      setMembershipDetails({
-        name: res.customer.customerDetails.membership[0].name,
-        isValid: res.customer.customerDetails.membership[0].isValid,
-        startTime: res.customer.customerDetails.membership[0].startTime,
-        endTime: res.customer.customerDetails.membership[0].endTime,
-        total: f.amount.value,
-        status: f.status,
-        methods: f.method,
-        date: f.createdAt,
-      });
+    try {
+      const res = await getUserProfileInfo(userInfo.id);
+      if (!res || !res.customer) return;
+
+      setUserEmail(res.customer.email);
+
+      if (res.customer.mollieId) {
+        const subInfo = await getSubscribtionInformation(res.customer.mollieId);
+        if (subInfo && subInfo.response) {
+          const parsed = JSON.parse(subInfo.response);
+          const subscriptions = parsed?._embedded?.subscriptions;
+          if (subscriptions && subscriptions.length > 0) {
+            const f = subscriptions[0];
+            const membership = res.customer.customerDetails?.membership?.[0];
+            if (membership) {
+              setMembershipDetails({
+                name: membership.name,
+                isValid: membership.isValid,
+                startTime: membership.startTime,
+                endTime: membership.endTime,
+                total: f.amount?.value,
+                status: f.status,
+                methods: f.method,
+                date: f.createdAt,
+              });
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch user settings data:", error);
     }
   };
 
   const updatePasswordButtonClick = async () => {
     if (email === userEmail) {
       setLoading(true);
-      const res = await resetPassword(email);
-      console.log(res);
-
+      await resetPassword(email);
       setLoading(false);
       logoutUser(history, setUserInfo);
     } else {
-      alert("Please enter valid email address");
+      notification.error({
+        message: translate("user_setting.error"),
+        description: translate("user_setting.invalid_email"),
+      });
     }
   };
 
   useEffect(() => {
     fetchData();
-  }, [userInfo]);
-
-  const markNotificationAsRead = (id, notification) => {
-    history.push(notification.onClick);
-    if (!notifications.notifications) return;
-    // notification is already read
-    if (
-      notifications.notifications.find(
-        (notification) => notification._id === id
-      ).read
-    )
-      return;
-    setNotifications({
-      notifications: notifications.notifications.map((notification) => {
-        if (notification._id === id) {
-          return { ...notification, read: true };
-        }
-        return notification;
-      }),
-      unreadNotifications: notifications.unreadNotifications - 1,
-    });
-    console.log("markNotificationAsRead", id);
-  };
+  }, [userInfo.id]);
 
   return (
     <>
-      <LoggedinNavbar
-        notifications={notifications}
-        markNotificationAsRead={markNotificationAsRead}
-      />
+      <LoggedinNavbar />
       <div className="user-setting-container">
         <div className="user-setting-container-heading font-paragraph-white">
           <UserOutlined style={{ paddingRight: "10px" }} />
@@ -148,7 +112,7 @@ function UserSetting() {
               <MailOutlined style={emailIconStyle} />
               <div style={{ width: "100%", padding: "10px" }}>
                 <span className="font-paragraph-white">
-                  Enter Your Email To Update Password
+                  <T>user_setting.enter_email_to_reset</T>
                 </span>
                 <Input
                   className="user-setting-container-body1-box-field font-paragraph-white"
@@ -196,7 +160,7 @@ function UserSetting() {
                   <LoadingOutlined
                     style={{ color: "#fff", marginRight: "10px" }}
                   />{" "}
-                  Sending an password reset link to your email, please wait..
+                  <T>user_setting.sending_reset_link</T>
                 </p>
               ) : (
                 <button
@@ -227,7 +191,7 @@ function UserSetting() {
                   <span className="font-paragraph-white">
                     {membershipDetails.name && getPackage(membershipDetails.name)
                       ? getPackage(membershipDetails.name).displayName
-                      : "None"}
+                      : <T>user_setting.no_subscription</T>}
                   </span>
                 </div>
                 <div>
@@ -240,8 +204,8 @@ function UserSetting() {
                   <span className="font-paragraph-white">
                     {membershipDetails.isValid === "active" ||
                     membershipDetails.name !== "CHALLENGE_1"
-                      ? "Yes"
-                      : "No"}
+                      ? <T>user_setting.yes</T>
+                      : <T>user_setting.no</T>}
                   </span>
                 </div>
                 <div

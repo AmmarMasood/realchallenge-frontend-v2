@@ -21,6 +21,19 @@ export function createCustomerDetails(values, id) {
     });
 }
 
+export function getPhotoUploadUrl({ filename, mimeType }) {
+  return axios
+    .post(`${process.env.REACT_APP_SERVER}/api/customerDetails/photo-upload`, {
+      filename,
+      mimeType,
+    })
+    .then((res) => res.data)
+    .catch((err) => {
+      openNotificationWithIcon("error", "Unable to prepare photo upload", "");
+      throw err;
+    });
+}
+
 export function addChallengeToCustomerDetail(userId, challengeId) {
   return axios
     .put(`${process.env.REACT_APP_SERVER}/api/auth/mollie/add/challenges`, {

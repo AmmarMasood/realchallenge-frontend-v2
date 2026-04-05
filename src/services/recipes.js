@@ -543,6 +543,41 @@ export function getAllFavouriteRecipes(id) {
     });
 }
 
+export function addToShoppingCart(body, id) {
+  return axios
+    .put(
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/shoppingCart/${id}`,
+      body,
+    )
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+    });
+}
+
+export function removeFromShoppingCart(body, id) {
+  return axios
+    .put(
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/removeShoppingCart/${id}`,
+      body,
+    )
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+    });
+}
+
+export function getShoppingCart(id) {
+  return axios
+    .get(
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/shoppingCart/${id}`,
+    )
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+    });
+}
+
 export function addRecipeReview(recipeId, comment, rating) {
   return axios
     .post(

@@ -15,6 +15,13 @@ import { getAllTrainerGoalsPublic } from "../../services/trainers";
 import { getDefaultGoals } from "../../constants/goals";
 import { T } from "../Translate";
 import { LanguageContext } from "../../contexts/LanguageContext";
+import {
+  calculateBMI,
+  calculateBMR,
+  calculateBodyFat,
+  calculateCalories,
+  toMetric,
+} from "../../helpers/fitnessCalculations";
 
 const { Step } = Steps;
 
@@ -49,59 +56,13 @@ function Wizard({ setWizardCompleted }) {
     getAllFitnessInterests();
   }, []);
   useEffect(() => {
-    const getPal = () => {
-      let pal = 0;
-      switch (fitnessLevel) {
-        case "inactive":
-          pal = 1.2;
-          break;
-        case "light-actve":
-          pal = 1.45;
-          break;
-        case "average-active":
-          pal = 1.65;
-          break;
-        case "active":
-          pal = 1.85;
-          break;
-        case "very-active":
-          pal = 2.2;
-          break;
-        default:
-          pal = 0;
-          break;
-      }
-      return pal;
-    };
+    const { weightKg, heightCm } = toMetric(details.weight, details.height, details.metric);
 
-    // Convert imperial inputs to metric for calculations
-    const heightCm = details.metric
-      ? details.height
-      : (details.height || 0) * 30.48;
-    const weightKg = details.metric
-      ? details.weight
-      : (details.weight || 0) * 0.453592;
+    const BMI = calculateBMI(weightKg, heightCm);
+    const BMR = calculateBMR(weightKg, heightCm, details.age, gender);
+    const bf = calculateBodyFat(BMI, details.age, gender);
+    const c = calculateCalories(BMR, fitnessLevel);
 
-    let BMI = 0;
-    let BMR = 0;
-    let bf = 0;
-    let c = 0;
-
-    if (heightCm && weightKg) {
-      // Fix: exponent (**) not multiplication (*)
-      BMI = weightKg / ((heightCm / 100) ** 2);
-    }
-
-    if (gender === "male") {
-      BMR = 88.362 + 13.397 * weightKg + 4.799 * heightCm - 5.677 * details.age;
-      bf = 1.2 * BMI + 0.23 * details.age - 16.2;
-    }
-    if (gender === "female") {
-      BMR = 447.593 + 9.247 * weightKg + 3.098 * heightCm - 4.33 * details.age;
-      bf = 1.2 * BMI + 0.23 * details.age - 5.4;
-    }
-
-    c = getPal() * BMR;
     setCalories(c.toFixed(2));
     setBodyFat(bf.toFixed(2));
     setBmi(BMI.toFixed(2));

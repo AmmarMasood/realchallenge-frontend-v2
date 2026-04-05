@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useContext } from "react";
-import { CloseOutlined, UserOutlined } from "@ant-design/icons";
-// import { Scrollbars } from "react-custom-scrollbars";
-import { Input, Button } from "antd";
+import React, { useState, useEffect, useContext, useRef } from "react";
+import { CloseOutlined } from "@ant-design/icons";
+import { Input, Button, Tooltip } from "antd";
 import { addNewComment } from "../../services/posts";
 import { addNewCommunityPostComment } from "../../services/communityPosts";
 import Modal from "react-modal";
@@ -12,12 +11,15 @@ import TopIcon from "../../assets/icons/comment-header-icon.svg";
 import useWindowDimensions from "../../helpers/useWindowDimensions";
 import NoCommentBack from "../../assets/icons/no-comments-background.svg";
 import Avatar from "antd/lib/avatar/avatar";
+import { T } from "../Translate";
 
 function CommentSection({ post, updatePosts, visible, setVisible, community }) {
   const userInfo = useContext(userInfoContext)[0];
   const [newComment, setNewComment] = useState("");
   const [allComments, setAllComments] = useState([]);
   const { width } = useWindowDimensions();
+  const commentsEndRef = useRef(null);
+
   const customStyles = {
     content: {
       top: "50%",
@@ -25,37 +27,45 @@ function CommentSection({ post, updatePosts, visible, setVisible, community }) {
       transform: "translate(-50%, -50%)",
       width: width < 700 ? "90%" : "60%",
       overflow: "hidden",
-      // height:"600px"
     },
   };
 
   useEffect(() => {
-    console.log(post);
     setAllComments(post.comments ? post.comments : []);
   }, [post]);
 
+  // Scroll to bottom when modal opens or comments change
+  useEffect(() => {
+    if (visible && commentsEndRef.current) {
+      commentsEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [visible, allComments]);
+
   const addComment = async () => {
     if (newComment.length > 0) {
+      let n;
       if (community) {
-        var n = await addNewCommunityPostComment(post._id, {
-          text: newComment,
-        });
+        n = await addNewCommunityPostComment(post._id, { text: newComment });
       } else {
-        var n = await addNewComment(post._id, { text: newComment });
+        n = await addNewComment(post._id, { text: newComment });
       }
-
-      console.log(n);
-      setAllComments(n);
+      if (n) {
+        setAllComments(n);
+        updatePosts(post._id, n);
+      }
       setNewComment("");
     }
   };
+
+  const handleClose = () => {
+    setVisible(false);
+    updatePosts(post._id, allComments);
+  };
+
   return (
     <Modal
       isOpen={visible}
-      onRequestClose={() => {
-        setVisible(false);
-        updatePosts(post._id, allComments);
-      }}
+      onRequestClose={handleClose}
       style={customStyles}
       contentLabel="Comments"
     >
@@ -63,29 +73,20 @@ function CommentSection({ post, updatePosts, visible, setVisible, community }) {
         <span>
           <img src={TopIcon} alt="" />
           <span className="font-paragraph-white" style={{ marginLeft: "10px" }}>
-            COMMENTS
+            <T>dashboard.comments</T>
           </span>
         </span>
         <CloseOutlined
           style={{ color: "#fff", fontSize: "26px", cursor: "pointer" }}
-          onClick={() => {
-            setVisible(false);
-            updatePosts(post._id, allComments);
-          }}
+          onClick={handleClose}
         />
       </div>
       <div className="challenge-review-modal">
-        {/* todo do later */}
-        {/* <Scrollbars style={{ height: "400px" }}>
+        <div className="comment-list-container">
           {allComments.length > 0 ? (
-            allComments.map((comment) => (
-              // <div className="challenge-profile-comment font-paragraph-white">
-              //   <span className="challenge-profile-comment-username">
-              //     <UserOutlined /> {comment.username}
-              //   </span>
-              //   <span>{comment.text}</span>
-              // </div>
+            allComments.map((comment, index) => (
               <div
+                key={comment._id || index}
                 className="comment-container"
                 style={{ marginBottom: width < 700 ? "20px" : "10px" }}
               >
@@ -96,16 +97,26 @@ function CommentSection({ post, updatePosts, visible, setVisible, community }) {
                     flexDirection: width < 700 ? "column" : "row",
                   }}
                 >
-                  <Avatar src={comment.user.avatarLink} shape="square" />{" "}
-                  <span
-                    style={{
-                      marginLeft: "5px",
-                      fontWeight: "bolder",
-                      fontSize: "16px",
-                    }}
-                  >
-                    {comment.user.username}
-                  </span>
+                  <Avatar
+                    src={comment.user?.avatarLink || comment.avatar}
+                    shape="square"
+                  />{" "}
+                  <Tooltip title={comment.user?.username || comment.username}>
+                    <span
+                      style={{
+                        marginLeft: "5px",
+                        fontWeight: "bolder",
+                        fontSize: "16px",
+                        maxWidth: "120px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        display: "inline-block",
+                      }}
+                    >
+                      {comment.user?.username || comment.username}
+                    </span>
+                  </Tooltip>
                   <div style={{ paddingLeft: width < 700 ? "0" : "20px" }}>
                     <div
                       className="comment-container-c2 font-paragraph-white"
@@ -121,25 +132,22 @@ function CommentSection({ post, updatePosts, visible, setVisible, community }) {
                       className="font-paragraph-white comment-container-c3"
                       style={{ color: "#82868b", padding: 0 }}
                     >
-                      {moment(comment.createdAt).format("MMM, Do YY")}
+                      {moment(comment.date || comment.createdAt).format(
+                        "MMM, Do YY"
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
             ))
           ) : (
-            <img
-              src={NoCommentBack}
-              alt=""
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-              }}
-            />
+            <div style={{ textAlign: "center", padding: "40px 0" }}>
+              <img src={NoCommentBack} alt="" style={{ maxWidth: "200px" }} />
+            </div>
           )}
-        </Scrollbars> */}
+          <div ref={commentsEndRef} />
+        </div>
+
         <div style={{ marginTop: "10px" }}>
           <div style={{ display: "flex", alignItems: "flex-start" }}>
             <Avatar
@@ -149,7 +157,7 @@ function CommentSection({ post, updatePosts, visible, setVisible, community }) {
             />{" "}
             <Input.TextArea
               rows="3"
-              placeholder="Enter New Comment"
+              placeholder=""
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
             />
@@ -171,19 +179,16 @@ function CommentSection({ post, updatePosts, visible, setVisible, community }) {
                 border: "2px solid #ff7700",
                 borderRadius: "0",
               }}
-              onClick={() => {
-                setVisible(false);
-                updatePosts(post._id, allComments);
-              }}
+              onClick={handleClose}
             >
-              Cancel
+              <T>dashboard.cancel</T>
             </Button>
             <Button
               className="common-orange-button font-paragraph-white"
               style={{ padding: "3px 10px", borderRadius: "0" }}
               onClick={() => addComment()}
             >
-              New Comment
+              <T>dashboard.new_comment</T>
             </Button>
           </div>
         </div>

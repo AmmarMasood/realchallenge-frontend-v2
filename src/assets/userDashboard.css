@@ -41,19 +41,18 @@
 
 /* feed styles */
 .dashboard-feed-container {
-  /* border: 1px solid white; */
-  padding-top: 20px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(40rem, 1fr));
-  grid-gap: 20px;
-  justify-content: center;
+  padding-top: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 .dashboard-feed-container-card {
-  /* border: 1px solid brown; */
   background-color: #1d2631;
   width: 40rem;
+  min-width: 40rem;
   padding: 10px;
   position: relative;
+  border-radius: 8px;
 }
 .dashboard-feed-container-card-row1 {
   /* border: 1px solid green; */
@@ -326,6 +325,7 @@
   /* border: 1px solid red; */
   background-color: #1a222d;
   padding: 10px;
+  width: 100%;
 }
 .dashboard-nutrient-row1-container {
   /* border: 1px solid blue; */

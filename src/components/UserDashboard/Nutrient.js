@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import "react-multi-carousel/lib/styles.css";
 import "../../assets/userDashboard.css";
-import { Switch, Modal, Checkbox } from "antd";
+import { Switch, Modal, Checkbox, message } from "antd";
 import {
   CaretDownOutlined,
   CloseSquareFilled,
@@ -36,11 +36,14 @@ import {
   getAllRecipes,
   getAllFavouriteRecipes,
   unFavouriteRecipeById,
+  getShoppingCart,
+  removeFromShoppingCart as removeFromShoppingCartApi,
+  addToShoppingCart as addToShoppingCartApi,
 } from "../../services/recipes";
 import { createCustomerDetails } from "../../services/customer";
 import { swapRecipeInRecommandedNutrients } from "../../services/users";
 import slug from "elegant-slug";
-import { T } from "../Translate";
+import { T, translate } from "../Translate";
 
 const iconsStyle = {
   color: "var(--color-orange)",
@@ -105,7 +108,7 @@ function Nutrient({
     sunday: [],
   });
   const [allDiets, setAllDiets] = useState([]);
-  const [currentDay, setCurrentDay] = useState("monday");
+  const [currentDay, setCurrentDay] = useState(() => localStorage.getItem("currentDay") || "monday");
   // eslint-disable-next-line
   const [bodyOverview, setBodyOverview] = useState({
     calories: null,
@@ -128,10 +131,11 @@ function Nutrient({
   // eslint-disable-next-line
   const [fav, setFavRecipes] = useState([]);
   const [ingredientsSummary, setIngredientsSummary] = useState([]);
-  const [pinnedRecipe, setPinnedRecipe] = useState("");
+  const [pinnedRecipe, setPinnedRecipe] = useState(() => localStorage.getItem("pinnedRecipe") || "");
   // eslint-disable-next-line
   const [suggestedSupplements, setSuggestedSupplements] = useState([]);
   const [selectedSupplements, setSelectedSupplements] = useState([]);
+  const [supplementSnapshot, setSupplementSnapshot] = useState(null);
 
   // =
   useEffect(() => {
@@ -173,22 +177,36 @@ function Nutrient({
       setSelectedSuplementType(supplementIntake.supplementOption);
     supplementIntake && setSelectedSupplements(supplementIntake.recipes);
 
-    // setSelectedSuplementType();
-    console.log("user profile", userProfile);
-    console.log("recommnaded diet", recommandedWeekDiet);
     recommandedWeekDiet &&
       recommandedWeekDiet.weeklyDietPlan &&
       setMealsForTheWeek(recommandedWeekDiet.weeklyDietPlan);
   }, []);
 
   async function fetchData() {
-    const res = await getAllDietTypes();
+    const res = await getAllDietTypes(localStorage.getItem("locale") || "english");
     const rec = await getAllRecipes(localStorage.getItem("locale"));
     const allFavs = await getAllFavouriteRecipes(userInfo.id);
     allFavs && setFavRecipes(allFavs.favRecipes);
 
     setAllDiets(res.diets);
     setSuggestedSupplements(rec.recipes);
+
+    const cartRes = await getShoppingCart(userInfo.id);
+    if (cartRes && cartRes.shoppingCart) {
+      const cartRecipes = cartRes.shoppingCart.map((recipe) => ({
+        id: recipe._id,
+        name: recipe.name,
+        ingredients: recipe.ingredients || [],
+      }));
+      setSelectedRecipes(cartRecipes);
+      const allIngredients = cartRecipes
+        .flatMap((r) => r.ingredients)
+        .filter(
+          (item, idx, self) =>
+            idx === self.findIndex((t) => t.name === item.name)
+        );
+      setIngredientsSummary(allIngredients);
+    }
   }
 
   const givenObjectFindArray = (obj) => {
@@ -198,16 +216,32 @@ function Nutrient({
 
   const swapRecipe = async (meal) => {
     const res = await swapRecipeInRecommandedNutrients(userInfo.id, meal);
-    console.log("swap", res);
+    if (res) {
+      message.success(translate("userDashboard.nutrient.recipe_swapped"));
+      getUserDetails();
+    } else {
+      message.error(translate("userDashboard.nutrient.swap_failed"));
+    }
   };
 
   const pinRecipe = (id) => {
-    // console.log(id);
-    setPinnedRecipe(id);
+    setPinnedRecipe((prev) => (prev === id ? "" : id));
   };
+
+  useEffect(() => {
+    if (pinnedRecipe) {
+      localStorage.setItem("pinnedRecipe", pinnedRecipe);
+    } else {
+      localStorage.removeItem("pinnedRecipe");
+    }
+  }, [pinnedRecipe]);
+
+  useEffect(() => {
+    localStorage.setItem("currentDay", currentDay);
+  }, [currentDay]);
   const unfouriteReceipe = async (id) => {
     await unFavouriteRecipeById({ recipeId: id }, userInfo.id);
-    fetchData();
+    setFavRecipes((prev) => prev.filter((r) => r._id !== id));
   };
   const setMealsForTheWeek = (recipes) => {
     const obj = {
@@ -220,7 +254,6 @@ function Nutrient({
       sunday: recipes[6] ? givenObjectFindArray(recipes[6]) : [],
     };
     setMealsOfTheWeek(obj);
-    console.log("booo", obj);
   };
   const getDietNameFromId = (id) => {
     const s = allDiets
@@ -241,11 +274,11 @@ function Nutrient({
   async function saveUserSupplementSettings() {
     if (selectedSuplementType !== "none") {
       if (selectedSupplements.length < 2) {
-        window.alert("Please add atleast 2 supplements");
+        message.warning(translate("userDashboard.nutrient.min_supplements"));
         return;
       }
     }
-    const res = await createCustomerDetails(
+    await createCustomerDetails(
       {
         supplementIntake: {
           supplementOption: selectedSuplementType,
@@ -254,22 +287,26 @@ function Nutrient({
       },
       userInfo.id
     );
-    console.log("work please dient", res);
     getUserDetails();
     setSuplementModal(false);
   }
 
   async function saveUserDietSetup() {
+    if (!selectedDiet) {
+      message.warning(translate("userDashboard.nutrient.select_diet"));
+      return;
+    }
     const res = await createCustomerDetails(
       { myDiet: [selectedDiet] },
       userInfo.id
     );
-    // if(res.success === true){
-    //   setS
-    // }
-    getUserDetails();
-    setDietSetupModal(false);
-    console.log("work please dient", res);
+    if (res) {
+      message.success(translate("userDashboard.nutrient.diet_saved"));
+      getUserDetails();
+      setDietSetupModal(false);
+    } else {
+      message.error(translate("userDashboard.nutrient.diet_save_failed"));
+    }
   }
 
   async function saveUserEatingLateSetting() {
@@ -277,46 +314,53 @@ function Nutrient({
       ...eatingBehave,
       eatingLate: !eatingBehave.eatingLate,
     });
-    const res = await createCustomerDetails(
+    await createCustomerDetails(
       { lateMeal: !eatingBehave.eatingLate },
       userInfo.id
     );
     getUserDetails();
-    console.log("work please eating late", res);
   }
 
-  const addToShoppingCart = (day, meal) => {
-    setSelectedRecipes([
+  const addToShoppingCart = async (day, meal) => {
+    if (selectedrRecipes.some((r) => r.id === meal._id)) {
+      message.info(translate("userDashboard.nutrient.already_in_cart"));
+      return;
+    }
+    const res = await addToShoppingCartApi({ recipeId: meal._id }, userInfo.id);
+    if (!res) {
+      message.error(translate("userDashboard.nutrient.cart_add_failed"));
+      return;
+    }
+    const newRecipes = [
       ...selectedrRecipes,
-      { id: meal._id, name: meal.name, ingredients: meal.ingredients },
-    ]);
-    console.log("mealing", meal);
-    meal.ingredients &&
-      setIngredientsSummary([...ingredientsSummary, ...meal.ingredients]);
+      { id: meal._id, name: meal.name, ingredients: meal.ingredients || [] },
+    ];
+    setSelectedRecipes(newRecipes);
+    const allIngredients = newRecipes
+      .flatMap((r) => r.ingredients)
+      .filter(
+        (item, idx, self) =>
+          idx === self.findIndex((t) => t.name === item.name)
+      );
+    setIngredientsSummary(allIngredients);
+    message.success(translate("userDashboard.nutrient.added_to_cart"));
   };
 
-  const removeFromShoppingCart = (id, ingredients) => {
-    const s = selectedrRecipes.filter((g) => g.id !== id);
-    let i = ingredientsSummary.map((p) => {
-      if (ingredients.some((item) => item._id === p._id)) {
-        // console.log(ingredients.filter((item) => item.id === p._id));
-        return undefined;
-      } else {
-        return p;
-      }
-    });
-
-    i = i.filter(function (el) {
-      return el != null;
-    });
-    setIngredientsSummary(i);
-
-    setSelectedRecipes(s);
+  const removeFromShoppingCart = async (id) => {
+    await removeFromShoppingCartApi({ recipeId: id }, userInfo.id);
+    const remaining = selectedrRecipes.filter((g) => g.id !== id);
+    setSelectedRecipes(remaining);
+    const allIngredients = remaining
+      .flatMap((r) => r.ingredients)
+      .filter(
+        (item, idx, self) =>
+          idx === self.findIndex((t) => t.name === item.name)
+      );
+    setIngredientsSummary(allIngredients);
   };
 
   return (
     <>
-      {console.log("selected", selectedSupplements, suggestedSupplements)}
       {/* suplemet modal starts */}
       <Modal
         title={
@@ -330,7 +374,13 @@ function Nutrient({
         bodyStyle={{ marginTop: "-40px" }}
         visible={suplementModal}
         width={width >= 600 ? "60%" : "100%"}
-        onCancel={() => setSuplementModal(false)}
+        onCancel={() => {
+          if (supplementSnapshot) {
+            setSelectedSuplementType(supplementSnapshot.type);
+            setSelectedSupplements(supplementSnapshot.supplements);
+          }
+          setSuplementModal(false);
+        }}
         footer={false}
       >
         <div className="supplement-container">
@@ -378,12 +428,13 @@ function Nutrient({
           <>
             <div className="selected-meals-container">
               {selectedSupplements.map((meal) => (
-                <div className="suggested-meal-container">
+                <div className="suggested-meal-container" key={meal._id}>
                   <div
                     style={{
                       height: "150px",
-                      background: `url(${meal.image})`,
+                      background: `url(${meal.image ? meal.image.replaceAll(" ", "%20") : ""})`,
                       backgroundSize: "cover",
+                      backgroundPosition: "center",
                     }}
                   ></div>
                   <div
@@ -407,7 +458,6 @@ function Nutrient({
                   <Link to={`/recipe/${slug(meal.name)}/${meal._id}`}>
                     <button
                       className="common-transparent-button font-paragraph-white"
-                      onClick={() => console.log(false)}
                       style={{ marginLeft: "10px" }}
                     >
                       <T>userDashboard.nutrient.mi</T>
@@ -416,59 +466,54 @@ function Nutrient({
                 </div>
               ))}
             </div>
-            {/* todo do later */}
-            {/* <Scrollbars style={{ height: "400px" }}>
-              <div className="meals-list-container">
-                <h3 className="font-card-heading">
-                  <T>userDashboard.nutrient.selectPi</T>
-                </h3>
-                <div className="divider"></div>
-                {suggestedSupplements.map((meal) => (
-                  <div className="suggested-meal-container">
-                    <div
-                      style={{
-                        height: "150px",
-                        background: `url(${meal.image})`,
-                        backgroundSize: "cover",
-                      }}
-                    ></div>
-                    <div
-                      className="font-paragraph-white"
-                      style={{ fontSize: "1.8rem" }}
-                    >
-                      {meal.name}
-                    </div>
-                    <div
-                      className="font-paragraph-white"
-                      style={{ fontSize: "1.3rem", opacity: "0.8" }}
-                    >
-                      {meal.kCalPerPerson}
-                    </div>
-                    <button
-                      className="common-orange-button font-paragraph-white"
-                      onClick={() => {
-                        if (selectedSupplements.length >= 4) {
-                          window.alert("Only 4 supplements can be choosen!");
-                          return;
-                        }
-                        setSelectedSupplements([...selectedSupplements, meal]);
-                      }}
-                    >
-                      <T>userDashboard.nutrient.select</T>
-                    </button>
-                    <Link to={`/recipe/${slug(meal.name)}/${meal._id}`}>
+            <div style={{ marginTop: "20px" }}>
+              <h3 className="font-card-heading">
+                <T>userDashboard.nutrient.selectPi</T>
+              </h3>
+              <div className="divider"></div>
+              <div className="selected-meals-container" style={{ maxHeight: "400px", overflowY: "auto" }}>
+                {suggestedSupplements
+                  .filter((meal) => !selectedSupplements.some((s) => s._id === meal._id))
+                  .map((meal) => (
+                    <div className="suggested-meal-container" key={meal._id}>
+                      <div
+                        style={{
+                          height: "150px",
+                          background: `url(${meal.image ? meal.image.replaceAll(" ", "%20") : ""})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }}
+                      ></div>
+                      <div className="font-paragraph-white" style={{ fontSize: "1.8rem" }}>
+                        {meal.name}
+                      </div>
+                      <div className="font-paragraph-white" style={{ fontSize: "1.3rem", opacity: "0.8" }}>
+                        {meal.kCalPerPerson}
+                      </div>
                       <button
-                        className="common-transparent-button font-paragraph-white"
-                        onClick={() => console.log(false)}
-                        style={{ marginLeft: "10px" }}
+                        className="common-orange-button font-paragraph-white"
+                        onClick={() => {
+                          if (selectedSupplements.length >= 4) {
+                            message.warning(translate("userDashboard.nutrient.max_supplements"));
+                            return;
+                          }
+                          setSelectedSupplements([...selectedSupplements, meal]);
+                        }}
                       >
-                        <T>userDashboard.nutrient.moreInfo</T>
+                        <T>userDashboard.nutrient.select</T>
                       </button>
-                    </Link>
-                  </div>
-                ))}
+                      <Link to={`/recipe/${slug(meal.name)}/${meal._id}`}>
+                        <button
+                          className="common-transparent-button font-paragraph-white"
+                          style={{ marginLeft: "10px" }}
+                        >
+                          <T>userDashboard.nutrient.moreInfo</T>
+                        </button>
+                      </Link>
+                    </div>
+                  ))}
               </div>
-            </Scrollbars> */}
+            </div>
           </>
         ) : (
           ""
@@ -495,14 +540,14 @@ function Nutrient({
         bodyStyle={{ marginTop: "-40px" }}
         visible={dietSetupModal}
         width="30%"
-        onOk={() => saveUserDietSetup()}
-        onCancel={() => saveUserDietSetup()}
+        onCancel={() => setDietSetupModal(false)}
         footer={false}
       >
         <div className="diet-setup-container">
           {allDiets.map((p) => (
             <div
               className="diet-setup-container-inbox"
+              key={p._id}
               onClick={() => setSelectedDiet(p._id)}
             >
               {/* <AppleOutlined style={iconsListStyle} /> */}
@@ -558,7 +603,7 @@ function Nutrient({
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <span>{bodyOverview.bmr}</span>
                     <span style={{ fontSize: "1.5rem" }}>
-                      <T>userDashboard.nutrient.your-bmr</T>
+                      <T>userDashboard.nutrient.your-body-fat</T>
                     </span>
                   </div>
                 </div>
@@ -615,7 +660,7 @@ function Nutrient({
                 >
                   <img src={KnifeFork} alt="" style={iconsStyle} />
                   <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span>I'm eating too late</span>
+                    <span><T>userDashboard.nutrient.eating_late</T></span>
                     <span style={{ fontSize: "1.2rem" }}>
                       {" "}
                       <Switch
@@ -626,13 +671,6 @@ function Nutrient({
                       />
                     </span>
                   </div>
-                  <CaretDownOutlined
-                    style={{
-                      position: "absolute",
-                      right: 0,
-                      marginRight: "10px",
-                    }}
-                  />
                 </div>
                 <div
                   className="dashboard-nutrient-row1-col-container-insideBox font-paragraph-white"
@@ -642,11 +680,17 @@ function Nutrient({
                     cursor: "pointer",
                     padding: "15px 0",
                   }}
-                  onClick={() => setSuplementModal(true)}
+                  onClick={() => {
+                    setSupplementSnapshot({
+                      type: selectedSuplementType,
+                      supplements: selectedSupplements,
+                    });
+                    setSuplementModal(true);
+                  }}
                 >
                   <img src={Supplements} alt="" style={iconsStyle} />
                   <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span>Supplement Options</span>
+                    <span><T>userDashboard.nutrient.supplement_options</T></span>
                     <span style={{ fontSize: "1.6rem" }}>
                       {selectedSuplementType}
                     </span>
@@ -674,7 +718,7 @@ function Nutrient({
                       flexDirection: "column",
                     }}
                   >
-                    <span>My diet setup</span>
+                    <span><T>userDashboard.nutrient.my_diet_setup</T></span>
                     <span style={{ fontSize: "1.6rem" }}>
                       {getDietNameFromId(selectedDiet)
                         ? getDietNameFromId(selectedDiet).name
@@ -728,99 +772,21 @@ function Nutrient({
         </div>
 
         <div className="dashboard-nutrient-row2-container-days font-paragraph-whites">
-          <span
-            className="dashboard-nutrient-row2-container-day font-paragraph-white"
-            style={{
-              color:
-                currentDay === "monday" ? "var(--color-orange)" : "#677182",
-            }}
-            onClick={() => setCurrentDay("monday")}
-          >
-            {currentDay === "monday" && (
-              <img src={pin} alt="" style={{ marginRight: "10px" }} />
-            )}
-            <T>userDashboard.nutrient.monday</T>
-          </span>
-          <span
-            style={{
-              color:
-                currentDay === "tuesday" ? "var(--color-orange)" : "#677182",
-            }}
-            className="dashboard-nutrient-row2-container-day font-paragraph-white"
-            onClick={() => setCurrentDay("tuesday")}
-          >
-            {" "}
-            {currentDay === "tuesday" && (
-              <img src={pin} alt="" style={{ marginRight: "10px" }} />
-            )}
-            <T>userDashboard.nutrient.tuesday</T>
-          </span>
-          <span
-            style={{
-              color:
-                currentDay === "wednesday" ? "var(--color-orange)" : "#677182",
-            }}
-            className="dashboard-nutrient-row2-container-day font-paragraph-white"
-            onClick={() => setCurrentDay("wednesday")}
-          >
-            {currentDay === "wednesday" && (
-              <img src={pin} alt="" style={{ marginRight: "10px" }} />
-            )}
-            <T>userDashboard.nutrient.wednesday</T>
-          </span>
-          <span
-            style={{
-              color:
-                currentDay === "thursday" ? "var(--color-orange)" : "#677182",
-            }}
-            className="dashboard-nutrient-row2-container-day font-paragraph-white"
-            onClick={() => setCurrentDay("thursday")}
-          >
-            {currentDay === "thursday" && (
-              <img src={pin} alt="" style={{ marginRight: "10px" }} />
-            )}
-
-            <T>userDashboard.nutrient.thursday</T>
-          </span>
-          <span
-            style={{
-              color:
-                currentDay === "friday" ? "var(--color-orange)" : "#677182",
-            }}
-            className="dashboard-nutrient-row2-container-day font-paragraph-white"
-            onClick={() => setCurrentDay("friday")}
-          >
-            {currentDay === "friday" && (
-              <img src={pin} alt="" style={{ marginRight: "10px" }} />
-            )}
-            <T>userDashboard.nutrient.friday</T>
-          </span>
-          <span
-            style={{
-              color:
-                currentDay === "saturday" ? "var(--color-orange)" : "#677182",
-            }}
-            className="dashboard-nutrient-row2-container-day font-paragraph-white"
-            onClick={() => setCurrentDay("saturday")}
-          >
-            {currentDay === "saturday" && (
-              <img src={pin} alt="" style={{ marginRight: "10px" }} />
-            )}
-            <T>userDashboard.nutrient.saturday</T>
-          </span>
-          <span
-            style={{
-              color:
-                currentDay === "sunday" ? "var(--color-orange)" : "#677182",
-            }}
-            className="dashboard-nutrient-row2-container-day font-paragraph-white"
-            onClick={() => setCurrentDay("sunday")}
-          >
-            {currentDay === "sunday" && (
-              <img src={pin} alt="" style={{ marginRight: "10px" }} />
-            )}
-            <T>userDashboard.nutrient.sunday</T>
-          </span>
+          {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => (
+            <span
+              key={day}
+              className="dashboard-nutrient-row2-container-day font-paragraph-white"
+              style={{
+                color: currentDay === day ? "var(--color-orange)" : "#677182",
+              }}
+              onClick={() => setCurrentDay(day)}
+            >
+              {currentDay === day && (
+                <img src={pin} alt="" style={{ marginRight: "10px" }} />
+              )}
+              <T>{`userDashboard.nutrient.${day}`}</T>
+            </span>
+          ))}
         </div>
         <div className="divider"></div>
         <div className="dashboard-nutrient-row2-container">
@@ -838,20 +804,22 @@ function Nutrient({
                   <Link to={`/recipe/${slug(meal.name)}/${meal._id}`}>
                     <div
                       style={{
-                        background: `url(${process.env.REACT_APP_SERVER}/api${meal.image})`,
+                        background: `url(${process.env.REACT_APP_SERVER}/api${meal.image ? meal.image.replaceAll(" ", "%20") : ""})`,
                         backgroundSize: "cover",
+                        backgroundPosition: "center",
                         height: "200px",
                       }}
                     ></div>
                     <div className="dashboard-nutrient-row2-container-card-bob font-paragraph-black">
-                      {meal.foodType.replace(/[0-9]/g, "")}
+                      {meal.foodType ? meal.foodType.replace(/[0-9]/g, "") : ""}
                     </div>
                     <div className="dashboard-nutrient-row2-container-card-heading font-paragraph-white">
                       {meal.name}
                     </div>
-                    <div className="dashboard-nutrient-row2-container-card-about font-paragraph-white">
-                      {meal.description}
-                    </div>
+                    <div
+                      className="dashboard-nutrient-row2-container-card-about font-paragraph-white"
+                      dangerouslySetInnerHTML={{ __html: meal.description || "" }}
+                    />
                   </Link>
                   <div className="dashboard-nutrient-row2-container-card-buttons">
                     <div className="font-paragraph-white">
@@ -897,9 +865,8 @@ function Nutrient({
               >
                 <h3 className="font-paragraph-white">
                   {userProfile.myDiet && userProfile.supplementIntake
-                    ? `Sorry, cant find recipes that fills your diet plan. We are
-                    working on making new recipes possible!`
-                    : `Please complete your diet setup so that we can show you, your recommanded recipes`}
+                    ? <T>userDashboard.nutrient.no_recipes_found</T>
+                    : <T>userDashboard.nutrient.complete_diet_setup</T>}
                 </h3>
               </div>
             )}
@@ -943,24 +910,28 @@ function Nutrient({
               <T>userDashboard.nutrient.sr</T>
             </div>
             <div className="dashboard-nutrient-row3-container-selectedRecipes-container">
-              {selectedrRecipes.map((recipe) => (
-                <div className="recipe-block font-paragraph-white">
-                  <span style={{ color: "#f37720", opacity: "1" }}>
-                    {recipe.name}
-                  </span>{" "}
-                  <CloseSquareFilled
-                    style={{
-                      fontSize: "2.4rem",
-                      cursor: "pointer",
-                      color: "#f37720",
-                      marginLeft: "10px",
-                    }}
-                    onClick={() =>
-                      removeFromShoppingCart(recipe.id, recipe.ingredients)
-                    }
-                  />
+              {selectedrRecipes.length === 0 ? (
+                <div className="font-paragraph-white" style={{ opacity: 0.6, padding: "10px 0" }}>
+                  <T>userDashboard.nutrient.no_recipes_in_cart</T>
                 </div>
-              ))}
+              ) : (
+                selectedrRecipes.map((recipe) => (
+                  <div className="recipe-block font-paragraph-white" key={recipe.id}>
+                    <span style={{ color: "#f37720", opacity: "1" }}>
+                      {recipe.name}
+                    </span>{" "}
+                    <CloseSquareFilled
+                      style={{
+                        fontSize: "2.4rem",
+                        cursor: "pointer",
+                        color: "#f37720",
+                        marginLeft: "10px",
+                      }}
+                      onClick={() => removeFromShoppingCart(recipe.id)}
+                    />
+                  </div>
+                ))
+              )}
             </div>
           </div>
           <div className="dashboard-nutrient-row3-container-ingredientsSummary">
@@ -971,15 +942,20 @@ function Nutrient({
               <T>userDashboard.nutrient.ingres</T>
             </div>
             <div className="dashboard-nutrient-row3-container-ingredientsSummary-container">
-              {ingredientsSummary.map((ingredient) => (
-                <div className="ingredientContainer font-paragraph-white">
-                  <span style={{ textTransform: "capitalize" }}>
-                    {console.log("ingre", ingredient)}
-                    {ingredient.name.name}
-                  </span>
-                  <span>{ingredient.weight} g</span>
+              {ingredientsSummary.length === 0 ? (
+                <div className="font-paragraph-white" style={{ opacity: 0.6, padding: "10px 0" }}>
+                  <T>userDashboard.nutrient.no_ingredients</T>
                 </div>
-              ))}
+              ) : (
+                ingredientsSummary.map((ingredient, idx) => (
+                  <div className="ingredientContainer font-paragraph-white" key={ingredient._id || `${ingredient.name?.name || "ingredient"}-${idx}`}>
+                    <span style={{ textTransform: "capitalize" }}>
+                      {ingredient.name?.name || ingredient.name}
+                    </span>
+                    <span>{ingredient.weight ? `${ingredient.weight} g` : ""}</span>
+                  </div>
+                ))
+              )}
             </div>
             <div className="dashboard-nutrient-row2-container-card-buttons">
               <button
@@ -1024,17 +1000,19 @@ function Nutrient({
                 <Link to={`/recipe/${slug(meal.name)}/${meal._id}`}>
                   <div
                     style={{
-                      background: `url(${meal.image})`,
+                      background: `url(${meal.image ? meal.image.replaceAll(" ", "%20") : ""})`,
                       backgroundSize: "cover",
+                      backgroundPosition: "center",
                       height: "200px",
                     }}
                   ></div>
                   <div className="dashboard-nutrient-row2-container-card-heading font-paragraph-white">
                     {meal.name}
                   </div>
-                  <div className="dashboard-nutrient-row2-container-card-about font-paragraph-white">
-                    {meal.description}
-                  </div>
+                  <div
+                    className="dashboard-nutrient-row2-container-card-about font-paragraph-white"
+                    dangerouslySetInnerHTML={{ __html: meal.description || "" }}
+                  />
                 </Link>
                 <div
                   className="dashboard-nutrient-row2-container-card-buttons"

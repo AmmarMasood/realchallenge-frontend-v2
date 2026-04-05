@@ -175,7 +175,15 @@
     "remove": "Remove",
     "upload_before_image": "Upload Before Image",
     "after": "After",
-    "upload_after_image": "Upload After Image"
+    "upload_after_image": "Upload After Image",
+    "bmi": "BMI",
+    "body_fat": "Body Fat %",
+    "shoulder_size": "Shoulder Size",
+    "chest_size": "Chest Size",
+    "hip_size": "Hip Size",
+    "waist_size": "Waist Size",
+    "update_success": "Information Updated!",
+    "update_error": "Unable to update values"
   },
   "user_setting": {
     "account_setting": "Account setting",
@@ -193,7 +201,14 @@
     "methods": "Methods",
     "total": "Total",
     "status": "Status",
-    "invoice": "Invoice"
+    "invoice": "Invoice",
+    "enter_email_to_reset": "Enter your email to reset your password",
+    "sending_reset_link": "Sending a password reset link to your email, please wait..",
+    "invalid_email": "Please enter a valid email address",
+    "no_subscription": "None",
+    "yes": "Yes",
+    "no": "No",
+    "error": "Error"
   },
   "user_profile": {
     "about_me": "About Me",
@@ -204,6 +219,15 @@
     "challenges": "Challenges",
     "nutrients": "Nutrients",
     "community": "Community"
+  },
+  "dashboard": {
+    "comments": "COMMENTS",
+    "cancel": "Cancel",
+    "new_comment": "New Comment",
+    "enter_comment": "Enter New Comment",
+    "no_posts": "No posts here!",
+    "previous": "Previous",
+    "next": "Next"
   },
   "trainers": {
     "skill": "Skillful Trainers & Coaches",
@@ -261,7 +285,9 @@
     "comments": "Comments",
     "start_today": "START TODAY",
     "love": "Love",
+    "unlove": "Unlove",
     "add_to_shopping_list": "Add to shopping list",
+    "remove_from_shopping_list": "Remove from shopping list",
     "get_full_nutrition_advice": "GET FULL NUTRITION ADVICE",
     "related_product": "RELATED PRODUCT"
   },
@@ -949,7 +975,7 @@
       "bodyV": " Body Overview",
       "calories": "Calories",
       "your-bmi": "Your BMI",
-      "your-bmr": "Your BMR",
+      "your-body-fat": "Body Fat %",
       "nr": "Nutrient Recommandation",
       "protein": "Protien",
       "carbohydrates": "Carbohydrates",
@@ -976,7 +1002,24 @@
       "ingredients": "Ingredients",
       "pt": "Prepration Time",
       "diet": "Diet",
-      "raf": "Remove All Filters"
+      "raf": "Remove All Filters",
+      "eating_late": "I'm eating too late",
+      "supplement_options": "Supplement Options",
+      "my_diet_setup": "My diet setup",
+      "no_recipes_found": "Sorry, can't find recipes that fill your diet plan. We are working on making new recipes possible!",
+      "complete_diet_setup": "Please complete your diet setup so that we can show you your recommended recipes.",
+      "min_supplements": "Please add at least 2 supplements",
+      "max_supplements": "Only 4 supplements can be chosen!",
+      "no_recipes_in_cart": "No recipes added yet. Add recipes from your favourites or browse recipes to get started.",
+      "no_ingredients": "No ingredients yet.",
+      "already_in_cart": "This recipe is already in your shopping list.",
+      "cart_add_failed": "Could not add recipe to shopping list.",
+      "added_to_cart": "Added to shopping list.",
+      "recipe_swapped": "Recipe swapped successfully.",
+      "swap_failed": "Could not swap recipe.",
+      "select_diet": "Please select a diet first.",
+      "diet_saved": "Diet updated successfully.",
+      "diet_save_failed": "Could not update diet."
     },
     "feed": {},
     "community": {

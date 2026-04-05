@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import "../assets/adminDashboard.css";
 import Logo from "../images/logo_orange.png";
-import { Avatar, Popover, Layout, Menu, Modal, Button } from "antd";
+import { Avatar, Popover, Layout, Menu, Modal, Button, Tooltip } from "antd";
 import {
   UserOutlined,
   CaretDownOutlined,
@@ -180,7 +180,9 @@ function AdminDashboard(props) {
           />
           <Popover placement="bottom" content={content} trigger="click">
             <div className="loggedin-nav-name font-paragraph-white">
-              <span className="username-text">{adminInfo.username}</span>
+              <Tooltip title={adminInfo.username}>
+                <span className="username-text">{adminInfo.username}</span>
+              </Tooltip>
               <CaretDownOutlined className="dropdown-arrow" />
             </div>
           </Popover>

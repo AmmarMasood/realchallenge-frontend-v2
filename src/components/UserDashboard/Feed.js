@@ -14,7 +14,6 @@ import {
   addUnlikePost,
 } from "../../services/posts";
 import { LanguageContext } from "../../contexts/LanguageContext";
-// import ReactHTMLParser from "react-html-parser";
 
 function Feed({ userInfo }) {
   const { language } = useContext(LanguageContext);
@@ -32,7 +31,6 @@ function Feed({ userInfo }) {
     setLoading(false);
     setData(res.posts);
     setTotalPosts(6 * res.lastPage);
-    console.log(res);
   };
 
   useEffect(() => {
@@ -50,8 +48,6 @@ function Feed({ userInfo }) {
       });
       setData(d);
     }
-    // fetchData();
-    console.log("like", res);
   };
   const unlikePost = async (id) => {
     const res = await addUnlikePost(id);
@@ -104,11 +100,12 @@ function Feed({ userInfo }) {
         style={{ justifyItems: "center" }}
       >
         {loading ? (
-          <LoadingOutlined style={{ fontSize: "30px", color: "#ff7700" }} />
+          <div style={{ textAlign: "center", width: "100%" }}>
+            <LoadingOutlined style={{ fontSize: "30px", color: "#ff7700" }} />
+          </div>
         ) : data ? (
           data.map((d) => (
             <div className="dashboard-feed-container-card">
-              {console.log("d", d)}
               <Link to={`${d.url ? d.url : "#"}`}>
                 <div
                   className="dashboard-feed-container-card-row1"
@@ -153,12 +150,12 @@ function Feed({ userInfo }) {
                 </div>
                 {/* </Link> */}
                 <div className="dashboard-feed-container-card-row3">
-                  <div className="dashboard-feed-container-card-row3-heading font-paragraph-white">
-                    {/* {ReactHTMLParser(d.title)} */}
-                  </div>
-                  <div className="dashboard-feed-container-card-row3-text font-paragraph-white">
-                    {/* {ReactHTMLParser(d.text)} */}
-                  </div>
+                  <div className="dashboard-feed-container-card-row3-heading font-paragraph-white"
+                    dangerouslySetInnerHTML={{ __html: d.title }}
+                  />
+                  <div className="dashboard-feed-container-card-row3-text font-paragraph-white"
+                    dangerouslySetInnerHTML={{ __html: d.text }}
+                  />
                 </div>
               </Link>
               <div className="dashboard-feed-container-card-row4">
