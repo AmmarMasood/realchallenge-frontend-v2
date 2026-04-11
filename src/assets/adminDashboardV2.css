@@ -233,6 +233,24 @@
   color: #fff !important;
 }
 
+.adminV2-country-selector-dropdown .ant-select-item {
+  color: #fff !important;
+  background-color: transparent !important;
+  min-height: 32px;
+}
+.adminV2-country-selector-dropdown .ant-select-item-option-active:not(.ant-select-item-option-disabled),
+.adminV2-country-selector-dropdown .ant-select-item-option:hover {
+  background-color: rgba(255, 149, 10, 0.15) !important;
+}
+.adminV2-country-selector-dropdown .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background-color: rgba(255, 149, 10, 0.3) !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+.adminV2-country-selector-dropdown .ant-select-item-empty {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
 /* Mobile responsive - add top padding for navbar spacing */
 @media screen and (max-width: 960px) {
   .trainer-profile-container {

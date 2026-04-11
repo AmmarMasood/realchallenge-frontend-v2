@@ -18,7 +18,8 @@ import ChallengeProfileSubtract from "../../assets/icons/challenge-profile-subtr
 import ShareIcon from "../../assets/icons/share-icon.svg";
 import StarFilled from "../../assets/icons/star-orange.svg";
 import StarTransparent from "../../assets/icons/star-transparent.svg";
-import { Avatar, Button, Input, Select, message } from "antd";
+import { Avatar, Button, Input, message } from "antd";
+import CountryDropdown from "../../components/Admin/V2/Common/CountryDropdown";
 import slug from "elegant-slug";
 import { Helmet } from "react-helmet";
 import { T } from "../../components/Translate";
@@ -514,32 +515,13 @@ function AdminDashboard(props) {
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Select
-                    value={country || undefined}
+                  <CountryDropdown
+                    value={country}
                     onChange={handleCountryChange}
+                    countries={allCountries}
                     placeholder="Select your country"
-                    showSearch
-                    allowClear
-                    style={{
-                      width: "200px",
-                    }}
-                    dropdownStyle={{
-                      backgroundColor: "#222935",
-                      border: "1px solid #FF950A",
-                    }}
-                    className="adminV2-country-selector"
-                    filterOption={(input, option) =>
-                      option.children
-                        .toLowerCase()
-                        .includes(input.toLowerCase())
-                    }
-                  >
-                    {allCountries.map((co) => (
-                      <Select.Option key={co.name} value={co.name}>
-                        {co.name}
-                      </Select.Option>
-                    ))}
-                  </Select>
+                    width={200}
+                  />
                   {hasAnyRole(adminInfo, ["admin", "trainer", "nutrist"]) && (
                     <img
                       src={ShareIcon}
