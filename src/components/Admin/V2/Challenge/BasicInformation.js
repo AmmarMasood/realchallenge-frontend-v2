@@ -1293,7 +1293,7 @@ function BasicInformation(props) {
                   name: newTrainerFitnessInterest,
                   language: language,
                 });
-                // setShowBodyfocusModal(false);
+                setNewTrainerFitnessInterest("");
                 fetchDataV2();
               }
             }}
@@ -1406,7 +1406,7 @@ function BasicInformation(props) {
             onClick={async () => {
               if (newBodyFocus.length > 0) {
                 await createBodyFocus(newBodyFocus, language);
-
+                setNewBodyFocus("");
                 fetchDataV2();
               }
             }}
