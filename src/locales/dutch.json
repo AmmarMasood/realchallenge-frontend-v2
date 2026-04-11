@@ -247,7 +247,10 @@
     "my_goal": "Mijn doelgebieden",
     "about_me": "Over mij",
     "challenges": "Uitdagingen",
-    "fitness_interests": "Fitness Interesses"
+    "recipes": "Recepten",
+    "fitness_interests": "Fitness Interesses",
+    "no_challenges": "Nog geen uitdagingen om te tonen.",
+    "no_recipes": "Nog geen recepten om te tonen."
   },
   "signup": {
     "join": "Start Real Challenge vandaag",
@@ -1003,6 +1006,7 @@
       "pt": "Voorbereidingstijd",
       "diet": "Eetpatroon",
       "raf": "Alle filters verwijderen",
+      "no_recipes": "Geen recepten gevonden met deze filters.",
       "eating_late": "Ik eet te laat",
       "supplement_options": "Supplement opties",
       "my_diet_setup": "Mijn dieet opstelling",

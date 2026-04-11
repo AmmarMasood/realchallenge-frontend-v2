@@ -4,7 +4,6 @@ import "../../assets/trainers.css";
 import { Collapse, Input, Slider } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import "../../assets/nutrition.css";
-import _ from "lodash";
 
 import ChallengeCard from "../Cards/ChallengeCard";
 import { Link } from "react-router-dom";
@@ -31,119 +30,92 @@ function SearchNutrition({
   useEffect(() => {
     const r = allRecipies ? allRecipies.filter((r) => r.isPublic) : [];
     setAllMeals(r);
-    console.log(r);
     setFilterMeals(r);
   }, [allRecipies]);
 
-  // useEffect(
-  //   () => {
-  //     let filteredWithMealType = allMeals.map((meal) => {
-  //       if (mealTypeFilters.every((val) => meal.mealTypes.includes(val))) {
-  //         return meal;
-  //       } else {
-  //         return undefined;
-  //       }
-  //     });
-  //     filteredWithMealType = allMeals.map((meal) => {
-  //       if (
-  //         ingredientsTypeFilter.every((val) => meal.ingredients.includes(val))
-  //       ) {
-  //         return meal;
-  //       } else {
-  //         return undefined;
-  //       }
-  //     });
-  //     filteredWithMealType = allMeals.map((meal) => {
-  //       if (dietTypeFilter.every((val) => meal.diet.includes(val))) {
-  //         return meal;
-  //       } else {
-  //         return undefined;
-  //       }
-  //     });
-  //     filteredWithMealType = allMeals.map((meal) => {
-  //       if (
-  //         meal.preprationTime >= preprationTimeFilter[0] &&
-  //         meal.preprationTime < preprationTimeFilter[1]
-  //       ) {
-  //         console.log("here");
-  //         return meal;
-  //       } else {
-  //         return undefined;
-  //       }
-  //     });
-  //     filteredWithMealType = allMeals.map((meal) => {
-  //       if (
-  //         meal.calories >= caloriesFilter[0] &&
-  //         meal.calories < caloriesFilter[1]
-  //       ) {
-  //         console.log("here");
-  //         return meal;
-  //       } else {
-  //         return undefined;
-  //       }
-  //     });
-  //     setFilterMeals(_.compact(filteredWithMealType));
-  //   },
-  //   // eslint-disable-next-line
-  //   [
-  //     // filteredWithMealType,
-  //     mealTypeFilters,
-  //     ingredientsTypeFilter,
-  //     dietTypeFilter,
-  //     preprationTimeFilter,
-  //     caloriesFilter,
-  //   ]
-  // );
+  useEffect(() => {
+    const search = mealName.trim().toLowerCase();
+
+    const getIngredientIds = (meal) =>
+      (meal.ingredients || []).map((i) => {
+        if (!i || !i.name) return "";
+        return String(typeof i.name === "object" ? i.name._id : i.name);
+      });
+
+    const filtered = allMeals.filter((meal) => {
+      if (search && !(meal.name || "").toLowerCase().includes(search)) {
+        return false;
+      }
+
+      if (mealTypeFilters.length > 0) {
+        const mealTypeIds = (meal.mealTypes || []).map(String);
+        if (!mealTypeFilters.some((id) => mealTypeIds.includes(id))) {
+          return false;
+        }
+      }
+
+      if (ingredientsTypeFilter.length > 0) {
+        const ingIds = getIngredientIds(meal);
+        if (!ingredientsTypeFilter.some((id) => ingIds.includes(id))) {
+          return false;
+        }
+      }
+
+      if (dietTypeFilter.length > 0) {
+        const dietIds = (meal.diet || []).map(String);
+        if (!dietTypeFilter.some((id) => dietIds.includes(id))) {
+          return false;
+        }
+      }
+
+      const pt = Number(meal.prepTime) || 0;
+      if (pt < preprationTimeFilter[0] || pt > preprationTimeFilter[1]) {
+        return false;
+      }
+
+      const cal = Number(meal.kCalPerPerson) || 0;
+      if (cal < caloriesFilter[0] || cal > caloriesFilter[1]) {
+        return false;
+      }
+
+      return true;
+    });
+
+    setFilterMeals(filtered);
+  }, [
+    allMeals,
+    mealName,
+    mealTypeFilters,
+    ingredientsTypeFilter,
+    dietTypeFilter,
+    preprationTimeFilter,
+    caloriesFilter,
+  ]);
 
   function onSelectFilter(type, value) {
     if (type === "mealType") {
-      const check = mealTypeFilters.includes(value);
-      if (check) {
-        const newArray = mealTypeFilters.filter((str) => str !== value);
-        setMealTypeFilters(newArray);
-        // console.log("====>", newArray);
-      } else {
-        setMealTypeFilters((prev) => [...prev, value]);
-      }
-      console.log(value);
-      console.log(check);
-      console.log(mealTypeFilters);
+      setMealTypeFilters((prev) =>
+        prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+      );
     }
     if (type === "ingredientsType") {
-      const check = ingredientsTypeFilter.includes(value);
-      if (check) {
-        const newArray = ingredientsTypeFilter.filter((str) => str !== value);
-        setIngredientsTypeFilter(newArray);
-        // console.log("====>", newArray);
-      } else {
-        setIngredientsTypeFilter((prev) => [...prev, value]);
-      }
-      console.log(value);
-      console.log(check);
-      console.log(mealTypeFilters);
+      setIngredientsTypeFilter((prev) =>
+        prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+      );
     }
     if (type === "diet") {
-      const check = dietTypeFilter.includes(value);
-      if (check) {
-        const newArray = dietTypeFilter.filter((str) => str !== value);
-        setDietTypeFilter(newArray);
-        // console.log("====>", newArray);
-      } else {
-        setDietTypeFilter((prev) => [...prev, value]);
-      }
-
-      console.log(value);
-      console.log(check);
-      console.log(mealTypeFilters);
+      setDietTypeFilter((prev) =>
+        prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+      );
     }
   }
   function removeAllFilters() {
+    setMealName("");
     setMealTypeFilters([]);
     setIngredientsTypeFilter([]);
     setDietTypeFilter([]);
     setPreprationTimeFilter([5, 55]);
     setCaloriesFilter([100, 955]);
-    setFilterMeals(allRecipies);
   }
   return (
     <div className="search-nutrition-container">
@@ -152,27 +124,15 @@ function SearchNutrition({
         <Input
           size="large"
           placeholder="Search Keyword"
+          className="nutrition-search-input"
           style={{
             backgroundColor: "transparent",
             padding: "20px",
-            color: "#fff",
             fontSize: "2rem",
-            opacity: "0.8",
           }}
           value={mealName}
-          onChange={(e) => {
-            console.log(e.target.value);
-            setMealName(e.target.value);
-            // setFilterMeals(
-            console.log(
-              allMeals.filter((meal) =>
-                meal.name.toUpperCase().includes(e.target.value.toUpperCase())
-              )
-            );
-
-            // );
-          }}
-          prefix={<SearchOutlined />}
+          onChange={(e) => setMealName(e.target.value)}
+          prefix={<SearchOutlined style={{ color: "#fff", opacity: 0.8 }} />}
         />
         {width <= 700 && (
           <Collapse ghost>
@@ -253,7 +213,6 @@ function SearchNutrition({
                   >
                     <T>userDashboard.nutrient.pt</T>
                   </h2>
-                  {console.log("recipes all meals", allMeals)}
                   <Slider
                     min={5}
                     max={55}
@@ -442,22 +401,36 @@ function SearchNutrition({
             </div>
           )}
           <div className="trainers-3-row-cards nutrition-cards">
-            {filterMeals.map((meal) => (
-              <Link
-                key={meal._id}
-                to={`/recipe/${slug(meal.name)}/${meal._id}`}
+            {filterMeals.length === 0 ? (
+              <div
+                className="font-paragraph-white"
+                style={{
+                  width: "100%",
+                  textAlign: "center",
+                  padding: "40px 20px",
+                  color: "rgba(255, 255, 255, 0.6)",
+                  fontSize: "16px",
+                }}
               >
-                {console.log(meal)}
-                <ChallengeCard
-                  picture={meal.image ? meal.image.replaceAll(" ", "%20") : ""}
-                  name={meal.name}
-                  rating={meal.rating}
-                  newc={false}
-                  preprationTime={meal.prepTime}
-                  recipe={true}
-                />
-              </Link>
-            ))}
+                <T>userDashboard.nutrient.no_recipes</T>
+              </div>
+            ) : (
+              filterMeals.map((meal) => (
+                <Link
+                  key={meal._id}
+                  to={`/recipe/${slug(meal.name)}/${meal._id}`}
+                >
+                  <ChallengeCard
+                    picture={meal.image ? meal.image.replaceAll(" ", "%20") : ""}
+                    name={meal.name}
+                    rating={meal.rating}
+                    newc={false}
+                    preprationTime={meal.prepTime}
+                    recipe={true}
+                  />
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </div>

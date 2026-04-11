@@ -97,3 +97,13 @@
     padding: 5px;
   } */
 }
+
+.nutrition-search-input.ant-input-affix-wrapper,
+.nutrition-search-input .ant-input {
+  background-color: transparent !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.nutrition-search-input .ant-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}

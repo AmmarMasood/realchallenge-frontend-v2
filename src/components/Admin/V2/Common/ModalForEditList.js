@@ -47,6 +47,9 @@ function ModalForEditList({
   // Both admins and trainers can view challenges
   const canViewChallenge = (isAdmin || isTrainer) && type === "challenge";
 
+  // Admins and nutritionists can view recipes
+  const canViewRecipe = (isAdmin || isNutrist) && type === "recipe";
+
   // Check if user can edit a specific item
   const canEdit = (item) => {
     if (isAdmin) return true; // Admins can edit everything
@@ -377,6 +380,21 @@ function ModalForEditList({
                 {canViewChallenge && (
                   <Link
                     to={`/challenge/${slug(d.challengeName)}/${d._id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <EyeOutlined
+                      style={{
+                        cursor: "pointer",
+                        color: "white",
+                        fontSize: "18px",
+                      }}
+                    />
+                  </Link>
+                )}
+                {canViewRecipe && (
+                  <Link
+                    to={`/recipe/${slug(d.name || "")}/${d._id}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

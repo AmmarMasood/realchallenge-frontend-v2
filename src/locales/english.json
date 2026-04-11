@@ -247,7 +247,10 @@
     "my_goal": "My Goals Areas",
     "about_me": "About Me",
     "challenges": "Challenges",
-    "fitness_interests": "Fitness Interests"
+    "recipes": "Recipes",
+    "fitness_interests": "Fitness Interests",
+    "no_challenges": "No challenges to show yet.",
+    "no_recipes": "No recipes to show yet."
   },
   "signup": {
     "join": "JOIN REALCHALLENGE TODAY",
@@ -1003,6 +1006,7 @@
       "pt": "Prepration Time",
       "diet": "Diet",
       "raf": "Remove All Filters",
+      "no_recipes": "No recipes match your filters.",
       "eating_late": "I'm eating too late",
       "supplement_options": "Supplement Options",
       "my_diet_setup": "My diet setup",
