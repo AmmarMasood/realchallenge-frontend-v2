@@ -2603,7 +2603,7 @@ export const VFSBrowser = React.memo((props) => {
               </div>
             )}
 
-            {/* Video optimization status legend */}
+            {/* Optimization status legend (videos + images) */}
             {filesForBrowser.some(f => f.processingStatus && f.processingStatus !== "none") && (
               <div style={{
                 display: "flex",
@@ -2615,7 +2615,7 @@ export const VFSBrowser = React.memo((props) => {
                 fontSize: "12px",
                 color: "#666",
               }}>
-                <span style={{ fontWeight: 500 }}>Video optimization:</span>
+                <span style={{ fontWeight: 500 }}>Optimization:</span>
                 <span>⏳ Optimizing</span>
                 <span>✅ Optimized</span>
                 <span>❌ Failed</span>
