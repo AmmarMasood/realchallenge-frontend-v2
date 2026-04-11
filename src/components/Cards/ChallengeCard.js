@@ -50,12 +50,13 @@ function ChallengeCard({
     <div
       className="challenge-card-basic"
       style={{
-        background: isVideo
-          ? "#171e27"
-          : `linear-gradient(180deg, rgba(255, 255, 255, 0) 17.71%, rgba(43, 57, 73, 0.85) 96.88%),
-                url(${picture})`,
+        backgroundColor: isVideo ? "#171e27" : undefined,
+        backgroundImage: isVideo
+          ? "none"
+          : `linear-gradient(180deg, rgba(255, 255, 255, 0) 17.71%, rgba(43, 57, 73, 0.85) 96.88%), url(${picture})`,
         backgroundSize: "cover",
         backgroundPosition: "50% 50%",
+        backgroundRepeat: "no-repeat",
         position: "relative",
         overflow: "hidden",
       }}

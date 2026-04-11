@@ -5,7 +5,7 @@ import React, {
   useCallback,
   useRef,
 } from "react";
-import "../../../../assets/trainerprofile.css";
+import "../../../../assets/creatorprofile.css";
 import "../../../../assets/home.css";
 import "../../../../assets/challengeProfile.css";
 import Navbar from "../../../../components/Navbar";
@@ -2353,7 +2353,7 @@ function BasicInformation(props) {
                     ></span>
 
                     <a
-                      href={`/trainer/${slug(trainer.firstName)}/${
+                      href={`/creator/${slug(trainer.firstName)}/${
                         trainer._id
                       }`}
                       target="_blank"

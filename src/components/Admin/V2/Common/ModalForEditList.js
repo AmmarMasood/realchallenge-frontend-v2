@@ -50,13 +50,15 @@ function ModalForEditList({
   // Check if user can edit a specific item
   const canEdit = (item) => {
     if (isAdmin) return true; // Admins can edit everything
-    if (isTrainer && item.user && item.user._id === adminInfo.id) {
+    const ownerId =
+      item.user && typeof item.user === "object" ? item.user._id : item.user;
+    if (isTrainer && ownerId && ownerId === adminInfo.id) {
       return true; // Trainers can edit their own content
     }
     if (isTrainer && item.trainers?.some((t) => (t._id || t) === adminInfo.id)) {
       return true; // Assigned trainers can edit
     }
-    if (isNutrist && type === "recipe" && item.user && item.user._id === adminInfo.id) {
+    if (isNutrist && type === "recipe" && ownerId && ownerId === adminInfo.id) {
       return true; // Nutrists can edit their own recipes
     }
     return false;

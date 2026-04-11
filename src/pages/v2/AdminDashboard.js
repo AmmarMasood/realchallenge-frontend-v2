@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
-import "../../assets/trainerprofile.css";
+import "../../assets/creatorprofile.css";
 import "../../assets/adminDashboardV2.css";
 import "../../assets/home.css";
 import Navbar from "../../components/Navbar";
@@ -409,7 +409,7 @@ function AdminDashboard(props) {
         <meta property="og:description" content={trainer.motto} />
         <meta
           property="og:url"
-          content={`http://localhost:3001/trainer/${slug(trainer.firstName)}/${
+          content={`${window.location.origin}/creator/${slug(trainer.firstName)}/${
             trainer._id
           }`}
         />
@@ -540,7 +540,7 @@ function AdminDashboard(props) {
                       </Select.Option>
                     ))}
                   </Select>
-                  {hasAnyRole(adminInfo, ["admin", "trainer"]) && (
+                  {hasAnyRole(adminInfo, ["admin", "trainer", "nutrist"]) && (
                     <img
                       src={ShareIcon}
                       alt="share"
@@ -550,8 +550,8 @@ function AdminDashboard(props) {
                         cursor: "pointer",
                       }}
                       onClick={() => {
-                        const url = `${window.location.origin}/trainer/${slug(
-                          trainer.firstName || "",
+                        const url = `${window.location.origin}/creator/${slug(
+                          trainer.username || trainer.firstName || "",
                         )}/${trainer._id}`;
                         navigator.clipboard
                           .writeText(url)
@@ -751,64 +751,66 @@ function AdminDashboard(props) {
               )}
             </div>
 
-            <div className="adminv2-selector">
-              <h1
-                style={{
-                  margin: "50px 0 40px 0",
-                }}
-              >
-                <T>adminv2.interests</T>
-              </h1>
-              <div className="adminv2-selector-interests">
-                {goals.map((goal, i) => (
-                  <div
-                    className="adminv2-selector-interests-interest"
-                    key={i}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    {goal.icon && (
-                      <img
-                        src={goal.icon}
-                        alt=""
-                        style={{
-                          width: "16px",
-                          height: "16px",
-                          objectFit: "contain",
-                        }}
-                      />
-                    )}
-                    <span>{goal.name}</span>
-                    <EditFilled
-                      style={{
-                        cursor: "pointer",
-                        color: "#FF950A",
-                        fontSize: "14px",
-                        marginLeft: "4px",
-                      }}
-                      onClick={() => openEditInterestModal(goal)}
-                    />
-                    <DeleteFilled
-                      style={{
-                        cursor: "pointer",
-                        color: "#ff4444",
-                        fontSize: "14px",
-                      }}
-                      onClick={() => handleDeleteGoal(goal._id)}
-                    />
-                  </div>
-                ))}
-                <Button
-                  className="adminv2-interest-button"
-                  onClick={openNewInterestModal}
+            {hasAnyRole(adminInfo, ["admin", "trainer"]) && (
+              <div className="adminv2-selector">
+                <h1
+                  style={{
+                    margin: "50px 0 40px 0",
+                  }}
                 >
-                  <T>adminv2.add_new</T>
-                </Button>
+                  <T>adminv2.interests</T>
+                </h1>
+                <div className="adminv2-selector-interests">
+                  {goals.map((goal, i) => (
+                    <div
+                      className="adminv2-selector-interests-interest"
+                      key={i}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      {goal.icon && (
+                        <img
+                          src={goal.icon}
+                          alt=""
+                          style={{
+                            width: "16px",
+                            height: "16px",
+                            objectFit: "contain",
+                          }}
+                        />
+                      )}
+                      <span>{goal.name}</span>
+                      <EditFilled
+                        style={{
+                          cursor: "pointer",
+                          color: "#FF950A",
+                          fontSize: "14px",
+                          marginLeft: "4px",
+                        }}
+                        onClick={() => openEditInterestModal(goal)}
+                      />
+                      <DeleteFilled
+                        style={{
+                          cursor: "pointer",
+                          color: "#ff4444",
+                          fontSize: "14px",
+                        }}
+                        onClick={() => handleDeleteGoal(goal._id)}
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    className="adminv2-interest-button"
+                    onClick={openNewInterestModal}
+                  >
+                    <T>adminv2.add_new</T>
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {hasAnyRole(adminInfo, ["admin", "trainer"]) && (

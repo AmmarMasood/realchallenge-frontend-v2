@@ -8,14 +8,14 @@ export function RecipeProvider({ children }) {
   const [recipeName, setRecipeName] = useState("");
   const [recipeDescription, setRecipeDescription] = useState("");
   const [featuredImage, setFeaturedImage] = useState("");
-  const [prepTime, setPrepTime] = useState(0);
-  const [persons, setPersons] = useState(0);
-  const [kCalPerPerson, setKCalPerPerson] = useState(0);
-  const [saturationIndex, setSaturationIndex] = useState(0);
-  const [protein, setProtein] = useState(0);
-  const [carbohydrate, setCarbohydrate] = useState(0);
-  const [fat, setFat] = useState(0);
-  const [fiber, setFiber] = useState(0);
+  const [prepTime, setPrepTime] = useState("");
+  const [persons, setPersons] = useState("");
+  const [kCalPerPerson, setKCalPerPerson] = useState("");
+  const [saturationIndex, setSaturationIndex] = useState("");
+  const [protein, setProtein] = useState("");
+  const [carbohydrate, setCarbohydrate] = useState("");
+  const [fat, setFat] = useState("");
+  const [fiber, setFiber] = useState("");
   const [selectedMealTypes, setSelectedMealTypes] = useState([]);
   const [selectedFoodTypes, setSelectedFoodTypes] = useState([]);
   const [selectedDiet, setSelectedDiet] = useState([]);
@@ -40,14 +40,14 @@ export function RecipeProvider({ children }) {
     setRecipeName(recipeData.name || "");
     setRecipeDescription(recipeData.description || "");
     setFeaturedImage(recipeData.image ? { link: recipeData.image } : "");
-    setPrepTime(recipeData.prepTime || 0);
-    setPersons(recipeData.persons || 0);
-    setKCalPerPerson(recipeData.kCalPerPerson || 0);
-    setSaturationIndex(recipeData.saturationIndex || 0);
-    setProtein(recipeData.protein || 0);
-    setCarbohydrate(recipeData.carbohydrate || 0);
-    setFat(recipeData.fat || 0);
-    setFiber(recipeData.fiber || 0);
+    setPrepTime(recipeData.prepTime || "");
+    setPersons(recipeData.persons || "");
+    setKCalPerPerson(recipeData.kCalPerPerson || "");
+    setSaturationIndex(recipeData.saturationIndex || "");
+    setProtein(recipeData.protein || "");
+    setCarbohydrate(recipeData.carbohydrate || "");
+    setFat(recipeData.fat || "");
+    setFiber(recipeData.fiber || "");
 
     // Meal types — store as [{_id, name}] objects
     setSelectedMealTypes(

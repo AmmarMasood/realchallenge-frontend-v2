@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
-import "../assets/trainerprofile.css";
+import "../assets/creatorprofile.css";
 import "../assets/home.css";
 import "../assets/challengeProfile.css";
 import Navbar from "../components/Navbar";
@@ -1312,7 +1312,7 @@ function ChallengeProfile(props) {
                       alt={trainer.firstName}
                     /> */}
                     <Link
-                      to={`/trainer/${slug(trainer.firstName)}/${trainer._id}`}
+                      to={`/creator/${slug(trainer.firstName)}/${trainer._id}`}
                       className="challenge-trainer-box-text font-paragraph-white"
                     >
                       {trainer.firstName + " " + trainer.lastName}

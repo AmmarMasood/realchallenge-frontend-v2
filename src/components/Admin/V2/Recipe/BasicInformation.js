@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
-import "../../../../assets/trainerprofile.css";
+import "../../../../assets/creatorprofile.css";
 import "../../../../assets/home.css";
 import "../../../../assets/challengeProfile.css";
 import "../../../../assets/recipeProfile.css";
@@ -15,7 +15,7 @@ import {
   UserOutlined,
   FireOutlined,
 } from "@ant-design/icons";
-import { withRouter } from "react-router-dom";
+import { withRouter, Prompt } from "react-router-dom";
 import {
   Tooltip,
   Modal,
@@ -173,13 +173,20 @@ function BasicInformation(props) {
   const [editLockBlocked, setEditLockBlocked] = useState(false);
   const [editLockDetails, setEditLockDetails] = useState(null);
 
+  // Allows programmatic navigation (save, unauthorized redirect) to bypass <Prompt>
+  const allowNavigationRef = useRef(false);
+
+  // Dirty tracking: only block navigation when the user has actually edited something
+  const [isDirty, setIsDirty] = useState(false);
+  const dirtyTrackingReadyRef = useRef(false);
+
   // Store recipe's original language
   const [recipeLanguage, setRecipeLanguage] = useState(null);
   const [isFirstRender, setIsFirstRender] = useState(false);
 
   const { reloadWithoutConfirmation } = useBrowserEvents({
-    enableBeforeUnloadConfirm: !editLockBlocked,
-    hasUnsavedChanges: !editLockBlocked,
+    enableBeforeUnloadConfirm: !editLockBlocked && isDirty,
+    hasUnsavedChanges: !editLockBlocked && isDirty,
     backForwardMessage: get(
       strings,
       "recipeStudio.unsaved_changes_warning",
@@ -191,6 +198,48 @@ function BasicInformation(props) {
       "Any unsaved work will be lost. Continue?",
     ),
   });
+
+  // Enable dirty tracking once the initial data has settled into form state.
+  // Deferred via setTimeout so it runs after the populate-triggered renders,
+  // preventing the populate itself from being treated as a user edit.
+  useEffect(() => {
+    const hasRecipeId = Boolean(props.match.params.recipeId);
+    const initialLoadDone = hasRecipeId ? isFirstRender : dataLoaded;
+    if (!initialLoadDone) return;
+    const id = setTimeout(() => {
+      dirtyTrackingReadyRef.current = true;
+    }, 0);
+    return () => clearTimeout(id);
+  }, [dataLoaded, isFirstRender, props.match.params.recipeId]);
+
+  // Mark form as dirty on any form-field change after tracking is enabled
+  useEffect(() => {
+    if (!dirtyTrackingReadyRef.current) return;
+    setIsDirty(true);
+  }, [
+    recipeName,
+    recipeDescription,
+    featuredImage,
+    prepTime,
+    persons,
+    kCalPerPerson,
+    saturationIndex,
+    protein,
+    carbohydrate,
+    fat,
+    fiber,
+    selectedMealTypes,
+    selectedFoodTypes,
+    selectedDiet,
+    ingredients,
+    cookingProcess,
+    notes,
+    tips,
+    isPublic,
+    adminApproved,
+    allowComments,
+    allowReviews,
+  ]);
 
   // ── Data fetching ──
   const fetchDataV2 = async (effectiveLanguage) => {
@@ -274,6 +323,7 @@ function BasicInformation(props) {
             message: "Not Authorized",
             description: "You don't have permission to edit this recipe.",
           });
+          allowNavigationRef.current = true;
           props.history.push("/admin/v2");
           return;
         }
@@ -554,10 +604,13 @@ function BasicInformation(props) {
 
       if (isUpdate) {
         await updateRecipe(obj, props.match.params.recipeId);
+        setIsDirty(false);
         reloadWithoutConfirmation();
       } else {
         const res = await createRecipe(obj);
         if (res && res.newRecipe) {
+          setIsDirty(false);
+          allowNavigationRef.current = true;
           props.history.push(`/admin/v2/recipe-studio/${res.newRecipe._id}`);
         }
       }
@@ -589,6 +642,20 @@ function BasicInformation(props) {
 
   return (
     <div>
+      <Prompt
+        when={!editLockBlocked && isDirty}
+        message={() => {
+          if (allowNavigationRef.current) {
+            allowNavigationRef.current = false;
+            return true;
+          }
+          return get(
+            strings,
+            "recipeStudio.unsaved_changes_warning",
+            "You have unsaved changes in this recipe. Are you sure you want to leave?",
+          );
+        }}
+      />
       {loading && (
         <div
           style={{
@@ -1261,19 +1328,83 @@ function BasicInformation(props) {
                     }}
                   >
                     <UserOutlined style={{ color: "var(--color-orange)" }} />{" "}
-                    <input
-                      placeholder="0"
-                      className="font-paragraph-white adminV2-bi-input"
+                    <div
                       style={{
-                        width: "40px",
-                        textAlign: "center",
-                        fontSize: "1.8rem",
-                        padding: "0",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
                       }}
-                      onChange={(e) => setPersons(e.target.value)}
-                      value={persons}
-                      type="number"
-                    />{" "}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = Number(persons) || 0;
+                          if (current > 0) setPersons(current - 1);
+                        }}
+                        disabled={(Number(persons) || 0) <= 0}
+                        aria-label="Decrease persons"
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "50%",
+                          border: "1px solid var(--color-orange)",
+                          background: "transparent",
+                          color: "var(--color-orange)",
+                          fontSize: "1.4rem",
+                          lineHeight: 1,
+                          cursor:
+                            (Number(persons) || 0) <= 0
+                              ? "not-allowed"
+                              : "pointer",
+                          opacity: (Number(persons) || 0) <= 0 ? 0.4 : 1,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: 0,
+                        }}
+                      >
+                        −
+                      </button>
+                      <input
+                        placeholder="0"
+                        className="font-paragraph-white adminV2-bi-input"
+                        style={{
+                          width: "40px",
+                          textAlign: "center",
+                          fontSize: "1.8rem",
+                          padding: "0",
+                        }}
+                        onChange={(e) => setPersons(e.target.value)}
+                        value={persons}
+                        type="number"
+                        min="0"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = Number(persons) || 0;
+                          setPersons(current + 1);
+                        }}
+                        aria-label="Increase persons"
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "50%",
+                          border: "1px solid var(--color-orange)",
+                          background: "transparent",
+                          color: "var(--color-orange)",
+                          fontSize: "1.4rem",
+                          lineHeight: 1,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: 0,
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>{" "}
                     <span className="font-paragraph-white">persons</span>
                   </div>
                 </div>

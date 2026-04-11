@@ -443,12 +443,13 @@ function SearchNutrition({
           )}
           <div className="trainers-3-row-cards nutrition-cards">
             {filterMeals.map((meal) => (
-              <Link to={`/recipe/${slug(meal.name)}/${meal._id}`}>
+              <Link
+                key={meal._id}
+                to={`/recipe/${slug(meal.name)}/${meal._id}`}
+              >
                 {console.log(meal)}
                 <ChallengeCard
-                  picture={`${
-                    process.env.REACT_APP_SERVER
-                  }/uploads/${meal.image.replaceAll(" ", "%20")}`}
+                  picture={meal.image ? meal.image.replaceAll(" ", "%20") : ""}
                   name={meal.name}
                   rating={meal.rating}
                   newc={false}

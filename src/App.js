@@ -18,7 +18,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import AllChallenges from "./pages/AllChallenges";
-import TrainerProfile from "./pages/TrainerProfile";
+import CreatorProfile from "./pages/CreatorProfile";
 import ChallengeProfile from "./pages/ChallengeProfile";
 import RecipeProfile from "./pages/RecipeProfile";
 import UserDashboard from "./pages/UserDashboard";
@@ -89,8 +89,8 @@ function App() {
         />
         <Route component={AllChallenges} path="/all-challenges" exact />
         <Route
-          component={TrainerProfile}
-          path="/trainer/:trainerName/:id"
+          component={CreatorProfile}
+          path="/creator/:username/:id"
           exact
         />
         <Route path="/challenge/:challengeName/:id" exact>

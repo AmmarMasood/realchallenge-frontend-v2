@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "../assets/trainerprofile.css";
+import "../assets/creatorprofile.css";
 import "../assets/home.css";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";

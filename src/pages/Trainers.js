@@ -171,7 +171,7 @@ function Trainers() {
           </Collapse>
           <div className="trainers-3-row-cards">
             {filterTrainers.map((trainer) => (
-              <Link to={`/trainer/${slug(trainer.username)}/${trainer._id}`}>
+              <Link to={`/creator/${slug(trainer.username)}/${trainer._id}`}>
                 <ChallengeCard
                   picture={trainer.avatarLink ? `${trainer.avatarLink}` : ""}
                   // rating={5}

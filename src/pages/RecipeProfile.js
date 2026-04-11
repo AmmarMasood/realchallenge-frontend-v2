@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import "../assets/trainerprofile.css";
+import "../assets/creatorprofile.css";
 import "../assets/home.css";
 import "../assets/challengeProfile.css";
 import "../assets/recipeProfile.css";
