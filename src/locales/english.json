@@ -971,6 +971,7 @@
   "userDashboard": {
     "nutrient": {
       "this_week": "This Week",
+      "current_week": "Current Week",
       "next_week": "Next Week",
       "regenerate_week": "Regenerate Week",
       "regenerating": "Regenerating…",
@@ -986,6 +987,9 @@
       "selected_recipes": "Selected Recipes",
       "no_selected_recipes": "No recipes added yet.",
       "remove_recipe": "Remove recipe",
+      "add_persons": "Add persons",
+      "order_grocery_list": "Order grocery list",
+      "add_week_to_shopping": "Add week to shopping cart",
       "update_shopping_list": "Update shopping list",
       "shopping_updated": "Shopping list updated",
       "shopping_needs_update": "Your plan changed — update your shopping list to match.",

@@ -326,56 +326,111 @@
   color: var(--color-orange) !important;
 }
 
+.dashboard-nutrient-row2-container .react-multi-carousel-track {
+  align-items: stretch;
+}
+.dashboard-nutrient-row2-container .react-multi-carousel-item {
+  display: flex;
+  align-items: stretch;
+  height: auto;
+}
 .dashboard-nutrient-row2-container-card {
-  /* border: 1px solid blue; */
   background-color: var(--color-gray-light);
-  margin: 10px;
-  padding: 15px;
-  /* min-width: 350px; */
+  margin: 0 10px;
+  padding: 12px 10px 16px 10px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  /* border: 1px solid red; */
+}
+.dashboard-nutrient-row2-container-card > a {
+  display: block;
+  line-height: 0;
+  color: inherit;
+}
+.dashboard-nutrient-row2-container-card > a > div:first-child {
+  line-height: 0;
+  display: block;
 }
 .dashboard-nutrient-row2-container-card-heading {
-  font-size: 2rem;
-  padding: 5px 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #fff;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 10px 0 10px 0;
 }
 .dashboard-nutrient-row2-container-card-about {
-  opacity: 0.8;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #8e9298 !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  height: 50px;
-  padding: 5px 0;
+  text-overflow: ellipsis;
+    margin: 10px 0 10px 0;
 }
 .dashboard-nutrient-row2-container-card-buttons {
-  display: grid;
-  grid-template-columns: 0.6fr 0.2fr 0.2fr 1fr;
-  grid-gap: 10px;
-  padding-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: auto;
+    /* border: 1px solid yellow; */
 }
 .dashboard-nutrient-row2-container-card-bob {
-  background-color: rgba(255, 255, 255, 0.866);
+  background-color: rgba(255, 255, 255, 0.92);
   position: absolute;
-  color: #fff;
-  top: 30px;
-  right: 30px;
-  padding: 5px;
-  font-weight: 400;
+  color: #1d2631;
+  top: 20px;
+  right: 20px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 600;
+    /* border: 1px solid blue; */
 }
 .dashboard-nutrient-row2-container-card-buttons > div {
-  background-color: var(--color-gray-dark);
-  font-size: 12px;
-  padding: 5px;
+  background-color: #2a3340;
+  font-size: 10px;
+  padding: 8px 12px;
   text-align: center;
+  color: #8e9298;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+    /* border: 1px solid red; */
+     text-wrap: nowrap;
+     height: 100%;
 }
 .dashboard-nutrient-row2-container-card-buttons > button {
-  background-color: #53d470;
+  background-color: #3b9e4b;
+  color: #fff;
   cursor: pointer;
-  border: 0px;
-  font-size: 12px;
+  border: 0;
+  padding: 8px 14px;
+  font-size: 10px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  /* border: 1px solid yellow; */
+  text-wrap: nowrap;
 }
 .favourite-recipes-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(35rem, 1fr));
 }
 .dashboard-nutrient-row2-container-card-buttons > button:hover {
-  background-color: #53d46fc2;
+  background-color: #2d7d3a;
 }
 .dashboard-nutrient-row3 {
   /* border: 1px solid green; */

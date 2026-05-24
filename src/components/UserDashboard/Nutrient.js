@@ -9,6 +9,8 @@ import {
   PlusOutlined,
   HeartFilled,
   LoadingOutlined,
+  ShoppingCartOutlined,
+  SwapOutlined,
 } from "@ant-design/icons";
 import { userInfoContext } from "../../contexts/UserStore";
 import { Link } from "react-router-dom";
@@ -102,6 +104,40 @@ const responsive = {
   },
 };
 
+// Format a shopping-list quantity for display.
+//  - "pieces" → ceil to a whole number with a space ("0.5 → 1 pieces")
+//    because half a piece of an ingredient isn't a real purchasable unit.
+//  - "g" / "ml" → round to 1 decimal, drop trailing .0 ("0.45 → 0.5g",
+//    "300.0 → 300g"), no space (matches the Figma's "650g" style).
+function formatShoppingQty(quantity, unit) {
+  if (typeof quantity !== "number" || Number.isNaN(quantity)) return "";
+  if (unit === "pieces") {
+    const n = Math.max(1, Math.ceil(quantity));
+    return `${n} pieces`;
+  }
+  const rounded = Math.round(quantity * 10) / 10;
+  const str = Number.isInteger(rounded) ? `${rounded}` : `${rounded}`;
+  return `${str}${unit || ""}`;
+}
+
+// Strip HTML tags from a rich-text string so block-level <p>/<br> don't
+// break the line-clamp ellipsis on the description.
+function stripHtml(html) {
+  if (!html) return "";
+  if (typeof window !== "undefined" && window.DOMParser) {
+    try {
+      const doc = new window.DOMParser().parseFromString(
+        String(html),
+        "text/html"
+      );
+      return (doc.body && doc.body.textContent) || "";
+    } catch (_) {
+      // fall through to regex
+    }
+  }
+  return String(html).replace(/<[^>]+>/g, "");
+}
+
 // Render a slot key (breakfast, morningSnack, ...) as a user-facing label.
 // Prefers the i18n entry (mealType.<key>); falls back to camelCase → "Title
 // Case" so a missing translation still reads naturally.
@@ -117,11 +153,7 @@ function formatMealSlot(slot) {
     .trim();
 }
 
-function Nutrient({
-  userProfile,
-  gender,
-  getUserDetails,
-}) {
+function Nutrient({ userProfile, gender, getUserDetails }) {
   const [userInfo, setUserInfo] = useContext(userInfoContext);
   const { height, width } = useWindowDimensions();
   const [selectedSuplementType, setSelectedSuplementType] = useState("none");
@@ -140,7 +172,9 @@ function Nutrient({
     sunday: [],
   });
   const [allDiets, setAllDiets] = useState([]);
-  const [currentDay, setCurrentDay] = useState(() => localStorage.getItem("currentDay") || "monday");
+  const [currentDay, setCurrentDay] = useState(
+    () => localStorage.getItem("currentDay") || "monday",
+  );
   // eslint-disable-next-line
   const [bodyOverview, setBodyOverview] = useState({
     calories: null,
@@ -170,6 +204,10 @@ function Nutrient({
   const [regenerating, setRegenerating] = useState(false);
   const [actionSlotKey, setActionSlotKey] = useState(null);
   const [confirmModal, setConfirmModal] = useState(null);
+  // Person-count multiplier for the shopping list. Backend stores
+  // ingredient quantities per single serving (recipeToLineItems scales
+  // by recipe.persons), so we multiply on display.
+  const [personCount, setPersonCount] = useState(1);
 
   useEffect(() => {
     if (!confirmModal) return;
@@ -239,7 +277,10 @@ function Nutrient({
       setFuelMomentSlot(supplementIntake.fuelMomentSlot || null);
       const sched = {};
       (supplementIntake.schedule || []).forEach((s) => {
-        sched[s.recipe] = { everyDay: s.everyDay !== false, days: s.days || [] };
+        sched[s.recipe] = {
+          everyDay: s.everyDay !== false,
+          days: s.days || [],
+        };
       });
       setSupplementSchedule(sched);
     }
@@ -281,7 +322,9 @@ function Nutrient({
   }, [weekMode, userInfo.id]);
 
   async function fetchData() {
-    const res = await getAllDietTypes(localStorage.getItem("locale") || "english");
+    const res = await getAllDietTypes(
+      localStorage.getItem("locale") || "english",
+    );
     const rec = await getAllRecipes(localStorage.getItem("locale"));
     const allFavs = await getAllFavouriteRecipes(userInfo.id);
     allFavs && setFavRecipes(allFavs.favRecipes);
@@ -303,9 +346,10 @@ function Nutrient({
 
   // Per-day metadata from the raw plan: date, past/today flags, day pin.
   const dayMeta = (weekday) => {
-    const d = weekPlan && weekPlan.days
-      ? weekPlan.days.find((x) => x.weekday === weekday)
-      : null;
+    const d =
+      weekPlan && weekPlan.days
+        ? weekPlan.days.find((x) => x.weekday === weekday)
+        : null;
     if (!d) return { isPast: false, isToday: false, isDayPinned: false };
     const planDate = new Date(d.date);
     const today = new Date();
@@ -314,7 +358,8 @@ function Nutrient({
     return {
       date: d.date,
       isPast: weekMode === "this_week" && planDate < today,
-      isToday: weekMode === "this_week" && planDate.getTime() === today.getTime(),
+      isToday:
+        weekMode === "this_week" && planDate.getTime() === today.getTime(),
       isDayPinned: !!d.is_day_pinned,
     };
   };
@@ -327,8 +372,13 @@ function Nutrient({
   // becomes a recipe-like object carrying slot/lock metadata.
   const setMealsForTheWeek = (plan) => {
     const obj = {
-      monday: [], tuesday: [], wednesday: [], thursday: [],
-      friday: [], saturday: [], sunday: [],
+      monday: [],
+      tuesday: [],
+      wednesday: [],
+      thursday: [],
+      friday: [],
+      saturday: [],
+      sunday: [],
     };
     (plan.days || []).forEach((day) => {
       obj[day.weekday] = (day.meals || [])
@@ -355,7 +405,7 @@ function Nutrient({
     if (isDayReadOnly(currentDay)) {
       message.info(
         translate("userDashboard.nutrient.past_day_readonly") ||
-          "Passed days are read-only."
+          "Passed days are read-only.",
       );
       return;
     }
@@ -369,7 +419,7 @@ function Nutrient({
             mealSlot: meal._mealSlot,
             pinId: meal._pinId,
             pinMode: meal._pinMode,
-          }
+          },
     );
   };
 
@@ -378,8 +428,7 @@ function Nutrient({
       setConfirmModal({
         title: opts.title || null,
         content,
-        okText:
-          opts.okText || translate("userDashboard.nutrient.confirm_yes"),
+        okText: opts.okText || translate("userDashboard.nutrient.confirm_yes"),
         cancelText:
           opts.cancelText || translate("userDashboard.nutrient.confirm_no"),
         resolve,
@@ -405,7 +454,7 @@ function Nutrient({
             next[currentDay] = (prev[currentDay] || []).map((m) =>
               m._mealSlot === mealSlot
                 ? { ...m, _lockType: null, _pinId: null, _pinMode: null }
-                : m
+                : m,
             );
             return next;
           });
@@ -421,7 +470,7 @@ function Nutrient({
       if (weekMode === "this_week") {
         const ok = await confirmAsync(
           translate("userDashboard.nutrient.add_to_next_week_confirm") ||
-            "Add this to your Next Week plan?"
+            "Add this to your Next Week plan?",
         );
         if (!ok) {
           setPinPopover(null);
@@ -429,7 +478,7 @@ function Nutrient({
         }
         const nw = await getNextWeek(
           userInfo.id,
-          localStorage.getItem("locale") || "english"
+          localStorage.getItem("locale") || "english",
         );
         const nwSlot =
           nw &&
@@ -444,7 +493,7 @@ function Nutrient({
         ) {
           const ok2 = await confirmAsync(
             translate("userDashboard.nutrient.slot_conflict_confirm") ||
-              "That slot in Next Week was already changed or pinned. Replace it?"
+              "That slot in Next Week was already changed or pinned. Replace it?",
           );
           if (!ok2) {
             setPinPopover(null);
@@ -467,7 +516,7 @@ function Nutrient({
                   _lockType: "recipe_pin",
                   _pinMode: mode,
                 }
-              : m
+              : m,
           );
           return next;
         });
@@ -483,7 +532,7 @@ function Nutrient({
         setMealsOfTheWeek((prev) => {
           const next = { ...prev };
           next[currentDay] = (prev[currentDay] || []).map((m) =>
-            m._mealSlot === mealSlot ? { ...m, _pinId: savedPin._id } : m
+            m._mealSlot === mealSlot ? { ...m, _pinId: savedPin._id } : m,
           );
           return next;
         });
@@ -493,7 +542,7 @@ function Nutrient({
           ? translate("userDashboard.nutrient.pin_saved_always") ||
               "Pinned weekly"
           : translate("userDashboard.nutrient.pin_saved_once") ||
-              "Pinned for next week"
+              "Pinned for next week",
       );
     }
     setPinPopover(null);
@@ -508,14 +557,14 @@ function Nutrient({
     if (weekMode !== "next_week") {
       message.info(
         translate("userDashboard.nutrient.swap_next_only") ||
-          "Swapping is only available on Next Week."
+          "Swapping is only available on Next Week.",
       );
       return;
     }
     if (findPin(meal)) {
       message.warning(
         translate("userDashboard.nutrient.swap_pinned_blocked") ||
-          "The recipe is pinned. Unpin it to swap."
+          "The recipe is pinned. Unpin it to swap.",
       );
       return;
     }
@@ -533,7 +582,7 @@ function Nutrient({
       } else {
         message.error(
           translate("userDashboard.nutrient.swap_failed") ||
-            "Unable to swap recipe"
+            "Unable to swap recipe",
         );
       }
     } finally {
@@ -548,13 +597,13 @@ function Nutrient({
     try {
       const res = await regenerateNextWeek(
         userInfo.id,
-        localStorage.getItem("locale") || "english"
+        localStorage.getItem("locale") || "english",
       );
       if (res) {
         setPlanWarning(res.warning || null);
         message.success(
           translate("userDashboard.nutrient.week_regenerated") ||
-            "Next week regenerated"
+            "Next week regenerated",
         );
         await loadPlan();
       }
@@ -579,7 +628,7 @@ function Nutrient({
     if (!locked_meals.length) {
       message.warning(
         translate("userDashboard.nutrient.nothing_to_pin") ||
-          "Nothing to pin on this day yet."
+          "Nothing to pin on this day yet.",
       );
       return;
     }
@@ -590,7 +639,7 @@ function Nutrient({
       source_week_type: weekMode,
     });
     message.success(
-      translate("userDashboard.nutrient.day_pinned") || "Day pinned"
+      translate("userDashboard.nutrient.day_pinned") || "Day pinned",
     );
     await loadPlan();
   };
@@ -600,7 +649,7 @@ function Nutrient({
     if (!d || !d.day_pin_id) return;
     await removeDayPinApi(userInfo.id, d.day_pin_id);
     message.success(
-      translate("userDashboard.nutrient.day_unpinned") || "Day unpinned"
+      translate("userDashboard.nutrient.day_unpinned") || "Day unpinned",
     );
     await loadPlan();
   };
@@ -636,7 +685,7 @@ function Nutrient({
     if (!c || !c.total) return true;
     const ok = await confirmAsync(
       translate("userDashboard.nutrient.pins_affected_confirm") ||
-        "This change affects one or more pinned days or recipes. Continue and remove the affected pin(s)?"
+        "This change affects one or more pinned days or recipes. Continue and remove the affected pin(s)?",
     );
     if (!ok) return false;
     await invalidatePins(userInfo.id, "settings_change");
@@ -673,7 +722,7 @@ function Nutrient({
                 }),
         },
       },
-      userInfo.id
+      userInfo.id,
     );
     getUserDetails();
     loadPlan();
@@ -688,7 +737,7 @@ function Nutrient({
     if (!(await confirmPinInvalidation())) return;
     const res = await createCustomerDetails(
       { myDiet: [selectedDiet] },
-      userInfo.id
+      userInfo.id,
     );
     if (res) {
       message.success(translate("userDashboard.nutrient.diet_saved"));
@@ -733,24 +782,24 @@ function Nutrient({
     if (res.prompt && res.prompt.length) {
       message.info(
         translate("userDashboard.nutrient.some_items_previously_removed") ||
-          "Some ingredients you removed earlier are needed again — review below."
+          "Some ingredients you removed earlier are needed again — review below.",
       );
     } else if (added.emitted === 0) {
       message.warning(
         translate("userDashboard.nutrient.recipe_no_items") ||
-          "This recipe has no ingredients with quantities to add."
+          "This recipe has no ingredients with quantities to add.",
       );
     } else if (added.pushed === 0 && added.merged > 0) {
       message.info(
         translate("userDashboard.nutrient.shopping_qty_updated") ||
           `Already in your list — updated ${added.merged} quantit${
             added.merged === 1 ? "y" : "ies"
-          }.`
+          }.`,
       );
     } else {
       message.success(
         translate("userDashboard.nutrient.added_to_cart") ||
-          `Added ${added.pushed} item${added.pushed === 1 ? "" : "s"}`
+          `Added ${added.pushed} item${added.pushed === 1 ? "" : "s"}`,
       );
     }
   };
@@ -771,7 +820,7 @@ function Nutrient({
     await loadPlan(); // shopping_sync_status -> synced
     message.success(
       translate("userDashboard.nutrient.shopping_updated") ||
-        "Shopping list updated"
+        "Shopping list updated",
     );
   };
 
@@ -788,7 +837,7 @@ function Nutrient({
       readd: true,
     });
     setShoppingPrompt((prev) =>
-      prev.filter((x) => !(x.itemId === p.itemId && x.unit === p.unit))
+      prev.filter((x) => !(x.itemId === p.itemId && x.unit === p.unit)),
     );
   };
 
@@ -927,7 +976,9 @@ function Nutrient({
                   {/* Per-supplement day scheduling (not one global set) */}
                   <div style={{ marginTop: "10px" }}>
                     <Checkbox
-                      checked={(supplementSchedule[meal._id] || {}).everyDay !== false}
+                      checked={
+                        (supplementSchedule[meal._id] || {}).everyDay !== false
+                      }
                       onChange={(e) =>
                         setSupplementSchedule((prev) => ({
                           ...prev,
@@ -942,10 +993,28 @@ function Nutrient({
                         <T>userDashboard.nutrient.every_day</T>
                       </span>
                     </Checkbox>
-                    {(supplementSchedule[meal._id] || {}).everyDay === false && (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "6px" }}>
-                        {["monday","tuesday","wednesday","thursday","friday","saturday","sunday"].map((d) => {
-                          const sc = supplementSchedule[meal._id] || { days: [] };
+                    {(supplementSchedule[meal._id] || {}).everyDay ===
+                      false && (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "6px",
+                          marginTop: "6px",
+                        }}
+                      >
+                        {[
+                          "monday",
+                          "tuesday",
+                          "wednesday",
+                          "thursday",
+                          "friday",
+                          "saturday",
+                          "sunday",
+                        ].map((d) => {
+                          const sc = supplementSchedule[meal._id] || {
+                            days: [],
+                          };
                           const on = (sc.days || []).includes(d);
                           return (
                             <button
@@ -953,18 +1022,26 @@ function Nutrient({
                               className="font-paragraph-white"
                               onClick={() =>
                                 setSupplementSchedule((prev) => {
-                                  const cur = prev[meal._id] || { everyDay: false, days: [] };
+                                  const cur = prev[meal._id] || {
+                                    everyDay: false,
+                                    days: [],
+                                  };
                                   const days = on
                                     ? cur.days.filter((x) => x !== d)
                                     : [...(cur.days || []), d];
-                                  return { ...prev, [meal._id]: { everyDay: false, days } };
+                                  return {
+                                    ...prev,
+                                    [meal._id]: { everyDay: false, days },
+                                  };
                                 })
                               }
                               style={{
                                 padding: "3px 8px",
                                 borderRadius: "4px",
                                 border: "1px solid var(--color-orange)",
-                                background: on ? "var(--color-orange)" : "transparent",
+                                background: on
+                                  ? "var(--color-orange)"
+                                  : "transparent",
                                 cursor: "pointer",
                                 fontSize: "1.1rem",
                               }}
@@ -984,9 +1061,15 @@ function Nutrient({
                 <T>userDashboard.nutrient.selectPi</T>
               </h3>
               <div className="divider"></div>
-              <div className="selected-meals-container" style={{ maxHeight: "400px", overflowY: "auto" }}>
+              <div
+                className="selected-meals-container"
+                style={{ maxHeight: "400px", overflowY: "auto" }}
+              >
                 {suggestedSupplements
-                  .filter((meal) => !selectedSupplements.some((s) => s._id === meal._id))
+                  .filter(
+                    (meal) =>
+                      !selectedSupplements.some((s) => s._id === meal._id),
+                  )
                   .map((meal) => (
                     <div className="suggested-meal-container" key={meal._id}>
                       <div
@@ -997,20 +1080,33 @@ function Nutrient({
                           backgroundPosition: "center",
                         }}
                       ></div>
-                      <div className="font-paragraph-white" style={{ fontSize: "1.8rem" }}>
+                      <div
+                        className="font-paragraph-white"
+                        style={{ fontSize: "1.8rem" }}
+                      >
                         {meal.name}
                       </div>
-                      <div className="font-paragraph-white" style={{ fontSize: "1.3rem", opacity: "0.8" }}>
+                      <div
+                        className="font-paragraph-white"
+                        style={{ fontSize: "1.3rem", opacity: "0.8" }}
+                      >
                         {meal.kCalPerPerson}
                       </div>
                       <button
                         className="common-orange-button font-paragraph-white"
                         onClick={() => {
                           if (selectedSupplements.length >= 4) {
-                            message.warning(translate("userDashboard.nutrient.max_supplements"));
+                            message.warning(
+                              translate(
+                                "userDashboard.nutrient.max_supplements",
+                              ),
+                            );
                             return;
                           }
-                          setSelectedSupplements([...selectedSupplements, meal]);
+                          setSelectedSupplements([
+                            ...selectedSupplements,
+                            meal,
+                          ]);
                         }}
                       >
                         <T>userDashboard.nutrient.select</T>
@@ -1173,7 +1269,9 @@ function Nutrient({
                 >
                   <img src={KnifeFork} alt="" style={iconsStyle} />
                   <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span><T>userDashboard.nutrient.eating_late</T></span>
+                    <span>
+                      <T>userDashboard.nutrient.eating_late</T>
+                    </span>
                     <span style={{ fontSize: "1.2rem" }}>
                       {" "}
                       <Switch
@@ -1203,7 +1301,9 @@ function Nutrient({
                 >
                   <img src={Supplements} alt="" style={iconsStyle} />
                   <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span><T>userDashboard.nutrient.supplement_options</T></span>
+                    <span>
+                      <T>userDashboard.nutrient.supplement_options</T>
+                    </span>
                     <span style={{ fontSize: "1.6rem" }}>
                       {selectedSuplementType}
                     </span>
@@ -1231,7 +1331,9 @@ function Nutrient({
                       flexDirection: "column",
                     }}
                   >
-                    <span><T>userDashboard.nutrient.my_diet_setup</T></span>
+                    <span>
+                      <T>userDashboard.nutrient.my_diet_setup</T>
+                    </span>
                     <span style={{ fontSize: "1.6rem" }}>
                       {getDietNameFromId(selectedDiet)
                         ? getDietNameFromId(selectedDiet).name
@@ -1265,85 +1367,39 @@ function Nutrient({
             <T>userDashboard.nutrient.nfrw</T>
           </span>
 
-          {width > 700 && (
-            <div style={{ marginBottom: "10px", marginTop: "10px" }}>
-              <Link
-                to="/nutrition"
-                className="common-orange-button font-paragraph-white"
-              >
-                <T>userDashboard.nutrient.discoverR</T>
-              </Link>
-              <Link
-                to="/pricing"
-                style={{ marginLeft: "10px" }}
-                className="common-transparent-button font-paragraph-white"
-              >
-                <T>userDashboard.nutrient.seeP</T>
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* This Week (execution) vs Next Week (planning) */}
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            alignItems: "center",
-            padding: "10px 0",
-            flexWrap: "wrap",
-          }}
-        >
-          <button
-            className="font-paragraph-white"
-            onClick={() => setWeekMode("this_week")}
+          <div
             style={{
-              padding: "6px 16px",
-              borderRadius: "6px",
-              border: "1px solid var(--color-orange)",
-              background:
-                weekMode === "this_week" ? "var(--color-orange)" : "transparent",
-              cursor: "pointer",
+              marginBottom: "10px",
+              marginTop: "10px",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              flexWrap: "wrap",
             }}
           >
-            <T>userDashboard.nutrient.this_week</T>
-          </button>
-          <button
-            className="font-paragraph-white"
-            onClick={() => setWeekMode("next_week")}
-            style={{
-              padding: "6px 16px",
-              borderRadius: "6px",
-              border: "1px solid var(--color-orange)",
-              background:
-                weekMode === "next_week" ? "var(--color-orange)" : "transparent",
-              cursor: "pointer",
-            }}
-          >
-            <T>userDashboard.nutrient.next_week</T>
-          </button>
-          {weekMode === "next_week" && (
             <button
-              className="font-paragraph-white"
-              onClick={handleRegenerate}
-              disabled={regenerating}
-              style={{
-                padding: "6px 16px",
-                borderRadius: "6px",
-                border: "1px solid #677182",
-                background: "transparent",
-                cursor: regenerating ? "not-allowed" : "pointer",
-                opacity: regenerating ? 0.5 : 1,
-                marginLeft: "auto",
-              }}
+              type="button"
+              onClick={() => setWeekMode("this_week")}
+              className={
+                weekMode === "this_week"
+                  ? "common-orange-button font-paragraph-white"
+                  : "common-transparent-button font-paragraph-white"
+              }
             >
-              {regenerating ? (
-                <T>userDashboard.nutrient.regenerating</T>
-              ) : (
-                <T>userDashboard.nutrient.regenerate_week</T>
-              )}
+              <T>userDashboard.nutrient.current_week</T>
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => setWeekMode("next_week")}
+              className={
+                weekMode === "next_week"
+                  ? "common-orange-button font-paragraph-white"
+                  : "common-transparent-button font-paragraph-white"
+              }
+            >
+              <T>userDashboard.nutrient.next_week</T>
+            </button>
+          </div>
         </div>
         {planWarning && weekMode === "next_week" && (
           <div
@@ -1381,7 +1437,15 @@ function Nutrient({
         )}
 
         <div className="dashboard-nutrient-row2-container-days font-paragraph-whites">
-          {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => {
+          {[
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+          ].map((day) => {
             const meta = dayMeta(day);
             return (
               <span
@@ -1393,8 +1457,8 @@ function Nutrient({
                     currentDay === day
                       ? "var(--color-orange)"
                       : meta.isToday
-                      ? "#fff"
-                      : "#677182",
+                        ? "#fff"
+                        : "#677182",
                   opacity: meta.isPast ? 0.45 : 1,
                   fontWeight: meta.isToday ? 700 : 400,
                   position: "relative",
@@ -1451,7 +1515,12 @@ function Nutrient({
                   cursor: "pointer",
                 }}
               >
-                <img src={GrayPin} alt="" height="13px" style={{ marginRight: "6px" }} />
+                <img
+                  src={GrayPin}
+                  alt=""
+                  height="13px"
+                  style={{ marginRight: "6px" }}
+                />
                 <T>userDashboard.nutrient.pin_this_day</T>
               </button>
             ) : (
@@ -1462,21 +1531,39 @@ function Nutrient({
                 <button
                   className="font-paragraph-white"
                   onClick={() => handleDayPin("just_once")}
-                  style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid var(--color-orange)", background: "transparent", cursor: "pointer" }}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--color-orange)",
+                    background: "transparent",
+                    cursor: "pointer",
+                  }}
                 >
                   <T>userDashboard.nutrient.pin_just_once</T>
                 </button>
                 <button
                   className="font-paragraph-white"
                   onClick={() => handleDayPin("always")}
-                  style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid var(--color-orange)", background: "transparent", cursor: "pointer" }}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--color-orange)",
+                    background: "transparent",
+                    cursor: "pointer",
+                  }}
                 >
                   <T>userDashboard.nutrient.pin_always</T>
                 </button>
                 <button
                   className="font-paragraph-white"
                   onClick={() => setDayPinMenu(false)}
-                  style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #677182", background: "transparent", cursor: "pointer" }}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid #677182",
+                    background: "transparent",
+                    cursor: "pointer",
+                  }}
                 >
                   <T>userDashboard.nutrient.cancel</T>
                 </button>
@@ -1500,7 +1587,11 @@ function Nutrient({
                   />
                   <div
                     className="rc-skeleton-block"
-                    style={{ height: "16px", width: "70px", margin: "12px 0 8px" }}
+                    style={{
+                      height: "16px",
+                      width: "70px",
+                      margin: "12px 0 8px",
+                    }}
                   />
                   <div
                     className="rc-skeleton-block"
@@ -1508,7 +1599,11 @@ function Nutrient({
                   />
                   <div
                     className="rc-skeleton-block"
-                    style={{ height: "12px", width: "95%", margin: "8px 0 4px" }}
+                    style={{
+                      height: "12px",
+                      width: "95%",
+                      margin: "8px 0 4px",
+                    }}
                   />
                   <div
                     className="rc-skeleton-block"
@@ -1541,97 +1636,96 @@ function Nutrient({
                 const cardLoading =
                   actionSlotKey === `${currentDay}|${meal._mealSlot}`;
                 return (
-                <div
-                  className="dashboard-nutrient-row2-container-card"
-                  style={{
-                    border: mealPin ? "3px solid #f37720" : "",
-                    opacity: readOnly ? 0.55 : 1,
-                    position: "relative",
-                  }}
-                  key={meal._id}
-                >
-                  {cardLoading && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: "rgba(0,0,0,0.55)",
-                        borderRadius: "inherit",
-                        zIndex: 5,
-                      }}
-                    >
-                      <LoadingOutlined
-                        style={{ fontSize: "40px", color: "#fff" }}
-                        spin
-                      />
-                    </div>
-                  )}
-                  <Link to={`/recipe/${slug(meal.name)}/${meal._id}`}>
-                    <div
-                      style={{
-                        background: meal.image
-                          ? `url(${meal.image.replaceAll(" ", "%20")}) center center / cover`
-                          : "var(--color-gray-dark)",
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                        height: "200px",
-                      }}
-                    ></div>
-                    <div className="dashboard-nutrient-row2-container-card-bob font-paragraph-black">
-                      {formatMealSlot(meal.foodType)}
-                    </div>
-                    <div className="dashboard-nutrient-row2-container-card-heading font-paragraph-white">
-                      {meal.name}
-                    </div>
-                    <div
-                      className="dashboard-nutrient-row2-container-card-about font-paragraph-white"
-                      dangerouslySetInnerHTML={{ __html: meal.description || "" }}
-                    />
-                  </Link>
-                  <div className="dashboard-nutrient-row2-container-card-buttons">
-                    <div className="font-paragraph-white">
-                      <img
-                        src={GrayFire}
-                        alt=""
-                        height="16px"
-                        style={{ margin: "0 5px" }}
-                      />
-                      <span>{meal.kCalPerPerson} kCAL</span>
-                    </div>
-                    <div
-                      style={{
-                        cursor: readOnly ? "not-allowed" : "pointer",
-                        textAlign: "center",
-                        opacity: readOnly ? 0.4 : 1,
-                      }}
-                      onClick={(e) => openPinPopover(e, meal)}
-                    >
-                      <img
-                        src={mealPin ? pin : GrayPin}
-                        alt=""
-                        height="16px"
-                      />
-                    </div>
-                    {weekMode === "next_week" && (
+                  <div
+                    className="dashboard-nutrient-row2-container-card"
+                    style={{
+                      border: mealPin ? "3px solid #f37720" : "",
+                      opacity: readOnly ? 0.55 : 1,
+                      position: "relative",
+                    }}
+                    key={meal._id}
+                  >
+                    {cardLoading && (
                       <div
-                        style={{ cursor: "pointer", textAlign: "center" }}
-                        onClick={() => swapRecipe(meal)}
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: "rgba(0,0,0,0.55)",
+                          borderRadius: "inherit",
+                          zIndex: 5,
+                        }}
                       >
-                        <img src={SwapIcon} alt="" height="16px" />
+                        <LoadingOutlined
+                          style={{ fontSize: "40px", color: "#fff" }}
+                          spin
+                        />
                       </div>
                     )}
-                    <button
-                      className="font-paragraph-white"
-                      onClick={() => addToShoppingCart(currentDay, meal)}
-                    >
-                      <PlusOutlined style={{ color: "#fff" }} />
-                      <T>userDashboard.nutrient.atsl</T>
-                    </button>
+                    <Link to={`/recipe/${slug(meal.name)}/${meal._id}`}>
+                      <div
+                        style={{
+                          background: meal.image
+                            ? `url(${meal.image.replaceAll(" ", "%20")}) center center / cover`
+                            : "var(--color-gray-dark)",
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                          height: "200px",
+                        }}
+                      ></div>
+                      <div className="dashboard-nutrient-row2-container-card-bob font-paragraph-black">
+                        {formatMealSlot(meal.foodType)}
+                      </div>
+                      <div className="dashboard-nutrient-row2-container-card-heading font-paragraph-white">
+                        {meal.name}
+                      </div>
+                      <div className="dashboard-nutrient-row2-container-card-about font-paragraph-white">
+                        {stripHtml(meal.description)}
+                      </div>
+                    </Link>
+                    <div className="dashboard-nutrient-row2-container-card-buttons">
+                      <div className="font-paragraph-white">
+                        <img
+                          src={GrayFire}
+                          alt=""
+                          height="16px"
+                          style={{ margin: "0 5px" }}
+                        />
+                        <span>{meal.kCalPerPerson} kCAL</span>
+                      </div>
+                      <div
+                        style={{
+                          cursor: readOnly ? "not-allowed" : "pointer",
+                          textAlign: "center",
+                          opacity: readOnly ? 0.4 : 1,
+                        }}
+                        onClick={(e) => openPinPopover(e, meal)}
+                      >
+                        <img
+                          src={mealPin ? pin : GrayPin}
+                          alt=""
+                          height="16px"
+                        />
+                      </div>
+                      {weekMode === "next_week" && (
+                        <div
+                          style={{ cursor: "pointer", textAlign: "center" }}
+                          onClick={() => swapRecipe(meal)}
+                        >
+                          <img src={SwapIcon} alt="" height="16px" />
+                        </div>
+                      )}
+                      <button
+                        className="font-paragraph-white"
+                        onClick={() => addToShoppingCart(currentDay, meal)}
+                      >
+                        <PlusOutlined style={{ color: "#fff" }} />
+                        <T>userDashboard.nutrient.atsl</T>
+                      </button>
+                    </div>
                   </div>
-                </div>
                 );
               })
             ) : (
@@ -1641,14 +1735,73 @@ function Nutrient({
                 }}
               >
                 <h3 className="font-paragraph-white">
-                  {userProfile.myDiet && userProfile.supplementIntake
-                    ? <T>userDashboard.nutrient.no_recipes_found</T>
-                    : <T>userDashboard.nutrient.complete_diet_setup</T>}
+                  {userProfile.myDiet && userProfile.supplementIntake ? (
+                    <T>userDashboard.nutrient.no_recipes_found</T>
+                  ) : (
+                    <T>userDashboard.nutrient.complete_diet_setup</T>
+                  )}
                 </h3>
               </div>
             )}
           </Carousel>
         </div>
+        {weekMode === "next_week" && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "12px",
+              marginTop: "16px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={handleSyncWeek}
+              style={{
+                background: "#1F5A2C",
+                color: "#fff",
+                border: "none",
+                borderRadius: "6px",
+                padding: "10px 22px",
+                fontSize: "14px",
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <PlusOutlined style={{ color: "#fff", fontSize: "16px" }} />
+              <T>userDashboard.nutrient.add_week_to_shopping</T>
+            </button>
+            <button
+              type="button"
+              onClick={handleRegenerate}
+              disabled={regenerating}
+              style={{
+                background: "#4F2A31",
+                color: "#FF6C6C",
+                border: "none",
+                borderRadius: "6px",
+                padding: "10px 22px",
+                fontSize: "14px",
+                fontWeight: 500,
+                cursor: regenerating ? "not-allowed" : "pointer",
+                opacity: regenerating ? 0.6 : 1,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <SwapOutlined style={{ color: "#FF6C6C", fontSize: "16px" }} />
+              {regenerating ? (
+                <T>userDashboard.nutrient.regenerating</T>
+              ) : (
+                <T>userDashboard.nutrient.regenerate_week</T>
+              )}
+            </button>
+          </div>
+        )}
         {width < 700 && (
           <div
             style={{
@@ -1676,9 +1829,16 @@ function Nutrient({
       <div className="dashboard-nutrient-row3">
         <div
           className="dashboard-challenges-mychallenge-heading font-card-heading"
-          style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "10px",
+          }}
         >
-          <span><T>userDashboard.nutrient.mysl</T></span>
+          <span>
+            <T>userDashboard.nutrient.mysl</T>
+          </span>
           {/* "Update shopping list" full-week sync button — hidden for now.
               Uncomment to restore full-week shopping sync UX. */}
           {/* {weekMode === "next_week" && (
@@ -1731,17 +1891,30 @@ function Nutrient({
             {shoppingPrompt.map((p, i) => (
               <div
                 key={`${p.itemId}-${p.unit}-${i}`}
-                style={{ display: "flex", alignItems: "center", gap: "10px", padding: "3px 0" }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "3px 0",
+                }}
               >
                 <span style={{ textTransform: "capitalize", flex: 1 }}>
-                  {p.name || translate("userDashboard.nutrient.ingredient_fallback") || "ingredient"}
+                  {p.name ||
+                    translate("userDashboard.nutrient.ingredient_fallback") ||
+                    "ingredient"}
                 </span>
                 <span>
                   {p.quantity} {p.unit}
                 </span>
                 <button
                   className="font-paragraph-white"
-                  style={{ cursor: "pointer", border: "1px solid #677182", borderRadius: "4px", padding: "2px 10px", background: "transparent" }}
+                  style={{
+                    cursor: "pointer",
+                    border: "1px solid #677182",
+                    borderRadius: "4px",
+                    padding: "2px 10px",
+                    background: "transparent",
+                  }}
                   onClick={() => reAddShoppingItem(p)}
                 >
                   <T>userDashboard.nutrient.add_back</T>
@@ -1752,10 +1925,13 @@ function Nutrient({
         )}
 
         <div className="dashboard-nutrient-row3-container">
-          <div className="dashboard-nutrient-row3-container-ingredientsSummary" style={{ width: "100%" }}>
+          <div
+            className="dashboard-nutrient-row3-container-ingredientsSummary"
+            style={{ width: "100%" }}
+          >
             <div
               className="font-paragraph-white"
-              style={{ fontSize: "1.8rem", marginBottom: "8px" }}
+              style={{ fontSize: "14px", marginBottom: "8px" }}
             >
               <T>userDashboard.nutrient.selected_recipes</T>
             </div>
@@ -1774,21 +1950,21 @@ function Nutrient({
                   return (
                     <span
                       key={rid || i}
-                      className="font-paragraph-white"
                       style={{
-                        padding: "4px 6px 4px 10px",
-                        borderRadius: "16px",
-                        background: "rgba(243,119,32,0.15)",
-                        border: "1px solid var(--color-orange)",
-                        fontSize: "13px",
-                        display: "inline-flex",
+                        padding: "2px 8px",
+                        background: "#f3782046",
+                        color: "#F37720",
+                        fontSize: "16px",
+                        display: "flex",
                         alignItems: "center",
-                        gap: "6px",
+                        gap: "8px",
                       }}
                     >
-                      {(r && r.name) ||
-                        translate("userDashboard.nutrient.recipe_fallback") ||
-                        "Recipe"}
+                      <span style={{ padding: "6px 10px 6px 0" }}>
+                        {(r && r.name) ||
+                          translate("userDashboard.nutrient.recipe_fallback") ||
+                          "Recipe"}
+                      </span>
                       <button
                         type="button"
                         onClick={() => handleRemoveRecipeFromShopping(rid)}
@@ -1798,15 +1974,15 @@ function Nutrient({
                           "Remove recipe"
                         }
                         style={{
-                          background: "transparent",
+                          background: "#F37720",
                           border: "none",
-                          color: "var(--color-orange)",
+                          color: "#fff",
                           cursor: "pointer",
-                          fontSize: "16px",
-                          lineHeight: 1,
-                          padding: "0 2px",
-                          display: "inline-flex",
+                          fontSize: "14px",
+                          padding: "4px",
+                          display: "flex",
                           alignItems: "center",
+                          justifyContent: "center",
                         }}
                       >
                         <CloseOutlined />
@@ -1817,18 +1993,30 @@ function Nutrient({
               ) : (
                 <span
                   className="font-paragraph-white"
-                  style={{ opacity: 0.6, fontSize: "13px" }}
+                  style={{ opacity: 0.6, fontSize: "14px" }}
                 >
                   <T>userDashboard.nutrient.no_selected_recipes</T>
                 </span>
               )}
             </div>
-            <div className="font-paragraph-white" style={{ fontSize: "1.8rem" }}>
+            <div
+              className="font-paragraph-white"
+              style={{
+                fontSize: "14px",
+                marginTop: "20px",
+                marginBottom: "10px",
+              }}
+            >
               <T>userDashboard.nutrient.ingres</T>
             </div>
             <div className="dashboard-nutrient-row3-container-ingredientsSummary-container">
-              {(!shoppingList.items || shoppingList.items.filter((i) => !i.removedByUser).length === 0) ? (
-                <div className="font-paragraph-white" style={{ opacity: 0.6, padding: "10px 0" }}>
+              {!shoppingList.items ||
+              shoppingList.items.filter((i) => !i.removedByUser).length ===
+                0 ? (
+                <div
+                  className="font-paragraph-white"
+                  style={{ opacity: 0.6, padding: "10px 0" }}
+                >
                   <T>userDashboard.nutrient.no_ingredients</T>
                 </div>
               ) : (
@@ -1836,44 +2024,125 @@ function Nutrient({
                   .filter((i) => !i.removedByUser)
                   .map((it, idx) => (
                     <div
-                      className="ingredientContainer font-paragraph-white"
                       key={`${it.itemId && (it.itemId._id || it.itemId)}-${it.unit}-${idx}`}
-                      style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        background: "#171E27",
+
+                        padding: "16px 16px",
+                        marginBottom: "12px",
+                        color: "#8083A0",
+                        fontSize: "15px",
+                      }}
                     >
                       <span style={{ textTransform: "capitalize", flex: 1 }}>
                         {(it.itemId && it.itemId.name) || "ingredient"}
-                        {it.isOptional && (
-                          <em style={{ opacity: 0.6 }}> · <T>userDashboard.nutrient.optional</T></em>
-                        )}
-                        {it.isSupplement && (
-                          <em style={{ color: "var(--color-orange)" }}> · <T>userDashboard.nutrient.supplement</T></em>
-                        )}
                       </span>
                       <span>
-                        {it.quantity} {it.unit}
+                        {formatShoppingQty(it.quantity * personCount, it.unit)}
                       </span>
                     </div>
                   ))
               )}
             </div>
-            <div className="dashboard-nutrient-row2-container-card-buttons">
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                marginTop: "16px",
+                flexWrap: "wrap",
+              }}
+            >
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  border: "1px solid #1F5A2C",
+                  borderRadius: "4px",
+                  background: "#1F5A2C",
+                  color: "#fff",
+                  fontSize: "14px",
+                  overflow: "hidden",
+                }}
+              >
+                <span style={{ padding: "8px 12px" }}>
+                  <T>userDashboard.nutrient.add_persons</T>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPersonCount((c) => Math.max(1, c - 1))}
+                  aria-label="Decrease persons"
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#fff",
+                    cursor: personCount <= 1 ? "not-allowed" : "pointer",
+                    opacity: personCount <= 1 ? 0.5 : 1,
+                    padding: "8px 10px",
+                    fontSize: "16px",
+                    lineHeight: 1,
+                  }}
+                  disabled={personCount <= 1}
+                >
+                  −
+                </button>
+                <span
+                  style={{
+                    minWidth: "20px",
+                    textAlign: "center",
+                    padding: "8px 4px",
+                  }}
+                >
+                  {personCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPersonCount((c) => c + 1)}
+                  aria-label="Increase persons"
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#fff",
+                    cursor: "pointer",
+                    padding: "8px 10px",
+                    fontSize: "16px",
+                    lineHeight: 1,
+                  }}
+                >
+                  +
+                </button>
+              </div>
               <button
-                className="font-paragraph-white"
-                disabled
+                type="button"
                 title={
                   deliveryStatus && deliveryStatus.firstDeliverableWeekId
                     ? `First deliverable week: ${deliveryStatus.firstDeliverableWeekId}`
                     : ""
                 }
+                onClick={() =>
+                  message.info(
+                    translate(
+                      "userDashboard.nutrient.order_groceries_coming_soon",
+                    ) || "Ordering coming soon",
+                  )
+                }
                 style={{
-                  width: "240px",
-                  padding: "10px",
-                  margin: "10px",
-                  opacity: 0.5,
-                  cursor: "not-allowed",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  background: "#53D470",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "4px",
+                  padding: "10px 16px",
+                  fontSize: "14px",
+                  cursor: "pointer",
                 }}
               >
-                <T>userDashboard.nutrient.order_groceries_coming_soon</T>
+                <ShoppingCartOutlined style={{ fontSize: "16px" }} />
+                <T>userDashboard.nutrient.order_grocery_list</T>
               </button>
             </div>
           </div>
