@@ -124,6 +124,14 @@ function Challenges({ userProfile, gender, recommandedChal }) {
               <T>userDashboard.challenges.mcc</T>
             </div>
             <div className="divider"></div>
+            {(!Array.isArray(myChallenges) || myChallenges.length === 0) && (
+              <div
+                className="font-paragraph-white"
+                style={{ opacity: 0.7, padding: "20px 10px", textAlign: "center" }}
+              >
+                <T>userDashboard.challenges.no_my_challenges</T>
+              </div>
+            )}
             {/* todo do later */}
             {/* <Scrollbars style={{ height: "500px" }}>
               <div className="dashboard-challenges-mychallenge-body">

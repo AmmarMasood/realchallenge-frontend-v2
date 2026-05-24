@@ -1,4 +1,11 @@
 {
+  "mealType": {
+    "breakfast": "Ontbijt",
+    "morningSnack": "Ochtendsnack",
+    "lunch": "Lunch",
+    "afternoonSnack": "Middagsnack",
+    "dinner": "Diner"
+  },
   "common": {
     "start_your_7day_free_trial": "Start je gratis proefperiode van 7 dagen",
     "accept_the_challenge": "Accepteer de uitdaging",
@@ -963,6 +970,49 @@
 
   "userDashboard": {
     "nutrient": {
+      "this_week": "Deze week",
+      "next_week": "Volgende week",
+      "regenerate_week": "Week opnieuw genereren",
+      "regenerating": "Bezig met genereren…",
+      "week_regenerated": "Volgende week opnieuw gegenereerd",
+      "confirm_yes": "Ja",
+      "confirm_no": "Nee",
+      "past_day_readonly": "Voorbije dagen zijn alleen-lezen.",
+      "swap_next_only": "Wisselen kan alleen bij Volgende week.",
+      "swap_failed": "Kan recept niet wisselen",
+      "swap_pinned_blocked": "Dit recept is vastgezet. Maak het los om te wisselen.",
+      "recipe_no_items": "Dit recept heeft geen ingrediënten met hoeveelheden om toe te voegen.",
+      "shopping_qty_updated": "Al in je lijst — hoeveelheden bijgewerkt.",
+      "selected_recipes": "Geselecteerde recepten",
+      "no_selected_recipes": "Nog geen recepten toegevoegd.",
+      "remove_recipe": "Recept verwijderen",
+      "update_shopping_list": "Boodschappenlijst bijwerken",
+      "shopping_updated": "Boodschappenlijst bijgewerkt",
+      "shopping_needs_update": "Je plan is gewijzigd — werk je boodschappenlijst bij.",
+      "previously_removed_prompt": "Enkele eerder verwijderde ingrediënten worden gebruikt in het bijgewerkte plan:",
+      "some_items_previously_removed": "Enkele eerder verwijderde ingrediënten zijn weer nodig — bekijk hieronder.",
+      "add_back": "Opnieuw toevoegen",
+      "optional": "optioneel",
+      "supplement": "supplement",
+      "order_groceries_coming_soon": "Boodschappen bestellen — binnenkort",
+      "fuel_moment_replaces": "Welke snack vervangt Fuel Moment?",
+      "every_day": "Elke dag",
+      "pins_affected_confirm": "Deze wijziging heeft invloed op vastgezette dagen of recepten. Doorgaan en de betreffende pin(s) verwijderen?",
+      "pin_this_day": "Dag vastzetten",
+      "unpin_day": "Dag losmaken",
+      "pin_day_as": "Dag vastzetten als:",
+      "pin_just_once": "Eenmalig",
+      "pin_always": "Altijd",
+      "pin_remove": "Vastzetten ongedaan maken",
+      "pin_saved_once": "Vastgezet voor volgende week",
+      "pin_saved_always": "Wekelijks vastgezet",
+      "cancel": "Annuleren",
+      "day_pinned": "Dag vastgezet",
+      "day_unpinned": "Dag losgemaakt",
+      "nothing_to_pin": "Nog niets om vast te zetten op deze dag.",
+      "loading_plan": "Je plan wordt geladen…",
+      "add_to_next_week_confirm": "Dit toevoegen aan je Volgende week-plan?",
+      "slot_conflict_confirm": "Dat moment in Volgende week is al gewijzigd of vastgezet. Vervangen?",
       "sup": "Supplement instelling",
       "none": "Geen",
       "du": "Tijdens de dag",
@@ -1043,7 +1093,8 @@
       "ccfy": "Uitdaging voor jou gekozen",
       "vac": "Bekijk alle uitdagingen",
       "sp": "Prijzen",
-      "nochal": "Geen uitdagingen gevonden"
+      "nochal": "Geen uitdagingen gevonden",
+      "no_my_challenges": "Geen uitdaging gevonden"
     }
   },
   "wizard": {

@@ -1,13 +1,8 @@
 import React, { useState, useEffect, useContext } from "react";
-import moment from "moment";
-import { UserOutlined, LoadingOutlined } from "@ant-design/icons";
-import { Link } from "react-router-dom";
-import { Avatar, Modal, Pagination } from "antd";
+import { LoadingOutlined } from "@ant-design/icons";
+import { Pagination } from "antd";
 import CommentSection from "./CommentSection";
-import ChatWhite from "../../assets/icons/chat-white.svg";
-import Clap from "../../assets/icons/clap-orange.svg";
-import Clock from "../../assets/icons/feed-clock.svg";
-import ClapGray from "../../assets/icons/clap-gray.svg";
+import FeedCard from "./FeedCard";
 import {
   getPostsWithPagination,
   addLikeToPost,
@@ -105,91 +100,17 @@ function Feed({ userInfo }) {
           </div>
         ) : data ? (
           data.map((d) => (
-            <div className="dashboard-feed-container-card">
-              <Link to={`${d.url ? d.url : "#"}`}>
-                <div
-                  className="dashboard-feed-container-card-row1"
-                  style={{ cursor: "pointer" }}
-                >
-                  <Avatar
-                    shape="square"
-                    size="large"
-                    src={d.avatar ? d.avatar : ""}
-                    icon={<UserOutlined />}
-                  />
-
-                  <div className="dashboard-feed-container-card-row1-col2 font-paragraph-white">
-                    <span>{d.username ? d.username : ""}</span>
-                    <span
-                      style={{
-                        opacity: "0.8",
-                        color: "#8e9298",
-                        fontSize: "13px",
-                      }}
-                    >
-                      <img src={Clock} alt="" /> {moment(d.date).fromNow()}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-              {/* <Link to={`/${d.type}/${d.id}`}> */}
-              <Link to={`${d.url ? d.url : "#"}`}>
-                <div
-                  className="dashboard-feed-container-card-row2"
-                  style={{
-                    background: `url(${
-                      d.image ? d.image.replaceAll(" ", "%20") : ""
-                    })`,
-                    backgroundSize: "cover",
-                    cursor: "pointer",
-                  }}
-                >
-                  <div className="dashboard-feed-container-card-row2-tag font-paragraph-white">
-                    {d.type}
-                  </div>
-                </div>
-                {/* </Link> */}
-                <div className="dashboard-feed-container-card-row3">
-                  <div className="dashboard-feed-container-card-row3-heading font-paragraph-white"
-                    dangerouslySetInnerHTML={{ __html: d.title }}
-                  />
-                  <div className="dashboard-feed-container-card-row3-text font-paragraph-white"
-                    dangerouslySetInnerHTML={{ __html: d.text }}
-                  />
-                </div>
-              </Link>
-              <div className="dashboard-feed-container-card-row4">
-                <span
-                  className="dashboard-feed-container-card-row4-click"
-                  onClick={() => {
-                    if (d.likes.some((like) => like["user"] === userInfo.id)) {
-                      unlikePost(d._id);
-                    } else {
-                      addLike(d._id);
-                    }
-                  }}
-                >
-                  <img
-                    src={
-                      d.likes.some((like) => like["user"] === userInfo.id)
-                        ? Clap
-                        : ClapGray
-                    }
-                    alt=""
-                  />{" "}
-                  {d.likes.length}
-                </span>
-                <span
-                  className="dashboard-feed-container-card-row4-click"
-                  onClick={() => {
-                    setOpen(true);
-                    setSelectedPost(d);
-                  }}
-                >
-                  <img src={ChatWhite} alt="" /> {d.comments.length}
-                </span>
-              </div>
-            </div>
+            <FeedCard
+              key={d._id}
+              post={d}
+              userInfo={userInfo}
+              onLike={addLike}
+              onUnlike={unlikePost}
+              onOpenComments={(p) => {
+                setSelectedPost(p);
+                setOpen(true);
+              }}
+            />
           ))
         ) : (
           <h2 className="font-heading-white">No posts here!</h2>

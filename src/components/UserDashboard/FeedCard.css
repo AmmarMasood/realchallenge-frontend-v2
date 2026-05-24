@@ -1,0 +1,157 @@
+/* FeedCard / PostCover styles
+ * Extracted from userDashboard.css so FeedCard.js owns its own visuals.
+ * Class names are preserved (dashboard-feed-container-card-*) so existing
+ * markup in FeedCard.js and PostCover.js works without changes.
+ *
+ * The outer wrapper `.dashboard-feed-container` (used by Feed.js +
+ * Community.js around the cards) stays in userDashboard.css — it's the
+ * page layout, not the card itself.
+ */
+
+.dashboard-feed-container-card {
+  background-color: #1d2631;
+  width: 40rem;
+  min-width: 40rem;
+  padding: 10px;
+  position: relative;
+  border-radius: 8px;
+}
+
+.dashboard-feed-container-card-row1 {
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-feed-container-card-row1-col2 {
+  display: flex;
+  flex-direction: column;
+  padding-left: 10px;
+}
+
+.dashboard-feed-container-card-row2 {
+  position: relative;
+  height: 250px;
+  text-align: right;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.dashboard-feed-container-card-row2-tag {
+  font-size: 1.1rem;
+  margin: 8px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background-color: rgba(0, 0, 0, 0.55);
+  border: none;
+  color: var(--color-orange, #f37720);
+  border-radius: 3px;
+  min-width: 50px;
+  text-align: center;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 2;
+}
+.dashboard-feed-container-card-row2-tag > img {
+  height: 14px;
+  width: 14px;
+  display: inline-block;
+}
+
+/* Centered play overlay used for video covers. The outer overlay is
+ * click-through (so the surrounding Link still navigates), only the
+ * inner circle captures clicks to start playback. */
+.dashboard-feed-cover-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  pointer-events: none;
+}
+.dashboard-feed-cover-play-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.dashboard-feed-cover-play-circle:hover {
+  background: rgba(255, 255, 255, 0.55);
+  transform: scale(1.05);
+}
+
+.dashboard-feed-container-card-row3 {
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.dashboard-feed-container-card-row3-heading {
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+
+.dashboard-feed-container-card-row3-text {
+  font-size: 14px;
+  color: #8083A0 !important;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-feed-container-card-row4 {
+  padding: 4px 0 0;
+  display: flex;
+  gap: 10px;
+}
+
+.dashboard-feed-container-card-row4-click {
+  padding: 8px 14px;
+  font-size: 1.6rem;
+  color: var(--color-white);
+  cursor: pointer;
+  border: none;
+  background-color: #283545;
+  border-radius: 4px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.dashboard-feed-container-card-row4-click > img {
+  height: 20px;
+  width: 20px;
+}
+
+.dashboard-feed-container-card-row4-click > span {
+  font-size: 16px;
+  color: #8083A0;
+  border-left: 1px solid #8083A0;
+  padding-left: 10px;
+}
+
+@media screen and (max-width: 500px) {
+  .dashboard-feed-container-card-row2-tag {
+    display: none;
+  }
+}

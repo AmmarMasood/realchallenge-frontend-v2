@@ -164,7 +164,25 @@ export async function checkEmailVerified(email) {
   }
 }
 
+// Browser-detected timezone, silently persisted (client decision: no UI).
+// Guarded so it only hits the API when the detected zone actually changes.
+export function syncTimeZone() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!tz || localStorage.getItem("tz_synced") === tz) return;
+    axios
+      .put(`${process.env.REACT_APP_SERVER}/api/users/timezone`, {
+        timeZone: tz,
+      })
+      .then(() => localStorage.setItem("tz_synced", tz))
+      .catch(() => {});
+  } catch (_) {
+    /* Intl unsupported — backend falls back to GMT */
+  }
+}
+
 export function logoutUser(histoy, setUserInfo) {
+  localStorage.removeItem("tz_synced");
   setUserInfo(emptyUserConstants);
   localStorage.removeItem("jwtToken");
   localStorage.removeItem("package-type");
@@ -220,6 +238,9 @@ export function checkUser(userInfo, setUserInfo, token, history) {
         isActive: decode.isActive,
         authenticated: true,
       });
+
+      // Fire-and-forget: keep the user's timezone current for week logic.
+      syncTimeZone();
     } catch (error) {
       console.error("Error decoding token:", error);
       logoutUser(history, setUserInfo);

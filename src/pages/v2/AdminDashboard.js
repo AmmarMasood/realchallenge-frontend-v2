@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import "../../assets/creatorprofile.css";
 import "../../assets/adminDashboardV2.css";
 import "../../assets/home.css";
@@ -6,7 +6,7 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { EditFilled, DeleteFilled, LoadingOutlined } from "@ant-design/icons";
 import { Link, withRouter } from "react-router-dom";
-import { debounce, get } from "lodash";
+import { get } from "lodash";
 import PopupPlayer from "../../components/PopupPlayer/PopupPlayer";
 import ChallengeCard from "../../components/Cards/ChallengeCard";
 import {
@@ -78,6 +78,8 @@ function AdminDashboard(props) {
   const [mediaManagerVisible, setMediaManagerVisible] = useState(false);
   const [mediaManagerType, setMediaManagerType] = useState("images");
   const [mediaManagerActions, setMediaManagerActions] = useState([]);
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   async function fetchTrainerGoals() {
     const { goals } = await getAllTrainerGoals(language);
@@ -149,142 +151,62 @@ function AdminDashboard(props) {
     }
   }, [trainer.videoTrailerLink]);
 
-  const debouncedUpdateMotto = useCallback(
-    debounce(async (newMotto, trainerId, lang) => {
-      try {
-        const field = lang === "dutch" ? "motto_nl" : "motto_en";
-        await updateUserProfileByAdmin(
-          { [field]: newMotto, motto: lang === "dutch" ? undefined : newMotto },
-          trainerId,
-          adminInfo.role,
-        );
-      } catch (error) {
-        console.error("Failed to update motto:", error);
-      }
-    }, 1000),
-    [],
-  );
+  const handleMottoChange = (e) => setMotto(e.target.value);
+  const handleBioChange = (e) => setBio(e.target.value);
+  const handleCountryChange = (value) => setCountry(value);
 
-  const handleMottoChange = (e) => {
-    const newMotto = e.target.value;
-    setMotto(newMotto);
-    if (trainer._id) {
-      debouncedUpdateMotto(newMotto, trainer._id, language);
-    }
+  // Exit edit mode if language changes — each language is edited separately
+  useEffect(() => {
+    setEditMode(false);
+  }, [language]);
+
+  const handleEdit = () => setEditMode(true);
+
+  const handleCancel = () => {
+    const suffix = language === "dutch" ? "_nl" : "_en";
+    setMotto(trainer[`motto${suffix}`] || trainer.motto || "");
+    setBio(trainer[`bio${suffix}`] || trainer.bio || "");
+    setCountry(trainer.country || "");
+    setHeroBanner(trainer.heroBanner || "");
+    setAvatarLink(trainer.avatarLink || "");
+    setVideoTrailerLink(trainer.videoTrailerLink || "");
+    setEditMode(false);
   };
 
-  const debouncedUpdateBio = useCallback(
-    debounce(async (newBio, trainerId, lang) => {
-      try {
-        const field = lang === "dutch" ? "bio_nl" : "bio_en";
-        await updateUserProfileByAdmin(
-          { [field]: newBio, bio: lang === "dutch" ? undefined : newBio },
-          trainerId,
-          adminInfo.role,
-        );
-      } catch (error) {
-        console.error("Failed to update bio:", error);
+  const handleSave = async () => {
+    if (!trainer._id) return;
+    setSaving(true);
+    try {
+      const mottoField = language === "dutch" ? "motto_nl" : "motto_en";
+      const bioField = language === "dutch" ? "bio_nl" : "bio_en";
+      const payload = {
+        [mottoField]: motto,
+        [bioField]: bio,
+        country,
+        heroBanner,
+        avatarLink,
+        videoTrailerLink,
+      };
+      if (language !== "dutch") {
+        payload.motto = motto;
+        payload.bio = bio;
       }
-    }, 1000),
-    [],
-  );
-
-  const handleBioChange = (e) => {
-    const newBio = e.target.value;
-    setBio(newBio);
-    if (trainer._id) {
-      debouncedUpdateBio(newBio, trainer._id, language);
+      await updateUserProfileByAdmin(payload, trainer._id, adminInfo.role);
+      const { user } = await getUsersProfile();
+      setTrainer(user);
+      setEditMode(false);
+      message.success(
+        get(strings, "adminv2.profile_saved", "Profile saved"),
+      );
+    } catch (error) {
+      console.error("Failed to save profile:", error);
+      message.error(
+        get(strings, "adminv2.profile_save_failed", "Failed to save profile"),
+      );
+    } finally {
+      setSaving(false);
     }
   };
-
-  const debouncedUpdateCountry = useCallback(
-    debounce(async (newCountry, trainerId) => {
-      try {
-        await updateUserProfileByAdmin(
-          { country: newCountry },
-          trainerId,
-          adminInfo.role,
-        );
-      } catch (error) {
-        console.error("Failed to update country:", error);
-      }
-    }, 1000),
-    [],
-  );
-
-  const handleCountryChange = (value) => {
-    setCountry(value);
-    if (trainer._id) {
-      debouncedUpdateCountry(value, trainer._id);
-    }
-  };
-
-  const debouncedUpdateHeroBanner = useCallback(
-    debounce(async (newHeroBanner, trainerId) => {
-      try {
-        await updateUserProfileByAdmin(
-          { heroBanner: newHeroBanner },
-          trainerId,
-          adminInfo.role,
-        );
-      } catch (error) {
-        console.error("Failed to update hero banner:", error);
-      }
-    }, 1000),
-    [],
-  );
-
-  const debouncedUpdateAvatar = useCallback(
-    debounce(async (newAvatar, trainerId) => {
-      try {
-        await updateUserProfileByAdmin(
-          { avatarLink: newAvatar },
-          trainerId,
-          adminInfo.role,
-        );
-      } catch (error) {
-        console.error("Failed to update avatar:", error);
-      }
-    }, 1000),
-    [],
-  );
-
-  const debouncedUpdateTrailer = useCallback(
-    debounce(async (newTrailer, trainerId) => {
-      try {
-        await updateUserProfileByAdmin(
-          { videoTrailerLink: newTrailer },
-          trainerId,
-          adminInfo.role,
-        );
-      } catch (error) {
-        console.error("Failed to update trailer:", error);
-      }
-    }, 1000),
-    [],
-  );
-
-  useEffect(() => {
-    if (heroBanner && trainer._id && heroBanner !== trainer.heroBanner) {
-      debouncedUpdateHeroBanner(heroBanner, trainer._id);
-    }
-  }, [heroBanner]);
-
-  useEffect(() => {
-    if (avatarLink && trainer._id && avatarLink !== trainer.avatarLink) {
-      debouncedUpdateAvatar(avatarLink, trainer._id);
-    }
-  }, [avatarLink]);
-
-  useEffect(() => {
-    if (
-      videoTrailerLink &&
-      trainer._id &&
-      videoTrailerLink !== trainer.videoTrailerLink
-    ) {
-      debouncedUpdateTrailer(videoTrailerLink, trainer._id);
-    }
-  }, [videoTrailerLink]);
 
   // Wrapper functions to extract just the link string from VFSBrowser's object response
   const handleHeroBannerSelect = (mediaObj) => {
@@ -455,30 +377,107 @@ function AdminDashboard(props) {
         >
           <div className="profile-box">
             <div
-              onClick={openForHeroBanner}
-              className="new-editable-border adminV2-bi-input"
               style={{
-                width: "200px",
+                display: "flex",
+                justifyContent: "flex-end",
+                alignItems: "center",
+                gap: "12px",
+                marginBottom: "12px",
               }}
             >
-              <span
-                className="font-paragraph-white"
-                style={{ fontSize: "14px" }}
-              >
-                {heroBanner ? (
-                  <T>adminv2.change_cover</T>
-                ) : (
-                  <T>adminv2.add_cover</T>
-                )}
-              </span>
+              {editMode ? (
+                <>
+                  <Button
+                    onClick={handleCancel}
+                    disabled={saving}
+                    style={{
+                      height: "34px",
+                      padding: "0 16px",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      borderRadius: "6px",
+                      background: "#ffffff",
+                      borderColor: "#ff7700",
+                      color: "#ff7700",
+                    }}
+                  >
+                    {language === "dutch"
+                      ? get(strings, "common.cancel", "Annuleren")
+                      : get(strings, "common.cancel", "Cancel")}
+                  </Button>
+                  <Button
+                    type="primary"
+                    onClick={handleSave}
+                    loading={saving}
+                    style={{
+                      height: "34px",
+                      padding: "0 18px",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      borderRadius: "6px",
+                      background: "#ff7700",
+                      borderColor: "#ff7700",
+                      letterSpacing: "0.3px",
+                    }}
+                  >
+                    {language === "dutch"
+                      ? `${get(strings, "common.save", "Opslaan")} (NL)`
+                      : `${get(strings, "common.save", "Save")} (EN)`}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="primary"
+                  onClick={handleEdit}
+                  icon={<EditFilled />}
+                  style={{
+                    height: "34px",
+                    padding: "0 18px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    borderRadius: "6px",
+                    background: "#ff7700",
+                    borderColor: "#ff7700",
+                    letterSpacing: "0.3px",
+                  }}
+                >
+                  {language === "dutch"
+                    ? `${get(strings, "common.edit", "Bewerken")} (NL)`
+                    : `${get(strings, "common.edit", "Edit")} (EN)`}
+                </Button>
+              )}
             </div>
+            {editMode && (
+              <div
+                onClick={openForHeroBanner}
+                className="new-editable-border adminV2-bi-input"
+                style={{
+                  width: "200px",
+                }}
+              >
+                <span
+                  className="font-paragraph-white"
+                  style={{ fontSize: "14px" }}
+                >
+                  {heroBanner ? (
+                    <T>adminv2.change_cover</T>
+                  ) : (
+                    <T>adminv2.add_cover</T>
+                  )}
+                </span>
+              </div>
+            )}
             <div className="profile-box-row1">
               <div
-                className="profile-box-row1-avatar new-editable-border adminV2-bi-input"
-                onClick={openForAvatar}
+                className={
+                  editMode
+                    ? "profile-box-row1-avatar new-editable-border adminV2-bi-input"
+                    : "profile-box-row1-avatar"
+                }
+                onClick={editMode ? openForAvatar : undefined}
                 style={{
                   position: "relative",
-                  cursor: "pointer",
+                  cursor: editMode ? "pointer" : "default",
                   width: "130px",
                   height: "130px",
                 }}
@@ -515,13 +514,22 @@ function AdminDashboard(props) {
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <CountryDropdown
-                    value={country}
-                    onChange={handleCountryChange}
-                    countries={allCountries}
-                    placeholder="Select your country"
-                    width={200}
-                  />
+                  {editMode ? (
+                    <CountryDropdown
+                      value={country}
+                      onChange={handleCountryChange}
+                      countries={allCountries}
+                      placeholder="Select your country"
+                      width={200}
+                    />
+                  ) : (
+                    <p
+                      className="font-paragraph-white"
+                      style={{ margin: 0, padding: 0 }}
+                    >
+                      {country || ""}
+                    </p>
+                  )}
                   {hasAnyRole(adminInfo, ["admin", "trainer", "nutrist"]) && (
                     <img
                       src={ShareIcon}
@@ -586,26 +594,32 @@ function AdminDashboard(props) {
                   alignItems: "center",
                 }}
               >
-                <span
-                  className="font-paragraph-white"
-                  style={{ fontSize: "11px", marginBottom: "0px" }}
-                  onClick={openForTrailer}
-                >
-                  {videoTrailerLink ? (
-                    <T>adminv2.update_trailer</T>
-                  ) : (
-                    <T>adminv2.add_trailer</T>
-                  )}
-                </span>
+                {editMode && (
+                  <span
+                    className="font-paragraph-white"
+                    style={{ fontSize: "11px", marginBottom: "0px" }}
+                    onClick={openForTrailer}
+                  >
+                    {videoTrailerLink ? (
+                      <T>adminv2.update_trailer</T>
+                    ) : (
+                      <T>adminv2.add_trailer</T>
+                    )}
+                  </span>
+                )}
                 <div
-                  className="profile-box-row1-playericon new-editable-border"
+                  className={
+                    editMode
+                      ? "profile-box-row1-playericon new-editable-border"
+                      : "profile-box-row1-playericon"
+                  }
                   style={{
                     position: "relative",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
-                  onClick={openForTrailer}
+                  onClick={editMode ? openForTrailer : undefined}
                 >
                   <img
                     src={ChallengeProfileSubtract}
@@ -627,16 +641,25 @@ function AdminDashboard(props) {
                 style={{ alignItems: "center" }}
               >
                 <img src={QuoteIcon} alt="" />
-                <input
-                  value={motto}
-                  onChange={handleMottoChange}
-                  placeholder={language === "dutch" ? "Voeg je motto toe" : "Add your motto"}
-                  className="font-paragraph-white adminV2-bi-input"
-                  style={{
-                    marginLeft: "6px",
-                    flex: 1,
-                  }}
-                />
+                {editMode ? (
+                  <input
+                    value={motto}
+                    onChange={handleMottoChange}
+                    placeholder={language === "dutch" ? "Voeg je motto toe" : "Add your motto"}
+                    className="font-paragraph-white adminV2-bi-input"
+                    style={{
+                      marginLeft: "6px",
+                      flex: 1,
+                    }}
+                  />
+                ) : (
+                  <span
+                    className="font-paragraph-white"
+                    style={{ marginLeft: "10px" }}
+                  >
+                    {motto || ""}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -664,18 +687,24 @@ function AdminDashboard(props) {
             >
               <T>trainer_profile.about_me</T>
             </div>
-            <textarea
-              rows={4}
-              value={bio}
-              onChange={handleBioChange}
-              placeholder={language === "dutch" ? "Voeg je bio toe" : "Add your bio"}
-              className="font-paragraph-white adminV2-bi-input"
-              style={{
-                width: "100%",
-                resize: "vertical",
-                height: "auto",
-              }}
-            />
+            {editMode ? (
+              <textarea
+                rows={4}
+                value={bio}
+                onChange={handleBioChange}
+                placeholder={language === "dutch" ? "Voeg je bio toe" : "Add your bio"}
+                className="font-paragraph-white adminV2-bi-input"
+                style={{
+                  width: "100%",
+                  resize: "vertical",
+                  height: "auto",
+                }}
+              />
+            ) : (
+              <div className="trainer-profile-aboutme-container font-paragraph-white">
+                {bio || ""}
+              </div>
+            )}
           </div>
 
           <div className="adminv2-selector-container">

@@ -107,11 +107,9 @@ export function deleteRecipeWithId(id) {
     });
 }
 
-export function getAllMealTypes(language) {
+export function getAllMealTypes() {
   return axios
-    .get(
-      `${process.env.REACT_APP_SERVER}/api/recipes/mealType?language=${language}`,
-    )
+    .get(`${process.env.REACT_APP_SERVER}/api/recipes/mealType`)
     .then((res) => {
       return res.data;
     })
@@ -121,65 +119,6 @@ export function getAllMealTypes(language) {
         return;
       }
       openNotificationWithIcon("error", "Unable to get meal types", "");
-      console.log(err);
-    });
-}
-
-export function removeMealType(id) {
-  return axios
-    .delete(`${process.env.REACT_APP_SERVER}/api/recipes/mealType/${id}`)
-    .then((res) => {
-      openNotificationWithIcon("success", "Meal Type deleted successfully", "");
-    })
-    .catch((err) => {
-      if (err.response.data.header && err.response.data.header.message) {
-        openNotificationWithIcon("error", err.response.data.header.message, "");
-        return;
-      }
-      openNotificationWithIcon("error", "Unable to remove meal type", "");
-      console.log(err);
-    });
-}
-
-export function createMealType(name, language) {
-  return axios
-    .post(`${process.env.REACT_APP_SERVER}/api/recipes/mealType/create`, {
-      name: name,
-      language,
-    })
-    .then((res) => {
-      openNotificationWithIcon("success", "Meal Type created successfully", "");
-      return res.data;
-    })
-    .catch((err) => {
-      if (err.response.data.header && err.response.data.header.message) {
-        openNotificationWithIcon("error", err.response.data.header.message, "");
-        return;
-      }
-      console.log(err.response.data);
-      if (err.response.data.header && err.response.data.header.message) {
-        openNotificationWithIcon("error", err.response.data.header.message, "");
-        return;
-      }
-
-      openNotificationWithIcon("error", "Unable to create meal type", "");
-    });
-}
-
-export function updateMealType(name, id) {
-  return axios
-    .put(`${process.env.REACT_APP_SERVER}/api/recipes/mealType/${id}`, {
-      name: name,
-    })
-    .then((res) => {
-      openNotificationWithIcon("success", "Meal Type updated successfully", "");
-    })
-    .catch((err) => {
-      if (err.response.data.header && err.response.data.header.message) {
-        openNotificationWithIcon("error", err.response.data.header.message, "");
-        return;
-      }
-      openNotificationWithIcon("error", "Unable to update meal type", "");
       console.log(err);
     });
 }

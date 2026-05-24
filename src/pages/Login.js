@@ -12,6 +12,7 @@ import {
   loginUser,
   loginUserWithGoogle,
   loginUserWithFacebook,
+  syncTimeZone,
 } from "../services/authentication";
 import { userInfoContext, userPointsContext } from "../contexts/UserStore";
 import setAuthToken from "../helpers/setAuthToken";
@@ -56,6 +57,7 @@ function Login(props) {
       console.log(res);
       localStorage.setItem("jwtToken", res.res.token);
       setAuthToken(localStorage.getItem("jwtToken"));
+      syncTimeZone();
 
       // NEW: Check if user has ANY non-customer role for admin dashboard
       const hasNonCustomerRole = res.res.roles.some(role =>
@@ -107,6 +109,7 @@ function Login(props) {
       console.log(res);
       localStorage.setItem("jwtToken", res.res.token);
       setAuthToken(localStorage.getItem("jwtToken"));
+      syncTimeZone();
       // localStorage.setItem("role", res.res.role);
 
       // NEW: Check if user has ANY non-customer role for admin dashboard
@@ -157,6 +160,7 @@ function Login(props) {
       localStorage.setItem("jwtToken", res.res.token);
       localStorage.setItem("isActive", res.res.isActive);
       setAuthToken(localStorage.getItem("jwtToken"));
+      syncTimeZone();
       getUserPoints(userPoints, setUserPoints);
       // localStorage.setItem("role", res.res.role);
 

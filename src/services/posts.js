@@ -37,6 +37,16 @@ export function createPost(data) {
     });
 }
 
+// Returns { exists: boolean, postId: string|null } for a given post url.
+export function postExistsForUrl(url) {
+  return axios
+    .get(`${process.env.REACT_APP_SERVER}/api/posts/exists`, {
+      params: { url },
+    })
+    .then((res) => res.data)
+    .catch(() => ({ exists: false, postId: null }));
+}
+
 export function getPostsWithPagination(number, language) {
   return axios
     .get(

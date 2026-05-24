@@ -42,8 +42,6 @@ import {
   getAllFoodTypes,
   getAllDietTypes,
   getAllIngredients,
-  createMealType,
-  removeMealType,
   createFoodType,
   removeFoodType,
   createDiet,
@@ -56,6 +54,8 @@ import {
   releaseRecipeLock,
   renewRecipeLock,
 } from "../../../../services/recipes";
+import { createPost, postExistsForUrl } from "../../../../services/posts.js";
+import slug from "elegant-slug";
 import { useBrowserEvents } from "../../../../helpers/useBrowserEvents";
 import { hasAnyRole } from "../../../../helpers/roleHelpers";
 import setAuthToken from "../../../../helpers/setAuthToken";
@@ -138,6 +138,52 @@ function BasicInformation(props) {
 
   const [dataLoaded, setDataLoaded] = useState(false);
   const [errors, setErrors] = useState({});
+  const [postExists, setPostExists] = useState(false);
+  const [postCreating, setPostCreating] = useState(false);
+
+  // Check whether a feed post already exists for this recipe (by url) so
+  // the "Create Post" button can be pre-disabled.
+  useEffect(() => {
+    const recipeId = props.match.params.recipeId;
+    if (!recipeId || !recipeName) return;
+    let cancelled = false;
+    (async () => {
+      const url = `/recipe/${slug(recipeName)}/${recipeId}`;
+      const r = await postExistsForUrl(url);
+      if (!cancelled) setPostExists(!!(r && r.exists));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [props.match.params.recipeId, recipeName]);
+
+  const handleManualCreatePost = async () => {
+    if (postExists || postCreating) return;
+    const recipeId = props.match.params.recipeId;
+    if (!recipeId || !recipeName) return;
+    setPostCreating(true);
+    try {
+      const values = {
+        title: recipeName,
+        text:
+          typeof recipeDescription === "string"
+            ? recipeDescription.replace(/<[^>]+>/g, "").slice(0, 500)
+            : "",
+        image:
+          typeof featuredImage === "object"
+            ? featuredImage.link
+            : featuredImage || "",
+        type: "Recipe",
+        url: `/recipe/${slug(recipeName)}/${recipeId}`,
+        language:
+          isUpdate && recipeLanguage ? recipeLanguage : language,
+      };
+      await createPost(values);
+      setPostExists(true);
+    } finally {
+      setPostCreating(false);
+    }
+  };
 
   // Edit/update modals
   const [editItemNameModalVisible, setEditItemNameModalVisible] =
@@ -148,7 +194,6 @@ function BasicInformation(props) {
 
   // Create new modals
   const [mealTypeModal, setMealTypeModal] = useState(false);
-  const [newMealType, setNewMealType] = useState("");
   const [foodTypeModal, setFoodTypeModal] = useState(false);
   const [newFoodType, setNewFoodType] = useState("");
   const [dietModal, setDietModal] = useState(false);
@@ -485,6 +530,8 @@ function BasicInformation(props) {
         pieces: "",
         method: "",
         other: "",
+        isOptional: false,
+        includeInShoppingListByDefault: true,
       },
     ]);
   };
@@ -527,6 +574,32 @@ function BasicInformation(props) {
     if (!recipeName) {
       validationErrors.push("Recipe Name is required");
       errorToShow.recipeName = "Recipe Name is required";
+    }
+    const named = ingredients.filter((ing) => ing.name);
+    if (!named.length) {
+      validationErrors.push("At least one ingredient is required");
+      errorToShow.ingredients = "At least one ingredient is required";
+    } else {
+      const hasQty = (ing) =>
+        Number(ing.weight) > 0 ||
+        Number(ing.volume) > 0 ||
+        Number(ing.pieces) > 0;
+      const missingQty = named.filter((ing) => !hasQty(ing));
+      if (missingQty.length) {
+        const labels = missingQty
+          .map(
+            (ing) =>
+              ing.nameLabel ||
+              allIngredients.find((ai) => ai._id === ing.name)?.name ||
+              ing.name
+          )
+          .join(", ");
+        validationErrors.push(
+          `Each ingredient needs a quantity (g, ml, or pieces): ${labels}`
+        );
+        errorToShow.ingredients = `Each ingredient needs a quantity (g, ml, or pieces). Missing: ${labels}`;
+        errorToShow.missingQtyIds = missingQty.map((ing) => ing.id);
+      }
     }
 
     setErrors(errorToShow);
@@ -577,6 +650,9 @@ function BasicInformation(props) {
             pieces: ing.pieces || undefined,
             method: ing.method || undefined,
             other: ing.other || undefined,
+            isOptional: !!ing.isOptional,
+            includeInShoppingListByDefault:
+              ing.includeInShoppingListByDefault !== false,
           })),
         cookingProcess: cookingProcess
           .map((step) => step.text)
@@ -682,38 +758,17 @@ function BasicInformation(props) {
         titleName={selectedItemForUpdateTitle}
       />
 
-      {/* Create Meal Type Modal */}
+      {/* Meal Type Modal — fixed slot vocabulary */}
       <Modal
         onCancel={() => setMealTypeModal(false)}
         footer={false}
         visible={mealTypeModal}
       >
-        <p className="font-paragraph-white">Create Meal Type</p>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <Input
-            value={newMealType}
-            onChange={(e) => setNewMealType(e.target.value)}
-          />
-          <Button
-            type="primary"
-            style={{
-              backgroundColor: "var(--color-orange)",
-              borderColor: "var(--color-orange)",
-              marginLeft: "5px",
-            }}
-            onClick={async () => {
-              if (newMealType.length > 0) {
-                await createMealType(newMealType, effectiveLanguage);
-                setNewMealType("");
-                fetchDataV2(effectiveLanguage);
-              }
-            }}
-          >
-            Create
-          </Button>
-        </div>
+        <p className="font-paragraph-white">Select Meal Type</p>
+        <p style={{ color: "#9ca3af", fontSize: "12px", marginTop: "-6px" }}>
+          Meal types are fixed slots. Names cannot be edited or deleted.
+        </p>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-          <span className="font-subheading-white">All Meal Types</span>
           <List
             size="small"
             bordered
@@ -729,65 +784,38 @@ function BasicInformation(props) {
                   gap: "5px",
                 }}
               >
-                <span>{g.name}</span>
-                <span style={{ display: "flex", gap: "6px" }}>
-                  <Tooltip
-                    title={
-                      selectedMealTypes.find((item) => item._id === g._id)
-                        ? "Unselect"
-                        : "Select"
-                    }
-                  >
-                    <Button
-                      onClick={() => {
-                        setSelectedMealTypes((prev) => {
-                          const isExist = prev.find(
-                            (item) => item._id === g._id,
-                          );
-                          if (isExist)
-                            return prev.filter((item) => item._id !== g._id);
-                          else return [...prev, g];
-                        });
-                      }}
-                      type="primary"
-                      icon={
-                        selectedMealTypes.find((item) => item._id === g._id) ? (
-                          <CloseOutlined />
-                        ) : (
-                          <CheckOutlined />
-                        )
-                      }
-                      size="small"
-                    />
-                  </Tooltip>
-                  <Tooltip title="Delete">
-                    <Button
-                      onClick={async () => {
-                        await removeMealType(g._id);
-                        setSelectedMealTypes((prev) =>
-                          prev.filter((item) => item._id !== g._id),
-                        );
-                        fetchDataV2(effectiveLanguage);
-                      }}
-                      type="primary"
-                      danger
-                      icon={<DeleteFilled />}
-                      size="small"
-                    />
-                  </Tooltip>
-                  <Tooltip title="Edit">
-                    <Button
-                      type="primary"
-                      onClick={() => {
-                        setSelectedItemForUpdateTitle("Update Meal Type");
-                        setSelectedItemForUpdate(g);
-                        setEditItemNameModalVisible(true);
-                      }}
-                      icon={<EditOutlined />}
-                      size="small"
-                    />
-                  </Tooltip>
+                <span>
+                  <T>{`mealType.${g.name}`}</T>
                 </span>
+                <Tooltip
+                  title={
+                    selectedMealTypes.find((item) => item._id === g._id)
+                      ? "Unselect"
+                      : "Select"
+                  }
+                >
+                  <Button
+                    onClick={() => {
+                      setSelectedMealTypes((prev) => {
+                        const isExist = prev.find(
+                          (item) => item._id === g._id,
+                        );
+                        if (isExist)
+                          return prev.filter((item) => item._id !== g._id);
+                        else return [...prev, g];
+                      });
+                    }}
+                    type="primary"
+                    icon={
+                      selectedMealTypes.find((item) => item._id === g._id) ? (
+                        <CloseOutlined />
+                      ) : (
+                        <CheckOutlined />
+                      )
+                    }
+                    size="small"
+                  />
+                </Tooltip>
               </List.Item>
             )}
           />
@@ -1092,6 +1120,8 @@ function BasicInformation(props) {
                               pieces: "",
                               method: "",
                               other: "",
+                              isOptional: false,
+                              includeInShoppingListByDefault: true,
                             },
                           ]);
                         }
@@ -1229,34 +1259,38 @@ function BasicInformation(props) {
                       alignItems: "center",
                     }}
                   >
-                    {selectedMealTypes.map((mt) => (
-                      <div
-                        className="challenge-profile-box-2-container"
-                        style={{
-                          opacity: "0.7",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "5px",
-                        }}
-                        key={mt._id}
-                      >
-                        {allMealTypes.find((a) => a._id === mt._id)?.name ||
-                          mt.name}
-                        <DeleteFilled
-                          onClick={() =>
-                            setSelectedMealTypes((prev) =>
-                              prev.filter((item) => item._id !== mt._id),
-                            )
-                          }
+                    {selectedMealTypes.map((mt) => {
+                      const slotKey =
+                        allMealTypes.find((a) => a._id === mt._id)?.name ||
+                        mt.name;
+                      return (
+                        <div
+                          className="challenge-profile-box-2-container"
                           style={{
-                            color: "#ff7700",
-                            fontSize: "14px",
-                            marginLeft: "5px",
-                            cursor: "pointer",
+                            opacity: "0.7",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "5px",
                           }}
-                        />
-                      </div>
-                    ))}
+                          key={mt._id}
+                        >
+                          <T>{`mealType.${slotKey}`}</T>
+                          <DeleteFilled
+                            onClick={() =>
+                              setSelectedMealTypes((prev) =>
+                                prev.filter((item) => item._id !== mt._id),
+                              )
+                            }
+                            style={{
+                              color: "#ff7700",
+                              fontSize: "14px",
+                              marginLeft: "5px",
+                              cursor: "pointer",
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
                     <AddNewButton
                       onClick={() => setMealTypeModal(true)}
                       type="small"
@@ -1600,10 +1634,20 @@ function BasicInformation(props) {
             {/* Ingredients */}
             <div className="recipe-mealValues">
               <div className="recipe-mealValues-heading font-paragraph-white">
-                Ingredients
+                Ingredients <span style={{ color: "#ff4d4f" }}>*</span>
               </div>
+              {errors.ingredients && (
+                <div style={{ color: "#ff4d4f", fontSize: "12px", marginTop: "4px" }}>
+                  {errors.ingredients}
+                </div>
+              )}
               <div style={{ marginTop: "8px" }}>
-                {ingredients.map((ing, idx) => (
+                {ingredients.map((ing, idx) => {
+                  const qtyMissing =
+                    Array.isArray(errors.missingQtyIds) &&
+                    errors.missingQtyIds.includes(ing.id);
+                  const qtyBorder = qtyMissing ? "#ff4d4f" : "#ccc";
+                  return (
                   <div
                     key={ing.id}
                     style={{
@@ -1643,42 +1687,66 @@ function BasicInformation(props) {
                       style={{
                         width: "70px",
                         color: "#283443",
-                        borderColor: "#ccc",
+                        borderColor: qtyBorder,
                       }}
                       type="number"
                       placeholder="g"
                       value={ing.weight}
-                      onChange={(e) =>
-                        updateIngredientField(ing.id, "weight", e.target.value)
-                      }
+                      onChange={(e) => {
+                        if (qtyMissing) {
+                          setErrors((prev) => ({
+                            ...prev,
+                            missingQtyIds: (prev.missingQtyIds || []).filter(
+                              (id) => id !== ing.id
+                            ),
+                          }));
+                        }
+                        updateIngredientField(ing.id, "weight", e.target.value);
+                      }}
                     />
                     <input
                       className="adminV2-bi-input"
                       style={{
                         width: "70px",
                         color: "#283443",
-                        borderColor: "#ccc",
+                        borderColor: qtyBorder,
                       }}
                       type="number"
                       placeholder="ml"
                       value={ing.volume}
-                      onChange={(e) =>
-                        updateIngredientField(ing.id, "volume", e.target.value)
-                      }
+                      onChange={(e) => {
+                        if (qtyMissing) {
+                          setErrors((prev) => ({
+                            ...prev,
+                            missingQtyIds: (prev.missingQtyIds || []).filter(
+                              (id) => id !== ing.id
+                            ),
+                          }));
+                        }
+                        updateIngredientField(ing.id, "volume", e.target.value);
+                      }}
                     />
                     <input
                       className="adminV2-bi-input"
                       style={{
                         width: "70px",
                         color: "#283443",
-                        borderColor: "#ccc",
+                        borderColor: qtyBorder,
                       }}
                       type="number"
                       placeholder="pcs"
                       value={ing.pieces}
-                      onChange={(e) =>
-                        updateIngredientField(ing.id, "pieces", e.target.value)
-                      }
+                      onChange={(e) => {
+                        if (qtyMissing) {
+                          setErrors((prev) => ({
+                            ...prev,
+                            missingQtyIds: (prev.missingQtyIds || []).filter(
+                              (id) => id !== ing.id
+                            ),
+                          }));
+                        }
+                        updateIngredientField(ing.id, "pieces", e.target.value);
+                      }}
                     />
                     <input
                       className="adminV2-bi-input"
@@ -1708,6 +1776,36 @@ function BasicInformation(props) {
                         updateIngredientField(ing.id, "other", e.target.value)
                       }
                     />
+                    <label
+                      style={{ color: "#283443", fontSize: "12px", display: "flex", alignItems: "center", gap: "4px" }}
+                      title="Optional ingredient"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!!ing.isOptional}
+                        onChange={(e) =>
+                          updateIngredientField(ing.id, "isOptional", e.target.checked)
+                        }
+                      />
+                      Optional
+                    </label>
+                    <label
+                      style={{ color: "#283443", fontSize: "12px", display: "flex", alignItems: "center", gap: "4px" }}
+                      title="Include in shopping list by default"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={ing.includeInShoppingListByDefault !== false}
+                        onChange={(e) =>
+                          updateIngredientField(
+                            ing.id,
+                            "includeInShoppingListByDefault",
+                            e.target.checked
+                          )
+                        }
+                      />
+                      In list
+                    </label>
                     <Tooltip title="Remove">
                       <Button
                         type="primary"
@@ -1718,7 +1816,13 @@ function BasicInformation(props) {
                       />
                     </Tooltip>
                   </div>
-                ))}
+                  );
+                })}
+                <div
+                  style={{ color: "#8a94a3", fontSize: "11px", marginTop: "2px" }}
+                >
+                  Use a single unit per ingredient (g, ml, or pieces).
+                </div>
                 <AddNewButton
                   onClick={() => setIngredientModal(true)}
                   type="small"
@@ -2010,6 +2114,39 @@ function BasicInformation(props) {
                   "Create Recipe"
                 )}
               </button>
+              {isUpdate && (
+                <button
+                  onClick={handleManualCreatePost}
+                  disabled={postExists || postCreating || editLockBlocked}
+                  title={
+                    postExists
+                      ? "A post for this recipe already exists"
+                      : "Create a feed post for this recipe"
+                  }
+                  style={{
+                    color: "#fff",
+                    borderColor: "#ff7700",
+                    background: postExists ? "#4a5260" : "transparent",
+                    border: "1px solid #ff7700",
+                    padding: "10px 40px",
+                    fontSize: "16px",
+                    width: "100%",
+                    marginTop: "10px",
+                    cursor:
+                      postExists || postCreating || editLockBlocked
+                        ? "not-allowed"
+                        : "pointer",
+                    opacity:
+                      postExists || postCreating || editLockBlocked ? 0.6 : 1,
+                  }}
+                >
+                  {postCreating
+                    ? "Creating…"
+                    : postExists
+                    ? "Post already created"
+                    : "Create Post"}
+                </button>
+              )}
             </div>
           </div>
         </div>

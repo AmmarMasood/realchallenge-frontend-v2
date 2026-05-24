@@ -5,8 +5,10 @@ import { Switch, Modal, Checkbox, message } from "antd";
 import {
   CaretDownOutlined,
   CloseSquareFilled,
+  CloseOutlined,
   PlusOutlined,
   HeartFilled,
+  LoadingOutlined,
 } from "@ant-design/icons";
 import { userInfoContext } from "../../contexts/UserStore";
 import { Link } from "react-router-dom";
@@ -36,14 +38,29 @@ import {
   getAllRecipes,
   getAllFavouriteRecipes,
   unFavouriteRecipeById,
-  getShoppingCart,
-  removeFromShoppingCart as removeFromShoppingCartApi,
-  addToShoppingCart as addToShoppingCartApi,
 } from "../../services/recipes";
 import { createCustomerDetails } from "../../services/customer";
-import { swapRecipeInRecommandedNutrients } from "../../services/users";
 import slug from "elegant-slug";
 import { T, translate } from "../Translate";
+import PinPopover from "./PinPopover";
+import {
+  getCurrentWeek,
+  getNextWeek,
+  regenerateNextWeek,
+  swapMeal as swapMealApi,
+  pinRecipe as pinRecipeApi,
+  removeRecipePin as removeRecipePinApi,
+  pinDay as pinDayApi,
+  removeDayPin as removeDayPinApi,
+  getShoppingList,
+  addRecipeToShopping,
+  removeRecipeFromShopping,
+  syncWeekShopping,
+  updateShoppingItem,
+  getDeliveryStatus,
+  getPinCount,
+  invalidatePins,
+} from "../../services/mealPlan";
 
 const iconsStyle = {
   color: "var(--color-orange)",
@@ -84,10 +101,25 @@ const responsive = {
     items: 1,
   },
 };
+
+// Render a slot key (breakfast, morningSnack, ...) as a user-facing label.
+// Prefers the i18n entry (mealType.<key>); falls back to camelCase → "Title
+// Case" so a missing translation still reads naturally.
+function formatMealSlot(slot) {
+  if (!slot) return "";
+  const key = `mealType.${slot}`;
+  const translated = translate(key);
+  if (translated && translated !== key) return translated;
+  return slot
+    .replace(/[0-9]/g, "")
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (c) => c.toUpperCase())
+    .trim();
+}
+
 function Nutrient({
   userProfile,
   gender,
-  recommandedWeekDiet,
   getUserDetails,
 }) {
   const [userInfo, setUserInfo] = useContext(userInfoContext);
@@ -127,25 +159,54 @@ function Nutrient({
     dietSetup: [],
   });
   // eslint-disable-next-line
-  const [selectedrRecipes, setSelectedRecipes] = useState([]);
-  // eslint-disable-next-line
   const [fav, setFavRecipes] = useState([]);
-  const [ingredientsSummary, setIngredientsSummary] = useState([]);
-  const [pinnedRecipe, setPinnedRecipe] = useState(() => localStorage.getItem("pinnedRecipe") || "");
+  // Backend WeekPlan model. weekMode toggles This Week (execution) vs
+  // Next Week (planning). The raw plan keeps per-day date/lock info that
+  // the mapped mealsOfTheWeek shape drops.
+  const [weekMode, setWeekMode] = useState("this_week");
+  const [weekPlan, setWeekPlan] = useState(null);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [planWarning, setPlanWarning] = useState(null);
+  const [regenerating, setRegenerating] = useState(false);
+  const [actionSlotKey, setActionSlotKey] = useState(null);
+  const [confirmModal, setConfirmModal] = useState(null);
+
+  useEffect(() => {
+    if (!confirmModal) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        confirmModal.resolve(false);
+        setConfirmModal(null);
+      } else if (e.key === "Enter") {
+        confirmModal.resolve(true);
+        setConfirmModal(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [confirmModal]);
+
+  useEffect(() => {
+    if (!planWarning) return;
+    const t = setTimeout(() => setPlanWarning(null), 15000);
+    return () => clearTimeout(t);
+  }, [planWarning]);
+  const [pinPopover, setPinPopover] = useState(null);
+  const [dayPinMenu, setDayPinMenu] = useState(false);
   // eslint-disable-next-line
   const [suggestedSupplements, setSuggestedSupplements] = useState([]);
   const [selectedSupplements, setSelectedSupplements] = useState([]);
   const [supplementSnapshot, setSupplementSnapshot] = useState(null);
+  // Phase 4/5: backend shopping list, delivery, supplement structure.
+  const [shoppingList, setShoppingList] = useState({ items: [] });
+  const [shoppingPrompt, setShoppingPrompt] = useState([]);
+  const [deliveryStatus, setDeliveryStatus] = useState(null);
+  const [fuelMomentSlot, setFuelMomentSlot] = useState(null);
+  const [supplementSchedule, setSupplementSchedule] = useState({});
 
   // =
   useEffect(() => {
     fetchData();
-    let ingredients = selectedrRecipes.map((recipe) => recipe.ingredients);
-    ingredients = ingredients.flat();
-    ingredients = ingredients.filter(
-      (thing, index, self) =>
-        index === self.findIndex((t) => t.name === thing.name)
-    );
     const {
       bmi,
       bmir,
@@ -157,7 +218,6 @@ function Nutrient({
       myDiet,
       supplementIntake,
     } = userProfile;
-    setIngredientsSummary(ingredients);
     setBodyOverview({
       bmi: bmi,
       bmr: bmir,
@@ -173,14 +233,52 @@ function Nutrient({
       eatingLate: lateMeal ? lateMeal : false,
     });
     myDiet && myDiet[0] && setSelectedDiet(myDiet[0]._id);
-    supplementIntake &&
+    if (supplementIntake) {
       setSelectedSuplementType(supplementIntake.supplementOption);
-    supplementIntake && setSelectedSupplements(supplementIntake.recipes);
-
-    recommandedWeekDiet &&
-      recommandedWeekDiet.weeklyDietPlan &&
-      setMealsForTheWeek(recommandedWeekDiet.weeklyDietPlan);
+      setSelectedSupplements(supplementIntake.recipes || []);
+      setFuelMomentSlot(supplementIntake.fuelMomentSlot || null);
+      const sched = {};
+      (supplementIntake.schedule || []).forEach((s) => {
+        sched[s.recipe] = { everyDay: s.everyDay !== false, days: s.days || [] };
+      });
+      setSupplementSchedule(sched);
+    }
   }, []);
+
+  // Load the WeekPlan from the backend whenever the week mode changes.
+  // resetDay: only true on initial load / week switch — NOT after an
+  // action (pin/swap/regenerate) so the user stays on the day they're
+  // editing and sees the change apply in place.
+  const loadPlan = async (resetDay = false, silent = false) => {
+    if (!userInfo.id) return;
+    const locale = localStorage.getItem("locale") || "english";
+    if (!silent) setPlanLoading(true);
+    try {
+      const plan =
+        weekMode === "next_week"
+          ? await getNextWeek(userInfo.id, locale)
+          : await getCurrentWeek(userInfo.id, locale);
+      if (plan) {
+        setWeekPlan(plan);
+        setMealsForTheWeek(plan);
+        if (resetDay) {
+          const today = todayWeekday();
+          if (plan.days && plan.days.some((d) => d.weekday === today)) {
+            setCurrentDay(today);
+          }
+        }
+      }
+    } finally {
+      if (!silent) setPlanLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPlan(true);
+    loadShopping();
+    loadDelivery();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weekMode, userInfo.id]);
 
   async function fetchData() {
     const res = await getAllDietTypes(localStorage.getItem("locale") || "english");
@@ -190,51 +288,322 @@ function Nutrient({
 
     setAllDiets(res.diets);
     setSuggestedSupplements(rec.recipes);
-
-    const cartRes = await getShoppingCart(userInfo.id);
-    if (cartRes && cartRes.shoppingCart) {
-      const cartRecipes = cartRes.shoppingCart.map((recipe) => ({
-        id: recipe._id,
-        name: recipe.name,
-        ingredients: recipe.ingredients || [],
-      }));
-      setSelectedRecipes(cartRecipes);
-      const allIngredients = cartRecipes
-        .flatMap((r) => r.ingredients)
-        .filter(
-          (item, idx, self) =>
-            idx === self.findIndex((t) => t.name === item.name)
-        );
-      setIngredientsSummary(allIngredients);
-    }
   }
 
-  const givenObjectFindArray = (obj) => {
-    const g = Object.entries(obj).map((l) => ({ ...l[1], foodType: l[0] }));
-    return g;
+  const WEEKDAYS = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+  ];
+  const todayWeekday = () => WEEKDAYS[new Date().getDay()];
+
+  // Per-day metadata from the raw plan: date, past/today flags, day pin.
+  const dayMeta = (weekday) => {
+    const d = weekPlan && weekPlan.days
+      ? weekPlan.days.find((x) => x.weekday === weekday)
+      : null;
+    if (!d) return { isPast: false, isToday: false, isDayPinned: false };
+    const planDate = new Date(d.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    planDate.setHours(0, 0, 0, 0);
+    return {
+      date: d.date,
+      isPast: weekMode === "this_week" && planDate < today,
+      isToday: weekMode === "this_week" && planDate.getTime() === today.getTime(),
+      isDayPinned: !!d.is_day_pinned,
+    };
+  };
+
+  // Past days in This Week are read-only (client 2026-05-16). Swap is a
+  // Next-Week-only action; pinning is allowed from either week.
+  const isDayReadOnly = (weekday) => dayMeta(weekday).isPast;
+
+  // Map the backend WeekPlan into the existing card shape: each meal slot
+  // becomes a recipe-like object carrying slot/lock metadata.
+  const setMealsForTheWeek = (plan) => {
+    const obj = {
+      monday: [], tuesday: [], wednesday: [], thursday: [],
+      friday: [], saturday: [], sunday: [],
+    };
+    (plan.days || []).forEach((day) => {
+      obj[day.weekday] = (day.meals || [])
+        .filter((mlt) => mlt.recipe_id && mlt.recipe_id._id)
+        .map((mlt) => ({
+          ...mlt.recipe_id,
+          foodType: mlt.meal_slot,
+          _mealSlot: mlt.meal_slot,
+          _lockType: mlt.lock_type,
+          _pinId: mlt.pin_id,
+          _pinMode: mlt.pin_mode || null,
+          _weekday: day.weekday,
+        }));
+    });
+    setMealsOfTheWeek(obj);
+  };
+
+  const findPin = (meal) =>
+    meal && (meal._lockType === "recipe_pin" || meal._lockType === "day_pin");
+
+  const openPinPopover = (e, meal) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isDayReadOnly(currentDay)) {
+      message.info(
+        translate("userDashboard.nutrient.past_day_readonly") ||
+          "Passed days are read-only."
+      );
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPinPopover((prev) =>
+      prev && prev.recipeId === meal._id
+        ? null
+        : {
+            rect,
+            recipeId: meal._id,
+            mealSlot: meal._mealSlot,
+            pinId: meal._pinId,
+            pinMode: meal._pinMode,
+          }
+    );
+  };
+
+  const confirmAsync = (content, opts = {}) =>
+    new Promise((resolve) => {
+      setConfirmModal({
+        title: opts.title || null,
+        content,
+        okText:
+          opts.okText || translate("userDashboard.nutrient.confirm_yes"),
+        cancelText:
+          opts.cancelText || translate("userDashboard.nutrient.confirm_no"),
+        resolve,
+      });
+    });
+
+  const handlePinSelect = async (mode) => {
+    if (!pinPopover) return;
+    const { recipeId, mealSlot, pinId, pinMode } = pinPopover;
+    const slotKey = `${currentDay}|${mealSlot}`;
+    // No-op if the user picked the mode that's already active — skip BE.
+    if (mode !== null && mode === pinMode) {
+      setPinPopover(null);
+      return;
+    }
+    if (mode === null) {
+      if (pinId) {
+        setActionSlotKey(slotKey);
+        try {
+          await removeRecipePinApi(userInfo.id, pinId);
+          setMealsOfTheWeek((prev) => {
+            const next = { ...prev };
+            next[currentDay] = (prev[currentDay] || []).map((m) =>
+              m._mealSlot === mealSlot
+                ? { ...m, _lockType: null, _pinId: null, _pinMode: null }
+                : m
+            );
+            return next;
+          });
+        } finally {
+          setActionSlotKey(null);
+        }
+      }
+    } else {
+      // Spec §9 applies only when pinning FROM This Week (it targets Next
+      // Week, so confirm + check the Next-Week slot for a conflict).
+      // Pinning while already on Next Week edits it directly — no
+      // confirm, no extra round-trip.
+      if (weekMode === "this_week") {
+        const ok = await confirmAsync(
+          translate("userDashboard.nutrient.add_to_next_week_confirm") ||
+            "Add this to your Next Week plan?"
+        );
+        if (!ok) {
+          setPinPopover(null);
+          return;
+        }
+        const nw = await getNextWeek(
+          userInfo.id,
+          localStorage.getItem("locale") || "english"
+        );
+        const nwSlot =
+          nw &&
+          nw.days &&
+          (nw.days.find((d) => d.weekday === currentDay) || {}).meals;
+        const target = nwSlot && nwSlot.find((s) => s.meal_slot === mealSlot);
+        if (
+          target &&
+          (target.lock_type === "recipe_pin" ||
+            target.lock_type === "day_pin" ||
+            target.source === "swapped")
+        ) {
+          const ok2 = await confirmAsync(
+            translate("userDashboard.nutrient.slot_conflict_confirm") ||
+              "That slot in Next Week was already changed or pinned. Replace it?"
+          );
+          if (!ok2) {
+            setPinPopover(null);
+            return;
+          }
+        }
+      }
+      setActionSlotKey(slotKey);
+      // Optimistic local update FIRST — show pin highlight immediately on
+      // click rather than waiting for the BE round-trip. (On This Week the
+      // pin targets Next Week, so the current view's slot doesn't change
+      // — skip optimistic there.)
+      if (weekMode === "next_week") {
+        setMealsOfTheWeek((prev) => {
+          const next = { ...prev };
+          next[currentDay] = (prev[currentDay] || []).map((m) =>
+            m._mealSlot === mealSlot
+              ? {
+                  ...m,
+                  _lockType: "recipe_pin",
+                  _pinMode: mode,
+                }
+              : m
+          );
+          return next;
+        });
+      }
+      const savedPin = await pinRecipeApi(userInfo.id, {
+        recipe_id: recipeId,
+        weekday: currentDay,
+        meal_slot: mealSlot,
+        mode,
+        source_week_type: weekMode,
+      });
+      if (savedPin && weekMode === "next_week") {
+        setMealsOfTheWeek((prev) => {
+          const next = { ...prev };
+          next[currentDay] = (prev[currentDay] || []).map((m) =>
+            m._mealSlot === mealSlot ? { ...m, _pinId: savedPin._id } : m
+          );
+          return next;
+        });
+      }
+      message.success(
+        mode === "always"
+          ? translate("userDashboard.nutrient.pin_saved_always") ||
+              "Pinned weekly"
+          : translate("userDashboard.nutrient.pin_saved_once") ||
+              "Pinned for next week"
+      );
+    }
+    setPinPopover(null);
+    try {
+      await loadPlan(false, true);
+    } finally {
+      setActionSlotKey(null);
+    }
   };
 
   const swapRecipe = async (meal) => {
-    const res = await swapRecipeInRecommandedNutrients(userInfo.id, meal);
-    if (res) {
-      message.success(translate("userDashboard.nutrient.recipe_swapped"));
-      getUserDetails();
-    } else {
-      message.error(translate("userDashboard.nutrient.swap_failed"));
+    if (weekMode !== "next_week") {
+      message.info(
+        translate("userDashboard.nutrient.swap_next_only") ||
+          "Swapping is only available on Next Week."
+      );
+      return;
+    }
+    if (findPin(meal)) {
+      message.warning(
+        translate("userDashboard.nutrient.swap_pinned_blocked") ||
+          "The recipe is pinned. Unpin it to swap."
+      );
+      return;
+    }
+    const slotKey = `${currentDay}|${meal._mealSlot}`;
+    setActionSlotKey(slotKey);
+    try {
+      const r = await swapMealApi(userInfo.id, currentDay, meal._mealSlot);
+      if (r.ok) {
+        message.success(translate("userDashboard.nutrient.recipe_swapped"));
+        await loadPlan(false, true);
+      } else if (r.conflict) {
+        message.warning(r.message);
+      } else if (r.message) {
+        message.info(r.message);
+      } else {
+        message.error(
+          translate("userDashboard.nutrient.swap_failed") ||
+            "Unable to swap recipe"
+        );
+      }
+    } finally {
+      setActionSlotKey(null);
     }
   };
 
-  const pinRecipe = (id) => {
-    setPinnedRecipe((prev) => (prev === id ? "" : id));
+  const handleRegenerate = async () => {
+    if (weekMode !== "next_week") return;
+    if (regenerating) return;
+    setRegenerating(true);
+    try {
+      const res = await regenerateNextWeek(
+        userInfo.id,
+        localStorage.getItem("locale") || "english"
+      );
+      if (res) {
+        setPlanWarning(res.warning || null);
+        message.success(
+          translate("userDashboard.nutrient.week_regenerated") ||
+            "Next week regenerated"
+        );
+        await loadPlan();
+      }
+    } finally {
+      setRegenerating(false);
+    }
   };
 
-  useEffect(() => {
-    if (pinnedRecipe) {
-      localStorage.setItem("pinnedRecipe", pinnedRecipe);
-    } else {
-      localStorage.removeItem("pinnedRecipe");
+  // ---- Day pin (locks the exact recipes visible that day) ----
+
+  const currentDayDoc = () =>
+    weekPlan && weekPlan.days
+      ? weekPlan.days.find((d) => d.weekday === currentDay)
+      : null;
+
+  const handleDayPin = async (mode) => {
+    setDayPinMenu(false);
+    const meals = mealsOfTheWeek[currentDay] || [];
+    const locked_meals = meals
+      .filter((mlt) => mlt._mealSlot && mlt._id)
+      .map((mlt) => ({ meal_slot: mlt._mealSlot, recipe_id: mlt._id }));
+    if (!locked_meals.length) {
+      message.warning(
+        translate("userDashboard.nutrient.nothing_to_pin") ||
+          "Nothing to pin on this day yet."
+      );
+      return;
     }
-  }, [pinnedRecipe]);
+    await pinDayApi(userInfo.id, {
+      weekday: currentDay,
+      locked_meals,
+      mode,
+      source_week_type: weekMode,
+    });
+    message.success(
+      translate("userDashboard.nutrient.day_pinned") || "Day pinned"
+    );
+    await loadPlan();
+  };
+
+  const handleRemoveDayPin = async () => {
+    const d = currentDayDoc();
+    if (!d || !d.day_pin_id) return;
+    await removeDayPinApi(userInfo.id, d.day_pin_id);
+    message.success(
+      translate("userDashboard.nutrient.day_unpinned") || "Day unpinned"
+    );
+    await loadPlan();
+  };
 
   useEffect(() => {
     localStorage.setItem("currentDay", currentDay);
@@ -242,18 +611,6 @@ function Nutrient({
   const unfouriteReceipe = async (id) => {
     await unFavouriteRecipeById({ recipeId: id }, userInfo.id);
     setFavRecipes((prev) => prev.filter((r) => r._id !== id));
-  };
-  const setMealsForTheWeek = (recipes) => {
-    const obj = {
-      monday: recipes[0] ? givenObjectFindArray(recipes[0]) : [],
-      tuesday: recipes[1] ? givenObjectFindArray(recipes[1]) : [],
-      wednesday: recipes[2] ? givenObjectFindArray(recipes[2]) : [],
-      thursday: recipes[3] ? givenObjectFindArray(recipes[3]) : [],
-      friday: recipes[4] ? givenObjectFindArray(recipes[4]) : [],
-      saturday: recipes[5] ? givenObjectFindArray(recipes[5]) : [],
-      sunday: recipes[6] ? givenObjectFindArray(recipes[6]) : [],
-    };
-    setMealsOfTheWeek(obj);
   };
   const getDietNameFromId = (id) => {
     const s = allDiets
@@ -271,6 +628,21 @@ function Nutrient({
     setSelectedSupplements(t);
   }
 
+  // A meal-structure / restriction change that touches pinned content
+  // must confirm before silently breaking pins (client 2026-05-16).
+  // Returns true to proceed, false to abort.
+  async function confirmPinInvalidation() {
+    const c = await getPinCount(userInfo.id);
+    if (!c || !c.total) return true;
+    const ok = await confirmAsync(
+      translate("userDashboard.nutrient.pins_affected_confirm") ||
+        "This change affects one or more pinned days or recipes. Continue and remove the affected pin(s)?"
+    );
+    if (!ok) return false;
+    await invalidatePins(userInfo.id, "settings_change");
+    return true;
+  }
+
   async function saveUserSupplementSettings() {
     if (selectedSuplementType !== "none") {
       if (selectedSupplements.length < 2) {
@@ -278,16 +650,33 @@ function Nutrient({
         return;
       }
     }
+    if (!(await confirmPinInvalidation())) return;
     await createCustomerDetails(
       {
         supplementIntake: {
           supplementOption: selectedSuplementType,
           recipes: selectedSuplementType === "none" ? [] : selectedSupplements,
+          // Fuel Moment (during-the-day) replaces a user-chosen snack.
+          fuelMomentSlot:
+            selectedSuplementType === "during-the-day" ? fuelMomentSlot : null,
+          // Per-supplement day scheduling (not one global set).
+          schedule:
+            selectedSuplementType === "none"
+              ? []
+              : selectedSupplements.map((s) => {
+                  const sc = supplementSchedule[s._id] || {};
+                  return {
+                    recipe: s._id,
+                    everyDay: sc.everyDay !== false,
+                    days: sc.everyDay === false ? sc.days || [] : [],
+                  };
+                }),
         },
       },
       userInfo.id
     );
     getUserDetails();
+    loadPlan();
     setSuplementModal(false);
   }
 
@@ -296,6 +685,7 @@ function Nutrient({
       message.warning(translate("userDashboard.nutrient.select_diet"));
       return;
     }
+    if (!(await confirmPinInvalidation())) return;
     const res = await createCustomerDetails(
       { myDiet: [selectedDiet] },
       userInfo.id
@@ -303,60 +693,103 @@ function Nutrient({
     if (res) {
       message.success(translate("userDashboard.nutrient.diet_saved"));
       getUserDetails();
+      loadPlan();
       setDietSetupModal(false);
     } else {
       message.error(translate("userDashboard.nutrient.diet_save_failed"));
     }
   }
 
+  // Late Meal is its own meal-structure setting (separate from supplement
+  // mode, coexists with any of them — client 2026-05-16).
   async function saveUserEatingLateSetting() {
-    setEatingBehave({
-      ...eatingBehave,
-      eatingLate: !eatingBehave.eatingLate,
-    });
-    await createCustomerDetails(
-      { lateMeal: !eatingBehave.eatingLate },
-      userInfo.id
-    );
+    if (!(await confirmPinInvalidation())) return;
+    const next = !eatingBehave.eatingLate;
+    setEatingBehave({ ...eatingBehave, eatingLate: next });
+    await createCustomerDetails({ lateMeal: next }, userInfo.id);
     getUserDetails();
+    loadPlan();
   }
 
-  const addToShoppingCart = async (day, meal) => {
-    if (selectedrRecipes.some((r) => r.id === meal._id)) {
-      message.info(translate("userDashboard.nutrient.already_in_cart"));
-      return;
-    }
-    const res = await addToShoppingCartApi({ recipeId: meal._id }, userInfo.id);
-    if (!res) {
-      message.error(translate("userDashboard.nutrient.cart_add_failed"));
-      return;
-    }
-    const newRecipes = [
-      ...selectedrRecipes,
-      { id: meal._id, name: meal.name, ingredients: meal.ingredients || [] },
-    ];
-    setSelectedRecipes(newRecipes);
-    const allIngredients = newRecipes
-      .flatMap((r) => r.ingredients)
-      .filter(
-        (item, idx, self) =>
-          idx === self.findIndex((t) => t.name === item.name)
-      );
-    setIngredientsSummary(allIngredients);
-    message.success(translate("userDashboard.nutrient.added_to_cart"));
+  // ---- Shopping list (backend ShoppingList, itemId+unit aggregated) ----
+
+  const loadShopping = async () => {
+    if (!userInfo.id) return;
+    const list = await getShoppingList(userInfo.id);
+    setShoppingList(list || { items: [] });
   };
 
-  const removeFromShoppingCart = async (id) => {
-    await removeFromShoppingCartApi({ recipeId: id }, userInfo.id);
-    const remaining = selectedrRecipes.filter((g) => g.id !== id);
-    setSelectedRecipes(remaining);
-    const allIngredients = remaining
-      .flatMap((r) => r.ingredients)
-      .filter(
-        (item, idx, self) =>
-          idx === self.findIndex((t) => t.name === item.name)
+  const loadDelivery = async () => {
+    if (!userInfo.id) return;
+    setDeliveryStatus(await getDeliveryStatus(userInfo.id));
+  };
+
+  const addToShoppingCart = async (day, meal) => {
+    const res = await addRecipeToShopping(userInfo.id, meal._id);
+    if (!res) return;
+    setShoppingList(res.list || { items: [] });
+    setShoppingPrompt(res.prompt || []);
+    const added = res.added || { pushed: 0, merged: 0, emitted: 0 };
+    if (res.prompt && res.prompt.length) {
+      message.info(
+        translate("userDashboard.nutrient.some_items_previously_removed") ||
+          "Some ingredients you removed earlier are needed again — review below."
       );
-    setIngredientsSummary(allIngredients);
+    } else if (added.emitted === 0) {
+      message.warning(
+        translate("userDashboard.nutrient.recipe_no_items") ||
+          "This recipe has no ingredients with quantities to add."
+      );
+    } else if (added.pushed === 0 && added.merged > 0) {
+      message.info(
+        translate("userDashboard.nutrient.shopping_qty_updated") ||
+          `Already in your list — updated ${added.merged} quantit${
+            added.merged === 1 ? "y" : "ies"
+          }.`
+      );
+    } else {
+      message.success(
+        translate("userDashboard.nutrient.added_to_cart") ||
+          `Added ${added.pushed} item${added.pushed === 1 ? "" : "s"}`
+      );
+    }
+  };
+
+  const handleRemoveRecipeFromShopping = async (recipeId) => {
+    if (!recipeId) return;
+    const list = await removeRecipeFromShopping(userInfo.id, recipeId);
+    if (list) setShoppingList(list);
+  };
+
+  // Full-week add — Next Week only (client 2026-05-16).
+  const handleSyncWeek = async () => {
+    if (weekMode !== "next_week") return;
+    const res = await syncWeekShopping(userInfo.id);
+    if (!res) return;
+    setShoppingList(res.list || { items: [] });
+    setShoppingPrompt(res.prompt || []);
+    await loadPlan(); // shopping_sync_status -> synced
+    message.success(
+      translate("userDashboard.nutrient.shopping_updated") ||
+        "Shopping list updated"
+    );
+  };
+
+  const mutateShoppingItem = async (payload) => {
+    const list = await updateShoppingItem(userInfo.id, payload);
+    if (list) setShoppingList(list);
+  };
+
+  const reAddShoppingItem = async (p) => {
+    await mutateShoppingItem({
+      itemId: p.itemId,
+      unit: p.unit,
+      quantity: p.quantity,
+      readd: true,
+    });
+    setShoppingPrompt((prev) =>
+      prev.filter((x) => !(x.itemId === p.itemId && x.unit === p.unit))
+    );
   };
 
   return (
@@ -423,6 +856,34 @@ function Nutrient({
             />
           </div>
         </div>
+        {selectedSuplementType === "during-the-day" && (
+          <div style={{ margin: "12px 0" }}>
+            <span className="font-paragraph-white">
+              <T>userDashboard.nutrient.fuel_moment_replaces</T>
+            </span>
+            <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+              {["morningSnack", "afternoonSnack"].map((slot) => (
+                <button
+                  key={slot}
+                  className="font-paragraph-white"
+                  onClick={() => setFuelMomentSlot(slot)}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--color-orange)",
+                    background:
+                      fuelMomentSlot === slot
+                        ? "var(--color-orange)"
+                        : "transparent",
+                    cursor: "pointer",
+                  }}
+                >
+                  <T>{`mealType.${slot}`}</T>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {selectedSuplementType === "extra-meal" ||
         selectedSuplementType === "during-the-day" ? (
           <>
@@ -463,6 +924,58 @@ function Nutrient({
                       <T>userDashboard.nutrient.mi</T>
                     </button>
                   </Link>
+                  {/* Per-supplement day scheduling (not one global set) */}
+                  <div style={{ marginTop: "10px" }}>
+                    <Checkbox
+                      checked={(supplementSchedule[meal._id] || {}).everyDay !== false}
+                      onChange={(e) =>
+                        setSupplementSchedule((prev) => ({
+                          ...prev,
+                          [meal._id]: {
+                            everyDay: e.target.checked,
+                            days: (prev[meal._id] || {}).days || [],
+                          },
+                        }))
+                      }
+                    >
+                      <span className="font-paragraph-white">
+                        <T>userDashboard.nutrient.every_day</T>
+                      </span>
+                    </Checkbox>
+                    {(supplementSchedule[meal._id] || {}).everyDay === false && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "6px" }}>
+                        {["monday","tuesday","wednesday","thursday","friday","saturday","sunday"].map((d) => {
+                          const sc = supplementSchedule[meal._id] || { days: [] };
+                          const on = (sc.days || []).includes(d);
+                          return (
+                            <button
+                              key={d}
+                              className="font-paragraph-white"
+                              onClick={() =>
+                                setSupplementSchedule((prev) => {
+                                  const cur = prev[meal._id] || { everyDay: false, days: [] };
+                                  const days = on
+                                    ? cur.days.filter((x) => x !== d)
+                                    : [...(cur.days || []), d];
+                                  return { ...prev, [meal._id]: { everyDay: false, days } };
+                                })
+                              }
+                              style={{
+                                padding: "3px 8px",
+                                borderRadius: "4px",
+                                border: "1px solid var(--color-orange)",
+                                background: on ? "var(--color-orange)" : "transparent",
+                                cursor: "pointer",
+                                fontSize: "1.1rem",
+                              }}
+                            >
+                              <T>{`userDashboard.nutrient.${d}`}</T>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -771,47 +1284,304 @@ function Nutrient({
           )}
         </div>
 
-        <div className="dashboard-nutrient-row2-container-days font-paragraph-whites">
-          {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => (
-            <span
-              key={day}
-              className="dashboard-nutrient-row2-container-day font-paragraph-white"
+        {/* This Week (execution) vs Next Week (planning) */}
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            alignItems: "center",
+            padding: "10px 0",
+            flexWrap: "wrap",
+          }}
+        >
+          <button
+            className="font-paragraph-white"
+            onClick={() => setWeekMode("this_week")}
+            style={{
+              padding: "6px 16px",
+              borderRadius: "6px",
+              border: "1px solid var(--color-orange)",
+              background:
+                weekMode === "this_week" ? "var(--color-orange)" : "transparent",
+              cursor: "pointer",
+            }}
+          >
+            <T>userDashboard.nutrient.this_week</T>
+          </button>
+          <button
+            className="font-paragraph-white"
+            onClick={() => setWeekMode("next_week")}
+            style={{
+              padding: "6px 16px",
+              borderRadius: "6px",
+              border: "1px solid var(--color-orange)",
+              background:
+                weekMode === "next_week" ? "var(--color-orange)" : "transparent",
+              cursor: "pointer",
+            }}
+          >
+            <T>userDashboard.nutrient.next_week</T>
+          </button>
+          {weekMode === "next_week" && (
+            <button
+              className="font-paragraph-white"
+              onClick={handleRegenerate}
+              disabled={regenerating}
               style={{
-                color: currentDay === day ? "var(--color-orange)" : "#677182",
+                padding: "6px 16px",
+                borderRadius: "6px",
+                border: "1px solid #677182",
+                background: "transparent",
+                cursor: regenerating ? "not-allowed" : "pointer",
+                opacity: regenerating ? 0.5 : 1,
+                marginLeft: "auto",
               }}
-              onClick={() => setCurrentDay(day)}
             >
-              {currentDay === day && (
-                <img src={pin} alt="" style={{ marginRight: "10px" }} />
+              {regenerating ? (
+                <T>userDashboard.nutrient.regenerating</T>
+              ) : (
+                <T>userDashboard.nutrient.regenerate_week</T>
               )}
-              <T>{`userDashboard.nutrient.${day}`}</T>
-            </span>
-          ))}
+            </button>
+          )}
         </div>
+        {planWarning && weekMode === "next_week" && (
+          <div
+            className="font-paragraph-white"
+            style={{
+              background: "rgba(243,119,32,0.15)",
+              border: "1px solid var(--color-orange)",
+              borderRadius: "6px",
+              padding: "10px 14px",
+              marginBottom: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+            }}
+          >
+            <span style={{ flex: 1 }}>{planWarning}</span>
+            <button
+              type="button"
+              onClick={() => setPlanWarning(null)}
+              aria-label="Dismiss"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                fontSize: "18px",
+                lineHeight: 1,
+                padding: "0 4px",
+              }}
+            >
+              <CloseSquareFilled style={{ color: "var(--color-orange)" }} />
+            </button>
+          </div>
+        )}
+
+        <div className="dashboard-nutrient-row2-container-days font-paragraph-whites">
+          {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => {
+            const meta = dayMeta(day);
+            return (
+              <span
+                key={day}
+                className="dashboard-nutrient-row2-container-day font-paragraph-white"
+                title={meta.isPast ? "Passed day (read-only)" : ""}
+                style={{
+                  color:
+                    currentDay === day
+                      ? "var(--color-orange)"
+                      : meta.isToday
+                      ? "#fff"
+                      : "#677182",
+                  opacity: meta.isPast ? 0.45 : 1,
+                  fontWeight: meta.isToday ? 700 : 400,
+                  position: "relative",
+                }}
+                onClick={() => setCurrentDay(day)}
+              >
+                <T>{`userDashboard.nutrient.${day}`}</T>
+                {meta.isDayPinned && (
+                  <img
+                    src={pin}
+                    alt="pinned"
+                    height="11px"
+                    style={{ marginLeft: "4px" }}
+                  />
+                )}
+              </span>
+            );
+          })}
+        </div>
+
+        {weekMode === "next_week" && !isDayReadOnly(currentDay) && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "8px 0",
+              flexWrap: "wrap",
+            }}
+          >
+            {dayMeta(currentDay).isDayPinned ? (
+              <button
+                className="font-paragraph-white"
+                onClick={handleRemoveDayPin}
+                style={{
+                  padding: "5px 14px",
+                  borderRadius: "6px",
+                  border: "1px solid var(--color-orange)",
+                  background: "var(--color-orange)",
+                  cursor: "pointer",
+                }}
+              >
+                <T>userDashboard.nutrient.unpin_day</T>
+              </button>
+            ) : !dayPinMenu ? (
+              <button
+                className="font-paragraph-white"
+                onClick={() => setDayPinMenu(true)}
+                style={{
+                  padding: "5px 14px",
+                  borderRadius: "6px",
+                  border: "1px solid var(--color-orange)",
+                  background: "transparent",
+                  cursor: "pointer",
+                }}
+              >
+                <img src={GrayPin} alt="" height="13px" style={{ marginRight: "6px" }} />
+                <T>userDashboard.nutrient.pin_this_day</T>
+              </button>
+            ) : (
+              <>
+                <span className="font-paragraph-white" style={{ opacity: 0.8 }}>
+                  <T>userDashboard.nutrient.pin_day_as</T>
+                </span>
+                <button
+                  className="font-paragraph-white"
+                  onClick={() => handleDayPin("just_once")}
+                  style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid var(--color-orange)", background: "transparent", cursor: "pointer" }}
+                >
+                  <T>userDashboard.nutrient.pin_just_once</T>
+                </button>
+                <button
+                  className="font-paragraph-white"
+                  onClick={() => handleDayPin("always")}
+                  style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid var(--color-orange)", background: "transparent", cursor: "pointer" }}
+                >
+                  <T>userDashboard.nutrient.pin_always</T>
+                </button>
+                <button
+                  className="font-paragraph-white"
+                  onClick={() => setDayPinMenu(false)}
+                  style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #677182", background: "transparent", cursor: "pointer" }}
+                >
+                  <T>userDashboard.nutrient.cancel</T>
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
         <div className="divider"></div>
         <div className="dashboard-nutrient-row2-container">
           <Carousel responsive={responsive}>
-            {mealsOfTheWeek[currentDay].length > 0 ? (
-              mealsOfTheWeek[currentDay].map((meal) => (
+            {planLoading ? (
+              [0, 1, 2, 3].map((i) => (
+                <div
+                  className="dashboard-nutrient-row2-container-card"
+                  key={`skeleton-${i}`}
+                >
+                  <div
+                    className="rc-skeleton-block"
+                    style={{ height: "200px" }}
+                  />
+                  <div
+                    className="rc-skeleton-block"
+                    style={{ height: "16px", width: "70px", margin: "12px 0 8px" }}
+                  />
+                  <div
+                    className="rc-skeleton-block"
+                    style={{ height: "22px", width: "75%", margin: "6px 0" }}
+                  />
+                  <div
+                    className="rc-skeleton-block"
+                    style={{ height: "12px", width: "95%", margin: "8px 0 4px" }}
+                  />
+                  <div
+                    className="rc-skeleton-block"
+                    style={{ height: "12px", width: "80%", margin: "0 0 12px" }}
+                  />
+                  <div className="rc-skeleton-card-buttons">
+                    <div
+                      className="rc-skeleton-block"
+                      style={{ height: "26px" }}
+                    />
+                    <div
+                      className="rc-skeleton-block"
+                      style={{ height: "26px" }}
+                    />
+                    <div
+                      className="rc-skeleton-block"
+                      style={{ height: "26px" }}
+                    />
+                    <div
+                      className="rc-skeleton-block"
+                      style={{ height: "26px" }}
+                    />
+                  </div>
+                </div>
+              ))
+            ) : mealsOfTheWeek[currentDay].length > 0 ? (
+              mealsOfTheWeek[currentDay].map((meal) => {
+                const mealPin = findPin(meal);
+                const readOnly = isDayReadOnly(currentDay);
+                const cardLoading =
+                  actionSlotKey === `${currentDay}|${meal._mealSlot}`;
+                return (
                 <div
                   className="dashboard-nutrient-row2-container-card"
                   style={{
-                    border:
-                      pinnedRecipe === meal._id ? "3px solid #f37720" : "",
+                    border: mealPin ? "3px solid #f37720" : "",
+                    opacity: readOnly ? 0.55 : 1,
+                    position: "relative",
                   }}
                   key={meal._id}
                 >
+                  {cardLoading && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "rgba(0,0,0,0.55)",
+                        borderRadius: "inherit",
+                        zIndex: 5,
+                      }}
+                    >
+                      <LoadingOutlined
+                        style={{ fontSize: "40px", color: "#fff" }}
+                        spin
+                      />
+                    </div>
+                  )}
                   <Link to={`/recipe/${slug(meal.name)}/${meal._id}`}>
                     <div
                       style={{
-                        background: `url(${process.env.REACT_APP_SERVER}/api${meal.image ? meal.image.replaceAll(" ", "%20") : ""})`,
+                        background: meal.image
+                          ? `url(${meal.image.replaceAll(" ", "%20")}) center center / cover`
+                          : "var(--color-gray-dark)",
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                         height: "200px",
                       }}
                     ></div>
                     <div className="dashboard-nutrient-row2-container-card-bob font-paragraph-black">
-                      {meal.foodType ? meal.foodType.replace(/[0-9]/g, "") : ""}
+                      {formatMealSlot(meal.foodType)}
                     </div>
                     <div className="dashboard-nutrient-row2-container-card-heading font-paragraph-white">
                       {meal.name}
@@ -832,21 +1602,27 @@ function Nutrient({
                       <span>{meal.kCalPerPerson} kCAL</span>
                     </div>
                     <div
-                      style={{ cursor: "pointer", textAlign: "center" }}
-                      onClick={() => pinRecipe(meal._id)}
+                      style={{
+                        cursor: readOnly ? "not-allowed" : "pointer",
+                        textAlign: "center",
+                        opacity: readOnly ? 0.4 : 1,
+                      }}
+                      onClick={(e) => openPinPopover(e, meal)}
                     >
                       <img
-                        src={meal._id === pinnedRecipe ? pin : GrayPin}
+                        src={mealPin ? pin : GrayPin}
                         alt=""
                         height="16px"
                       />
                     </div>
-                    <div
-                      style={{ cursor: "pointer", textAlign: "center" }}
-                      onClick={() => swapRecipe(meal)}
-                    >
-                      <img src={SwapIcon} alt="" height="16px" />
-                    </div>
+                    {weekMode === "next_week" && (
+                      <div
+                        style={{ cursor: "pointer", textAlign: "center" }}
+                        onClick={() => swapRecipe(meal)}
+                      >
+                        <img src={SwapIcon} alt="" height="16px" />
+                      </div>
+                    )}
                     <button
                       className="font-paragraph-white"
                       onClick={() => addToShoppingCart(currentDay, meal)}
@@ -856,7 +1632,8 @@ function Nutrient({
                     </button>
                   </div>
                 </div>
-              ))
+                );
+              })
             ) : (
               <div
                 style={{
@@ -897,72 +1674,206 @@ function Nutrient({
         )}
       </div>
       <div className="dashboard-nutrient-row3">
-        <div className="dashboard-challenges-mychallenge-heading font-card-heading">
-          <T>userDashboard.nutrient.mysl</T>
+        <div
+          className="dashboard-challenges-mychallenge-heading font-card-heading"
+          style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}
+        >
+          <span><T>userDashboard.nutrient.mysl</T></span>
+          {/* "Update shopping list" full-week sync button — hidden for now.
+              Uncomment to restore full-week shopping sync UX. */}
+          {/* {weekMode === "next_week" && (
+            <button
+              className="font-paragraph-white"
+              onClick={handleSyncWeek}
+              style={{
+                padding: "6px 16px",
+                borderRadius: "6px",
+                border: "1px solid var(--color-orange)",
+                background: "var(--color-orange)",
+                cursor: "pointer",
+              }}
+            >
+              <T>userDashboard.nutrient.update_shopping_list</T>
+            </button>
+          )} */}
         </div>
         <div className="divider"></div>
+
+        {weekPlan && weekPlan.shopping_sync_status === "needs_update" && (
+          <div
+            className="font-paragraph-white"
+            style={{
+              background: "rgba(243,119,32,0.15)",
+              border: "1px solid var(--color-orange)",
+              borderRadius: "6px",
+              padding: "10px 14px",
+              margin: "10px 0",
+            }}
+          >
+            <T>userDashboard.nutrient.shopping_needs_update</T>
+          </div>
+        )}
+
+        {shoppingPrompt.length > 0 && (
+          <div
+            className="font-paragraph-white"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px dashed var(--color-orange)",
+              borderRadius: "6px",
+              padding: "10px 14px",
+              margin: "10px 0",
+            }}
+          >
+            <div style={{ marginBottom: "6px" }}>
+              <T>userDashboard.nutrient.previously_removed_prompt</T>
+            </div>
+            {shoppingPrompt.map((p, i) => (
+              <div
+                key={`${p.itemId}-${p.unit}-${i}`}
+                style={{ display: "flex", alignItems: "center", gap: "10px", padding: "3px 0" }}
+              >
+                <span style={{ textTransform: "capitalize", flex: 1 }}>
+                  {p.name || translate("userDashboard.nutrient.ingredient_fallback") || "ingredient"}
+                </span>
+                <span>
+                  {p.quantity} {p.unit}
+                </span>
+                <button
+                  className="font-paragraph-white"
+                  style={{ cursor: "pointer", border: "1px solid #677182", borderRadius: "4px", padding: "2px 10px", background: "transparent" }}
+                  onClick={() => reAddShoppingItem(p)}
+                >
+                  <T>userDashboard.nutrient.add_back</T>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="dashboard-nutrient-row3-container">
-          <div className="dashboard-nutrient-row3-container-selectedRecipes">
+          <div className="dashboard-nutrient-row3-container-ingredientsSummary" style={{ width: "100%" }}>
             <div
               className="font-paragraph-white"
-              style={{ fontSize: "1.8rem" }}
+              style={{ fontSize: "1.8rem", marginBottom: "8px" }}
             >
-              <T>userDashboard.nutrient.sr</T>
+              <T>userDashboard.nutrient.selected_recipes</T>
             </div>
-            <div className="dashboard-nutrient-row3-container-selectedRecipes-container">
-              {selectedrRecipes.length === 0 ? (
-                <div className="font-paragraph-white" style={{ opacity: 0.6, padding: "10px 0" }}>
-                  <T>userDashboard.nutrient.no_recipes_in_cart</T>
-                </div>
-              ) : (
-                selectedrRecipes.map((recipe) => (
-                  <div className="recipe-block font-paragraph-white" key={recipe.id}>
-                    <span style={{ color: "#f37720", opacity: "1" }}>
-                      {recipe.name}
-                    </span>{" "}
-                    <CloseSquareFilled
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "8px",
+                marginBottom: "16px",
+              }}
+            >
+              {Array.isArray(shoppingList.selectedRecipes) &&
+              shoppingList.selectedRecipes.length > 0 ? (
+                shoppingList.selectedRecipes.map((r, i) => {
+                  const rid = r && (r._id || r);
+                  return (
+                    <span
+                      key={rid || i}
+                      className="font-paragraph-white"
                       style={{
-                        fontSize: "2.4rem",
-                        cursor: "pointer",
-                        color: "#f37720",
-                        marginLeft: "10px",
+                        padding: "4px 6px 4px 10px",
+                        borderRadius: "16px",
+                        background: "rgba(243,119,32,0.15)",
+                        border: "1px solid var(--color-orange)",
+                        fontSize: "13px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
                       }}
-                      onClick={() => removeFromShoppingCart(recipe.id)}
-                    />
-                  </div>
-                ))
+                    >
+                      {(r && r.name) ||
+                        translate("userDashboard.nutrient.recipe_fallback") ||
+                        "Recipe"}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveRecipeFromShopping(rid)}
+                        aria-label="Remove recipe"
+                        title={
+                          translate("userDashboard.nutrient.remove_recipe") ||
+                          "Remove recipe"
+                        }
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--color-orange)",
+                          cursor: "pointer",
+                          fontSize: "16px",
+                          lineHeight: 1,
+                          padding: "0 2px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        <CloseOutlined />
+                      </button>
+                    </span>
+                  );
+                })
+              ) : (
+                <span
+                  className="font-paragraph-white"
+                  style={{ opacity: 0.6, fontSize: "13px" }}
+                >
+                  <T>userDashboard.nutrient.no_selected_recipes</T>
+                </span>
               )}
             </div>
-          </div>
-          <div className="dashboard-nutrient-row3-container-ingredientsSummary">
-            <div
-              className="font-paragraph-white"
-              style={{ fontSize: "1.8rem" }}
-            >
+            <div className="font-paragraph-white" style={{ fontSize: "1.8rem" }}>
               <T>userDashboard.nutrient.ingres</T>
             </div>
             <div className="dashboard-nutrient-row3-container-ingredientsSummary-container">
-              {ingredientsSummary.length === 0 ? (
+              {(!shoppingList.items || shoppingList.items.filter((i) => !i.removedByUser).length === 0) ? (
                 <div className="font-paragraph-white" style={{ opacity: 0.6, padding: "10px 0" }}>
                   <T>userDashboard.nutrient.no_ingredients</T>
                 </div>
               ) : (
-                ingredientsSummary.map((ingredient, idx) => (
-                  <div className="ingredientContainer font-paragraph-white" key={ingredient._id || `${ingredient.name?.name || "ingredient"}-${idx}`}>
-                    <span style={{ textTransform: "capitalize" }}>
-                      {ingredient.name?.name || ingredient.name}
-                    </span>
-                    <span>{ingredient.weight ? `${ingredient.weight} g` : ""}</span>
-                  </div>
-                ))
+                shoppingList.items
+                  .filter((i) => !i.removedByUser)
+                  .map((it, idx) => (
+                    <div
+                      className="ingredientContainer font-paragraph-white"
+                      key={`${it.itemId && (it.itemId._id || it.itemId)}-${it.unit}-${idx}`}
+                      style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                    >
+                      <span style={{ textTransform: "capitalize", flex: 1 }}>
+                        {(it.itemId && it.itemId.name) || "ingredient"}
+                        {it.isOptional && (
+                          <em style={{ opacity: 0.6 }}> · <T>userDashboard.nutrient.optional</T></em>
+                        )}
+                        {it.isSupplement && (
+                          <em style={{ color: "var(--color-orange)" }}> · <T>userDashboard.nutrient.supplement</T></em>
+                        )}
+                      </span>
+                      <span>
+                        {it.quantity} {it.unit}
+                      </span>
+                    </div>
+                  ))
               )}
             </div>
             <div className="dashboard-nutrient-row2-container-card-buttons">
               <button
                 className="font-paragraph-white"
-                style={{ width: "200px", padding: "10px", margin: "10px" }}
+                disabled
+                title={
+                  deliveryStatus && deliveryStatus.firstDeliverableWeekId
+                    ? `First deliverable week: ${deliveryStatus.firstDeliverableWeekId}`
+                    : ""
+                }
+                style={{
+                  width: "240px",
+                  padding: "10px",
+                  margin: "10px",
+                  opacity: 0.5,
+                  cursor: "not-allowed",
+                }}
               >
-                <T>userDashboard.nutrient.ogl</T>
+                <T>userDashboard.nutrient.order_groceries_coming_soon</T>
               </button>
             </div>
           </div>
@@ -1040,6 +1951,112 @@ function Nutrient({
           </div>
         )}
       </div>
+      {pinPopover && (
+        <PinPopover
+          anchorRect={pinPopover.rect}
+          currentMode={pinPopover.pinMode || null}
+          onSelect={handlePinSelect}
+          onClose={() => setPinPopover(null)}
+        />
+      )}
+      {confirmModal && (
+        <div
+          onClick={() => {
+            confirmModal.resolve(false);
+            setConfirmModal(null);
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.65)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--mirage, #1a222d)",
+              border: "1px solid var(--color-orange, #f37720)",
+              borderRadius: "10px",
+              padding: "24px",
+              width: "min(440px, 92vw)",
+              boxShadow: "0 16px 48px rgba(0,0,0,0.55)",
+              color: "#fff",
+            }}
+          >
+            {confirmModal.title && (
+              <div
+                style={{
+                  fontSize: "18px",
+                  fontWeight: 600,
+                  marginBottom: "10px",
+                }}
+              >
+                {confirmModal.title}
+              </div>
+            )}
+            <div
+              style={{
+                fontSize: "15px",
+                lineHeight: 1.5,
+                marginBottom: "20px",
+                color: "rgba(255,255,255,0.92)",
+              }}
+            >
+              {confirmModal.content}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  confirmModal.resolve(false);
+                  setConfirmModal(null);
+                }}
+                style={{
+                  padding: "8px 18px",
+                  borderRadius: "6px",
+                  border: "1px solid #677182",
+                  background: "transparent",
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                }}
+              >
+                {confirmModal.cancelText}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  confirmModal.resolve(true);
+                  setConfirmModal(null);
+                }}
+                autoFocus
+                style={{
+                  padding: "8px 18px",
+                  borderRadius: "6px",
+                  border: "1px solid var(--color-orange, #f37720)",
+                  background: "var(--color-orange, #f37720)",
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                }}
+              >
+                {confirmModal.okText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

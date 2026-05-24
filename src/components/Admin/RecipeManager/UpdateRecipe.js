@@ -19,8 +19,6 @@ import {
   getAllIngredients,
   updateRecipe,
   createFoodType,
-  createMealType,
-  removeMealType,
   removeFoodType,
   createDiet,
   removeDiet,
@@ -65,7 +63,6 @@ function UpdateRecipe(props) {
   const [mealTypes, setMealTypes] = useState([]);
   const [allMealTypes, setAllMealTypes] = useState([]);
   const [mealTypeModalVisible, setMealTypeModalVisible] = useState(false);
-  const [newMealTypeName, setNewMealTypeName] = useState("");
   //=food type
   const [foodType, setFoodTypes] = useState([]);
   const [allFoodTypes, setAllFoodTypes] = useState([]);
@@ -401,33 +398,11 @@ function UpdateRecipe(props) {
           footer={false}
           visible={mealTypeModalVisible}
         >
-          <p className="font-paragraph-white"><T>admin.enter_meal_type</T></p>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <Input
-              value={newMealTypeName}
-              onChange={(e) => setNewMealTypeName(e.target.value)}
-            />
-            <Button
-              type="primary"
-              htmlType="submit"
-              onClick={async () => {
-                if (newMealTypeName.length > 0) {
-                  await createMealType(newMealTypeName, language);
-                  setNewMealTypeName("");
-                  fetchMealTypes();
-                }
-              }}
-              style={{
-                backgroundColor: "var(--color-orange)",
-                borderColor: "var(--color-orange)",
-                marginLeft: "5px",
-              }}
-            >
-              <T>admin.create</T>
-            </Button>
-          </div>
+          <p className="font-paragraph-white"><T>admin.all_meal_types</T></p>
+          <p style={{ color: "#9ca3af", fontSize: "12px", marginTop: "-6px" }}>
+            Meal types are fixed slots. Names cannot be created, edited or deleted.
+          </p>
           <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-            <span className="font-subheading-white"><T>admin.all_meal_types</T></span>
             <List
               size="small"
               bordered
@@ -441,29 +416,8 @@ function UpdateRecipe(props) {
                     justifyContent: "space-between",
                   }}
                 >
-                  <span>{cat.name}</span>
                   <span>
-                    <Button
-                      onClick={async () => {
-                        await removeMealType(cat._id);
-                        fetchMealTypes();
-                      }}
-                      style={{ marginRight: "10px" }}
-                      type="primary"
-                      danger
-                    >
-                      <T>admin.delete</T>
-                    </Button>
-                    <Button
-                      type="primary"
-                      onClick={() => {
-                        setSelectedItemForUpdateTitle(get(strings, "admin.update_meal_type", "Update Meal Type"));
-                        setSelectedItemForUpdate(cat);
-                        setEditItemModelVisible(true);
-                      }}
-                    >
-                      <T>admin.edit</T>
-                    </Button>
+                    <T>{`mealType.${cat.name}`}</T>
                   </span>
                 </List.Item>
               )}

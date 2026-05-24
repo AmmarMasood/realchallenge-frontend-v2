@@ -91,6 +91,9 @@ export function RecipeProvider({ children }) {
             pieces: ing.pieces || "",
             method: ing.method || "",
             other: ing.other || "",
+            isOptional: !!ing.isOptional,
+            includeInShoppingListByDefault:
+              ing.includeInShoppingListByDefault !== false,
           }))
         : []
     );

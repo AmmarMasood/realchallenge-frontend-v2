@@ -12,6 +12,7 @@ import {
   registerUser,
   signupUserWithGoogle,
   signupUserWithFacebook,
+  syncTimeZone,
 } from "../services/authentication";
 import { userInfoContext } from "../contexts/UserStore";
 import { createCustomerDetails } from "../services/customer";
@@ -55,6 +56,7 @@ function Signup(props) {
       setLoading(false);
       localStorage.setItem("jwtToken", res.data.token);
       setAuthToken(localStorage.getItem("jwtToken"));
+      syncTimeZone();
       const r = await createCustomerDetails(wizardValues, res.data._id);
       props.history.push("/new/welcome");
     } else {
@@ -85,6 +87,7 @@ function Signup(props) {
       // setLoading(false);
       localStorage.setItem("jwtToken", res.data.token);
       setAuthToken(localStorage.getItem("jwtToken"));
+      syncTimeZone();
       const r = await createCustomerDetails(wizardValues, res.data._id);
       props.history.push("/new/welcome");
     } else {
@@ -117,6 +120,7 @@ function Signup(props) {
       localStorage.setItem("userRecentlySignedUp", true);
       localStorage.setItem("isActive", false);
       setAuthToken(localStorage.getItem("jwtToken"));
+      syncTimeZone();
       const r = await createCustomerDetails(wizardValues, res.data._id);
       if (
         localStorage.getItem("package-type") &&

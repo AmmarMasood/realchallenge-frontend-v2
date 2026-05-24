@@ -170,10 +170,11 @@ export function markAllNotificationsAsRead() {
     });
 }
 
-export function getRecommandedWeeklyDiet(id) {
+export function getRecommandedWeeklyDiet(id, language) {
+  const query = language ? `?language=${encodeURIComponent(language)}` : "";
   return axios
     .get(
-      `${process.env.REACT_APP_SERVER}/api/customerDetails/recommendedWeeklyDiet/${id}`,
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/recommendedWeeklyDiet/${id}${query}`,
     )
     .then((res) => res.data)
     .catch((err) => {

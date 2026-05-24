@@ -69,7 +69,7 @@ function UserDashboard() {
         setUserProfile(res.customer.customerDetails);
       }
       const rc = await getRecommandedChallenges(userInfo.id, language);
-      const rd = await getRecommandedWeeklyDiet(userInfo.id);
+      const rd = await getRecommandedWeeklyDiet(userInfo.id, language);
       const gender = res.customer.gender;
       setGender(gender);
       setRecommandedChallenges(rc);

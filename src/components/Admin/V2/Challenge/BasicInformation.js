@@ -100,7 +100,7 @@ import {
   ItemTypeWorkout,
 } from "../../../../helpers/DndWrapper.jsx";
 import { debounce } from "lodash";
-import { createPost } from "../../../../services/posts.js";
+import { createPost, postExistsForUrl } from "../../../../services/posts.js";
 import { getDefaultGoals } from "../../../../constants/goals.js";
 import VersionConflictModal from "../../../Common/VersionConflictModal";
 import ChallengeLockModal from "../../../Common/ChallengeLockModal";
@@ -214,6 +214,8 @@ function BasicInformation(props) {
   const [makePublic, setMakePublic] = useState(true);
   const [adminApproved, setAdminApproved] = useState(false);
   const [userCreatePost, setUserCreatePost] = useState(false);
+  const [postExists, setPostExists] = useState(false);
+  const [postCreating, setPostCreating] = useState(false);
   const [isDraggingWorkout, setIsDraggingWorkout] = useState(false);
   const [draggedWorkoutId, setDraggedWorkoutId] = useState(null);
   const [coverVideoLoading, setCoverVideoLoading] = useState(true);
@@ -1028,6 +1030,38 @@ function BasicInformation(props) {
     // setCreatePostModalVisible(false);
     // console.log(values);
   };
+
+  // Standalone "Create Post about this Challenge" button — usable anytime
+  // after the challenge exists. Disabled once a post is already on file
+  // for this challenge (detected by url).
+  const handleManualCreatePost = async () => {
+    if (postExists || postCreating) return;
+    const challengeId = props.match.params.challengeId;
+    if (!challengeId) return;
+    setPostCreating(true);
+    try {
+      await createAPost(challengeId);
+      setPostExists(true);
+    } finally {
+      setPostCreating(false);
+    }
+  };
+
+  // On entering update mode, check whether a post already exists for this
+  // challenge so the button can be pre-disabled.
+  useEffect(() => {
+    const challengeId = props.match.params.challengeId;
+    if (!challengeId || !challengeName) return;
+    let cancelled = false;
+    (async () => {
+      const url = `/challenge/${slug(challengeName)}/${challengeId}`;
+      const r = await postExistsForUrl(url);
+      if (!cancelled) setPostExists(!!(r && r.exists));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [props.match.params.challengeId, challengeName]);
 
   const handleWeeksForUpdate = async (weeks, isUpdate) => {
     // Helper function to transform workout data to be consistent format for both create and update
@@ -3407,16 +3441,18 @@ function BasicInformation(props) {
                 </Checkbox>
               </div>
 
-              <div>
-                <Checkbox
-                  checked={userCreatePost}
-                  onChange={(e) => setUserCreatePost(e.target.checked)}
-                  className="font-paragraph-white"
-                  style={{ marginTop: "10px" }}
-                >
-                  <T>challengeStudio.create_post</T>
-                </Checkbox>
-              </div>
+              {!isUpdate && (
+                <div>
+                  <Checkbox
+                    checked={userCreatePost}
+                    onChange={(e) => setUserCreatePost(e.target.checked)}
+                    className="font-paragraph-white"
+                    style={{ marginTop: "10px" }}
+                  >
+                    <T>challengeStudio.create_post</T>
+                  </Checkbox>
+                </div>
+              )}
 
               {isUpdate && (
                 <div
@@ -3562,6 +3598,36 @@ function BasicInformation(props) {
             >
               <T>challengeStudio.save_challenge</T>
             </button>
+            {isUpdate && (
+              <button
+                onClick={handleManualCreatePost}
+                disabled={postExists || postCreating}
+                title={
+                  postExists
+                    ? "A post for this challenge already exists"
+                    : "Create a feed post for this challenge"
+                }
+                style={{
+                  background: postExists ? "#4a5260" : "transparent",
+                  color: "white",
+                  border: "1px solid #f37720",
+                  padding: "10px 20px",
+                  fontSize: "16px",
+                  cursor:
+                    postExists || postCreating ? "not-allowed" : "pointer",
+                  opacity: postExists || postCreating ? 0.6 : 1,
+                  width: "99%",
+                  borderRadius: "5px",
+                  margin: "0 10px 20px",
+                }}
+              >
+                {postCreating
+                  ? "Creating…"
+                  : postExists
+                  ? "Post already created"
+                  : "Create Post"}
+              </button>
+            )}
           </div>
         </div>
       </div>

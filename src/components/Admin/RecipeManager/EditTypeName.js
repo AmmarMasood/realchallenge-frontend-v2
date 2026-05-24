@@ -5,7 +5,6 @@ import {
   updateDiet,
   updateFoodType,
   updateIngredient,
-  updateMealType,
 } from "../../../services/recipes";
 import { LanguageContext } from "../../../contexts/LanguageContext";
 
@@ -26,9 +25,7 @@ function EditTypeName({
 
   const updateItem = async () => {
     if (newCategoryName.length > 0) {
-      if (titleName === "Update Meal Type") {
-        await updateMealType(newCategoryName, selectedForUpdate._id);
-      }
+      // Meal Type is a fixed enum slot — intentionally not editable here.
       if (titleName === "Update Food Type") {
         await updateFoodType(newCategoryName, selectedForUpdate._id);
       }

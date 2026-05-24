@@ -137,39 +137,23 @@ function ModalForEditList({
 
   // Calculate responsive dimensions based on screen size
   const getResponsiveDimensions = () => {
-    const { width, height } = dimensions;
+    const { width } = dimensions;
 
     // Mobile portrait (< 600px width)
     if (width < 600) {
-      return {
-        width: "95vw",
-        listHeight: `${height - 250}px`, // Account for header, search, and margins
-        maxListHeight: "60vh",
-      };
+      return { width: "95vw", bodyMaxHeight: "90vh" };
     }
     // Mobile landscape or small tablet (600-900px width)
     else if (width < 900) {
-      return {
-        width: "80vw",
-        listHeight: `${height - 280}px`,
-        maxListHeight: "65vh",
-      };
+      return { width: "80vw", bodyMaxHeight: "85vh" };
     }
     // Tablet (900-1200px width)
     else if (width < 1200) {
-      return {
-        width: "70vw",
-        listHeight: `${height - 300}px`,
-        maxListHeight: "70vh",
-      };
+      return { width: "70vw", bodyMaxHeight: "85vh" };
     }
     // Desktop (>= 1200px width)
     else {
-      return {
-        width: "60vw",
-        listHeight: `${height - 350}px`,
-        maxListHeight: "75vh",
-      };
+      return { width: "60vw", bodyMaxHeight: "85vh" };
     }
   };
 
@@ -188,6 +172,10 @@ function ModalForEditList({
         border: "1px solid #FF950A",
         textAlign: "center",
         padding: dimensions.width < 600 ? "12px" : "24px", // Less padding on mobile
+        display: "flex",
+        flexDirection: "column",
+        maxHeight: responsiveDimensions.bodyMaxHeight,
+        overflow: "hidden",
       }}
       style={{
         top: dimensions.width < 600 ? 10 : undefined, // Minimize top margin on mobile
@@ -233,8 +221,8 @@ function ModalForEditList({
       <div
         className="exercise-selector__list"
         style={{
-          height: responsiveDimensions.listHeight,
-          maxHeight: responsiveDimensions.maxListHeight,
+          flex: 1,
+          minHeight: 0,
           overflowY: "auto",
         }}
       >

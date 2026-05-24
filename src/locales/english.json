@@ -1,4 +1,11 @@
 {
+  "mealType": {
+    "breakfast": "Breakfast",
+    "morningSnack": "Morning Snack",
+    "lunch": "Lunch",
+    "afternoonSnack": "Afternoon Snack",
+    "dinner": "Dinner"
+  },
   "common": {
     "start_your_7day_free_trial": "Start your 7 day free trial",
     "accept_the_challenge": "Accept the challenge!",
@@ -963,6 +970,49 @@
 
   "userDashboard": {
     "nutrient": {
+      "this_week": "This Week",
+      "next_week": "Next Week",
+      "regenerate_week": "Regenerate Week",
+      "regenerating": "Regenerating…",
+      "week_regenerated": "Next week regenerated",
+      "confirm_yes": "Yes",
+      "confirm_no": "No",
+      "past_day_readonly": "Passed days are read-only.",
+      "swap_next_only": "Swapping is only available on Next Week.",
+      "swap_failed": "Unable to swap recipe",
+      "swap_pinned_blocked": "The recipe is pinned. Unpin it to swap.",
+      "recipe_no_items": "This recipe has no ingredients with quantities to add.",
+      "shopping_qty_updated": "Already in your list — quantities updated.",
+      "selected_recipes": "Selected Recipes",
+      "no_selected_recipes": "No recipes added yet.",
+      "remove_recipe": "Remove recipe",
+      "update_shopping_list": "Update shopping list",
+      "shopping_updated": "Shopping list updated",
+      "shopping_needs_update": "Your plan changed — update your shopping list to match.",
+      "previously_removed_prompt": "Some ingredients you removed earlier are used in the updated plan:",
+      "some_items_previously_removed": "Some ingredients you removed earlier are needed again — review below.",
+      "add_back": "Add back",
+      "optional": "optional",
+      "supplement": "supplement",
+      "order_groceries_coming_soon": "Order groceries — coming soon",
+      "fuel_moment_replaces": "Fuel Moment replaces which snack?",
+      "every_day": "Every day",
+      "pins_affected_confirm": "This change affects one or more pinned days or recipes. Continue and remove the affected pin(s)?",
+      "pin_this_day": "Pin this day",
+      "unpin_day": "Unpin day",
+      "pin_day_as": "Pin day as:",
+      "pin_just_once": "Just once",
+      "pin_always": "Always",
+      "pin_remove": "Remove pin",
+      "pin_saved_once": "Pinned for next week",
+      "pin_saved_always": "Pinned weekly",
+      "cancel": "Cancel",
+      "day_pinned": "Day pinned",
+      "day_unpinned": "Day unpinned",
+      "nothing_to_pin": "Nothing to pin on this day yet.",
+      "loading_plan": "Loading your plan…",
+      "add_to_next_week_confirm": "Add this to your Next Week plan?",
+      "slot_conflict_confirm": "That slot in Next Week was already changed or pinned. Replace it?",
       "sup": "Supplement Setting",
       "none": "None",
       "du": "During the day",
@@ -1043,7 +1093,8 @@
       "ccfy": "Challenge Choosen For You",
       "vac": "View all challenges",
       "sp": "See Pricing",
-      "nochal": "No challenges found"
+      "nochal": "No challenges found",
+      "no_my_challenges": "No challenge found"
     }
   },
   "wizard": {
