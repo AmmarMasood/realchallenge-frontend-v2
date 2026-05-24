@@ -14,7 +14,15 @@ const INTENSITY_KEYS = {
 };
 
 const VIDEO_EXTENSIONS = [
-  "m4v", "avi", "mpg", "mp4", "mov", "wmv", "flv", "webm", "mkv",
+  "m4v",
+  "avi",
+  "mpg",
+  "mp4",
+  "mov",
+  "wmv",
+  "flv",
+  "webm",
+  "mkv",
 ];
 
 const isVideoFile = (src) => {
@@ -138,16 +146,21 @@ function ChallengeCard({
           {showLevelsBadge ? `${intensityLevels} Levels` : translatedIntensity}
         </div>
       )}
-      <div className="challenge-card-basic-textbox" style={{ position: "relative", zIndex: 2 }}>
+      <div
+        className="challenge-card-basic-textbox"
+        style={{ position: "relative", zIndex: 2 }}
+      >
         <h3
           className="challenge-card-basic-textbox-name  font-paragraph-white"
           style={{ lineHeight: "25px" }}
         >
           {name}
         </h3>
-        <div style={{ paddingRight: "5px" }}>
+        <div style={{ paddingRight: "5px", width: "fit-content" }}>
           {rating > 0 &&
-            new Array(rating).fill(0).map((_, i) => <img key={i} src={star} alt="" />)}
+            new Array(rating)
+              .fill(0)
+              .map((_, i) => <img key={i} src={star} alt="" />)}
         </div>
 
         <p className="challenge-card-basic-textbox-location font-paragraph-white">
@@ -167,7 +180,7 @@ function ChallengeCard({
           </p>
         )}
         {!recipe && (
-          <div>
+          <div style={{ width: "fit-content" }}>
             <img
               src={forward}
               alt=""

@@ -505,7 +505,6 @@ function ChallengePlayer(props) {
               challengeSlug={props.match.params.challengeName}
               history={props.history}
             />
-
             {/* <div className="buy-related-products">
           <p className="font-heading-white">Related Products</p>
           {workout.relatedProducts.map((p) => (
