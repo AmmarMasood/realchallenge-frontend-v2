@@ -973,6 +973,7 @@
       "this_week": "This Week",
       "current_week": "Current Week",
       "next_week": "Next Week",
+      "first_plan_starts_monday": "Your first plan starts Monday.",
       "regenerate_week": "Regenerate Week",
       "regenerating": "Regenerating…",
       "week_regenerated": "Next week regenerated",

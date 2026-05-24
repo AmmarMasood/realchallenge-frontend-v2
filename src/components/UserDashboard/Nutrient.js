@@ -197,7 +197,16 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
   // Backend WeekPlan model. weekMode toggles This Week (execution) vs
   // Next Week (planning). The raw plan keeps per-day date/lock info that
   // the mapped mealsOfTheWeek shape drops.
-  const [weekMode, setWeekMode] = useState("this_week");
+  // Signup-day default focus (spec §43):
+  //  - Mon-Wed → default to This Week (the user can act on their plan now)
+  //  - Thu-Sun → default to Next Week (this week is mostly past; planning
+  //    matters more, with the "your first plan starts Monday" copy)
+  // User can still freely toggle between modes; this only sets the initial
+  // view on first mount.
+  const [weekMode, setWeekMode] = useState(() => {
+    const d = new Date().getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    return d >= 1 && d <= 3 ? "this_week" : "next_week";
+  });
   const [weekPlan, setWeekPlan] = useState(null);
   const [planLoading, setPlanLoading] = useState(false);
   const [planWarning, setPlanWarning] = useState(null);
@@ -1401,6 +1410,22 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
             </button>
           </div>
         </div>
+        {weekMode === "next_week" &&
+          localStorage.getItem("userRecentlySignedUp") === "true" &&
+          [0, 4, 5, 6].includes(new Date().getDay()) && (
+            <div
+              className="font-paragraph-white"
+              style={{
+                background: "rgba(243,119,32,0.15)",
+                border: "1px solid var(--color-orange)",
+                borderRadius: "6px",
+                padding: "10px 14px",
+                margin: "10px 0",
+              }}
+            >
+              <T>userDashboard.nutrient.first_plan_starts_monday</T>
+            </div>
+          )}
         {planWarning && weekMode === "next_week" && (
           <div
             className="font-paragraph-white"

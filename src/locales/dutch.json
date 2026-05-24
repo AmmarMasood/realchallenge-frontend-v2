@@ -971,7 +971,9 @@
   "userDashboard": {
     "nutrient": {
       "this_week": "Deze week",
+      "current_week": "Huidige week",
       "next_week": "Volgende week",
+      "first_plan_starts_monday": "Je eerste plan begint maandag.",
       "regenerate_week": "Week opnieuw genereren",
       "regenerating": "Bezig met genereren…",
       "week_regenerated": "Volgende week opnieuw gegenereerd",
@@ -986,6 +988,9 @@
       "selected_recipes": "Geselecteerde recepten",
       "no_selected_recipes": "Nog geen recepten toegevoegd.",
       "remove_recipe": "Recept verwijderen",
+      "add_persons": "Personen toevoegen",
+      "order_grocery_list": "Boodschappenlijst bestellen",
+      "add_week_to_shopping": "Week toevoegen aan winkelmandje",
       "update_shopping_list": "Boodschappenlijst bijwerken",
       "shopping_updated": "Boodschappenlijst bijgewerkt",
       "shopping_needs_update": "Je plan is gewijzigd — werk je boodschappenlijst bij.",
