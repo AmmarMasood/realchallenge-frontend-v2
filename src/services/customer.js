@@ -58,3 +58,64 @@ export function addChallengeToCustomerDetail(userId, challengeId) {
       console.log(err);
     });
 }
+
+// ─── Favourite Challenges ─── parallel to favouriteRecipe* in services/recipes.js
+export function favouriteChallengeById(body, id) {
+  return axios
+    .put(
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/favouriteChallenge/${id}`,
+      body,
+    )
+    .then((res) => {
+      openNotificationWithIcon(
+        "success",
+        "Challenge added to favourites!",
+        "",
+      );
+      return res.data;
+    })
+    .catch((err) => {
+      const msg = err?.response?.data?.msg;
+      openNotificationWithIcon(
+        "error",
+        msg || "Unable to add challenge to favourites",
+        "",
+      );
+    });
+}
+
+export function unFavouriteChallengeById(body, id) {
+  return axios
+    .put(
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/unfavouriteChallenge/${id}`,
+      body,
+    )
+    .then((res) => {
+      openNotificationWithIcon(
+        "success",
+        "Challenge removed from favourites!",
+        "",
+      );
+      return res.data;
+    })
+    .catch((err) => {
+      const msg = err?.response?.data?.msg;
+      openNotificationWithIcon(
+        "error",
+        msg || "Unable to remove challenge from favourites",
+        "",
+      );
+    });
+}
+
+export function getAllFavouriteChallenges(id) {
+  return axios
+    .get(
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/favouriteChallenge/${id}`,
+    )
+    .then((res) => res.data)
+    .catch((err) => {
+      // 400 "Have not favourited any challenges yet" is expected for new users
+      console.log(err);
+    });
+}

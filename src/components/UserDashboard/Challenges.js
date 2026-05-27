@@ -1,15 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
-import { FlagOutlined } from "@ant-design/icons";
+import { FlagOutlined, HeartFilled } from "@ant-design/icons";
+import NoFavsChallenge from "../../assets/challenge-man.svg";
+import { userInfoContext } from "../../contexts/UserStore";
+import {
+  getAllFavouriteChallenges,
+  unFavouriteChallengeById,
+} from "../../services/customer";
 import MaleBody from "../../images/Asset-514@4x-1.png";
 import FemaleBody from "../../images/Group 9879.png";
 import {
   VictoryPie,
   VictoryChart,
-  VictoryBar,
-  VictoryLabel,
+  VictoryArea,
   VictoryAxis,
+  VictoryScatter,
+  VictoryGroup,
+  VictoryContainer,
 } from "victory";
+import { CaretDownOutlined, ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
 // import { Scrollbars } from "react-custom-scrollbars";
 import "../../assets/userDashboard.css";
 
@@ -23,7 +32,34 @@ import PlayerIcon from "../../assets/icons/player-icon.svg";
 import Carousel from "react-multi-carousel";
 import slug from "elegant-slug";
 import { getChallengeProgress } from "../../services/users";
-import { T } from "../Translate";
+import { T, translate } from "../Translate";
+
+const VIDEO_EXTENSIONS = [
+  "m4v",
+  "avi",
+  "mpg",
+  "mp4",
+  "mov",
+  "wmv",
+  "flv",
+  "webm",
+  "mkv",
+];
+
+const isVideoFile = (file) => {
+  if (!file) return false;
+  const link = typeof file === "string" ? file : file.link;
+  if (!link) return false;
+  const ext = link.split("?")[0].split(".").pop()?.toLowerCase();
+  return VIDEO_EXTENSIONS.includes(ext);
+};
+
+const getThumbnailLink = (thumbnail) => {
+  if (!thumbnail) return "";
+  if (typeof thumbnail === "string") return thumbnail.replace(/ /g, "%20");
+  if (thumbnail.link) return thumbnail.link.replace(/ /g, "%20");
+  return "";
+};
 
 const responsive = {
   superLargeDesktop: {
@@ -58,6 +94,16 @@ function Challenges({ userProfile, gender, recommandedChal }) {
   // eslint-disable-next-line
   const [myDevelopment, setMyDevelopment] = useState({});
   const [pics, setPics] = useState(["", ""]);
+  // My-Development chart controls (mockup):
+  //  - selectedMetric: which series to plot (Weight is the default like the mockup)
+  //  - selectedPeriod: stub for week/month/year — data is monthly today, so
+  //    all three render the same 12-month series. Hooked up so future
+  //    per-day tracking just plugs the period in here.
+  const [selectedMetric, setSelectedMetric] = useState("weight");
+  const [selectedPeriod, setSelectedPeriod] = useState("month");
+  // Favourite challenges (parallel to favourite recipes in Nutrient.js)
+  const [userInfo] = useContext(userInfoContext);
+  const [favChallenges, setFavChallenges] = useState([]);
   // eslint-disable-next-line
   const [recommandedChallenges, setRecommandedChallenges] = useState([]);
   const [challengeProgress, setChallengeProgress] = useState([]);
@@ -77,10 +123,21 @@ function Challenges({ userProfile, gender, recommandedChal }) {
   ];
   useEffect(() => {
     if (!userProfile) return;
+    // Normalize: if a measurement is still a scalar (pre-migration), expand
+    // it into a 12-slot array with the value in the current month.
+    const month = new Date().getMonth();
+    const normalize = (v) => {
+      if (Array.isArray(v)) return v;
+      const arr = new Array(12).fill(0);
+      if (typeof v === "number" && Number.isFinite(v)) arr[month] = v;
+      return arr;
+    };
     setMyDevelopment({
-      weightChart: Array.isArray(userProfile.weight)
-        ? userProfile.weight.map((w, i) => ({ x: months[i], y: w }))
-        : [],
+      weight: normalize(userProfile.weight),
+      shoulders: normalize(userProfile.shoulderSize),
+      waist: normalize(userProfile.waistSize),
+      breast: normalize(userProfile.chestSize),
+      hip: normalize(userProfile.hipSize),
       bodyFat: userProfile.bmir,
     });
     setPics([userProfile.beforeImageLink, userProfile.afterImageLink]);
@@ -112,13 +169,36 @@ function Challenges({ userProfile, gender, recommandedChal }) {
     getAllMyChallengeProgress();
   }, [myChallenges]);
 
+  useEffect(() => {
+    // Load the user's favourite challenges once we know who's logged in.
+    if (!userInfo || !userInfo.id) return;
+    let cancelled = false;
+    (async () => {
+      const res = await getAllFavouriteChallenges(userInfo.id);
+      if (cancelled) return;
+      setFavChallenges(
+        res && Array.isArray(res.favChallenges) ? res.favChallenges : [],
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userInfo && userInfo.id]);
+
+  const unfavouriteFavChallenge = async (id) => {
+    const res = await unFavouriteChallengeById({ challengeId: id }, userInfo.id);
+    if (res) {
+      setFavChallenges((prev) => prev.filter((c) => c._id !== id));
+    }
+  };
+
   return (
     <div>
       <div className="dashboard-feed-container" style={{ display: "grid" }}>
         <div className="dashboard-challenges-row1">
           <div className="dashboard-challenges-mychallenge">
             <div
-              className="user-update-container-box-row2-heading font-card-heading-light"
+              className="dashboard-challenges-mychallenge-heading user-update-container-box-row2-heading font-card-heading"
               style={{ marginTop: "8px" }}
             >
               <T>userDashboard.challenges.mcc</T>
@@ -200,120 +280,236 @@ function Challenges({ userProfile, gender, recommandedChal }) {
               </div>
             </Scrollbars> */}
           </div>
-          <div className="dashboard-challenges-myshape">
-            <div
-              className="dashboard-challenges-mychallenge-heading"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-              }}
-            >
-              <span className="user-update-container-box-row2-heading font-card-heading-light">
-                <T>userDashboard.challenges.ms</T>
-              </span>
+          {!userProfile?.hideMyShape && (
+            <div className="dashboard-challenges-myshape">
+              <div
+                className="dashboard-challenges-mychallenge-heading"
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                }}
+              >
+                <span className="user-update-container-box-row2-heading font-card-heading">
+                  <T>userDashboard.challenges.ms</T>
+                </span>
 
-              <div style={{ marginBottom: "10px" }}>
-                <Link
-                  to="/user/update"
-                  className="font-paragraph-white hover-orange"
-                  style={{ fontSize: "15px" }}
-                >
-                  <T>userDashboard.challenges.update</T>
-                </Link>
+                <div style={{ marginBottom: "10px" }}>
+                  <Link
+                    to="/user/update"
+                    className="font-paragraph-white hover-orange"
+                    style={{ fontSize: "15px" }}
+                  >
+                    <T>userDashboard.challenges.update</T>
+                  </Link>
+                </div>
+                <div className="divider"></div>
               </div>
-              <div className="divider"></div>
+              <div className="dashboard-challenges-myshape-container">
+                <ReactCompareSlider
+                  itemOne={
+                    <div
+                      className="font-paragraph-white"
+                      style={{ backgroundColor: "#2F3E50", height: "100%" }}
+                    >
+                      {pics[0] ? (
+                        <img src={pics[0]} alt="users-before" />
+                      ) : null}
+                    </div>
+                  }
+                  itemTwo={
+                    <div
+                      className="font-paragraph-white"
+                      style={{ backgroundColor: "#3C618F", height: "100%" }}
+                    >
+                      {pics[1] ? (
+                        <img src={pics[1]} alt="users-after" />
+                      ) : null}
+                    </div>
+                  }
+                />
+              </div>
             </div>
-            <div className="dashboard-challenges-myshape-container">
-              <ReactCompareSlider
-                itemOne={
-                  <div
-                    className="font-paragraph-white"
-                    style={{ backgroundColor: "#2F3E50", height: "100%" }}
-                  >
-                    {pics[0] ? (
-                      <img src={pics[0]} alt="users-before" />
-                    ) : null}
-                  </div>
-                }
-                itemTwo={
-                  <div
-                    className="font-paragraph-white"
-                    style={{ backgroundColor: "#3C618F", height: "100%" }}
-                  >
-                    {pics[1] ? (
-                      <img src={pics[1]} alt="users-after" />
-                    ) : null}
-                  </div>
-                }
-              />
-            </div>
-          </div>
+          )}
         </div>
       </div>
       <div className="dashboard-challenges-row2">
-        <div className="dashboard-challenges-row2-mydevelopment">
-          <div className="user-update-container-box-row2-heading font-card-heading-light">
-            <T>userDashboard.challenges.mydev</T>
-          </div>
-          <div className="divider"></div>
-          <div className="dashboard-challenges-row2-mydevelopment-insidebox-1">
-            {/* <VictoryContainer style={{ width: "50%" }}> */}
-            {/* <svg viewBox="0 0 200 350"> */}
-            <div style={{ width: "50%" }}>
-              <VictoryPie
-                innerRadius={30}
-                padding={10}
-                height={200}
-                width={350}
-                labels={({ datum }) => ``}
-                colorScale={["#F37720", "#171e27"]}
-                data={[
-                  { x: "Body Weight", y: myDevelopment.bodyFat },
-                  { x: "", y: 100 - myDevelopment.bodyFat },
-                ]}
-              />
+        {(() => {
+          // ── Derive everything the My-Development cards need from state ──
+          const series = myDevelopment[selectedMetric] || [];
+          const chartData = series.map((y, i) => ({
+            x: months[i],
+            y: Number(y) || 0,
+          }));
+          const monthIdx = new Date().getMonth();
+          const currentValue = Number(series[monthIdx]) || 0;
+          // Trend: compare current month vs nearest earlier non-zero month.
+          // Falls back to flat if no prior data point exists.
+          let trendDir = "flat";
+          for (let i = monthIdx - 1; i >= 0; i--) {
+            const prev = Number(series[i]) || 0;
+            if (prev === 0) continue;
+            if (currentValue > prev) trendDir = "up";
+            else if (currentValue < prev) trendDir = "down";
+            break;
+          }
+          const metricOptions = [
+            { v: "weight", k: "weight_chart" },
+            { v: "shoulders", k: "shoulders_chart" },
+            { v: "waist", k: "waist_chart" },
+            { v: "breast", k: "breast_chart" },
+            { v: "hip", k: "hip_chart" },
+          ];
+          return (
+            <div className="dashboard-challenges-row2-mydevelopment">
+              <div className="mydev-header">
+                <span className="user-update-container-box-row2-heading font-card-heading">
+                  <T>userDashboard.challenges.mydev</T>
+                </span>
+                <div className="mydev-period-select-wrap">
+                  <select
+                    className="mydev-period-select"
+                    value={selectedPeriod}
+                    onChange={(e) => setSelectedPeriod(e.target.value)}
+                  >
+                    {/* Week & Year disabled until per-day storage lands */}
+                    <option value="week" disabled>
+                      {translate("userDashboard.challenges.period_week")} (
+                      {translate("userDashboard.challenges.coming_soon")})
+                    </option>
+                    <option value="month">
+                      {translate("userDashboard.challenges.period_month")}
+                    </option>
+                    <option value="year" disabled>
+                      {translate("userDashboard.challenges.period_year")} (
+                      {translate("userDashboard.challenges.coming_soon")})
+                    </option>
+                  </select>
+                  <CaretDownOutlined className="mydev-select-caret" />
+                </div>
+              </div>
+              <div className="divider"></div>
+
+              {/* Card 1 — Body Fat */}
+              <div className="mydev-card mydev-bodyfat">
+                <div className="mydev-bodyfat-chart">
+                  <VictoryPie
+                    innerRadius={70}
+                    padding={10}
+                    height={220}
+                    width={220}
+                    labels={() => ""}
+                    /* Rest-slice contrasts with the #2B3949 card bg. */
+                    colorScale={["#F37720", "#1B2531"]}
+                    data={[
+                      { x: "Body Fat", y: myDevelopment.bodyFat || 0 },
+                      { x: "", y: 100 - (myDevelopment.bodyFat || 0) },
+                    ]}
+                  />
+                </div>
+                <div className="mydev-bodyfat-text">
+                  <span className="mydev-bodyfat-value">
+                    {myDevelopment.bodyFat || 0}%
+                  </span>
+                  <span className="mydev-bodyfat-label">
+                    <T>userDashboard.challenges.body_fat_approximately</T>
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 2 — Trend chart */}
+              <div className="mydev-card mydev-trend">
+                <div className="mydev-trend-header">
+                  <div className="mydev-metric-select-wrap">
+                    <select
+                      className="mydev-metric-select"
+                      value={selectedMetric}
+                      onChange={(e) => setSelectedMetric(e.target.value)}
+                    >
+                      {metricOptions.map((opt) => (
+                        <option key={opt.v} value={opt.v}>
+                          {/* Inline lookup — T not allowed inside <option> */}
+                          {opt.v === "weight"
+                            ? "Weight chart"
+                            : opt.v === "shoulders"
+                            ? "Shoulders chart"
+                            : opt.v === "waist"
+                            ? "Waist chart"
+                            : opt.v === "breast"
+                            ? "Breast chart"
+                            : "Hip chart"}
+                        </option>
+                      ))}
+                    </select>
+                    <CaretDownOutlined className="mydev-select-caret" />
+                  </div>
+                  <div
+                    className={`mydev-trend-pill mydev-trend-${trendDir}`}
+                  >
+                    {trendDir === "up" && <ArrowUpOutlined />}
+                    {trendDir === "down" && <ArrowDownOutlined />}
+                    <span>{currentValue || "—"}</span>
+                  </div>
+                </div>
+                <VictoryChart
+                  height={220}
+                  width={500}
+                  padding={{ top: 20, bottom: 30, left: 30, right: 20 }}
+                  containerComponent={
+                    <VictoryContainer
+                      responsive={true}
+                      style={{ width: "100%", height: "auto" }}
+                    />
+                  }
+                >
+                  <VictoryAxis
+                    style={{
+                      axis: { stroke: "transparent" },
+                      grid: {
+                        stroke: "#2A3340",
+                        strokeDasharray: "2,4",
+                      },
+                      tickLabels: {
+                        fontSize: 10,
+                        fill: "#8E9BAA",
+                      },
+                    }}
+                  />
+                  <VictoryGroup>
+                    <VictoryArea
+                      interpolation="catmullRom"
+                      data={chartData}
+                      style={{
+                        data: {
+                          fill: "#F37720",
+                          fillOpacity: 0.85,
+                          stroke: "#F37720",
+                          strokeWidth: 2,
+                        },
+                      }}
+                    />
+                    <VictoryScatter
+                      data={[
+                        {
+                          x: months[monthIdx],
+                          y: currentValue,
+                        },
+                      ]}
+                      size={6}
+                      style={{
+                        data: {
+                          fill: "#fff",
+                          stroke: "#F37720",
+                          strokeWidth: 3,
+                        },
+                      }}
+                    />
+                  </VictoryGroup>
+                </VictoryChart>
+              </div>
             </div>
-            {/* </svg> */}
-            {/* </VictoryContainer> */}
-            <div className="dashboard-challenges-row2-mydevelopment-insidebox-1-text">
-              <span className="font-paragraph-white">
-                {" "}
-                <T>userDashboard.challenges.bf</T>
-              </span>
-              <span
-                className="font-paragraph-white"
-                style={{ fontSize: "4rem", paddingTop: "10px" }}
-              >
-                {myDevelopment.bodyFat} %
-              </span>
-            </div>
-          </div>
-          <div className="dashboard-challenges-row2-mydevelopment-insidebox-2">
-            <VictoryChart height={250}>
-              <VictoryLabel
-                x={225}
-                y={30}
-                textAnchor="middle"
-                style={{ fill: "#fff", opacity: "0.8", fontSize: "1.4rem" }}
-              />
-              <VictoryBar
-                style={{ data: { fill: "#F37720" }, labels: { fill: "white" } }}
-                data={myDevelopment.weightChart}
-                labels={({ datum }) => datum.y}
-              />
-              <VictoryAxis
-                style={{
-                  tickLabels: {
-                    fontSize: "14px",
-                    fill: "#fff",
-                    opacity: "0.8",
-                  },
-                }}
-              />
-            </VictoryChart>
-          </div>
-        </div>
+          );
+        })()}
         <div className="dashboard-challenges-row2-mybody">
           <div
             className="dashboard-challenges-mychallenge-heading"
@@ -323,7 +519,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
               flexWrap: "wrap",
             }}
           >
-            <span className="user-update-container-box-row2-heading font-card-heading-light">
+            <span className="user-update-container-box-row2-heading font-card-heading">
               <T>userDashboard.challenges.mybody</T>
             </span>
 
@@ -385,7 +581,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
             flexWrap: "wrap",
           }}
         >
-          <span className="user-update-container-box-row2-heading font-card-heading-light">
+          <span className="user-update-container-box-row2-heading font-card-heading">
             <T>userDashboard.challenges.ccfy</T>
           </span>
 
@@ -485,6 +681,151 @@ function Challenges({ userProfile, gender, recommandedChal }) {
             </div>
           )}
         </div>
+      </div>
+
+      {/* ── My Favourite Challenges ── mirrors My Favourite Recipes pattern */}
+      <div className="dashboard-challenges-row3" style={{ marginTop: "18px" }}>
+        <div
+          className="dashboard-challenges-mychallenge-heading"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+          }}
+        >
+          <span className="user-update-container-box-row2-heading font-card-heading">
+            <T>userDashboard.challenges.mfc</T>
+          </span>
+          <div className="divider"></div>
+        </div>
+        {favChallenges.length === 0 ? (
+          <div className="dashboard-nutrient-row4-container">
+            <div style={{ textAlign: "center" }}>
+              <img
+                src={NoFavsChallenge}
+                alt="no-favourite-challenges"
+                style={{ maxHeight: "180px", width: "auto" }}
+              />
+              <div
+                className="font-paragraph-white"
+                style={{
+                  color: "#FFAF51",
+                  fontSize: "18px",
+                  fontWeight: 600,
+                  paddingTop: "15px",
+                  paddingBottom: "15px",
+                }}
+              >
+                <T>userDashboard.challenges.nfc</T>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="dashboard-challenges-row3-inbox">
+            <Carousel responsive={responsive}>
+              {favChallenges.map((challenge) => {
+                const thumbSrc = getThumbnailLink(challenge.thumbnailLink);
+                const isVideo = isVideoFile(challenge.thumbnailLink);
+                return (
+                  <Link
+                    key={challenge._id}
+                    to={`/challenge/${slug(challenge.challengeName || "")}/${
+                      challenge._id
+                    }`}
+                  >
+                    <div
+                      className="dashboard-challenges-row3-inbox-challenge"
+                      style={{
+                        background: isVideo ? "#171e27" : `url(${thumbSrc})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "50% 50%",
+                        position: "relative",
+                        height: "100%",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {isVideo && (
+                        <video
+                          src={thumbSrc}
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            zIndex: 0,
+                          }}
+                        />
+                      )}
+                      <div
+                        className="dashboard-challenges-row3-inbox-challenge-textbox"
+                        style={{ position: "relative", zIndex: 1 }}
+                      >
+                        <span
+                          className="font-paragraph-white"
+                          style={{ fontSize: "2rem" }}
+                        >
+                          {challenge.challengeName}
+                        </span>
+                        <span
+                          className="font-paragraph-white"
+                          style={{
+                            width: "70%",
+                            height: "50px",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {challenge.description}
+                        </span>
+                        <div>
+                          <img
+                            src={ForwardIcon}
+                            style={{ marginTop: "5px" }}
+                            alt="forward"
+                            height="15px"
+                            width="40px"
+                          />
+                        </div>
+                        <div>
+                          {new Array(challenge.rating || 0)
+                            .fill(0)
+                            .map((_, i) => (
+                              <img key={i} src={StarOrange} alt="" />
+                            ))}
+                        </div>
+                      </div>
+                      {/* Heart — anchored to the card's own edges */}
+                      <HeartFilled
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          unfavouriteFavChallenge(challenge._id);
+                        }}
+                        style={{
+                          position: "absolute",
+                          top: 12,
+                          right: 12,
+                          fontSize: "2.6rem",
+                          color: "#ff7700",
+                          cursor: "pointer",
+                          textShadow: "0 2px 6px rgba(0,0,0,0.6)",
+                          zIndex: 3,
+                        }}
+                        title="Remove from favourites"
+                      />
+                    </div>
+                  </Link>
+                );
+              })}
+            </Carousel>
+          </div>
+        )}
       </div>
     </div>
   );

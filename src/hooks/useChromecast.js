@@ -22,7 +22,13 @@ export default function useChromecast({ workout, currentExercise }) {
 
     const initializeCast = () => {
       try {
+        // The SDK loads in two phases: `window.cast.framework` first, then
+        // the legacy `window.chrome.cast` API. setOptions() internally calls
+        // `new chrome.cast.SessionRequest(...)`, so both must be present
+        // before we proceed — otherwise we get the "Cannot read properties
+        // of undefined (reading 'SessionRequest')" error.
         if (!window.cast?.framework?.CastContext) return false;
+        if (!window.chrome?.cast?.SessionRequest) return false;
 
         const context = window.cast.framework.CastContext.getInstance();
         castContextRef.current = context;
@@ -43,6 +49,16 @@ export default function useChromecast({ workout, currentExercise }) {
                 window.cast.framework.CastState.NO_DEVICES_AVAILABLE
             );
           }
+        );
+
+        // The SDK may fire CAST_STATE_CHANGED before our listener attaches.
+        // Pull the current state synchronously so the initial render reflects
+        // reality instead of waiting for the next state change (which only
+        // happens when a device appears/disappears).
+        const initialState = context.getCastState();
+        setCastAvailable(
+          initialState !==
+            window.cast.framework.CastState.NO_DEVICES_AVAILABLE
         );
 
         context.addEventListener(

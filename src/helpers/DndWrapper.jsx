@@ -20,8 +20,14 @@ export const getDndBackend = () => {
 
 // Touch backend options for better mobile experience
 export const touchBackendOptions = {
-  enableMouseEvents: true,
-  delayTouchStart: 150,
+  // Hybrid laptop touchscreens fire BOTH touch and mouse events; enabling
+  // mouse events on top of touch causes the backend to double-track and
+  // can swallow the drag-initiation. Keep touch-only on touch devices.
+  enableMouseEvents: false,
+  // 150ms felt broken to users (tap-then-swipe was being read as a tap).
+  // 50ms is enough to disambiguate a tap from a drag without making the
+  // user consciously long-press.
+  delayTouchStart: 50,
   ignoreContextMenu: true,
 };
 
@@ -307,15 +313,18 @@ export function DraggableHandle({ children }) {
     }
   }, [drag]);
 
-  // Prevent parent scroll container from intercepting touch events on the drag handle
+  // Prevent the native browser scroll gesture from hijacking the touchstart
+  // on the drag handle. We MUST NOT call stopPropagation() here — the
+  // react-dnd TouchBackend listens on `document`, and stopping propagation
+  // in the bubble phase blocks it from ever seeing the first touchstart,
+  // which is why drag previously required a "wake-up" click.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const preventScroll = (e) => {
       e.preventDefault();
-      e.stopPropagation();
     };
-    // Must use addEventListener with { passive: false } to allow preventDefault on touchstart
+    // passive: false is needed to allow preventDefault on touchstart.
     el.addEventListener("touchstart", preventScroll, { passive: false });
     return () => {
       el.removeEventListener("touchstart", preventScroll);

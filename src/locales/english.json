@@ -1109,7 +1109,19 @@
       "vac": "View all challenges",
       "sp": "See Pricing",
       "nochal": "No challenges found",
-      "no_my_challenges": "No challenge found"
+      "no_my_challenges": "No challenge found",
+      "mfc": "My favourite challenges",
+      "nfc": "No favourite challenges found",
+      "body_fat_approximately": "Body Fat Approximately",
+      "period_week": "This week",
+      "period_month": "This month",
+      "period_year": "This year",
+      "coming_soon": "Coming soon",
+      "weight_chart": "Weight chart",
+      "shoulders_chart": "Shoulders chart",
+      "waist_chart": "Waist chart",
+      "breast_chart": "Breast chart",
+      "hip_chart": "Hip chart"
     }
   },
   "wizard": {

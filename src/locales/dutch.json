@@ -1109,7 +1109,19 @@
       "vac": "Bekijk alle uitdagingen",
       "sp": "Prijzen",
       "nochal": "Geen uitdagingen gevonden",
-      "no_my_challenges": "Geen uitdaging gevonden"
+      "no_my_challenges": "Geen uitdaging gevonden",
+      "mfc": "Mijn favoriete uitdagingen",
+      "nfc": "Geen favoriete uitdagingen gevonden",
+      "body_fat_approximately": "Vetpercentage ongeveer",
+      "period_week": "Deze week",
+      "period_month": "Deze maand",
+      "period_year": "Dit jaar",
+      "coming_soon": "Binnenkort beschikbaar",
+      "weight_chart": "Gewichtsgrafiek",
+      "shoulders_chart": "Schoudergrafiek",
+      "waist_chart": "Taillegrafiek",
+      "breast_chart": "Borstgrafiek",
+      "hip_chart": "Heupgrafiek"
     }
   },
   "wizard": {

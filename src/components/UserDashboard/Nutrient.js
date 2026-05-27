@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useContext } from "react";
+import ReactDOM from "react-dom";
 import "react-multi-carousel/lib/styles.css";
 import "../../assets/userDashboard.css";
-import { Switch, Modal, Checkbox, message } from "antd";
+import { Modal, Checkbox, message } from "antd";
+import GreenSwitch from "../Common/GreenSwitch";
 import {
   CaretDownOutlined,
   CloseSquareFilled,
@@ -852,28 +854,44 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
 
   return (
     <>
-      {/* suplemet modal starts */}
-      <Modal
-        title={
-          <>
-            <div className="font-card-heading">
-              <T>userDashboard.nutrient.sup</T>
-            </div>
-            <div className="divider"></div>
-          </>
-        }
-        bodyStyle={{ marginTop: "-40px" }}
-        visible={suplementModal}
-        width={width >= 600 ? "60%" : "100%"}
-        onCancel={() => {
-          if (supplementSnapshot) {
-            setSelectedSuplementType(supplementSnapshot.type);
-            setSelectedSupplements(supplementSnapshot.supplements);
-          }
-          setSuplementModal(false);
-        }}
-        footer={false}
-      >
+      {/* suplemet modal starts — custom portal so the modal is wide on
+          desktop (up to 1100px) and full-width on phone */}
+      {suplementModal &&
+        ReactDOM.createPortal(
+          <div
+            className="supplement-modal-overlay"
+            onClick={() => {
+              if (supplementSnapshot) {
+                setSelectedSuplementType(supplementSnapshot.type);
+                setSelectedSupplements(supplementSnapshot.supplements);
+              }
+              setSuplementModal(false);
+            }}
+          >
+            <div
+              className="supplement-modal-content"
+              onClick={(e) => e.stopPropagation()}
+            ><div className="supplement-modal-header">
+                <div className="font-card-heading">
+                  <T>userDashboard.nutrient.sup</T>
+                </div>
+                <button
+                  type="button"
+                  className="supplement-modal-close"
+                  aria-label="Close"
+                  onClick={() => {
+                    if (supplementSnapshot) {
+                      setSelectedSuplementType(supplementSnapshot.type);
+                      setSelectedSupplements(supplementSnapshot.supplements);
+                    }
+                    setSuplementModal(false);
+                  }}
+                >
+                  <CloseOutlined />
+                </button>
+              </div>
+              <div className="divider"></div>
+              <div className="supplement-modal-body">
         <div className="supplement-container">
           <div
             className="diet-setup-container-inbox"
@@ -1136,14 +1154,19 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
         ) : (
           ""
         )}
-        <button
-          style={{ marginTop: "10px" }}
-          className="common-orange-button font-paragraph-white"
-          onClick={() => saveUserSupplementSettings()}
-        >
-          <T>userDashboard.nutrient.done</T>
-        </button>
-      </Modal>
+              </div>
+              <div className="supplement-modal-footer">
+                <button
+                  className="common-orange-button font-paragraph-white"
+                  onClick={() => saveUserSupplementSettings()}
+                >
+                  <T>userDashboard.nutrient.done</T>
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
       {/* suplemet modal ends */}
       {/* diet setup modal starts */}
       <Modal
@@ -1283,11 +1306,9 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
                     </span>
                     <span style={{ fontSize: "1.2rem" }}>
                       {" "}
-                      <Switch
-                        checkedChildren="ON"
+                      <GreenSwitch
                         checked={eatingBehave.eatingLate}
-                        unCheckedChildren="OFF"
-                        onChange={(e) => saveUserEatingLateSetting()}
+                        onChange={() => saveUserEatingLateSetting()}
                       />
                     </span>
                   </div>
@@ -2209,9 +2230,11 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
               <div
                 className="font-paragraph-white"
                 style={{
-                  color: "var(--color-orange)",
-                  fontSize: "2rem",
-                  paddingTop: "5px",
+                  color: "#FFAF51",
+                  fontSize: "18px",
+                  fontWeight: 600,
+                  paddingTop: "15px",
+                  paddingBottom: "15px",
                 }}
               >
                 <T>userDashboard.nutrient.nrf</T>

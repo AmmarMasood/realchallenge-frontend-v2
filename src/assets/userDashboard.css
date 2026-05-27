@@ -152,12 +152,10 @@
   /* height: 560px; */
 }
 .dashboard-challenges-row2-mybody {
-  /* border: 1px solid yellow; */
   background-color: #1d2631;
   padding: 20px;
-  /* min-width: 50rem; */
   margin: 10px;
-  height: 550px;
+  min-height: 550px;
 }
 .dashboard-challenges-row2-mybody img {
   height: 400px;
@@ -204,11 +202,12 @@
 }
 
 .dashboard-challenges-row2-mydevelopment {
-  /* border: 1px solid green; */
   margin: 10px;
   padding: 20px;
   background: #1d2631;
-  height: 550px;
+  min-height: 550px;
+  overflow: hidden;
+  min-width: 0;
 }
 .dashboard-challenges-row2-mydevelopment-insidebox-1 {
   background-color: var(--color-gray-light);
@@ -229,6 +228,198 @@
   background-color: var(--color-gray-light);
   margin: 5px;
   height: 50%;
+}
+
+/* ── My Development redesign (mockup-driven) ── */
+.mydev-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 2rem;
+}
+
+/* ── Supplement Settings custom modal ── */
+.supplement-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow: auto;
+}
+
+.supplement-modal-content {
+  width: min(1100px, calc(100vw - 32px));
+  max-height: calc(100vh - 60px);
+  background: #1B2531;
+  border-radius: 8px;
+  padding: 24px 24px 0 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+  color: #fff;
+}
+
+.supplement-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.supplement-modal-close {
+  background: rgba(255, 44, 44, 0.18);
+  border: none;
+  color: #FF6C6C;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.supplement-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-top: 8px;
+}
+
+.supplement-modal-footer {
+  padding: 16px 0;
+  border-top: 1px solid #2A3340;
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Phone — collapse padding so content has more room */
+@media (max-width: 600px) {
+  .supplement-modal-overlay {
+    padding: 8px;
+  }
+  .supplement-modal-content {
+    width: 100%;
+    max-height: calc(100vh - 16px);
+    padding: 16px 16px 0 16px;
+    border-radius: 4px;
+  }
+}
+
+.mydev-period-select-wrap,
+.mydev-metric-select-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.mydev-period-select,
+.mydev-metric-select {
+  background: #2A3340;
+  color: #fff;
+  border: 1px solid #2A3340;
+  padding: 8px 32px 8px 14px;
+  font-size: 1.4rem;
+  font-family: inherit;
+  border-radius: 4px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.mydev-select-caret {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #fff;
+  pointer-events: none;
+  font-size: 1.2rem;
+}
+
+.mydev-card {
+  background-color: #2B3949;
+  margin: 12px 5px;
+  border-radius: 4px;
+  padding: 20px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.mydev-card svg {
+  /* Victory renders to absolute-pixel SVGs; let them shrink with the card */
+  max-width: 100%;
+  height: auto;
+}
+
+/* Card 1 — body fat */
+.mydev-bodyfat {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.mydev-bodyfat-chart {
+  flex: 0 0 220px;
+}
+
+.mydev-bodyfat-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mydev-bodyfat-value {
+  color: #fff;
+  font-size: 4.4rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.mydev-bodyfat-label {
+  color: #8E9BAA;
+  font-size: 1.6rem;
+}
+
+/* Card 2 — trend chart */
+.mydev-trend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.mydev-trend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 1.4rem;
+  font-weight: 500;
+  background: #1F4A29;
+  color: #53D470;
+}
+
+.mydev-trend-pill.mydev-trend-up {
+  background: #4A1F1F;
+  color: #FF6C6C;
+}
+
+.mydev-trend-pill.mydev-trend-flat {
+  background: #2A3340;
+  color: #8E9BAA;
 }
 .dashboard-challenges-row3 {
   background-color: #1d2631;

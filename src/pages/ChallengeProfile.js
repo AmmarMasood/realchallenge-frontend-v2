@@ -9,6 +9,7 @@ import {
   DownOutlined,
   UpOutlined,
   UndoOutlined,
+  HeartFilled,
 } from "@ant-design/icons";
 import Attachment from "../assets/icons/attachement-symbol.png";
 import Ellipse from "../assets/icons/ellipse.svg";
@@ -22,13 +23,17 @@ import { Link, withRouter } from "react-router-dom";
 // import ModalVideo from "react-modal-video";
 import { Tooltip, Collapse, Input, Avatar, Progress, message } from "antd";
 import ShareIcon from "../assets/icons/share-icon.svg";
-import FavIcon from "../assets/icons/add-to-fav-icon.svg";
 
 import { userInfoContext } from "../contexts/UserStore";
 import { checkUserPackage } from "../services/payment";
 import { selectedChallengeContext } from "../contexts/PaymentProcessStore";
 import { getChallengeProgress, getUserProfileInfo } from "../services/users";
-import { addChallengeToCustomerDetail } from "../services/customer";
+import {
+  addChallengeToCustomerDetail,
+  favouriteChallengeById,
+  unFavouriteChallengeById,
+  getAllFavouriteChallenges,
+} from "../services/customer";
 import { checkUser } from "../services/authentication";
 import moment from "moment";
 import HelpIcon from "../assets/icons/Help-icon.png";
@@ -86,6 +91,9 @@ function ChallengeProfile(props) {
   const [intensityDropdownOpen, setIntensityDropdownOpen] = useState(false);
   const intensityDropdownRef = useRef(null);
   const [translationNotAvailable, setTranslationNotAvailable] = useState(false);
+  // Favourite-challenge state (mirrors RecipeProfile's isFavourited).
+  const [isFavourited, setIsFavourited] = useState(false);
+  const [favPending, setFavPending] = useState(false);
 
   const fetchChallengeData = async () => {
     setLoading(true);
@@ -174,6 +182,49 @@ function ChallengeProfile(props) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Resolve initial favourite state once the challenge + logged-in user
+  // are both available. Mirrors the recipe page pattern.
+  useEffect(() => {
+    if (!challenge._id || !userInfo.authenticated || !userInfo.id) return;
+    let cancelled = false;
+    (async () => {
+      const res = await getAllFavouriteChallenges(userInfo.id);
+      if (cancelled) return;
+      if (res && Array.isArray(res.favChallenges)) {
+        setIsFavourited(
+          res.favChallenges.some((c) => c._id === challenge._id),
+        );
+      } else {
+        setIsFavourited(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [challenge._id, userInfo.id, userInfo.authenticated]);
+
+  const toggleFavouriteChallenge = async () => {
+    if (!challenge._id || favPending) return;
+    setFavPending(true);
+    try {
+      if (isFavourited) {
+        const res = await unFavouriteChallengeById(
+          { challengeId: challenge._id },
+          userInfo.id,
+        );
+        if (res) setIsFavourited(false);
+      } else {
+        const res = await favouriteChallengeById(
+          { challengeId: challenge._id },
+          userInfo.id,
+        );
+        if (res) setIsFavourited(true);
+      }
+    } finally {
+      setFavPending(false);
+    }
+  };
 
   const fetchData = async () => {
     if (challenge && Object.keys(challenge).length > 0) {
@@ -1246,28 +1297,28 @@ function ChallengeProfile(props) {
                       title="Copy challenge link"
                     />
                     {localStorage.getItem("jwtToken") && (
-                      <img
-                        src={FavIcon}
-                        alt="fav"
+                      <HeartFilled
+                        onClick={toggleFavouriteChallenge}
+                        title={
+                          isFavourited
+                            ? get(
+                                strings,
+                                "challenge_profile.remove_from_favourites",
+                                "Remove from favourites",
+                              )
+                            : get(
+                                strings,
+                                "challenge_profile.add_to_favourites",
+                                "Add to favourites",
+                              )
+                        }
                         style={{
-                          width: "34px",
-                          height: "34px",
-                          cursor: "pointer",
+                          fontSize: "28px",
+                          cursor: favPending ? "wait" : "pointer",
+                          opacity: favPending ? 0.5 : 1,
+                          color: isFavourited ? "#ff7700" : "#ffffff",
+                          transition: "color 0.15s ease",
                         }}
-                        onClick={() => {
-                          message.success(
-                            get(
-                              strings,
-                              "challenge_profile.added_to_favourites",
-                              "Added to favourites!",
-                            ),
-                          );
-                        }}
-                        title={get(
-                          strings,
-                          "challenge_profile.added_to_favourites",
-                          "Add to favourites",
-                        )}
                       />
                     )}
                   </div>
