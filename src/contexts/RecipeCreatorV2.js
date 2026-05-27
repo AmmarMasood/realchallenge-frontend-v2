@@ -27,6 +27,9 @@ export function RecipeProvider({ children }) {
   const [adminApproved, setAdminApproved] = useState(false);
   const [allowComments, setAllowComments] = useState(false);
   const [allowReviews, setAllowReviews] = useState(false);
+  // Marks a recipe as a supplement: excluded from breakfast/lunch/dinner
+  // generation, shown in the user-dashboard supplement picker.
+  const [isSupplement, setIsSupplement] = useState(false);
 
   // Metadata lists
   const [allMealTypes, setAllMealTypes] = useState([]);
@@ -112,6 +115,7 @@ export function RecipeProvider({ children }) {
     setTips(recipeData.tips || "");
     setIsPublic(recipeData.isPublic || false);
     setAdminApproved(recipeData.adminApproved || false);
+    setIsSupplement(!!recipeData.isSupplement);
     setAllowComments(recipeData.allowComments || false);
     setAllowReviews(recipeData.allowReviews || false);
   };
@@ -165,6 +169,8 @@ export function RecipeProvider({ children }) {
         setAllowComments,
         allowReviews,
         setAllowReviews,
+        isSupplement,
+        setIsSupplement,
         allMealTypes,
         setAllMealTypes,
         allFoodTypes,

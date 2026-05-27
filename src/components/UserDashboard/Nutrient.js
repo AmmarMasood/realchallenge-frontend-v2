@@ -246,6 +246,8 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
   const [suggestedSupplements, setSuggestedSupplements] = useState([]);
   const [selectedSupplements, setSelectedSupplements] = useState([]);
   const [supplementSnapshot, setSupplementSnapshot] = useState(null);
+  // Client-side search over the picker grid (matches by name substring).
+  const [supplementSearch, setSupplementSearch] = useState("");
   // Phase 4/5: backend shopping list, delivery, supplement structure.
   const [shoppingList, setShoppingList] = useState({ items: [] });
   const [shoppingPrompt, setShoppingPrompt] = useState([]);
@@ -336,7 +338,9 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
     const res = await getAllDietTypes(
       localStorage.getItem("locale") || "english",
     );
-    const rec = await getAllRecipes(localStorage.getItem("locale"));
+    const rec = await getAllRecipes(localStorage.getItem("locale"), {
+      supplementOnly: true,
+    });
     const allFavs = await getAllFavouriteRecipes(userInfo.id);
     allFavs && setFavRecipes(allFavs.favRecipes);
 
@@ -892,48 +896,34 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
               </div>
               <div className="divider"></div>
               <div className="supplement-modal-body">
-        <div className="supplement-container">
-          <div
-            className="diet-setup-container-inbox"
-            onClick={() => setSelectedSuplementType("none")}
-          >
-            <span className="font-paragraph-white">
-              <T>userDashboard.nutrient.none</T>
-            </span>
-            <Checkbox
-              checked={selectedSuplementType === "none" ? true : false}
-              style={{ marginLeft: "auto", paddingLeft: "10px" }}
-            />
-          </div>
-          <div
-            className="diet-setup-container-inbox"
-            onClick={() => setSelectedSuplementType("during-the-day")}
-          >
-            <span className="font-paragraph-white">
-              <T>userDashboard.nutrient.du</T>
-            </span>
-            <Checkbox
-              checked={
-                selectedSuplementType === "during-the-day" ? true : false
-              }
-              style={{ marginLeft: "auto", paddingLeft: "10px" }}
-            />
-          </div>
-          <div
-            className="diet-setup-container-inbox"
-            onClick={() => setSelectedSuplementType("extra-meal")}
-          >
-            <span className="font-paragraph-white">
-              <T>userDashboard.nutrient.meal</T>
-            </span>
-            <Checkbox
-              checked={selectedSuplementType === "extra-meal" ? true : false}
-              style={{ marginLeft: "auto", paddingLeft: "10px" }}
-            />
-          </div>
+        {/* ── Type selector: 3 stacked rows, GreenSwitch styled radios ── */}
+        <div className="sup-type-list">
+          {[
+            { value: "none", label: "userDashboard.nutrient.none" },
+            { value: "during-the-day", label: "userDashboard.nutrient.du" },
+            { value: "extra-meal", label: "userDashboard.nutrient.meal" },
+          ].map((opt) => (
+            <div
+              key={opt.value}
+              className={`sup-type-row ${
+                selectedSuplementType === opt.value ? "active" : ""
+              }`}
+              onClick={() => setSelectedSuplementType(opt.value)}
+            >
+              <span className="font-paragraph-white">
+                <T>{opt.label}</T>
+              </span>
+              <Checkbox
+                checked={selectedSuplementType === opt.value}
+                onChange={() => setSelectedSuplementType(opt.value)}
+              />
+            </div>
+          ))}
         </div>
+
+        {/* Fuel-moment slot picker (only relevant for During-the-day) */}
         {selectedSuplementType === "during-the-day" && (
-          <div style={{ margin: "12px 0" }}>
+          <div style={{ margin: "16px 0" }}>
             <span className="font-paragraph-white">
               <T>userDashboard.nutrient.fuel_moment_replaces</T>
             </span>
@@ -960,199 +950,179 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
             </div>
           </div>
         )}
-        {selectedSuplementType === "extra-meal" ||
-        selectedSuplementType === "during-the-day" ? (
+
+        {(selectedSuplementType === "extra-meal" ||
+          selectedSuplementType === "during-the-day") && (
           <>
-            <div className="selected-meals-container">
-              {selectedSupplements.map((meal) => (
-                <div className="suggested-meal-container" key={meal._id}>
-                  <div
-                    style={{
-                      height: "150px",
-                      background: `url(${meal.image ? meal.image.replaceAll(" ", "%20") : ""})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                    }}
-                  ></div>
-                  <div
-                    className="font-paragraph-white"
-                    style={{ fontSize: "1.8rem" }}
-                  >
-                    {meal.name}
-                  </div>
-                  <div
-                    className="font-paragraph-white"
-                    style={{ fontSize: "1.3rem", opacity: "0.8" }}
-                  >
-                    {meal.kCalPerPerson}
-                  </div>
-                  <button
-                    className="common-orange-button font-paragraph-white"
-                    onClick={() => remmoveFromSelectedSuplemets(meal._id)}
-                  >
-                    <T>userDashboard.nutrient.unselect</T>
-                  </button>
-                  <Link to={`/recipe/${slug(meal.name)}/${meal._id}`}>
-                    <button
-                      className="common-transparent-button font-paragraph-white"
-                      style={{ marginLeft: "10px" }}
-                    >
-                      <T>userDashboard.nutrient.mi</T>
-                    </button>
-                  </Link>
-                  {/* Per-supplement day scheduling (not one global set) */}
-                  <div style={{ marginTop: "10px" }}>
-                    <Checkbox
-                      checked={
-                        (supplementSchedule[meal._id] || {}).everyDay !== false
-                      }
-                      onChange={(e) =>
-                        setSupplementSchedule((prev) => ({
-                          ...prev,
-                          [meal._id]: {
-                            everyDay: e.target.checked,
-                            days: (prev[meal._id] || {}).days || [],
-                          },
-                        }))
-                      }
-                    >
-                      <span className="font-paragraph-white">
-                        <T>userDashboard.nutrient.every_day</T>
-                      </span>
-                    </Checkbox>
-                    {(supplementSchedule[meal._id] || {}).everyDay ===
-                      false && (
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: "6px",
-                          marginTop: "6px",
-                        }}
-                      >
-                        {[
-                          "monday",
-                          "tuesday",
-                          "wednesday",
-                          "thursday",
-                          "friday",
-                          "saturday",
-                          "sunday",
-                        ].map((d) => {
-                          const sc = supplementSchedule[meal._id] || {
-                            days: [],
-                          };
-                          const on = (sc.days || []).includes(d);
-                          return (
-                            <button
-                              key={d}
-                              className="font-paragraph-white"
-                              onClick={() =>
-                                setSupplementSchedule((prev) => {
-                                  const cur = prev[meal._id] || {
-                                    everyDay: false,
-                                    days: [],
-                                  };
-                                  const days = on
-                                    ? cur.days.filter((x) => x !== d)
-                                    : [...(cur.days || []), d];
-                                  return {
-                                    ...prev,
-                                    [meal._id]: { everyDay: false, days },
-                                  };
-                                })
-                              }
-                              style={{
-                                padding: "3px 8px",
-                                borderRadius: "4px",
-                                border: "1px solid var(--color-orange)",
-                                background: on
-                                  ? "var(--color-orange)"
-                                  : "transparent",
-                                cursor: "pointer",
-                                fontSize: "1.1rem",
-                              }}
-                            >
-                              <T>{`userDashboard.nutrient.${d}`}</T>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
+            {/* ── Chosen Supplements grid (orange dotted left border) ── */}
+            <div className="sup-chosen-section">
+              <div className="sup-section-heading font-card-heading">
+                <T>userDashboard.nutrient.chosen_supplements</T>
+              </div>
+              <div className="sup-grid">
+              {selectedSupplements.length === 0 && (
+                <div
+                  className="font-paragraph-white"
+                  style={{ opacity: 0.6, gridColumn: "1 / -1" }}
+                >
+                  <T>userDashboard.nutrient.no_supplements_chosen</T>
                 </div>
-              ))}
-            </div>
-            <div style={{ marginTop: "20px" }}>
-              <h3 className="font-card-heading">
-                <T>userDashboard.nutrient.selectPi</T>
-              </h3>
-              <div className="divider"></div>
-              <div
-                className="selected-meals-container"
-                style={{ maxHeight: "400px", overflowY: "auto" }}
-              >
-                {suggestedSupplements
-                  .filter(
-                    (meal) =>
-                      !selectedSupplements.some((s) => s._id === meal._id),
-                  )
-                  .map((meal) => (
-                    <div className="suggested-meal-container" key={meal._id}>
-                      <div
-                        style={{
-                          height: "150px",
-                          background: `url(${meal.image ? meal.image.replaceAll(" ", "%20") : ""})`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                        }}
-                      ></div>
-                      <div
-                        className="font-paragraph-white"
-                        style={{ fontSize: "1.8rem" }}
-                      >
-                        {meal.name}
-                      </div>
-                      <div
-                        className="font-paragraph-white"
-                        style={{ fontSize: "1.3rem", opacity: "0.8" }}
-                      >
-                        {meal.kCalPerPerson}
-                      </div>
-                      <button
-                        className="common-orange-button font-paragraph-white"
-                        onClick={() => {
-                          if (selectedSupplements.length >= 4) {
-                            message.warning(
-                              translate(
-                                "userDashboard.nutrient.max_supplements",
-                              ),
-                            );
-                            return;
-                          }
-                          setSelectedSupplements([
-                            ...selectedSupplements,
-                            meal,
-                          ]);
-                        }}
-                      >
-                        <T>userDashboard.nutrient.select</T>
-                      </button>
-                      <Link to={`/recipe/${slug(meal.name)}/${meal._id}`}>
+              )}
+              {selectedSupplements.map((meal) => {
+                const sched = supplementSchedule[meal._id] || {};
+                const everyDay = sched.everyDay !== false;
+                return (
+                  <div className="sup-card" key={meal._id}>
+                    <div
+                      className="sup-card-image"
+                      style={{
+                        backgroundImage: `url(${meal.image ? meal.image.replaceAll(" ", "%20") : ""})`,
+                      }}
+                    >
+                      <div className="sup-card-overlay">
+                        <div className="sup-card-title">{meal.name}</div>
+                        {meal.kCalPerPerson != null && (
+                          <div className="sup-card-cal">
+                            {meal.kCalPerPerson} Cal
+                          </div>
+                        )}
                         <button
-                          className="common-transparent-button font-paragraph-white"
-                          style={{ marginLeft: "10px" }}
+                          className="sup-card-action sup-card-remove"
+                          onClick={() => remmoveFromSelectedSuplemets(meal._id)}
                         >
-                          <T>userDashboard.nutrient.moreInfo</T>
+                          <T>userDashboard.nutrient.unselect</T>
                         </button>
-                      </Link>
+                      </div>
                     </div>
-                  ))}
+                    {/* Per-supplement schedule — tucked under the card */}
+                    <div className="sup-schedule">
+                      <Checkbox
+                        checked={everyDay}
+                        onChange={(e) =>
+                          setSupplementSchedule((prev) => ({
+                            ...prev,
+                            [meal._id]: {
+                              everyDay: e.target.checked,
+                              days: (prev[meal._id] || {}).days || [],
+                            },
+                          }))
+                        }
+                      >
+                        <span className="font-paragraph-white sup-schedule-label">
+                          <T>userDashboard.nutrient.every_day</T>
+                        </span>
+                      </Checkbox>
+                      {!everyDay && (
+                        <div className="sup-day-chips">
+                          {[
+                            "monday",
+                            "tuesday",
+                            "wednesday",
+                            "thursday",
+                            "friday",
+                            "saturday",
+                            "sunday",
+                          ].map((d) => {
+                            const on = (sched.days || []).includes(d);
+                            return (
+                              <button
+                                key={d}
+                                className={`sup-day-chip ${on ? "on" : ""}`}
+                                onClick={() =>
+                                  setSupplementSchedule((prev) => {
+                                    const cur = prev[meal._id] || {
+                                      everyDay: false,
+                                      days: [],
+                                    };
+                                    const days = on
+                                      ? cur.days.filter((x) => x !== d)
+                                      : [...(cur.days || []), d];
+                                    return {
+                                      ...prev,
+                                      [meal._id]: { everyDay: false, days },
+                                    };
+                                  })
+                                }
+                              >
+                                <T>{`userDashboard.nutrient.${d}`}</T>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            </div>
+            {/* ── Picker section (dark card with padding) ── */}
+            <div className="sup-picker-section">
+              <div className="sup-search-row">
+                <div className="sup-section-heading font-card-heading">
+                  <T>userDashboard.nutrient.selectPi</T>
+                </div>
+                <input
+                  type="text"
+                  className="sup-search-input"
+                  placeholder={translate("userDashboard.nutrient.search_placeholder")}
+                  value={supplementSearch}
+                  onChange={(e) => setSupplementSearch(e.target.value)}
+                />
+              </div>
+              <div className="sup-grid">
+              {suggestedSupplements
+                .filter(
+                  (meal) =>
+                    !selectedSupplements.some((s) => s._id === meal._id),
+                )
+                .filter((meal) => {
+                  const q = supplementSearch.trim().toLowerCase();
+                  if (!q) return true;
+                  return (meal.name || "").toLowerCase().includes(q);
+                })
+                .map((meal) => (
+                  <div className="sup-card" key={meal._id}>
+                    <div
+                      className="sup-card-image"
+                      style={{
+                        backgroundImage: `url(${meal.image ? meal.image.replaceAll(" ", "%20") : ""})`,
+                      }}
+                    >
+                      <div className="sup-card-overlay">
+                        <div className="sup-card-title">{meal.name}</div>
+                        {meal.kCalPerPerson != null && (
+                          <div className="sup-card-cal">
+                            {meal.kCalPerPerson} Cal
+                          </div>
+                        )}
+                        <button
+                          className="sup-card-action sup-card-select"
+                          onClick={() => {
+                            if (selectedSupplements.length >= 4) {
+                              message.warning(
+                                translate(
+                                  "userDashboard.nutrient.max_supplements",
+                                ),
+                              );
+                              return;
+                            }
+                            setSelectedSupplements([
+                              ...selectedSupplements,
+                              meal,
+                            ]);
+                          }}
+                        >
+                          <T>userDashboard.nutrient.select</T>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </>
-        ) : (
-          ""
         )}
               </div>
               <div className="supplement-modal-footer">

@@ -122,6 +122,8 @@ function BasicInformation(props) {
     setAllowComments,
     allowReviews,
     setAllowReviews,
+    isSupplement,
+    setIsSupplement,
     allMealTypes,
     setAllMealTypes,
     allFoodTypes,
@@ -291,6 +293,7 @@ function BasicInformation(props) {
     adminApproved,
     allowComments,
     allowReviews,
+    isSupplement,
   ]);
 
   // ── Data fetching ──
@@ -669,6 +672,7 @@ function BasicInformation(props) {
         allowComments,
         allowReviews,
         isPublic,
+        isSupplement,
         ...(hasAnyRole(userInfo, ["admin"]) && { adminApproved }),
       };
 
@@ -2285,6 +2289,14 @@ function BasicInformation(props) {
                   style={{ marginLeft: 0 }}
                 >
                   <span style={{ color: "#283443" }}>Make Public</span>
+                </Checkbox>
+                <Checkbox
+                  checked={isSupplement}
+                  onChange={(e) => setIsSupplement(e.target.checked)}
+                  style={{ marginLeft: 0 }}
+                  title="Supplement recipes are excluded from breakfast/lunch/dinner generation and appear in the user's supplement picker."
+                >
+                  <span style={{ color: "#283443" }}>Supplement recipe</span>
                 </Checkbox>
                 {hasAnyRole(userInfo, ["admin"]) && (
                   <Checkbox

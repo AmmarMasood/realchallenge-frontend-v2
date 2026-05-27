@@ -8,10 +8,12 @@ const openNotificationWithIcon = (type, message, description) => {
   });
 };
 
-export function getAllRecipes(language) {
+export function getAllRecipes(language, opts = {}) {
+  const params = new URLSearchParams({ language });
+  if (opts.supplementOnly) params.set("supplementOnly", "true");
   return axios
     .get(
-      `${process.env.REACT_APP_SERVER}/api/recipes/recipe?language=${language}`,
+      `${process.env.REACT_APP_SERVER}/api/recipes/recipe?${params.toString()}`,
     )
     .then((res) => {
       return res.data;
