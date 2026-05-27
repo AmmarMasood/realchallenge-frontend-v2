@@ -69,10 +69,17 @@ function UserUpdate() {
   const [afterPic, setAfterPic] = useState("");
   const [beforeProgress, setBeforeProgress] = useState(0);
   const [afterProgress, setAfterProgress] = useState(0);
+  // Body measurements are stored as 12-month arrays (current month's slot
+  // is the displayed value). Keep both the current scalar (for the input)
+  // and the full array (so we don't lose other months when saving).
   const [shoulderSize, setShoulderSize] = useState("");
+  const [shoulderArray, setShoulderArray] = useState([]);
   const [chestSize, setChestSize] = useState("");
+  const [chestArray, setChestArray] = useState([]);
   const [hipSize, setHipSize] = useState("");
+  const [hipArray, setHipArray] = useState([]);
   const [waistSize, setWaistSize] = useState("");
+  const [waistArray, setWaistArray] = useState([]);
   const [gender, setGender] = useState("");
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -119,10 +126,24 @@ function UserUpdate() {
     setWeight(weight ? weight[month] : "");
     setBmr(bmir);
     setBmi(bmi);
-    setShoulderSize(shoulderSize);
-    setWaistSize(waistSize);
-    setHipSize(hipSize);
-    setChestSize(chestSize);
+    // Body measurements may be arrays (new shape) or scalars (legacy
+    // pre-migration). Normalize both so the form always shows the
+    // current-month value but we preserve the full series for save.
+    const slot = (arrOrNum) => {
+      if (Array.isArray(arrOrNum)) return arrOrNum[month] || "";
+      if (typeof arrOrNum === "number") return arrOrNum;
+      return "";
+    };
+    const fullArr = (arrOrNum) =>
+      Array.isArray(arrOrNum) ? arrOrNum : new Array(12).fill(0);
+    setShoulderSize(slot(shoulderSize));
+    setShoulderArray(fullArr(shoulderSize));
+    setWaistSize(slot(waistSize));
+    setWaistArray(fullArr(waistSize));
+    setHipSize(slot(hipSize));
+    setHipArray(fullArr(hipSize));
+    setChestSize(slot(chestSize));
+    setChestArray(fullArr(chestSize));
     setAfterPic(afterImageLink);
     setBeforePic(beforeImageLink);
     setHideMyShape(!!srvHide);
@@ -227,6 +248,17 @@ function UserUpdate() {
       const w = [...weightArray];
       w[month] = weight;
 
+      // Stamp the current-month slot on each body-measurement array. The
+      // length-12 default + .slice() guards against legacy docs that still
+      // carried a scalar value when first loaded.
+      const stampSlot = (arr, value) => {
+        const out = Array.isArray(arr) && arr.length === 12
+          ? [...arr]
+          : new Array(12).fill(0);
+        out[month] = Number(value) || 0;
+        return out;
+      };
+
       const { weightKg, heightCm } = toMetric(weight, height, metric);
       const newBmi = calculateBMI(weightKg, heightCm);
       const newBodyFat =
@@ -241,10 +273,10 @@ function UserUpdate() {
         weight: w,
         bmi: parseFloat(newBmi.toFixed(2)),
         bmir: parseFloat(newBodyFat.toFixed(2)),
-        waistSize,
-        shoulderSize,
-        hipSize,
-        chestSize,
+        waistSize: stampSlot(waistArray, waistSize),
+        shoulderSize: stampSlot(shoulderArray, shoulderSize),
+        hipSize: stampSlot(hipArray, hipSize),
+        chestSize: stampSlot(chestArray, chestSize),
         beforeImageLink: beforeLink,
         afterImageLink: afterLink,
         hideMyShape,
