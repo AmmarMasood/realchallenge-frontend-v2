@@ -1,122 +1,364 @@
-.user-update-container {
+/* ── New user-settings layout (matches new_user_settings.png) ── */
+
+.uu-page {
   background-color: var(--color-gray-dark);
   min-height: 100vh;
-  padding: 50px;
-}
-.user-update-container-heading {
-  /* border: 1px solid black; */
-  background-color: var(--color-gray);
-  padding: 15px;
-  font-size: 2rem;
-}
-.user-update-container-box {
-  background-color: #1a222d;
-  /* border: 1px solid red; */
-  margin-top: 20px;
-  padding: 10px;
-}
-.user-update-container-box-row1 {
-  /* border: 1px solid blue; */
-  padding: 10px;
-}
-.user-update-container-box-row1-heading {
-  /* border: 1px solid blue; */
-  font-size: 2rem;
-  opacity: 0.8;
-}
-.user-update-container-box-row1-inside {
-  margin: 10px;
-  /* border: 1px solid blue; */
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
-  grid-gap: 10px;
-}
-.user-update-container-box-row1-inside > div {
-  font-size: 1.8rem;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
+  padding-bottom: 40px;
 }
 
-.user-update-container-box-row2 {
-  /* border: 1px solid yellow; */
-  padding: 10px;
-}
-.user-update-container-box-row2-heading {
-  /* border: 1px solid yellow; */
-  font-size: 2rem;
-  opacity: 0.8;
-}
-.user-update-container-box-row2-inside {
-  /* border: 1px solid yellow; */
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
-  grid-gap: 10px;
-  margin: 10px;
-}
-.user-update-container-box-row2-inside > div {
-  font-size: 1.8rem;
+.uu-loading {
+  min-height: 60vh;
   display: flex;
   align-items: center;
-  cursor: pointer;
+  justify-content: center;
 }
-.user-update-container-box-row3 {
-  /* border: 1px solid green; */
-  padding: 10px;
+
+.uu-container {
+  padding: 50px 50px 80px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
-.user-update-container-box-row3-heading {
-  /* border: 1px solid green; */
+
+/* ── Header bar ── */
+.uu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #1B2531;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  border-radius: 4px;
+}
+
+.uu-header-title {
   font-size: 2rem;
-  opacity: 0.8;
+  opacity: 0.6;
 }
-.user-update-container-box-row3-inside {
-  /* border: 1px solid green; */
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
-  padding: 10px;
-  grid-gap: 10px;
-  margin: 10px;
-}
-.user-update-container-box-row3-inside > div {
-  font-size: 1.8rem;
-}
-.user-update-container-box-row3-buttons {
-  text-align: right;
-}
-.user-update-container-box-row3-buttons > button {
-  padding: 5px 30px;
+
+.uu-header-close {
+  background: rgba(255, 44, 44, 0.18);
   border: none;
-  margin-right: 5px;
+  color: #FF6C6C;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
-.user-update-uploadimage {
-  margin-top: 20px;
 
+/* ── Card blocks ── */
+.uu-card-block {
+  /* background-color: #1B2531; */
+  /* padding: 20px; */
+  margin-bottom: 50px;
+  border-radius: 4px;
+}
+
+.uu-block-withbg{
+  background: #1D2631;
+  padding: 20px;
+}
+.uu-section-title {
+  font-size: 22px;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #fff;
+}
+.uu-section-title-light{
+  font-weight: 400;
+  opacity: 0.4;
+  font-size: 20px;
+  padding-bottom: 10px;
+}
+
+.uu-section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+/* ── Goal cards row ── */
+.uu-goal-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.uu-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: background 0.15s ease;
+}
+
+.uu-goal-card {
+  border: none;
+  min-height: 50px;
+}
+
+.uu-goal-icon {
+  background: #1D2631;
   padding: 10px;
 }
-.user-update-uploadimage-heading {
-  font-size: 2rem;
+.uu-goal-icon > img{
+ width: 24px;
+  height: 24px;
 }
-.user-update-uploadimage-container {
-  /* border: 1px solid red; */
-  margin-top: 10px;
+
+/* ── Fitness level grid (3 cols, wraps) ── */
+.uu-fitness-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
-  grid-gap: 20px;
-  padding: 30px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
 }
-.user-update-uploadimage-container-box {
-  /* border: 1px solid blue; */
+
+.uu-fitness-card {
+  min-height: 50px;
+    border: none;
+}
+
+.uu-fitness-icon {
+  background: #1D2631;
+  padding: 10px;
+}
+.uu-fitness-icon > img{
+  height: 12px;
+  width: auto;
+}
+
+
+/* ── Metric toggle (orange pill) ── */
+.uu-metric-toggle {
+  display: inline-flex;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.uu-metric-btn {
+  background: #283443;
+  border: none;
+  color: #fff;
+  padding: 6px 18px;
+  font-size: 1.6rem;
+  cursor: pointer;
+}
+
+.uu-metric-btn.active {
+  background: var(--color-orange);
+}
+
+/* ── Detail grid (3-col compact) ── */
+.uu-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px 24px;
+  padding: 10px;
+}
+
+.uu-detail-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.uu-detail-label {
+  font-size: 1.8rem;
+  opacity: 0.8;
+  min-width: 95px;
+}
+
+.uu-detail-input {
+  background-color: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid #3a4a5e !important;
+  width: 90px;
+}
+
+.uu-detail-input .ant-input-number-input {
+  color: #fff !important;
+  font-size: 1.8rem !important;
+}
+
+.uu-detail-suffix {
+  font-size: 1.4rem;
+  opacity: 0.6;
+}
+
+/* ── Fitness interests grid ── */
+.uu-interest-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.uu-interest-empty {
+  font-size: 1.6rem;
+  opacity: 0.6;
+  padding: 10px 0;
+}
+
+.uu-interest-pill {
+  background-color: #171E27;
+  color: #fff;
+  font-size: 1.8rem;
+  padding: 8px 14px;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.uu-interest-pill.selected {
+  background-color: #2F3E50;
+  /* border-color: var(--color-orange); */
+}
+
+.uu-interest-icon {
+  color: #fff;
+  font-size: 3rem;
+}
+.uu-interest-icon.selected{
+  color: var(--color-orange)
+}
+
+/* ── Hide my shape row ── */
+.uu-hide-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+/* ── Photo grid + boxes ── */
+.uu-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 60px;
+}
+
+.uu-photo-column {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 450px;
+  gap: 12px;
 }
 
-.user-image-remove {
-  background-color: var(--color-orange);
-  padding: 5px 10px;
+.uu-photo-box {
+  position: relative;
+  background-color: #1D2631;
+  border-radius: 4px;
+  padding: 10px;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.uu-photo-remove {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #2F3E50;
+  color: #fff;
+  font-size: 1.4rem;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 2px;
   cursor: pointer;
-  display: inline-block;
-  margin-left: 10px;
+  z-index: 2;
+}
+
+.uu-photo-img {
+  flex: 1;
+  width: 100%;
+  object-fit: contain;
+  max-height: 450px;
+  margin-bottom: 6px;
+}
+
+.uu-photo-progress {
+  margin-bottom: 6px;
+}
+
+.uu-photo-upload {
+  width: 100%;
+}
+
+.uu-file-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.uu-choose-file {
+  background-color: #2F3E50;
+  color: #fff;
+  border: none;
+  padding: 12px 28px;
+  font-size: 1.4rem;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.uu-file-name {
+  font-size: 1.4rem;
+  opacity: 1;
+  color:#FF950A;
+}
+
+/* ── Bottom action bar ── */
+.uu-action-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 24px;
+  background-color: #1D2631;
+}
+
+.uu-cancel-btn {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #3a4a5e;
+  padding: 10px 32px;
+  font-size: 1.8rem;
+  cursor: pointer;
+}
+
+.uu-update-btn {
+  background-color: #53D470;
+  color: #fff;
+  border: none;
+  padding: 10px 32px;
+  font-size: 1.8rem;
+  cursor: pointer;
+}
+
+.uu-update-btn:disabled {
+  background-color: #3a8a4a;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .uu-goal-row,
+  .uu-fitness-grid,
+  .uu-detail-grid,
+  .uu-photo-grid {
+    grid-template-columns: 1fr;
+  }
+  .uu-detail-grid {
+    grid-template-columns: 1fr;
+  }
 }

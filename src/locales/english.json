@@ -190,7 +190,14 @@
     "hip_size": "Hip Size",
     "waist_size": "Waist Size",
     "update_success": "Information Updated!",
-    "update_error": "Unable to update values"
+    "update_error": "Unable to update values",
+    "fitness_interests": "Your fitness interests",
+    "hide_my_shape": "Hide My Shape on my challenges page",
+    "choose_file": "Choose a File",
+    "no_file_chosen": "No file chosen",
+    "cancel": "Cancel",
+    "update": "Update",
+    "no_items_exist": "No items exist"
   },
   "user_setting": {
     "account_setting": "Account setting",
@@ -1073,6 +1080,7 @@
       "max_supplements": "Only 4 supplements can be chosen!",
       "no_recipes_in_cart": "No recipes added yet. Add recipes from your favourites or browse recipes to get started.",
       "no_ingredients": "No ingredients yet.",
+      "supplements": "Supplements",
       "already_in_cart": "This recipe is already in your shopping list.",
       "cart_add_failed": "Could not add recipe to shopping list.",
       "added_to_cart": "Added to shopping list.",

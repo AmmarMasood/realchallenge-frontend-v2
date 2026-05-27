@@ -2035,42 +2035,66 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
               <T>userDashboard.nutrient.ingres</T>
             </div>
             <div className="dashboard-nutrient-row3-container-ingredientsSummary-container">
-              {!shoppingList.items ||
-              shoppingList.items.filter((i) => !i.removedByUser).length ===
-                0 ? (
-                <div
-                  className="font-paragraph-white"
-                  style={{ opacity: 0.6, padding: "10px 0" }}
-                >
-                  <T>userDashboard.nutrient.no_ingredients</T>
-                </div>
-              ) : (
-                shoppingList.items
-                  .filter((i) => !i.removedByUser)
-                  .map((it, idx) => (
+              {(() => {
+                const visible = (shoppingList.items || []).filter(
+                  (i) => !i.removedByUser,
+                );
+                if (visible.length === 0) {
+                  return (
                     <div
-                      key={`${it.itemId && (it.itemId._id || it.itemId)}-${it.unit}-${idx}`}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        background: "#171E27",
-
-                        padding: "16px 16px",
-                        marginBottom: "12px",
-                        color: "#8083A0",
-                        fontSize: "15px",
-                      }}
+                      className="font-paragraph-white"
+                      style={{ opacity: 0.6, padding: "10px 0" }}
                     >
-                      <span style={{ textTransform: "capitalize", flex: 1 }}>
-                        {(it.itemId && it.itemId.name) || "ingredient"}
-                      </span>
-                      <span>
-                        {formatShoppingQty(it.quantity * personCount, it.unit)}
-                      </span>
+                      <T>userDashboard.nutrient.no_ingredients</T>
                     </div>
-                  ))
-              )}
+                  );
+                }
+                const regular = visible.filter((i) => !i.isSupplement);
+                const supplements = visible.filter((i) => i.isSupplement);
+                const renderRow = (it, idx) => (
+                  <div
+                    key={`${it.itemId && (it.itemId._id || it.itemId)}-${it.unit}-${idx}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      background: "#171E27",
+                      padding: "16px 16px",
+                      marginBottom: "12px",
+                      color: "#8083A0",
+                      fontSize: "15px",
+                    }}
+                  >
+                    <span style={{ textTransform: "capitalize", flex: 1 }}>
+                      {(it.itemId && it.itemId.name) || "ingredient"}
+                    </span>
+                    <span>
+                      {formatShoppingQty(it.quantity * personCount, it.unit)}
+                    </span>
+                  </div>
+                );
+                return (
+                  <>
+                    {regular.map(renderRow)}
+                    {supplements.length > 0 && (
+                      <>
+                        <div
+                          className="font-paragraph-white"
+                          style={{
+                            fontSize: "14px",
+                            marginTop: regular.length > 0 ? "16px" : "0",
+                            marginBottom: "10px",
+                            opacity: 0.8,
+                          }}
+                        >
+                          <T>userDashboard.nutrient.supplements</T>
+                        </div>
+                        {supplements.map(renderRow)}
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </div>
             <div
               style={{

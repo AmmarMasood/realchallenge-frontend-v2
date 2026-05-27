@@ -14,6 +14,7 @@ import {
   ClockCircleOutlined,
   UserOutlined,
   FireOutlined,
+  HomeOutlined,
 } from "@ant-design/icons";
 import { withRouter, Prompt } from "react-router-dom";
 import {
@@ -48,6 +49,8 @@ import {
   removeDiet,
   createIngredient,
   removeIngredient,
+  setIngredientPantryStaple,
+  setIngredientActive,
   getAllUserRecipes,
   getRecipeTranslationsByKey,
   acquireRecipeLock,
@@ -200,6 +203,10 @@ function BasicInformation(props) {
   const [newDiet, setNewDiet] = useState("");
   const [ingredientModal, setIngredientModal] = useState(false);
   const [newIngredient, setNewIngredient] = useState("");
+  const [newIngredientIsPantryStaple, setNewIngredientIsPantryStaple] =
+    useState(false);
+  const [newIngredientCategory, setNewIngredientCategory] = useState("");
+  const [newIngredientDefaultUnit, setNewIngredientDefaultUnit] = useState("");
 
   // Translation support
   const [allRecipesFromOtherLanguage, setAllRecipesFromOtherLanguage] =
@@ -1064,14 +1071,71 @@ function BasicInformation(props) {
             }}
             onClick={async () => {
               if (newIngredient.length > 0) {
-                await createIngredient(newIngredient, effectiveLanguage);
+                await createIngredient(newIngredient, effectiveLanguage, {
+                  isPantryStaple: newIngredientIsPantryStaple,
+                  category: newIngredientCategory,
+                  defaultUnit: newIngredientDefaultUnit,
+                });
                 setNewIngredient("");
+                setNewIngredientIsPantryStaple(false);
+                setNewIngredientCategory("");
+                setNewIngredientDefaultUnit("");
                 fetchDataV2(effectiveLanguage);
               }
             }}
           >
             Create
           </Button>
+        </div>
+        <label
+          style={{
+            color: "#fff",
+            fontSize: "12px",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            marginTop: "6px",
+          }}
+          title="Pantry staples (salt, oil, etc.) are excluded from shopping lists by default."
+        >
+          <input
+            type="checkbox"
+            checked={newIngredientIsPantryStaple}
+            onChange={(e) => setNewIngredientIsPantryStaple(e.target.checked)}
+          />
+          Pantry staple (excluded from shopping list by default)
+        </label>
+        <div
+          style={{
+            display: "flex",
+            gap: "6px",
+            alignItems: "center",
+            marginTop: "6px",
+          }}
+        >
+          <Input
+            placeholder="Category (e.g. Dairy, Produce)"
+            value={newIngredientCategory}
+            onChange={(e) => setNewIngredientCategory(e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <select
+            value={newIngredientDefaultUnit}
+            onChange={(e) => setNewIngredientDefaultUnit(e.target.value)}
+            style={{
+              padding: "4px 8px",
+              border: "1px solid #d9d9d9",
+              borderRadius: "2px",
+              background: "#fff",
+              color: "#283443",
+              height: "32px",
+            }}
+          >
+            <option value="">No default unit</option>
+            <option value="g">g</option>
+            <option value="ml">ml</option>
+            <option value="pieces">pieces</option>
+          </select>
         </div>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
           <span className="font-subheading-white">All Ingredients</span>
@@ -1088,10 +1152,121 @@ function BasicInformation(props) {
                   justifyContent: "space-between",
                   flexWrap: "wrap",
                   gap: "5px",
+                  opacity: g.isActive === false ? 0.45 : 1,
                 }}
               >
-                <span>{g.name}</span>
+                <span style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                  <span
+                    style={{
+                      textDecoration:
+                        g.isActive === false ? "line-through" : "none",
+                    }}
+                  >
+                    {g.name}
+                  </span>
+                  {g.isPantryStaple && (
+                    <span
+                      title="Pantry staple"
+                      style={{
+                        fontSize: "10px",
+                        color: "#1F5A2C",
+                        background: "rgba(31,90,44,0.12)",
+                        padding: "1px 6px",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      pantry
+                    </span>
+                  )}
+                  {g.category && (
+                    <span
+                      title={`Category: ${g.category}`}
+                      style={{
+                        fontSize: "10px",
+                        color: "#283443",
+                        background: "#eef0f3",
+                        padding: "1px 6px",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      {g.category}
+                    </span>
+                  )}
+                  {g.defaultUnit && (
+                    <span
+                      title={`Default unit: ${g.defaultUnit}`}
+                      style={{
+                        fontSize: "10px",
+                        color: "#7a4a00",
+                        background: "rgba(255,119,0,0.12)",
+                        padding: "1px 6px",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      {g.defaultUnit}
+                    </span>
+                  )}
+                </span>
                 <span style={{ display: "flex", gap: "6px" }}>
+                  <Tooltip
+                    title={
+                      g.isActive === false
+                        ? "Reactivate"
+                        : "Deactivate (hide from new recipes)"
+                    }
+                  >
+                    <Button
+                      onClick={async () => {
+                        await setIngredientActive(
+                          g._id,
+                          g.isActive === false ? true : false,
+                        );
+                        fetchDataV2(effectiveLanguage);
+                      }}
+                      type={g.isActive === false ? "default" : "primary"}
+                      icon={
+                        g.isActive === false ? (
+                          <CheckOutlined />
+                        ) : (
+                          <CloseOutlined />
+                        )
+                      }
+                      size="small"
+                      style={
+                        g.isActive === false
+                          ? undefined
+                          : {
+                              backgroundColor: "#8a94a3",
+                              borderColor: "#8a94a3",
+                            }
+                      }
+                    />
+                  </Tooltip>
+                  <Tooltip
+                    title={
+                      g.isPantryStaple
+                        ? "Unmark pantry staple"
+                        : "Mark as pantry staple"
+                    }
+                  >
+                    <Button
+                      onClick={async () => {
+                        await setIngredientPantryStaple(g._id, !g.isPantryStaple);
+                        fetchDataV2(effectiveLanguage);
+                      }}
+                      type={g.isPantryStaple ? "primary" : "default"}
+                      icon={<HomeOutlined />}
+                      size="small"
+                      style={
+                        g.isPantryStaple
+                          ? {
+                              backgroundColor: "#1F5A2C",
+                              borderColor: "#1F5A2C",
+                            }
+                          : undefined
+                      }
+                    />
+                  </Tooltip>
                   <Tooltip
                     title={
                       ingredients.find((item) => item.name === g._id)
@@ -1647,6 +1822,16 @@ function BasicInformation(props) {
                     Array.isArray(errors.missingQtyIds) &&
                     errors.missingQtyIds.includes(ing.id);
                   const qtyBorder = qtyMissing ? "#ff4d4f" : "#ccc";
+                  // Master ingredient's defaultUnit (if any) locks this row
+                  // to a single unit — Tightening §B2 / §F1 alignment.
+                  const master = allIngredients.find(
+                    (ai) => ai._id === ing.name,
+                  );
+                  const lockedUnit = master?.defaultUnit || "";
+                  const gDisabled = lockedUnit && lockedUnit !== "g";
+                  const mlDisabled = lockedUnit && lockedUnit !== "ml";
+                  const pcsDisabled = lockedUnit && lockedUnit !== "pieces";
+                  const disabledBg = "#f0f0f0";
                   return (
                   <div
                     key={ing.id}
@@ -1688,10 +1873,18 @@ function BasicInformation(props) {
                         width: "70px",
                         color: "#283443",
                         borderColor: qtyBorder,
+                        background: gDisabled ? disabledBg : undefined,
+                        cursor: gDisabled ? "not-allowed" : undefined,
                       }}
                       type="number"
                       placeholder="g"
                       value={ing.weight}
+                      disabled={!!gDisabled}
+                      title={
+                        gDisabled
+                          ? `This ingredient is measured in ${lockedUnit}`
+                          : undefined
+                      }
                       onChange={(e) => {
                         if (qtyMissing) {
                           setErrors((prev) => ({
@@ -1710,10 +1903,18 @@ function BasicInformation(props) {
                         width: "70px",
                         color: "#283443",
                         borderColor: qtyBorder,
+                        background: mlDisabled ? disabledBg : undefined,
+                        cursor: mlDisabled ? "not-allowed" : undefined,
                       }}
                       type="number"
                       placeholder="ml"
                       value={ing.volume}
+                      disabled={!!mlDisabled}
+                      title={
+                        mlDisabled
+                          ? `This ingredient is measured in ${lockedUnit}`
+                          : undefined
+                      }
                       onChange={(e) => {
                         if (qtyMissing) {
                           setErrors((prev) => ({
@@ -1732,10 +1933,18 @@ function BasicInformation(props) {
                         width: "70px",
                         color: "#283443",
                         borderColor: qtyBorder,
+                        background: pcsDisabled ? disabledBg : undefined,
+                        cursor: pcsDisabled ? "not-allowed" : undefined,
                       }}
                       type="number"
                       placeholder="pcs"
                       value={ing.pieces}
+                      disabled={!!pcsDisabled}
+                      title={
+                        pcsDisabled
+                          ? `This ingredient is measured in ${lockedUnit}`
+                          : undefined
+                      }
                       onChange={(e) => {
                         if (qtyMissing) {
                           setErrors((prev) => ({
@@ -2124,7 +2333,7 @@ function BasicInformation(props) {
                       : "Create a feed post for this recipe"
                   }
                   style={{
-                    color: "#fff",
+                    color: "#ff7700",
                     borderColor: "#ff7700",
                     background: postExists ? "#4a5260" : "transparent",
                     border: "1px solid #ff7700",

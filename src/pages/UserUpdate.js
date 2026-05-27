@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useContext } from "react";
 import "../assets/userUpdate.css";
 import LoggedinNavbar from "../components/LoggedinNavbar";
-import { InputNumber, Upload, Button, Progress, notification } from "antd";
+import { InputNumber, Upload, notification } from "antd";
 import HumanVector from "../images/FreeVectorHumanSilhouette 1.png";
-// import ImgCrop from "antd-img-crop";
 
 import { getUserProfileInfo } from "../services/users";
 import { userInfoContext } from "../contexts/UserStore";
-import { getPhotoUploadUrl } from "../services/customer";
-// icons
+import { getPhotoUploadUrl, createCustomerDetails } from "../services/customer";
+import { getAllTrainerGoalsPublic } from "../services/trainers";
 import { getDefaultGoals } from "../constants/goals";
 import {
   kgToLb,
@@ -22,31 +21,41 @@ import {
 import ArrowOneActive from "../assets/icons/arrow-one-active.png";
 import ArrowForward from "../assets/icons/forward-arrows.png";
 import ArrowThreeActive from "../assets/icons/arrow-three-active.png";
-import { createCustomerDetails } from "../services/customer";
-import { LoadingOutlined } from "@ant-design/icons";
+import {
+  CloseOutlined,
+  LoadingOutlined,
+  ForwardOutlined,
+} from "@ant-design/icons";
 import { T, translate } from "../components/Translate";
 import { useHistory } from "react-router-dom";
+import GreenSwitch from "../components/Common/GreenSwitch";
+import { LanguageContext } from "../contexts/LanguageContext";
 
-const iconsStyle = {
-  color: "var(--color-orange)",
-  fontSize: "3rem",
-  padding: "5px",
-  marginRight: "10px",
-  backgroundColor: "var(--color-gray)",
-};
-const iconsStyleArrow = {
-  color: "var(--color-orange)",
-  height: "38px",
-  width: "40px",
-  padding: "10px 5px",
-  marginRight: "10px",
-  backgroundColor: "var(--color-gray)",
-};
+const fitnessLevels = [
+  { key: "inactive", label: "user_update.inactive", icon: ArrowOneActive },
+  {
+    key: "light-active",
+    label: "user_update.light_active",
+    icon: ArrowOneActive,
+  },
+  {
+    key: "average-active",
+    label: "user_update.average_active",
+    icon: ArrowForward,
+  },
+  { key: "active", label: "user_update.active", icon: ArrowThreeActive },
+  {
+    key: "very-active",
+    label: "user_update.very_active",
+    icon: ArrowThreeActive,
+  },
+];
 
 function UserUpdate() {
-  // eslint-disable-next-line
   const history = useHistory();
-  const [userInfo, setUserInfo] = useContext(userInfoContext);
+  const [userInfo] = useContext(userInfoContext);
+  const { language } = useContext(LanguageContext);
+
   const [goal, setGoal] = useState("");
   const [currentLevel, setCurrentLevel] = useState("");
   const [metric, setMetric] = useState(true);
@@ -58,25 +67,29 @@ function UserUpdate() {
   const [bmr, setBmr] = useState("");
   const [beforePic, setBeforePic] = useState("");
   const [afterPic, setAfterPic] = useState("");
+  const [beforeProgress, setBeforeProgress] = useState(0);
+  const [afterProgress, setAfterProgress] = useState(0);
   const [shoulderSize, setShoulderSize] = useState("");
   const [chestSize, setChestSize] = useState("");
   const [hipSize, setHipSize] = useState("");
   const [waistSize, setWaistSize] = useState("");
   const [gender, setGender] = useState("");
   const [loading, setLoading] = useState(false);
-  const [fetchLoading, setFetchLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+
+  // Fitness interests (re-uses the same TrainerGoal list as the wizard)
+  const [allFitnessInterests, setAllFitnessInterests] = useState([]);
+  const [selectedFitnessInterests, setSelectedFitnessInterests] = useState([]);
+
+  // New: hide before/after photos from public challenge profile
+  const [hideMyShape, setHideMyShape] = useState(false);
 
   const openNotificationWithIcon = (type, message, description) => {
-    notification[type]({
-      message: message,
-      description: description,
-    });
+    notification[type]({ message, description });
   };
 
-  const fechUserInfo = async () => {
-    setFetchLoading(true);
+  const fetchUserInfo = async () => {
     const month = new Date().getMonth();
-
     const res = await getUserProfileInfo(userInfo.id);
     const {
       goals,
@@ -93,15 +106,17 @@ function UserUpdate() {
       chestSize,
       afterImageLink,
       beforeImageLink,
+      hideMyShape: srvHide,
+      fitnessInterests,
     } = res.customer.customerDetails;
     setGender(res.customer.gender);
-    setGoal(goals[0]);
-    setCurrentLevel(currentFitnessLevel[0]);
-    setMetric(measureSystem === "metrics" ? true : false);
+    setGoal(goals && goals[0]);
+    setCurrentLevel(currentFitnessLevel && currentFitnessLevel[0]);
+    setMetric(measureSystem === "metrics");
     setHeight(height);
     setAge(age);
-    setWeightArray(weight);
-    setWeight(weight[month]);
+    setWeightArray(weight || []);
+    setWeight(weight ? weight[month] : "");
     setBmr(bmir);
     setBmi(bmi);
     setShoulderSize(shoulderSize);
@@ -110,29 +125,42 @@ function UserUpdate() {
     setChestSize(chestSize);
     setAfterPic(afterImageLink);
     setBeforePic(beforeImageLink);
-    setFetchLoading(false);
-    console.log("res", res);
+    setHideMyShape(!!srvHide);
+    setSelectedFitnessInterests(
+      Array.isArray(fitnessInterests)
+        ? fitnessInterests.map((f) => (typeof f === "object" ? f._id : f))
+        : [],
+    );
   };
+
+  const fetchFitnessInterests = async () => {
+    const res = await getAllTrainerGoalsPublic(language);
+    if (res && Array.isArray(res.goals)) setAllFitnessInterests(res.goals);
+  };
+
   useEffect(() => {
-    fechUserInfo();
+    (async () => {
+      try {
+        await Promise.all([fetchUserInfo(), fetchFitnessInterests()]);
+      } finally {
+        setPageLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-convert values when switching between metric and imperial
   const handleMetricToggle = (isMetric) => {
     if (isMetric === metric) return;
     if (isMetric) {
-      // Imperial → Metric
       setWeight(weight ? parseFloat(lbToKg(weight).toFixed(1)) : weight);
       setHeight(height ? parseFloat(ftToCm(height).toFixed(1)) : height);
     } else {
-      // Metric → Imperial
       setWeight(weight ? parseFloat(kgToLb(weight).toFixed(1)) : weight);
       setHeight(height ? parseFloat(cmToFt(height).toFixed(1)) : height);
     }
     setMetric(isMetric);
   };
 
-  // Auto-recalculate BMI and body fat when inputs change
   useEffect(() => {
     const { weightKg, heightCm } = toMetric(weight, height, metric);
     if (weightKg && heightCm) {
@@ -144,47 +172,55 @@ function UserUpdate() {
     }
   }, [weight, height, age, metric, gender]);
 
-  const uploadPhoto = async (file) => {
-    // 1. Get presigned URL + final CloudFront URL
+  const uploadPhoto = async (file, setProgress) => {
     const { presignedUrl, fileUrl } = await getPhotoUploadUrl({
       filename: file.name,
       mimeType: file.type,
     });
-
-    // 2. Upload directly to S3
     await new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("PUT", presignedUrl, true);
       xhr.setRequestHeader("Content-Type", file.type);
-      xhr.onload = () => (xhr.status === 200 ? resolve() : reject(new Error("S3 upload failed")));
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && setProgress) {
+          setProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      };
+      xhr.onload = () =>
+        xhr.status === 200 ? resolve() : reject(new Error("S3 upload failed"));
       xhr.onerror = () => reject(new Error("S3 upload failed"));
       xhr.send(file);
     });
-
     return fileUrl;
   };
 
-  const dummyRequest = async ({ file, onSuccess }) => {
+  const beforeFileRequest = ({ file, onSuccess }) => {
     setBeforePic(file);
+    setBeforeProgress(0);
+    setTimeout(() => onSuccess("ok"), 0);
+  };
+  const afterFileRequest = ({ file, onSuccess }) => {
+    setAfterPic(file);
+    setAfterProgress(0);
     setTimeout(() => onSuccess("ok"), 0);
   };
 
-  const dummyAfterPicRequest = async ({ file, onSuccess }) => {
-    setAfterPic(file);
-    setTimeout(() => onSuccess("ok"), 0);
+  const toggleInterest = (id) => {
+    setSelectedFitnessInterests((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   };
 
   const saveUserUpdate = async () => {
     setLoading(true);
     try {
-      // Upload images if they are new File objects
       const beforeLink =
         typeof beforePic === "object" && beforePic
-          ? await uploadPhoto(beforePic)
+          ? await uploadPhoto(beforePic, setBeforeProgress)
           : beforePic || "";
       const afterLink =
         typeof afterPic === "object" && afterPic
-          ? await uploadPhoto(afterPic)
+          ? await uploadPhoto(afterPic, setAfterProgress)
           : afterPic || "";
 
       const month = new Date().getMonth();
@@ -193,7 +229,8 @@ function UserUpdate() {
 
       const { weightKg, heightCm } = toMetric(weight, height, metric);
       const newBmi = calculateBMI(weightKg, heightCm);
-      const newBodyFat = gender && age ? calculateBodyFat(newBmi, age, gender) : bmr;
+      const newBodyFat =
+        gender && age ? calculateBodyFat(newBmi, age, gender) : bmr;
 
       const values = {
         goals: [goal],
@@ -210,443 +247,323 @@ function UserUpdate() {
         chestSize,
         beforeImageLink: beforeLink,
         afterImageLink: afterLink,
+        hideMyShape,
+        fitnessInterests: selectedFitnessInterests,
       };
       await createCustomerDetails(values, userInfo.id);
-      // Update local state with the URLs so they display correctly after save
       if (typeof beforePic === "object" && beforeLink) setBeforePic(beforeLink);
       if (typeof afterPic === "object" && afterLink) setAfterPic(afterLink);
       setLoading(false);
-      openNotificationWithIcon("success", translate("user_update.update_success"), "");
+      openNotificationWithIcon(
+        "success",
+        translate("user_update.update_success"),
+        "",
+      );
     } catch (error) {
       console.log(error);
       setLoading(false);
-      openNotificationWithIcon("error", translate("user_update.update_error"), "");
+      openNotificationWithIcon(
+        "error",
+        translate("user_update.update_error"),
+        "",
+      );
     }
   };
 
+  const renderGoalCard = (g) => {
+    const selected = goal === g._id;
+    return (
+      <div
+        key={g._id}
+        onClick={() => setGoal(g._id)}
+        className="uu-card uu-goal-card"
+        style={{
+          background: selected ? "#2F3E50" : "#171E27",
+        }}
+      >
+        <div className="uu-goal-icon">
+          <img src={g.icon} alt="" />
+        </div>
+        <span className="font-paragraph-white">{g.name}</span>
+      </div>
+    );
+  };
+
+  const renderFitnessCard = (lv) => {
+    const selected = currentLevel === lv.key;
+    return (
+      <div
+        key={lv.key}
+        onClick={() => setCurrentLevel(lv.key)}
+        className="uu-card uu-fitness-card"
+        style={{
+          background: selected ? "#2F3E50" : "#171E27",
+        }}
+      >
+        <div className="uu-fitness-icon">
+          <img src={lv.icon} alt="" />
+        </div>
+        <span className="font-paragraph-white">
+          <T>{lv.label}</T>
+        </span>
+      </div>
+    );
+  };
+
+  const detailField = (labelKey, value, setter, suffix) => (
+    <div className="uu-detail-field">
+      <span className="uu-detail-label font-paragraph-white">
+        <T>{labelKey}</T>:
+      </span>
+      <InputNumber
+        className="uu-detail-input"
+        value={value}
+        onChange={(v) => setter(v)}
+      />
+      {suffix && (
+        <span className="uu-detail-suffix font-paragraph-white">{suffix}</span>
+      )}
+    </div>
+  );
+
+  const renderPhotoBox = (pic, setPic, progress, setProgress, requestFn) => {
+    const previewSrc =
+      typeof pic === "object" && pic
+        ? URL.createObjectURL(pic)
+        : typeof pic === "string" && pic.length > 0
+          ? pic
+          : HumanVector;
+    return (
+      <div className="uu-photo-column">
+        <div className="uu-photo-box">
+          {pic && (
+            <button
+              type="button"
+              className="uu-photo-remove"
+              onClick={() => {
+                setPic("");
+                setProgress(0);
+              }}
+            >
+              <T>user_update.remove</T>
+            </button>
+          )}
+          <img src={previewSrc} alt="upload-preview" className="uu-photo-img" />
+        </div>
+        <Upload
+          accept="image/*"
+          customRequest={requestFn}
+          multiple={false}
+          showUploadList={false}
+          className="uu-photo-upload"
+        >
+          <div className="uu-file-input-row">
+            <button type="button" className="uu-choose-file">
+              <T>user_update.choose_file</T>
+            </button>
+            <span className="uu-file-name">
+              {typeof pic === "object" && pic
+                ? pic.name
+                : translate("user_update.no_file_chosen")}
+            </span>
+          </div>
+        </Upload>
+      </div>
+    );
+  };
+
+  if (pageLoading) {
+    return (
+      <div className="uu-page">
+        <LoggedinNavbar />
+        <div className="uu-loading">
+          <LoadingOutlined style={{ fontSize: "80px", color: "#ff7700" }} />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ backgroundColor: "var(--color-gray-dark)" }}>
+    <div className="uu-page">
       <LoggedinNavbar />
 
-      <div className="user-update-container">
-        <div className="user-update-container-heading font-card-heading">
-          <T>user_update.update_values</T>
+      <div className="uu-container">
+        <div className="uu-header">
+          <span
+            className="uu-section-title uu-section-title-light"
+            style={{ fontWeight: "600", margin: 0, padding: 0 }}
+          >
+            <T>user_update.update_values</T>
+          </span>
+          <button
+            type="button"
+            className="uu-header-close"
+            onClick={() => history.goBack()}
+            aria-label="Close"
+          >
+            <CloseOutlined />
+          </button>
         </div>
-        <div className="user-update-container-box">
-          <div className="user-update-container-box-row1">
-            <div className="user-update-container-box-row1-heading font-card-heading-light">
-              <T>user_update.your_goals</T>
-            </div>
-            <div className="user-update-container-box-row1-inside">
-              {getDefaultGoals().map((g) => (
-                <div
-                  key={g._id}
-                  className="font-paragraph-white"
-                  onClick={() => setGoal(g._id)}
-                  style={{
-                    padding: "10px",
-                    background:
-                      goal === g._id
-                        ? "var(--color-gray-light)"
-                        : "var(--color-gray-dark)",
-                  }}
-                >
-                  {" "}
-                  <img src={g.icon} alt="" style={iconsStyle} />
-                  {g.name}
-                </div>
-              ))}
-            </div>
+
+        <div className="uu-card-block uu-block-withbg">
+          <div className="uu-section-title uu-section-title-light">
+            <T>user_update.your_goals</T>
           </div>
-          <div className="user-update-container-box-row2">
-            <div className="user-update-container-box-row2-heading font-card-heading-light">
-              <T>user_update.current_fitness</T>
-            </div>
-            <div className="user-update-container-box-row2-inside">
-              <div
-                className="font-paragraph-white"
-                onClick={() => setCurrentLevel("inactive")}
-                style={{
-                  padding: "10px",
-                  background:
-                    currentLevel === "inactive"
-                      ? "var(--color-gray-light)"
-                      : "var(--color-gray-dark)",
-                }}
-              >
-                {" "}
-                <img src={ArrowOneActive} alt="" style={iconsStyleArrow} />
-                <T>user_update.inactive</T>
-              </div>
-              <div
-                className="font-paragraph-white"
-                onClick={() => setCurrentLevel("light-active")}
-                style={{
-                  padding: "10px",
-                  background:
-                    currentLevel === "light-active"
-                      ? "var(--color-gray-light)"
-                      : "var(--color-gray-dark)",
-                }}
-              >
-                {" "}
-                <img src={ArrowOneActive} alt="" style={iconsStyleArrow} />
-                <T>user_update.light_active</T>
-              </div>
-              <div
-                className="font-paragraph-white"
-                onClick={() => setCurrentLevel("average-active")}
-                style={{
-                  padding: "10px",
-                  background:
-                    currentLevel === "average-active"
-                      ? "var(--color-gray-light)"
-                      : "var(--color-gray-dark)",
-                }}
-              >
-                {" "}
-                <img src={ArrowForward} alt="" style={iconsStyleArrow} />
-                <T>user_update.average_active</T>
-              </div>
-              <div
-                className="font-paragraph-white"
-                onClick={() => setCurrentLevel("active")}
-                style={{
-                  padding: "10px",
-                  background:
-                    currentLevel === "active"
-                      ? "var(--color-gray-light)"
-                      : "var(--color-gray-dark)",
-                }}
-              >
-                {" "}
-                <img src={ArrowThreeActive} alt="" style={iconsStyleArrow} />
-                <T>user_update.active</T>
-              </div>
-              <div
-                className="font-paragraph-white"
-                onClick={() => setCurrentLevel("very-active")}
-                style={{
-                  padding: "10px",
-                  background:
-                    currentLevel === "very-active"
-                      ? "var(--color-gray-light)"
-                      : "var(--color-gray-dark)",
-                }}
-              >
-                {" "}
-                <img src={ArrowThreeActive} alt="" style={iconsStyleArrow} />
-                <T>user_update.very_active</T>
-              </div>
-            </div>
+          <div className="uu-goal-row">
+            {getDefaultGoals().map(renderGoalCard)}
           </div>
-          <div className="user-update-container-box-row3">
-            <div className="user-update-container-box-row3-heading font-card-heading-light">
+
+          <div className="uu-section-title uu-section-title-light">
+            <T>user_update.current_fitness</T>
+          </div>
+          <div className="uu-fitness-grid">
+            {fitnessLevels.map(renderFitnessCard)}
+          </div>
+
+          <div className="uu-section-title-row">
+            <div className="uu-section-title uu-section-title-light">
               <T>user_update.other_details</T>
             </div>
-            <div className="user-update-container-box-row3-buttons">
+            <div className="uu-metric-toggle">
               <button
-                className="font-paragraph-white"
-                style={{
-                  backgroundColor: metric
-                    ? "var(--color-orange)"
-                    : "var(--color-gray-light)",
-                }}
+                type="button"
+                className={`uu-metric-btn ${metric ? "active" : ""}`}
                 onClick={() => handleMetricToggle(true)}
               >
                 <T>user_update.metric</T>
               </button>
               <button
-                className="font-paragraph-white"
-                style={{
-                  backgroundColor: !metric
-                    ? "var(--color-orange)"
-                    : "var(--color-gray-light)",
-                }}
+                type="button"
+                className={`uu-metric-btn ${!metric ? "active" : ""}`}
                 onClick={() => handleMetricToggle(false)}
               >
                 <T>user_update.imperial</T>
               </button>
             </div>
-            <div className="user-update-container-box-row3-inside">
-              <div>
-                <span className="font-paragraph-white">
-                  <T>user_update.weight</T>:{" "}
-                </span>
-                <InputNumber
-                  className="font-paragraph-white"
-                  style={{
-                    backgroundColor: "transparent",
-                    border: "none",
-                    borderBottom: "2px solid var(--color-gray-light)",
-                    width: "100px",
-                  }}
-                  value={weight}
-                  onChange={(e) => setWeight(e)}
-                />
-                <span
-                  className="font-paragraph-white"
-                  style={{ marginLeft: "5px" }}
-                >
-                  {metric ? "kg" : "lb"}{" "}
-                </span>
-              </div>
-              <div>
-                <span className="font-paragraph-white">
-                  <T>user_update.height</T>:
-                </span>
-                <InputNumber
-                  className="font-paragraph-white"
-                  style={{
-                    backgroundColor: "transparent",
-                    border: "none",
-                    borderBottom: "2px solid var(--color-gray-light)",
-                    width: "100px",
-                  }}
-                  value={height}
-                  onChange={(e) => setHeight(e)}
-                />
-                <span
-                  className="font-paragraph-white"
-                  style={{ marginLeft: "5px" }}
-                >
-                  {metric ? "cm" : "ft"}{" "}
-                </span>
-              </div>
-              <div>
-                <span className="font-paragraph-white">
-                  <T>user_update.age</T>:
-                </span>
-                <InputNumber
-                  className="font-paragraph-white"
-                  style={{
-                    backgroundColor: "transparent",
-                    border: "none",
-                    borderBottom: "2px solid var(--color-gray-light)",
-                    width: "100px",
-                  }}
-                  value={age}
-                  onChange={(e) => setAge(e)}
-                />
-              </div>
-              <div>
-                <span className="font-paragraph-white"><T>user_update.bmi</T>: </span>
-                <InputNumber
-                  className="font-paragraph-white"
-                  style={{
-                    backgroundColor: "transparent",
-                    border: "none",
-                    borderBottom: "2px solid var(--color-gray-light)",
-                    width: "100px",
-                  }}
-                  value={bmi}
-                  onChange={(e) => setBmi(e)}
-                />
-              </div>
-              <div>
-                <span className="font-paragraph-white"><T>user_update.body_fat</T>: </span>
-                <InputNumber
-                  className="font-paragraph-white"
-                  style={{
-                    backgroundColor: "transparent",
-                    border: "none",
-                    borderBottom: "2px solid var(--color-gray-light)",
-                    width: "100px",
-                  }}
-                  value={bmr}
-                  onChange={(e) => setBmr(e)}
-                />
-              </div>
-              <div>
-                <span className="font-paragraph-white"><T>user_update.shoulder_size</T>: </span>
-                <InputNumber
-                  className="font-paragraph-white"
-                  style={{
-                    backgroundColor: "transparent",
-                    border: "none",
-                    borderBottom: "2px solid var(--color-gray-light)",
-                    width: "100px",
-                  }}
-                  value={shoulderSize}
-                  onChange={(e) => setShoulderSize(e)}
-                />
-                <span className="font-paragraph-white" style={{ marginLeft: "5px" }}>
-                  {metric ? "cm" : "in"}
-                </span>
-              </div>
-              <div>
-                <span className="font-paragraph-white"><T>user_update.chest_size</T>: </span>
-                <InputNumber
-                  className="font-paragraph-white"
-                  style={{
-                    backgroundColor: "transparent",
-                    border: "none",
-                    borderBottom: "2px solid var(--color-gray-light)",
-                    width: "100px",
-                  }}
-                  value={chestSize}
-                  onChange={(e) => setChestSize(e)}
-                />
-                <span className="font-paragraph-white" style={{ marginLeft: "5px" }}>
-                  {metric ? "cm" : "in"}
-                </span>
-              </div>
-              <div>
-                <span className="font-paragraph-white"><T>user_update.hip_size</T>: </span>
-                <InputNumber
-                  className="font-paragraph-white"
-                  style={{
-                    backgroundColor: "transparent",
-                    border: "none",
-                    borderBottom: "2px solid var(--color-gray-light)",
-                    width: "100px",
-                  }}
-                  value={hipSize}
-                  onChange={(e) => setHipSize(e)}
-                />
-                <span className="font-paragraph-white" style={{ marginLeft: "5px" }}>
-                  {metric ? "cm" : "in"}
-                </span>
-              </div>
-              <div>
-                <span className="font-paragraph-white"><T>user_update.waist_size</T>:</span>
-                <InputNumber
-                  className="font-paragraph-white"
-                  style={{
-                    backgroundColor: "transparent",
-                    border: "none",
-                    borderBottom: "2px solid var(--color-gray-light)",
-                    width: "100px",
-                  }}
-                  value={waistSize}
-                  onChange={(e) => setWaistSize(e)}
-                />
-                <span className="font-paragraph-white" style={{ marginLeft: "5px" }}>
-                  {metric ? "cm" : "in"}
-                </span>
-              </div>
-            </div>
           </div>
+          <div className="uu-detail-grid">
+            {detailField(
+              "user_update.height",
+              height,
+              setHeight,
+              metric ? "cm" : "ft",
+            )}
+            {detailField(
+              "user_update.shoulder_size",
+              shoulderSize,
+              setShoulderSize,
+              metric ? "cm" : "in",
+            )}
+            {detailField(
+              "user_update.waist_size",
+              waistSize,
+              setWaistSize,
+              metric ? "cm" : "in",
+            )}
+            {detailField(
+              "user_update.weight",
+              weight,
+              setWeight,
+              metric ? "kg" : "lb",
+            )}
+            {detailField(
+              "user_update.chest_size",
+              chestSize,
+              setChestSize,
+              metric ? "cm" : "in",
+            )}
+            {detailField(
+              "user_update.hip_size",
+              hipSize,
+              setHipSize,
+              metric ? "cm" : "in",
+            )}
+            {detailField("user_update.age", age, setAge)}
+            {detailField("user_update.bmi", bmi, setBmi)}
+            {detailField("user_update.body_fat", bmr, setBmr, "%")}
+          </div>
+        </div>
 
-          <div className="user-update-uploadimage">
-            <div className="user-update-container-box-row2-heading font-card-heading-light">
+        <div className="uu-card-block uu-block-withbg">
+          <div className="uu-section-title uu-section-title-light">
+            <T>user_update.fitness_interests</T>
+          </div>
+          <div className="uu-interest-grid">
+            {allFitnessInterests.length === 0 ? (
+              <div className="uu-interest-empty font-paragraph-white">
+                <T>user_update.no_items_exist</T>
+              </div>
+            ) : (
+              allFitnessInterests.map((i) => {
+                const selected = selectedFitnessInterests.includes(i._id);
+                return (
+                  <span
+                    key={i._id}
+                    onClick={() => toggleInterest(i._id)}
+                    className={`uu-interest-pill ${selected ? "selected" : ""}`}
+                  >
+                    <ForwardOutlined
+                      className={`uu-interest-icon ${selected ? "selected" : ""}`}
+                    />
+                    <span>{i.name}</span>
+                  </span>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        <div className="uu-card-block">
+          <div className="uu-section-title-row">
+            <div className="uu-section-title">
               <T>user_update.upload_your_pictures</T>
             </div>
-            <div className="user-update-uploadimage-container">
-              <div className="user-update-uploadimage-container-box">
-                <h3 className="font-paragraph-white">
-                  {" "}
-                  <T>user_update.before</T>
-                </h3>
-                <img
-                  src={
-                    typeof beforePic === "object"
-                      ? URL.createObjectURL(beforePic)
-                      : typeof beforePic === "string" && beforePic.length > 0
-                      ? `${beforePic}`
-                      : HumanVector
-                  }
-                  style={{
-                    height: "80%",
-                    padding: "20px",
-                    backgroundColor: "var(--color-gray-light)",
-                    marginBottom: "10px",
-                    marginTop: "10px",
-                  }}
-                  alt="human-vector"
-                />
-                {beforePic ? (
-                  <div
-                    className="user-image-remove font-paragraph-white"
-                    onClick={() => setBeforePic("")}
-                  >
-                    <T>user_update.remove</T>
-                  </div>
-                ) : (
-                  <Upload
-                    accept="image/*"
-                    customRequest={dummyRequest}
-                    multiple={false}
-                    showUploadList={false}
-                  >
-                    <Button
-                      className="font-paragraph-white hover-orange"
-                      style={{
-                        backgroundColor: "var(--color-gray-light)",
-                        border: "none",
-                      }}
-                    >
-                      <T>user_update.upload_before_image</T>
-                    </Button>
-                  </Upload>
-                )}
-              </div>
-              <div className="user-update-uploadimage-container-box">
-                <h3 className="font-paragraph-white">
-                  <T>user_update.after</T>
-                </h3>
-                <img
-                  src={
-                    typeof afterPic === "object"
-                      ? URL.createObjectURL(afterPic)
-                      : typeof afterPic === "string" && afterPic.length > 0
-                      ? `${afterPic}`
-                      : HumanVector
-                  }
-                  style={{
-                    height: "80%",
-                    padding: "20px",
-                    backgroundColor: "var(--color-gray-light)",
-                    marginBottom: "10px",
-                    marginTop: "10px",
-                  }}
-                  alt="human-vector"
-                />
-                {afterPic ? (
-                  <div
-                    className="user-image-remove font-paragraph-white"
-                    onClick={() => setAfterPic("")}
-                  >
-                    <T>user_update.remove</T>
-                  </div>
-                ) : (
-                  <Upload
-                    accept="image/*"
-                    customRequest={dummyAfterPicRequest}
-                    multiple={false}
-                    showUploadList={false}
-                  >
-                    <Button
-                      className="font-paragraph-white hover-orange"
-                      style={{
-                        backgroundColor: "var(--color-gray-light)",
-                        border: "none",
-                      }}
-                    >
-                      <T>user_update.upload_after_image</T>
-                    </Button>
-                  </Upload>
-                )}
-              </div>
-            </div>
           </div>
+          <div className="uu-hide-row">
+            <span className="font-paragraph-white">
+              <T>user_update.hide_my_shape</T>
+            </span>
+            <GreenSwitch
+              checked={hideMyShape}
+              onChange={(v) => setHideMyShape(v)}
+            />
+          </div>
+          <div className="uu-photo-grid">
+            {renderPhotoBox(
+              beforePic,
+              setBeforePic,
+              beforeProgress,
+              setBeforeProgress,
+              beforeFileRequest,
+            )}
+            {renderPhotoBox(
+              afterPic,
+              setAfterPic,
+              afterProgress,
+              setAfterProgress,
+              afterFileRequest,
+            )}
+          </div>
+        </div>
 
+        <div className="uu-action-bar">
           <button
-            className="font-paragraph-white"
-            style={{
-              backgroundColor: loading ? "var(--color-gray-light)" : "var(--color-orange)",
-              padding: "10px 40px",
-              border: "none",
-              margin: "20px",
-              fontSize: "1.8rem",
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.7 : 1,
-            }}
-            onClick={() => saveUserUpdate("save")}
+            type="button"
+            className="uu-cancel-btn"
+            onClick={() => history.goBack()}
+          >
+            <T>user_update.cancel</T>
+          </button>
+          <button
+            type="button"
+            className="uu-update-btn"
+            onClick={saveUserUpdate}
             disabled={loading}
           >
-            {loading ? <LoadingOutlined style={{ color: "#fff", marginRight: "8px" }} /> : null}
-            <T>user_update.save</T>
+            {loading && (
+              <LoadingOutlined style={{ color: "#fff", marginRight: "8px" }} />
+            )}
+            <T>user_update.update</T>
           </button>
         </div>
       </div>

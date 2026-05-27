@@ -285,11 +285,15 @@ export function getAllIngredients(language) {
     });
 }
 
-export function createIngredient(name, language) {
+export function createIngredient(name, language, opts = {}) {
+  const { isPantryStaple = false, category = "", defaultUnit = "" } = opts;
   return axios
     .post(`${process.env.REACT_APP_SERVER}/api/recipes/ingredient/create`, {
       name: name,
       language,
+      isPantryStaple,
+      category,
+      defaultUnit,
     })
     .then((res) => {
       openNotificationWithIcon(
@@ -327,6 +331,30 @@ export function updateIngredient(name, id) {
         return;
       }
       openNotificationWithIcon("error", "Unable to update ingredient", "");
+      console.log(err);
+    });
+}
+
+export function setIngredientPantryStaple(id, isPantryStaple) {
+  return axios
+    .put(`${process.env.REACT_APP_SERVER}/api/recipes/ingredient/${id}`, {
+      isPantryStaple,
+    })
+    .then((res) => res.data)
+    .catch((err) => {
+      openNotificationWithIcon("error", "Unable to update pantry flag", "");
+      console.log(err);
+    });
+}
+
+export function setIngredientActive(id, isActive) {
+  return axios
+    .put(`${process.env.REACT_APP_SERVER}/api/recipes/ingredient/${id}`, {
+      isActive,
+    })
+    .then((res) => res.data)
+    .catch((err) => {
+      openNotificationWithIcon("error", "Unable to update active state", "");
       console.log(err);
     });
 }
