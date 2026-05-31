@@ -24,10 +24,14 @@ export const touchBackendOptions = {
   // mouse events on top of touch causes the backend to double-track and
   // can swallow the drag-initiation. Keep touch-only on touch devices.
   enableMouseEvents: false,
-  // 150ms felt broken to users (tap-then-swipe was being read as a tap).
-  // 50ms is enough to disambiguate a tap from a drag without making the
-  // user consciously long-press.
-  delayTouchStart: 50,
+  // 0ms — start the drag immediately on first touch+move. Users were
+  // pressing the handle but not moving enough during the delay window,
+  // which caused the gesture to be classified as a tap.
+  delayTouchStart: 0,
+  // Number of pixels of movement required before a drag is committed.
+  // 0 means the very first touchmove starts the drag — paired with
+  // delayTouchStart:0 this makes the handle behave like a desktop drag.
+  touchSlop: 0,
   ignoreContextMenu: true,
 };
 
@@ -339,6 +343,7 @@ export function DraggableHandle({ children }) {
     <div
       ref={ref}
       onMouseDown={handleMouseDown}
+      data-drag-handle="true"
       style={{
         display: "inline-block",
         cursor: "move",
@@ -347,6 +352,10 @@ export function DraggableHandle({ children }) {
         WebkitUserSelect: "none",
         userSelect: "none",
         WebkitTouchCallout: "none",
+        // Padding + negative margin = invisible bigger touch target
+        // (48-ish px on each side) without affecting layout. Visually the
+        // element still takes up only the icon's natural size, so it
+        // aligns with sibling icons like copy/trash.
         padding: "14px",
         margin: "-14px",
       }}
