@@ -269,6 +269,78 @@ export function removeDiet(id) {
     });
 }
 
+export function getAllAllergens(language) {
+  return axios
+    .get(
+      `${process.env.REACT_APP_SERVER}/api/recipes/allergen?language=${language}`,
+    )
+    .then((res) => {
+      return res.data;
+    })
+    .catch((err) => {
+      if (err.response.data.header && err.response.data.header.message) {
+        openNotificationWithIcon("error", err.response.data.header.message, "");
+        return;
+      }
+      openNotificationWithIcon("error", "Unable to get allergens", "");
+      console.log(err);
+    });
+}
+
+export function createAllergen(name, language) {
+  return axios
+    .post(`${process.env.REACT_APP_SERVER}/api/recipes/allergen/create`, {
+      name: name,
+      language,
+    })
+    .then((res) => {
+      openNotificationWithIcon("success", "Allergen created successfully", "");
+      return res.data;
+    })
+    .catch((err) => {
+      if (err.response.data.header && err.response.data.header.message) {
+        openNotificationWithIcon("error", err.response.data.header.message, "");
+        return;
+      }
+      openNotificationWithIcon("error", "Unable to create allergen", "");
+      console.log(err);
+    });
+}
+
+export function updateAllergen(name, id) {
+  return axios
+    .put(`${process.env.REACT_APP_SERVER}/api/recipes/allergen/${id}`, {
+      name: name,
+    })
+    .then((res) => {
+      openNotificationWithIcon("success", "Allergen updated successfully", "");
+    })
+    .catch((err) => {
+      if (err.response.data.header && err.response.data.header.message) {
+        openNotificationWithIcon("error", err.response.data.header.message, "");
+        return;
+      }
+      openNotificationWithIcon("error", "Unable to update allergen", "");
+      console.log(err);
+    });
+}
+
+export function removeAllergen(id) {
+  return axios
+    .delete(`${process.env.REACT_APP_SERVER}/api/recipes/allergen/${id}`)
+    .then((res) => {
+      openNotificationWithIcon("success", "Allergen deleted successfully", "");
+    })
+    .catch((err) => {
+      if (err.response.data.header && err.response.data.header.message) {
+        openNotificationWithIcon("error", err.response.data.header.message, "");
+        return;
+      }
+      openNotificationWithIcon("error", "Unable to remove allergen", "");
+      console.log(err);
+    });
+}
+
 export function getAllIngredients(language) {
   return axios
     .get(

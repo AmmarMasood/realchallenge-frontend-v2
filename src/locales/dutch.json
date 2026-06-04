@@ -1091,7 +1091,12 @@
       "swap_failed": "Kon recept niet verwisselen.",
       "select_diet": "Selecteer eerst een dieet.",
       "diet_saved": "Dieet bijgewerkt.",
-      "diet_save_failed": "Kon dieet niet bijwerken."
+      "diet_save_failed": "Kon dieet niet bijwerken.",
+      "my_allergies": "Mijn allergieën",
+      "allergies_setup": "Allergieën & uitsluitingen",
+      "no_allergens_exist": "Nog geen allergenen beschikbaar.",
+      "allergies_saved": "Allergieën bijgewerkt.",
+      "allergies_save_failed": "Kon allergieën niet bijwerken."
     },
     "feed": {},
     "community": {

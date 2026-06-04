@@ -4,6 +4,7 @@ import { updateBlogCategory } from "../../../services/blogs";
 import {
   updateDiet,
   updateFoodType,
+  updateAllergen,
   updateIngredient,
 } from "../../../services/recipes";
 import { LanguageContext } from "../../../contexts/LanguageContext";
@@ -31,6 +32,10 @@ function EditTypeName({
       }
       if (titleName === "Update Diet Type") {
         await updateDiet(newCategoryName, selectedForUpdate._id);
+      }
+
+      if (titleName === "Update Allergen") {
+        await updateAllergen(newCategoryName, selectedForUpdate._id);
       }
 
       if (titleName === "Update Ingredient") {

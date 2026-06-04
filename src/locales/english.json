@@ -1091,7 +1091,12 @@
       "swap_failed": "Could not swap recipe.",
       "select_diet": "Please select a diet first.",
       "diet_saved": "Diet updated successfully.",
-      "diet_save_failed": "Could not update diet."
+      "diet_save_failed": "Could not update diet.",
+      "my_allergies": "My allergies",
+      "allergies_setup": "Allergies & Exclusions",
+      "no_allergens_exist": "No allergens available yet.",
+      "allergies_saved": "Allergies updated successfully.",
+      "allergies_save_failed": "Could not update allergies."
     },
     "feed": {},
     "community": {

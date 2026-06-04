@@ -19,6 +19,7 @@ export function RecipeProvider({ children }) {
   const [selectedMealTypes, setSelectedMealTypes] = useState([]);
   const [selectedFoodTypes, setSelectedFoodTypes] = useState([]);
   const [selectedDiet, setSelectedDiet] = useState([]);
+  const [selectedAllergens, setSelectedAllergens] = useState([]);
   const [ingredients, setIngredients] = useState([]);
   const [cookingProcess, setCookingProcess] = useState([]);
   const [notes, setNotes] = useState("");
@@ -35,6 +36,7 @@ export function RecipeProvider({ children }) {
   const [allMealTypes, setAllMealTypes] = useState([]);
   const [allFoodTypes, setAllFoodTypes] = useState([]);
   const [allDiets, setAllDiets] = useState([]);
+  const [allAllergens, setAllAllergens] = useState([]);
   const [allIngredients, setAllIngredients] = useState([]);
 
   const populateRecipeInfo = (recipeData) => {
@@ -78,6 +80,16 @@ export function RecipeProvider({ children }) {
         ? recipeData.diet.map((d) => ({
             _id: d._id || d,
             name: d.name || "",
+          }))
+        : []
+    );
+
+    // Allergens
+    setSelectedAllergens(
+      recipeData.allergens
+        ? recipeData.allergens.map((a) => ({
+            _id: a._id || a,
+            name: a.name || "",
           }))
         : []
     );
@@ -153,6 +165,8 @@ export function RecipeProvider({ children }) {
         setSelectedFoodTypes,
         selectedDiet,
         setSelectedDiet,
+        selectedAllergens,
+        setSelectedAllergens,
         ingredients,
         setIngredients,
         cookingProcess,
@@ -177,6 +191,8 @@ export function RecipeProvider({ children }) {
         setAllFoodTypes,
         allDiets,
         setAllDiets,
+        allAllergens,
+        setAllAllergens,
         allIngredients,
         setAllIngredients,
         populateRecipeInfo,

@@ -13,6 +13,7 @@ import {
   LoadingOutlined,
   ShoppingCartOutlined,
   SwapOutlined,
+  MedicineBoxOutlined,
 } from "@ant-design/icons";
 import { userInfoContext } from "../../contexts/UserStore";
 import { Link } from "react-router-dom";
@@ -39,6 +40,7 @@ import GrayPin from "../../assets/icons/pushpin-gray.png";
 
 import {
   getAllDietTypes,
+  getAllAllergens,
   getAllRecipes,
   getAllFavouriteRecipes,
   unFavouriteRecipeById,
@@ -163,6 +165,11 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
   const [selectedDiet, setSelectedDiet] = useState("");
   // eslint-disable-next-line
   const [dietSetupModal, setDietSetupModal] = useState(false);
+  // Allergies / food exclusions (multi-select). Drives the highest-priority
+  // meal-plan filter — excluded recipes never generate/swap.
+  const [allAllergens, setAllAllergens] = useState([]);
+  const [selectedAllergies, setSelectedAllergies] = useState([]);
+  const [allergySetupModal, setAllergySetupModal] = useState(false);
   // eslint-disable-next-line
   const [mealsOfTheWeek, setMealsOfTheWeek] = useState({
     monday: [],
@@ -267,6 +274,7 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
       amountOfProtein,
       lateMeal,
       myDiet,
+      allergies,
       supplementIntake,
     } = userProfile;
     setBodyOverview({
@@ -284,6 +292,11 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
       eatingLate: lateMeal ? lateMeal : false,
     });
     myDiet && myDiet[0] && setSelectedDiet(myDiet[0]._id);
+    setSelectedAllergies(
+      Array.isArray(allergies)
+        ? allergies.map((a) => (typeof a === "object" ? a._id : a))
+        : [],
+    );
     if (supplementIntake) {
       setSelectedSuplementType(supplementIntake.supplementOption);
       setSelectedSupplements(supplementIntake.recipes || []);
@@ -338,6 +351,9 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
     const res = await getAllDietTypes(
       localStorage.getItem("locale") || "english",
     );
+    const allergensRes = await getAllAllergens(
+      localStorage.getItem("locale") || "english",
+    );
     const rec = await getAllRecipes(localStorage.getItem("locale"), {
       supplementOnly: true,
     });
@@ -345,6 +361,7 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
     allFavs && setFavRecipes(allFavs.favRecipes);
 
     setAllDiets(res.diets);
+    setAllAllergens((allergensRes && allergensRes.allergens) || []);
     setSuggestedSupplements(rec.recipes);
   }
 
@@ -764,6 +781,30 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
     }
   }
 
+  const toggleAllergy = (id) => {
+    setSelectedAllergies((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  // Allergies are a hard restriction (spec §11/§13): saving them can
+  // invalidate pins, so confirm first — same as diet.
+  async function saveUserAllergies() {
+    if (!(await confirmPinInvalidation())) return;
+    const res = await createCustomerDetails(
+      { allergies: selectedAllergies },
+      userInfo.id,
+    );
+    if (res) {
+      message.success(translate("userDashboard.nutrient.allergies_saved"));
+      getUserDetails();
+      loadPlan();
+      setAllergySetupModal(false);
+    } else {
+      message.error(translate("userDashboard.nutrient.allergies_save_failed"));
+    }
+  }
+
   // Late Meal is its own meal-structure setting (separate from supplement
   // mode, coexists with any of them — client 2026-05-16).
   async function saveUserEatingLateSetting() {
@@ -1178,6 +1219,52 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
         </button>
       </Modal>
       {/* diet setup modal ends */}
+
+      {/* allergy setup modal starts */}
+      <Modal
+        title={
+          <>
+            <div className="font-card-heading">
+              <T>userDashboard.nutrient.allergies_setup</T>
+            </div>
+            <div className="divider"></div>
+          </>
+        }
+        bodyStyle={{ marginTop: "-40px" }}
+        visible={allergySetupModal}
+        width="30%"
+        onCancel={() => setAllergySetupModal(false)}
+        footer={false}
+      >
+        <div className="diet-setup-container">
+          {allAllergens.length === 0 ? (
+            <span className="font-paragraph-white" style={{ opacity: 0.6 }}>
+              <T>userDashboard.nutrient.no_allergens_exist</T>
+            </span>
+          ) : (
+            allAllergens.map((a) => (
+              <div
+                className="diet-setup-container-inbox"
+                key={a._id}
+                onClick={() => toggleAllergy(a._id)}
+              >
+                <span className="font-paragraph-white">{a.name}</span>
+                <Checkbox
+                  checked={selectedAllergies.includes(a._id)}
+                  style={{ marginLeft: "auto", paddingLeft: "10px" }}
+                />
+              </div>
+            ))
+          )}
+        </div>
+        <button
+          className="common-orange-button font-paragraph-white"
+          onClick={() => saveUserAllergies()}
+        >
+          <T>userDashboard.nutrient.done</T>
+        </button>
+      </Modal>
+      {/* allergy setup modal ends */}
       <div className="dashboard-feed-container">
         <div className="dashboard-nutrient-row1">
           <div className="dashboard-challenges-mychallenge-heading font-card-heading">
@@ -1320,7 +1407,9 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
                   className="dashboard-nutrient-row1-col-container-insideBox font-paragraph-white"
                   style={{
                     backgroundColor: "var(--color-gray-dark)",
+                    borderBottom: "2px solid black",
                     cursor: "pointer",
+                    padding: "15px 0",
                   }}
                   onClick={() => setDietSetupModal(true)}
                 >
@@ -1337,6 +1426,44 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
                     <span style={{ fontSize: "1.6rem" }}>
                       {getDietNameFromId(selectedDiet)
                         ? getDietNameFromId(selectedDiet).name
+                        : ""}
+                    </span>
+                  </div>
+                  <CaretDownOutlined
+                    style={{
+                      position: "absolute",
+                      right: 0,
+                      marginRight: "10px",
+                    }}
+                  />
+                </div>
+                <div
+                  className="dashboard-nutrient-row1-col-container-insideBox font-paragraph-white"
+                  style={{
+                    backgroundColor: "var(--color-gray-dark)",
+                    cursor: "pointer",
+                    padding: "15px 0px",
+                  }}
+                  onClick={() => setAllergySetupModal(true)}
+                >
+                  <MedicineBoxOutlined
+                    style={{ ...iconsStyle, color: "#FFAE42" }}
+                  />
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    <span>
+                      <T>userDashboard.nutrient.my_allergies</T>
+                    </span>
+                    <span style={{ fontSize: "1.6rem" }}>
+                      {selectedAllergies.length
+                        ? allAllergens
+                            .filter((a) => selectedAllergies.includes(a._id))
+                            .map((a) => a.name)
+                            .join(", ")
                         : ""}
                     </span>
                   </div>

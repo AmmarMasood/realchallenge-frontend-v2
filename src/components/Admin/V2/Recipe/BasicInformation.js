@@ -47,6 +47,9 @@ import {
   removeFoodType,
   createDiet,
   removeDiet,
+  getAllAllergens,
+  createAllergen,
+  removeAllergen,
   createIngredient,
   removeIngredient,
   setIngredientPantryStaple,
@@ -106,6 +109,8 @@ function BasicInformation(props) {
     setSelectedFoodTypes,
     selectedDiet,
     setSelectedDiet,
+    selectedAllergens,
+    setSelectedAllergens,
     ingredients,
     setIngredients,
     cookingProcess,
@@ -130,6 +135,8 @@ function BasicInformation(props) {
     setAllFoodTypes,
     allDiets,
     setAllDiets,
+    allAllergens,
+    setAllAllergens,
     allIngredients,
     setAllIngredients,
     populateRecipeInfo,
@@ -203,6 +210,8 @@ function BasicInformation(props) {
   const [newFoodType, setNewFoodType] = useState("");
   const [dietModal, setDietModal] = useState(false);
   const [newDiet, setNewDiet] = useState("");
+  const [allergenModal, setAllergenModal] = useState(false);
+  const [newAllergen, setNewAllergen] = useState("");
   const [ingredientModal, setIngredientModal] = useState(false);
   const [newIngredient, setNewIngredient] = useState("");
   const [newIngredientIsPantryStaple, setNewIngredientIsPantryStaple] =
@@ -285,6 +294,7 @@ function BasicInformation(props) {
     selectedMealTypes,
     selectedFoodTypes,
     selectedDiet,
+    selectedAllergens,
     ingredients,
     cookingProcess,
     notes,
@@ -302,17 +312,24 @@ function BasicInformation(props) {
     setLoading(true);
     const langToUse = effectiveLanguage || language;
 
-    const [mealTypesRes, foodTypesRes, dietTypesRes, ingredientsRes] =
-      await Promise.all([
-        getAllMealTypes(langToUse),
-        getAllFoodTypes(langToUse),
-        getAllDietTypes(langToUse),
-        getAllIngredients(langToUse),
-      ]);
+    const [
+      mealTypesRes,
+      foodTypesRes,
+      dietTypesRes,
+      allergensRes,
+      ingredientsRes,
+    ] = await Promise.all([
+      getAllMealTypes(langToUse),
+      getAllFoodTypes(langToUse),
+      getAllDietTypes(langToUse),
+      getAllAllergens(langToUse),
+      getAllIngredients(langToUse),
+    ]);
 
     setAllMealTypes(mealTypesRes?.mealTypes || []);
     setAllFoodTypes(foodTypesRes?.foodTypes || []);
     setAllDiets(dietTypesRes?.diets || []);
+    setAllAllergens(allergensRes?.allergens || []);
     setAllIngredients(ingredientsRes?.ingredients || []);
 
     // Fetch recipes from other language for translation linking
@@ -651,6 +668,7 @@ function BasicInformation(props) {
         mealTypes: selectedMealTypes.map((mt) => mt._id),
         foodTypes: selectedFoodTypes.map((ft) => ft._id),
         diet: selectedDiet.map((d) => d._id),
+        allergens: selectedAllergens.map((a) => a._id),
         ingredients: ingredients
           .filter((ing) => ing.name)
           .map((ing) => ({
@@ -1040,6 +1058,118 @@ function BasicInformation(props) {
                       type="primary"
                       onClick={() => {
                         setSelectedItemForUpdateTitle("Update Diet Type");
+                        setSelectedItemForUpdate(g);
+                        setEditItemNameModalVisible(true);
+                      }}
+                      icon={<EditOutlined />}
+                      size="small"
+                    />
+                  </Tooltip>
+                </span>
+              </List.Item>
+            )}
+          />
+        </div>
+      </Modal>
+
+      {/* Create Allergen Modal */}
+      <Modal
+        onCancel={() => setAllergenModal(false)}
+        footer={false}
+        visible={allergenModal}
+      >
+        <p className="font-paragraph-white">Create Allergen</p>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <Input
+            value={newAllergen}
+            onChange={(e) => setNewAllergen(e.target.value)}
+          />
+          <Button
+            type="primary"
+            style={{
+              backgroundColor: "var(--color-orange)",
+              borderColor: "var(--color-orange)",
+              marginLeft: "5px",
+            }}
+            onClick={async () => {
+              if (newAllergen.length > 0) {
+                await createAllergen(newAllergen, effectiveLanguage);
+                setNewAllergen("");
+                fetchDataV2(effectiveLanguage);
+              }
+            }}
+          >
+            Create
+          </Button>
+        </div>
+        <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
+          <span className="font-subheading-white">All Allergens</span>
+          <List
+            size="small"
+            bordered
+            dataSource={allAllergens}
+            renderItem={(g) => (
+              <List.Item
+                style={{
+                  backgroundColor: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: "5px",
+                }}
+              >
+                <span>{g.name}</span>
+                <span style={{ display: "flex", gap: "6px" }}>
+                  <Tooltip
+                    title={
+                      selectedAllergens.find((item) => item._id === g._id)
+                        ? "Unselect"
+                        : "Select"
+                    }
+                  >
+                    <Button
+                      onClick={() => {
+                        setSelectedAllergens((prev) => {
+                          const isExist = prev.find(
+                            (item) => item._id === g._id,
+                          );
+                          if (isExist)
+                            return prev.filter((item) => item._id !== g._id);
+                          else return [...prev, g];
+                        });
+                      }}
+                      type="primary"
+                      icon={
+                        selectedAllergens.find((item) => item._id === g._id) ? (
+                          <CloseOutlined />
+                        ) : (
+                          <CheckOutlined />
+                        )
+                      }
+                      size="small"
+                    />
+                  </Tooltip>
+                  <Tooltip title="Delete">
+                    <Button
+                      onClick={async () => {
+                        await removeAllergen(g._id);
+                        setSelectedAllergens((prev) =>
+                          prev.filter((item) => item._id !== g._id),
+                        );
+                        fetchDataV2(effectiveLanguage);
+                      }}
+                      type="primary"
+                      danger
+                      icon={<DeleteFilled />}
+                      size="small"
+                    />
+                  </Tooltip>
+                  <Tooltip title="Edit">
+                    <Button
+                      type="primary"
+                      onClick={() => {
+                        setSelectedItemForUpdateTitle("Update Allergen");
                         setSelectedItemForUpdate(g);
                         setEditItemNameModalVisible(true);
                       }}
@@ -2245,6 +2375,65 @@ function BasicInformation(props) {
                 ))}
                 <AddNewButton
                   onClick={() => setDietModal(true)}
+                  type="small"
+                  style={{
+                    marginLeft: "10px",
+                    height: "36px",
+                    marginTop: "5px",
+                    ...addBtnStyle,
+                  }}
+                  iconStyle={addBtnIconStyle}
+                />
+              </div>
+            </div>
+
+            {/* Allergens */}
+            <div className="recipe-mealValues">
+              <div className="recipe-mealValues-heading font-paragraph-white">
+                Allergens
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "5px",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  marginTop: "8px",
+                }}
+              >
+                {selectedAllergens.map((a) => (
+                  <div
+                    className="challenge-profile-box-2-container"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      background: "#283443",
+                      opacity: 1,
+                    }}
+                    key={a._id}
+                  >
+                    <span>
+                      {allAllergens.find((x) => x._id === a._id)?.name ||
+                        a.name}
+                    </span>
+                    <DeleteFilled
+                      onClick={() =>
+                        setSelectedAllergens((prev) =>
+                          prev.filter((item) => item._id !== a._id),
+                        )
+                      }
+                      style={{
+                        color: "#ff7700",
+                        fontSize: "14px",
+                        marginLeft: "5px",
+                        cursor: "pointer",
+                      }}
+                    />
+                  </div>
+                ))}
+                <AddNewButton
+                  onClick={() => setAllergenModal(true)}
                   type="small"
                   style={{
                     marginLeft: "10px",
