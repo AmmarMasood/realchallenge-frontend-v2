@@ -232,7 +232,20 @@
     "news_feed": "Nieuws",
     "challenges": "Uitdagingen",
     "nutrients": "Voeding",
-    "community": "Community"
+    "community": "Community",
+    "timezone": {
+      "banner_text": "We konden je tijdzone niet detecteren. Stel deze in zodat je weekplan, vandaag en herinneringen correct werken.",
+      "set_button": "Tijdzone instellen",
+      "modal_title": "Stel je tijdzone in",
+      "modal_help": "Kies je tijdzone of dichtstbijzijnde stad.",
+      "placeholder": "Zoek je tijdzone of stad",
+      "no_matches": "Geen overeenkomende tijdzones.",
+      "selected_label": "Geselecteerd",
+      "select_first": "Selecteer eerst een tijdzone.",
+      "save": "Opslaan",
+      "saved": "Tijdzone opgeslagen.",
+      "save_failed": "Kon tijdzone niet opslaan. Probeer opnieuw."
+    }
   },
   "dashboard": {
     "comments": "REACTIES",

@@ -761,6 +761,29 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
     setSuplementModal(false);
   }
 
+  // Diet and allergies are HARD restrictions (spec §11): after they change,
+  // Next Week must be regenerated so conflicting recipes are dropped — a plan
+  // that was already generated won't update on its own (the allergen/diet
+  // filter only runs at generation time). This Week is execution and is not
+  // silently overwritten. Pins that now conflict are invalidated during the
+  // regenerate. We own the loader here and reload silently.
+  async function regenerateAfterRestrictionChange() {
+    setPlanLoading(true);
+    try {
+      const res = await regenerateNextWeek(
+        userInfo.id,
+        localStorage.getItem("locale") || "english",
+      );
+      if (res) setPlanWarning(res.warning || null);
+    } catch (_) {
+      /* non-fatal — the reload below still reflects the saved settings */
+    } finally {
+      await getUserDetails();
+      await loadPlan(false, true);
+      setPlanLoading(false);
+    }
+  }
+
   async function saveUserDietSetup() {
     if (!selectedDiet) {
       message.warning(translate("userDashboard.nutrient.select_diet"));
@@ -773,9 +796,8 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
     );
     if (res) {
       message.success(translate("userDashboard.nutrient.diet_saved"));
-      getUserDetails();
-      loadPlan();
       setDietSetupModal(false);
+      await regenerateAfterRestrictionChange();
     } else {
       message.error(translate("userDashboard.nutrient.diet_save_failed"));
     }
@@ -797,9 +819,8 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
     );
     if (res) {
       message.success(translate("userDashboard.nutrient.allergies_saved"));
-      getUserDetails();
-      loadPlan();
       setAllergySetupModal(false);
+      await regenerateAfterRestrictionChange();
     } else {
       message.error(translate("userDashboard.nutrient.allergies_save_failed"));
     }

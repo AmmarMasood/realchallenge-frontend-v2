@@ -232,7 +232,20 @@
     "news_feed": "News Feed",
     "challenges": "Challenges",
     "nutrients": "Nutrients",
-    "community": "Community"
+    "community": "Community",
+    "timezone": {
+      "banner_text": "We couldn't detect your timezone. Please set it so your weekly plan, today, and reminders work correctly.",
+      "set_button": "Set timezone",
+      "modal_title": "Set your timezone",
+      "modal_help": "Choose your timezone or nearest city.",
+      "placeholder": "Search for your timezone or city",
+      "no_matches": "No matching timezones.",
+      "selected_label": "Selected",
+      "select_first": "Please select a timezone first.",
+      "save": "Save",
+      "saved": "Timezone saved.",
+      "save_failed": "Could not save timezone. Please try again."
+    }
   },
   "dashboard": {
     "comments": "COMMENTS",

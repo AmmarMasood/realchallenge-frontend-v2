@@ -8,6 +8,22 @@ const openNotificationWithIcon = (type, message, description) => {
   });
 };
 
+// Returns the current user's stored timezone, or null if not set yet.
+export function getMyTimeZone() {
+  return axios
+    .get(`${process.env.REACT_APP_SERVER}/api/users/timezone`)
+    .then((res) => res.data)
+    .catch(() => ({ timeZone: null }));
+}
+
+// Manual timezone save (set-once on the backend). Used by the dashboard
+// fallback picker when auto-detection failed.
+export function saveMyTimeZone(timeZone) {
+  return axios
+    .put(`${process.env.REACT_APP_SERVER}/api/users/timezone`, { timeZone })
+    .then((res) => res.data);
+}
+
 export function getAllUsers() {
   return axios
     .get(`${process.env.REACT_APP_SERVER}/api/users`)

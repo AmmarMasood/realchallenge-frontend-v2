@@ -1962,9 +1962,27 @@ function BasicInformation(props) {
                     (ai) => ai._id === ing.name,
                   );
                   const lockedUnit = master?.defaultUnit || "";
-                  const gDisabled = lockedUnit && lockedUnit !== "g";
-                  const mlDisabled = lockedUnit && lockedUnit !== "ml";
-                  const pcsDisabled = lockedUnit && lockedUnit !== "pieces";
+                  // Dynamic single-unit lock (Tightening §B2): the moment one
+                  // quantity is filled, the other two are disabled. Clearing
+                  // it re-enables them. This sits on top of any defaultUnit
+                  // lock from the master ingredient.
+                  const activeUnit =
+                    Number(ing.weight) > 0
+                      ? "g"
+                      : Number(ing.volume) > 0
+                      ? "ml"
+                      : Number(ing.pieces) > 0
+                      ? "pieces"
+                      : "";
+                  const gDisabled =
+                    (lockedUnit && lockedUnit !== "g") ||
+                    (activeUnit && activeUnit !== "g");
+                  const mlDisabled =
+                    (lockedUnit && lockedUnit !== "ml") ||
+                    (activeUnit && activeUnit !== "ml");
+                  const pcsDisabled =
+                    (lockedUnit && lockedUnit !== "pieces") ||
+                    (activeUnit && activeUnit !== "pieces");
                   const disabledBg = "#f0f0f0";
                   return (
                   <div

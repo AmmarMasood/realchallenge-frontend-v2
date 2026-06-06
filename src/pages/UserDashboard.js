@@ -6,6 +6,7 @@ import Challenges from "../components/UserDashboard/Challenges";
 import Feed from "../components/UserDashboard/Feed";
 import Community from "../components/UserDashboard/Community";
 import VerifyUser from "../components/UserDashboard/VerifyUser";
+import TimezoneBanner from "../components/UserDashboard/TimezoneBanner";
 
 import useWindowDimensions from "../helpers/useWindowDimensions";
 import NewsfeedGray from "../assets/icons/newsfeed-gray.svg";
@@ -115,6 +116,7 @@ function UserDashboard() {
       <VerifyUser />
       <div style={{ backgroundColor: "var(--color-gray-dark)" }}>
         <div className="dashboard-container">
+          <TimezoneBanner />
           <div className="user-dashboard-bar">
             <div
               className={
