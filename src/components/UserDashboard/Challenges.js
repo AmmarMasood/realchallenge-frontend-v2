@@ -313,7 +313,16 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                       style={{ backgroundColor: "#2F3E50", height: "100%" }}
                     >
                       {pics[0] ? (
-                        <img src={pics[0]} alt="users-before" />
+                        <img
+                          src={pics[0]}
+                          alt="users-before"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            display: "block",
+                          }}
+                        />
                       ) : null}
                     </div>
                   }
@@ -323,7 +332,16 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                       style={{ backgroundColor: "#3C618F", height: "100%" }}
                     >
                       {pics[1] ? (
-                        <img src={pics[1]} alt="users-after" />
+                        <img
+                          src={pics[1]}
+                          alt="users-after"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            display: "block",
+                          }}
+                        />
                       ) : null}
                     </div>
                   }

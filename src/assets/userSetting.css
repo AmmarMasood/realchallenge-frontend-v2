@@ -3,11 +3,34 @@
   min-height: 100vh;
   padding: 50px;
 }
+/* Center the content and cap its width to match the Update page
+   (.uu-container max-width: 1400px) while the dark background stays
+   full-width. */
+.user-setting-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
 .user-setting-container-heading {
-  background-color: var(--color-gray);
+  background-color: #1B2531;
   padding: 20px;
   color: var(--color-orange-light) !important;
   font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.user-setting-close {
+  background: rgba(255, 44, 44, 0.18);
+  border: none;
+  color: #ff6c6c;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 .user-setting-container-body {
   margin-top: 20px;
@@ -16,7 +39,7 @@
   grid-gap: 10px;
 }
 .user-setting-container-body1 {
-  background-color: var(--color-gray);
+  background-color: #1B2531;
   padding: 20px;
   /* border: 1px solid green; */
 }
@@ -55,7 +78,7 @@
 }
 
 .user-setting-container-body2-row1 {
-  background-color: var(--color-gray);
+  background-color: #1B2531;
   /* border: 1px solid red; */
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
@@ -85,7 +108,7 @@
   padding: 10px;
 }
 .user-setting-container-body2-row2 {
-  background-color: var(--color-gray);
+  background-color: #1B2531;
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr;

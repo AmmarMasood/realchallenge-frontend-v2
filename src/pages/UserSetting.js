@@ -5,6 +5,7 @@ import {
   UserOutlined,
   MailOutlined,
   LoadingOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import { Input, notification } from "antd";
 import moment from "moment";
@@ -101,10 +102,20 @@ function UserSetting() {
     <>
       <LoggedinNavbar />
       <div className="user-setting-container">
+        <div className="user-setting-inner">
         <div className="user-setting-container-heading font-paragraph-white">
-          <UserOutlined style={{ paddingRight: "10px" }} />
-
-          <T>user_setting.account_setting</T>
+          <span style={{ display: "inline-flex", alignItems: "center" }}>
+            <UserOutlined style={{ paddingRight: "10px" }} />
+            <T>user_setting.account_setting</T>
+          </span>
+          <button
+            type="button"
+            className="user-setting-close"
+            onClick={() => history.goBack()}
+            aria-label="Close"
+          >
+            <CloseOutlined />
+          </button>
         </div>
         <div className="user-setting-container-body">
           <div className="user-setting-container-body1">
@@ -297,6 +308,7 @@ function UserSetting() {
               </div> */}
             </div>
           </div>
+        </div>
         </div>
       </div>
     </>
