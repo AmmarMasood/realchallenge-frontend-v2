@@ -3,6 +3,7 @@ import { LoadingOutlined } from "@ant-design/icons";
 import { Pagination } from "antd";
 import CommentSection from "./CommentSection";
 import FeedCard from "./FeedCard";
+import CommunityPostComposer from "./CommunityPostComposer";
 import {
   addLikeToPost,
   addUnlikePost,
@@ -72,6 +73,13 @@ function Community({ userInfo }) {
     return originalElement;
   }
 
+  // After creating a post, show it: jump to page 1 (newest-first), or
+  // refetch directly if already there.
+  const handlePosted = () => {
+    if (pageNumber === 1) fetchData();
+    else setPageNumber(1);
+  };
+
   const updatePosts = (id, comments) => {
     const p = data.map((post) => {
       if (post._id === id) {
@@ -96,6 +104,7 @@ function Community({ userInfo }) {
         className="dashboard-feed-container"
         style={{ justifyItems: "center" }}
       >
+        <CommunityPostComposer userInfo={userInfo} onPosted={handlePosted} />
         {loading ? (
           <div style={{ textAlign: "center", width: "100%" }}>
             <LoadingOutlined style={{ fontSize: "30px", color: "#ff7700" }} />

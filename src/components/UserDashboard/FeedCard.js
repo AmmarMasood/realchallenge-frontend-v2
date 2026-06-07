@@ -86,9 +86,11 @@ export default function FeedCard({
       <Link to={linkTo}>
         <PostCover image={post.image} tag={post.type} url={post.url} />
         <div className="dashboard-feed-container-card-row3">
-          <div className="dashboard-feed-container-card-row3-heading font-paragraph-white">
-            {stripHtml(post.title)}
-          </div>
+          {post.title ? (
+            <div className="dashboard-feed-container-card-row3-heading font-paragraph-white">
+              {stripHtml(post.title)}
+            </div>
+          ) : null}
           <div className="dashboard-feed-container-card-row3-text font-paragraph-white">
             {stripHtml(post.text)}
           </div>

@@ -3,6 +3,7 @@ import { LoadingOutlined, CaretRightFilled } from "@ant-design/icons";
 import "./FeedCard.css";
 import ChallengeIconWhite from "../../assets/icons/challenge-icon-white.svg";
 import AvacadoWhite from "../../assets/icons/avacado-white.svg";
+import ChatWhite from "../../assets/icons/chat-white.svg";
 
 // Map a post to a small icon shown inside the type tag chip. We first
 // check the `type` string (the canonical source) and fall back to the
@@ -57,6 +58,38 @@ export default function PostCover({ image, tag, url }) {
   const safeImage = image ? image.replaceAll(" ", "%20") : "";
   const tagIcon = getTagIcon(tag, url);
 
+  // No media (e.g. a text-only community post): render a branded placeholder
+  // cover so the card keeps its normal shape/height (250px) instead of
+  // collapsing. Same outer class so sizing/CSS is unchanged.
+  if (!safeImage) {
+    return (
+      <div
+        className="dashboard-feed-container-card-row2"
+        style={{
+          background: "linear-gradient(135deg, #1B2531 0%, #2F3E50 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <img
+          src={ChatWhite}
+          alt=""
+          style={{ width: "48px", height: "48px", opacity: 0.2 }}
+        />
+        {tag && (
+          <div
+            className="dashboard-feed-container-card-row2-tag font-paragraph-white"
+            style={{ position: "absolute", top: 0, right: 0 }}
+          >
+            {tagIcon && <img src={tagIcon} alt="" />}
+            <span>{tag}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const handlePlayClick = (e) => {
     // Don't let the click bubble to the parent <Link> wrapping the cover.
     e.preventDefault();
@@ -65,6 +98,21 @@ export default function PostCover({ image, tag, url }) {
     if (!v) return;
     const p = v.play();
     if (p && typeof p.catch === "function") p.catch(() => {});
+  };
+
+  // Click the video to toggle play/pause (e.g. tapping a playing video
+  // pauses it). Stop the click from triggering the wrapping <Link>.
+  const handleVideoClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) {
+      const p = v.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    } else {
+      v.pause();
+    }
   };
 
   if (isVideo) {
@@ -101,6 +149,7 @@ export default function PostCover({ image, tag, url }) {
           src={safeImage}
           preload="metadata"
           playsInline
+          onClick={handleVideoClick}
           onLoadedMetadata={() => setVideoLoading(false)}
           onLoadStart={() => setVideoLoading(true)}
           onPlay={() => setIsPlaying(true)}
