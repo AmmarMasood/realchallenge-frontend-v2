@@ -34,6 +34,20 @@ export function getPhotoUploadUrl({ filename, mimeType }) {
     });
 }
 
+// Fire-and-forget: kicks off server-side optimization (sharp for images,
+// MediaConvert for videos) after the S3 PUT. The file URL stays valid either
+// way, so failures are silently ignored.
+export function confirmPhotoUpload({ s3Key, mimeType }) {
+  return axios
+    .post(
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/photo-upload/confirm`,
+      { s3Key, mimeType }
+    )
+    .catch((err) => {
+      console.log(err);
+    });
+}
+
 export function addChallengeToCustomerDetail(userId, challengeId) {
   return axios
     .put(`${process.env.REACT_APP_SERVER}/api/auth/mollie/add/challenges`, {
