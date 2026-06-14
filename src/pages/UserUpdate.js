@@ -6,7 +6,11 @@ import HumanVector from "../images/FreeVectorHumanSilhouette 1.png";
 
 import { getUserProfileInfo } from "../services/users";
 import { userInfoContext } from "../contexts/UserStore";
-import { getPhotoUploadUrl, createCustomerDetails } from "../services/customer";
+import {
+  getPhotoUploadUrl,
+  confirmPhotoUpload,
+  createCustomerDetails,
+} from "../services/customer";
 import { getAllTrainerGoalsPublic } from "../services/trainers";
 import { getDefaultGoals } from "../constants/goals";
 import {
@@ -194,7 +198,7 @@ function UserUpdate() {
   }, [weight, height, age, metric, gender]);
 
   const uploadPhoto = async (file, setProgress) => {
-    const { presignedUrl, fileUrl } = await getPhotoUploadUrl({
+    const { presignedUrl, fileUrl, s3Key } = await getPhotoUploadUrl({
       filename: file.name,
       mimeType: file.type,
     });
@@ -212,6 +216,8 @@ function UserUpdate() {
       xhr.onerror = () => reject(new Error("S3 upload failed"));
       xhr.send(file);
     });
+    // Not awaited: server optimizes the image in the background
+    confirmPhotoUpload({ s3Key, mimeType: file.type });
     return fileUrl;
   };
 
@@ -259,7 +265,12 @@ function UserUpdate() {
         return out;
       };
 
-      const { weightKg, heightCm } = toMetric(weight, height, metric);
+      // BMI from this month's weight, falling back to the latest recorded
+      // month — otherwise saving in a month with no entry computes BMI 0 and
+      // wipes the stored bmi/bmir.
+      const weightForBmi =
+        Number(weight) || [...w].reverse().find((v) => Number(v) > 0) || 0;
+      const { weightKg, heightCm } = toMetric(weightForBmi, height, metric);
       const newBmi = calculateBMI(weightKg, heightCm);
       const newBodyFat =
         gender && age ? calculateBodyFat(newBmi, age, gender) : bmr;
@@ -271,8 +282,9 @@ function UserUpdate() {
         height,
         age,
         weight: w,
-        bmi: parseFloat(newBmi.toFixed(2)),
-        bmir: parseFloat(newBodyFat.toFixed(2)),
+        // Never overwrite a stored value with a 0 from incomplete form data
+        bmi: newBmi ? parseFloat(newBmi.toFixed(2)) : bmi || 0,
+        bmir: newBodyFat ? parseFloat(Number(newBodyFat).toFixed(2)) : bmr || 0,
         waistSize: stampSlot(waistArray, waistSize),
         shoulderSize: stampSlot(shoulderArray, shoulderSize),
         hipSize: stampSlot(hipArray, hipSize),

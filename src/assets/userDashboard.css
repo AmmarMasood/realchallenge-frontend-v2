@@ -53,6 +53,9 @@
   display: flex;
   flex-wrap: wrap;
   /* height: 600px; */
+  /* grid item of the feed container — allow it to shrink so the inner card
+     scroller can scroll instead of pushing the row past the screen */
+  min-width: 0;
 }
 .dashboard-challenges-mychallenge {
   /* border: 1px solid yellow; */
@@ -61,6 +64,9 @@
   margin: 10px;
   width: 500px;
   flex-grow: 1;
+  /* let this flex item shrink below the cards' intrinsic width so the inner
+     .mychallenges-grid scrolls instead of extending past the screen */
+  min-width: 0;
 }
 .dashboard-challenges-mychallenge-heading {
   padding: 5px;
@@ -72,6 +78,81 @@
   display: grid;
   grid-gap: 10px;
 }
+/* My Challenges layout toggle (horizontal rows ↔ vertical grid) */
+.cards-view-toggle {
+  display: flex;
+  gap: 8px;
+}
+.cards-view-btn {
+  width: 42px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #171E27;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+}
+.cards-view-btn:hover {
+  color: #fff;
+}
+.cards-view-btn.active {
+  background: var(--color-orange);
+  color: #fff;
+}
+
+/* Vertical (portrait) grid of cards */
+.mychallenges-grid {
+  display: flex;
+  gap: 14px;
+  padding: 10px;
+  border: 1px solid red;
+  overflow: scroll;
+}
+
+/* Portrait carousel — native scroll track + arrow buttons (same pattern as
+   PlayerVideoBrowser). The card itself is left completely untouched. */
+.mychallenges-carousel-wrapper {
+  display: flex;
+  align-items: center;
+  height: 80%;
+}
+.mychallenges-carousel-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  gap: 14px;
+  padding: 4px 0;
+  flex: 1;
+  min-width: 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.mychallenges-carousel-track::-webkit-scrollbar {
+  display: none;
+}
+.mychallenges-carousel-arrow {
+  flex-shrink: 0;
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  line-height: 0;
+}
+.mychallenges-carousel-arrow img {
+  height: 48px;
+  width: 28px;
+}
+.mychallenges-carousel-arrow:hover {
+  opacity: 0.8;
+}
+
 .dashboard-challenges-mychallenge-body-box {
   min-height: 200px;
   display: flex;
@@ -129,6 +210,41 @@
   height: 490px;
   /* display: grid; */
   /* grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); */
+  position: relative;
+}
+
+/* Compare-slider handle: orange dot with a translucent halo, per the design */
+.myshape-handle-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  cursor: ew-resize;
+}
+.myshape-handle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-orange);
+  box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.18);
+  cursor: ew-resize;
+}
+
+/* Static Before/After captions in the bottom corners */
+.myshape-label {
+  position: absolute;
+  bottom: 14px;
+  color: #fff;
+  font-size: 1.4rem;
+  pointer-events: none;
+  /* keep readable over user photos */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.myshape-label-before {
+  left: 16px;
+}
+.myshape-label-after {
+  right: 16px;
 }
 .dashboard-challenges-myshape-container > div {
   height: 100%;
@@ -166,36 +282,72 @@
   align-items: center;
 }
 .body-line > div {
-  border-bottom: 2px solid var(--color-orange);
+  border-bottom: 1px solid var(--color-orange);
   margin: 5px;
+  position: relative;
 }
+/* Orange dot where the connector line touches the body, per the design */
+.body-line > div::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-orange);
+  top: -4px;
+}
+/* Left-side lines (breast, waist) touch the body at their right tip;
+   right-side lines (shoulders, hips) at their left tip */
+.body-line1 > div::after,
+.body-line2 > div::after {
+  right: -4px;
+}
+.body-line3 > div::after,
+.body-line4 > div::after {
+  left: -4px;
+}
+
+/* Shrink-wraps the body image so the absolutely-positioned lines anchor to
+   the image edges instead of the card — they stay on the body at any width */
+.body-figure {
+  position: relative;
+  display: inline-block;
+}
+
+/* Left labels hang outside the image; the line tip (dot) reaches inward to
+   the body part. right: calc(100% - Xpx) puts the tip X px into the image. */
+
+/* Breast — left, chest height */
 .body-line1 {
-  top: 90px;
-  left: 0;
+  top: 100px;
+  right: calc(100% - 75px);
 }
 .body-line1 > div {
   width: 150px;
 }
 
+/* Waist — left, lower torso */
 .body-line2 {
-  top: 180px;
-  left: 0;
+  top: 160px;
+  right: calc(100% - 70px);
 }
 .body-line2 > div {
   width: 160px;
 }
 
+/* Shoulders — right, top */
 .body-line3 {
   top: 70px;
-  right: 0;
+  left: calc(100% - 65px);
 }
 .body-line3 > div {
   width: 120px;
 }
 
+/* Hips — right, below waist level */
 .body-line4 {
-  right: 0;
-  top: 150px;
+  top: 190px;
+  left: calc(100% - 70px);
 }
 .body-line4 > div {
   width: 160px;
@@ -602,7 +754,22 @@
 .mydev-bodyfat-text {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 6px;
+  /* Thin divider between the donut and the text, per the design */
+  border-left: 1px solid #3A4554;
+  padding-left: 40px;
+  align-self: stretch;
+}
+
+/* When the card wraps (narrow screens) the text drops below the donut,
+   so a left border no longer reads as a divider */
+@media (max-width: 600px) {
+  .mydev-bodyfat-text {
+    border-left: none;
+    padding-left: 0;
+    align-self: auto;
+  }
 }
 
 .mydev-bodyfat-value {
@@ -635,12 +802,14 @@
   border-radius: 4px;
   font-size: 1.4rem;
   font-weight: 500;
-  background: #1F4A29;
-  color: #53D470;
+  /* Per the design: near-card dark bg with the green carried by the
+     arrow + value, not the pill itself */
+  background: #1A3122;
+  color: #3DD25E;
 }
 
 .mydev-trend-pill.mydev-trend-up {
-  background: #4A1F1F;
+  background: #381D1D;
   color: #FF6C6C;
 }
 
@@ -1001,6 +1170,12 @@
   .user-dashboard-bar-choosen {
     padding: 5px;
     font-size: 1.6rem;
+  }
+}
+
+@media screen and (max-width: 1024px) {
+  .dashboard-challenges-mychallenge {
+    width: 100%;
   }
 }
 

@@ -22,6 +22,7 @@ import {
   getChallengeProgress,
   getUserProfileInfo,
   saveChallengeProgress,
+  setLastPlayedChallenge,
 } from "../services/users";
 import { userInfoContext } from "../contexts/UserStore";
 import { checkUser } from "../services/authentication";
@@ -72,6 +73,16 @@ function ChallengePlayer(props) {
       fetchData();
     }
   }, [userInfo]);
+
+  // Record this challenge as last-played the moment the player opens (i.e. the
+  // user clicked a workout/week tile), so the dashboard shows "Continue"
+  // without waiting for any saved progress.
+  useEffect(() => {
+    const challengeId = props.match.params.challengeId;
+    if (userInfo && userInfo.id && challengeId) {
+      setLastPlayedChallenge(challengeId);
+    }
+  }, [userInfo, props.match.params.challengeId]);
 
   const fetchData = async () => {
     setLoading(true);

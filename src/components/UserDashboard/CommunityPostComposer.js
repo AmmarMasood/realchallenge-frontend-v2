@@ -8,7 +8,10 @@ import {
   LoadingOutlined,
 } from "@ant-design/icons";
 import { createPost } from "../../services/communityPosts";
-import { getPhotoUploadUrl } from "../../services/customer";
+import {
+  getPhotoUploadUrl,
+  confirmPhotoUpload,
+} from "../../services/customer";
 import { getUserProfileInfo } from "../../services/users";
 
 // Community post creator. A trigger card sits above the feed (avatar + a
@@ -88,7 +91,7 @@ export default function CommunityPostComposer({ userInfo, onPosted }) {
   };
 
   const uploadMedia = async (f) => {
-    const { presignedUrl, fileUrl } = await getPhotoUploadUrl({
+    const { presignedUrl, fileUrl, s3Key } = await getPhotoUploadUrl({
       filename: f.name,
       mimeType: f.type,
     });
@@ -101,6 +104,8 @@ export default function CommunityPostComposer({ userInfo, onPosted }) {
       xhr.onerror = () => reject(new Error("upload failed"));
       xhr.send(f);
     });
+    // Not awaited: server optimizes the image/video in the background
+    confirmPhotoUpload({ s3Key, mimeType: f.type });
     return fileUrl;
   };
 

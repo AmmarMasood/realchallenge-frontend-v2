@@ -243,6 +243,20 @@ export function getChallengeProgress(challengeId) {
     });
 }
 
+// Fire-and-forget: mark this challenge as the user's last-played one (called
+// when the player opens). Errors are ignored — it only drives the dashboard
+// "Continue" sign, so a failure shouldn't disrupt playback.
+export function setLastPlayedChallenge(challengeId) {
+  return axios
+    .put(
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/last-played/${challengeId}`,
+    )
+    .then((res) => res.data)
+    .catch((err) => {
+      console.log(err);
+    });
+}
+
 export function getUserPoints(userPoints, setUserPoints) {
   return axios
     .get(
