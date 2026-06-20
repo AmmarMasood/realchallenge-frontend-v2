@@ -90,7 +90,11 @@ function MusicPlayer({ visible, setMusicPlayerVisible, musicList, onMusicChange 
         height="100px"
         url={`${currentPlaying.url || currentPlaying.link}`}
         style={{ outline: "none", border: "none", display: "none" }}
-        playing={localStorage.getItem("music-playing")}
+        /* While casting, the TV plays the music — keep the local one silent so
+           the audio doesn't play on both devices. */
+        playing={
+          !!localStorage.getItem("music-playing") && !playerState.castConnected
+        }
         controls={false}
         volume={volume}
         loop={true}

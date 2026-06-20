@@ -453,8 +453,10 @@
         <span class="font-paragraph-white player-elasped-time-container" id="total-time" style="text-align: right;">00:00</span>
       </div>
 
-      <!-- Seek slider -->
-      <div class="seek-slider-wrap">
+      <!-- Seek slider — hidden so the TV matches the local player (stepper
+           only). Kept in the DOM so updateProgressBar()'s #progress-bar
+           reference stays valid. -->
+      <div class="seek-slider-wrap" style="display: none;">
         <div class="seek-slider">
           <div class="seek-slider-fill" id="progress-bar" style="width: 0%"></div>
         </div>

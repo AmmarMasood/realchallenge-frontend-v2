@@ -63,13 +63,21 @@ export default function useChromecast({ workout, currentExercise }) {
 
         context.addEventListener(
           window.cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-          () => {
-            const session = context.getCurrentSession();
+          (event) => {
+            // Key off the event's sessionState rather than getCurrentSession():
+            // during a disconnect the latter still returns the ending session
+            // for a moment, which flipped castConnected back to true and left
+            // the player stuck in cast mode.
+            const SS = window.cast.framework.SessionState;
+            const connected =
+              event.sessionState === SS.SESSION_STARTED ||
+              event.sessionState === SS.SESSION_RESUMED;
+            const session = connected ? context.getCurrentSession() : null;
             sessionRef.current = session;
-            setCastConnected(!!session);
+            setCastConnected(connected);
 
             // Listen for messages from receiver
-            if (session) {
+            if (connected && session) {
               session.addMessageListener(NAMESPACE, (ns, message) => {
                 try {
                   const parsed =
@@ -129,8 +137,11 @@ export default function useChromecast({ workout, currentExercise }) {
       const exercises = workout.exercises.map((ex) => ({
         videoURL: ex.videoURL || "",
         title: ex.title || "",
-        exerciseLength: ex.exerciseLength || 0,
-        break: ex.break || 0,
+        // exerciseLength is stored as a String in the DB — parse to a number
+        // so the receiver adds (e.g. 30 + 5) instead of concatenating strings
+        // ("30" + 5 = "305"), which blew the cast timer up to garbage values.
+        exerciseLength: parseInt(ex.exerciseLength, 10) || 0,
+        break: parseInt(ex.break, 10) || 0,
         videoThumbnailURL: ex.videoThumbnailURL || "",
       }));
 
@@ -165,6 +176,9 @@ export default function useChromecast({ workout, currentExercise }) {
             // Small delay to let the session establish
             setTimeout(() => {
               sendWorkoutToReceiver(musicUrl, musicVolume);
+              // Start paused on the TV so the user presses play (on the cast
+              // remote) when ready, instead of it auto-running on connect.
+              setTimeout(() => sendMessage("PAUSE"), 600);
             }, 500);
           })
           .catch((error) => {
@@ -172,7 +186,7 @@ export default function useChromecast({ workout, currentExercise }) {
           });
       }
     },
-    [castAvailable, castConnected, workout, sendWorkoutToReceiver]
+    [castAvailable, castConnected, workout, sendWorkoutToReceiver, sendMessage]
   );
 
   const stopCasting = useCallback(() => {
@@ -180,6 +194,11 @@ export default function useChromecast({ workout, currentExercise }) {
     if (session) {
       session.endSession(true);
     }
+    // Flip the flags immediately rather than waiting on SESSION_STATE_CHANGED
+    // (which can fire late or not at all), so the player leaves cast mode and
+    // restores the normal controls right away.
+    sessionRef.current = null;
+    setCastConnected(false);
     setReceiverState(null);
   }, []);
 
@@ -227,6 +246,7 @@ export default function useChromecast({ workout, currentExercise }) {
     toggleCast,
     startCasting,
     stopCasting,
+    sendWorkoutToReceiver,
     sendPlay,
     sendPause,
     sendTogglePause,

@@ -155,7 +155,7 @@ function PlayerVideoBrowser({
 
                   return i === 0 ? (
                     <div
-                      key={e._id}
+                      key={`${e._id}-${i}`}
                       data-exercise-index={i}
                       className={`${
                         currentExercise.index === i
@@ -241,7 +241,7 @@ function PlayerVideoBrowser({
                     </div>
                   ) : (
                     <div
-                      key={e._id}
+                      key={`${e._id}-${i}`}
                       data-exercise-index={i}
                       className={`${
                         currentExercise.index === i

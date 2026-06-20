@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import { LoadingOutlined } from "@ant-design/icons";
 import "../assets/challengePlayer.css";
 import Player from "../components/Player/Player";
@@ -46,6 +46,16 @@ function ChallengePlayer(props) {
     index: 0,
     completed: 0,
   });
+  // Resume position on reload: the last exercise index for this workout,
+  // captured once at mount (before any state write can overwrite it). Stored
+  // as an index rather than the exercise _id since exercises can repeat.
+  const resumeIndexRef = useRef(
+    (() => {
+      const wId = props.match.params.workoutId;
+      const v = parseInt(localStorage.getItem(`playerResume_${wId}`), 10);
+      return Number.isInteger(v) && v > 0 ? v : 0;
+    })(),
+  );
   const [openHelpModal, setOpenHelpModal] = useState(false);
   const [exerciseForHelpModal, setExerciseForHelpModal] = useState({});
   const [playerState, setPlayerState] = useContext(playerStateContext);
@@ -83,6 +93,17 @@ function ChallengePlayer(props) {
       setLastPlayedChallenge(challengeId);
     }
   }, [userInfo, props.match.params.challengeId]);
+
+  // Persist the current exercise index so a reload resumes at this position.
+  useEffect(() => {
+    const wId = props.match.params.workoutId;
+    if (wId && currentExercise && currentExercise.index >= 0) {
+      localStorage.setItem(
+        `playerResume_${wId}`,
+        String(currentExercise.index),
+      );
+    }
+  }, [currentExercise, props.match.params.workoutId]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -145,11 +166,27 @@ function ChallengePlayer(props) {
     }
 
     setWorkout({ ...res, renderWorkout: res.isRendered });
+    // Resume at the saved exercise if it's still in range, otherwise start over.
+    const resumeIndex =
+      resumeIndexRef.current < (res.exercises?.length || 0)
+        ? resumeIndexRef.current
+        : 0;
     setCurrentExercise({
-      exercise: res.exercises[0],
-      index: 0,
+      exercise: res.exercises[resumeIndex],
+      index: resumeIndex,
       completed: 0,
     });
+    // Restore the elapsed workout time to match the resumed exercise so the
+    // timer continues from there instead of 00:00. Same sum the player uses
+    // when advancing exercises (durations + breaks before the current one).
+    const elapsedBefore = res.exercises
+      .slice(0, resumeIndex)
+      .reduce(
+        (a, b) =>
+          a + (parseInt(b.exerciseLength) || 0) + (parseInt(b.break) || 0),
+        0,
+      );
+    setExerciseWorkoutTimeTrack((prev) => ({ ...prev, current: elapsedBefore }));
     setLoading(false);
   };
 
@@ -179,6 +216,8 @@ function ChallengePlayer(props) {
       await saveChallengeProgress(p, userInfo.id);
       setSavingProgress(false);
     } else {
+      // Workout finished — drop the saved resume so it starts fresh next time.
+      localStorage.removeItem(`playerResume_${wId}`);
       const p = {
         currentWorkout: null,
         currentExercise: null,

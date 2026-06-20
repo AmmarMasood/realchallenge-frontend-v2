@@ -164,9 +164,12 @@ function RenderedVideoPlayer({
     }, 3000);
   };
 
-  // Show timer if timerVisible is true and current exercise exists
+  // Show timer if timerVisible is true and current exercise exists — but never
+  // while casting (the start overlay / break timers run on the TV, and showing
+  // them locally lets the user start the workout under the cast screen).
   const shouldShowTimer =
     timerVisible &&
+    !playerState.castConnected &&
     workout?.exercises &&
     currentExercise.index >= 0 &&
     !!workout.exercises[currentExercise.index];
@@ -203,7 +206,7 @@ function RenderedVideoPlayer({
         onBufferEnd={() => {
           setPlayerState((prev) => ({ ...prev, loading: false }));
         }}
-        playing={playerState.playing}
+        playing={playerState.playing && !playerState.castConnected}
         muted={playerState.muted}
         loop={true}
         volume={playerState.volume}

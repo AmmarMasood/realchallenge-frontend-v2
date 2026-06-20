@@ -90,6 +90,12 @@ function PlayerControls(
 
   // Track current music selection for cast forwarding
   const currentMusicRef = useRef({ url: null, volume: 0.3 });
+  // Loop guards for cast/local exercise sync:
+  //  - tvDrivenIndexRef: the last index we set locally *because the TV moved*,
+  //    so the local→TV effect knows not to echo it back.
+  //  - prevLocalIndexRef: previous local index, to detect actual changes.
+  const tvDrivenIndexRef = useRef(null);
+  const prevLocalIndexRef = useRef(currentExercise?.index);
 
   // ─── Chromecast hook ───
   const {
@@ -97,6 +103,7 @@ function PlayerControls(
     castConnected,
     receiverState,
     toggleCast,
+    sendWorkoutToReceiver,
     sendTogglePause,
     sendSkipNext,
     sendSkipPrev,
@@ -104,12 +111,73 @@ function PlayerControls(
     sendSetVolume,
   } = useChromecast({ workout, currentExercise });
 
-  // Pause local player when casting starts
+  // When casting starts, hand the workout off to the TV: pause the local
+  // player and clear any active break overlay. The break runs on the receiver
+  // now, and clearing it locally lets the cast remote controls underneath be
+  // clickable (otherwise the break layout sits on top and blocks them, leaving
+  // the break timer looking stuck).
   useEffect(() => {
+    // Mirror cast state into the shared player state so RenderedVideoPlayer
+    // can suppress local playback and the start overlay while casting.
+    setPlayerState((prev) => ({
+      ...prev,
+      castConnected,
+      ...(castConnected ? { playing: false } : {}),
+    }));
     if (castConnected) {
-      setPlayerState((prev) => ({ ...prev, playing: false }));
+      setCurrentBreak(false);
+      setTimerVisible(false);
+      setBreakPaused(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [castConnected]);
+
+  // Keep the local player in sync with the TV while casting: follow the
+  // receiver's current exercise so disconnecting resumes from there. This only
+  // reads receiver state and updates local position — it sends nothing to the
+  // TV, so there's no reload loop. (local → TV is handled at connect time via
+  // LOAD_WORKOUT's startIndex.)
+  useEffect(() => {
+    if (!castConnected) return;
+    const tvIndex = receiverState?.exerciseIndex;
+    if (
+      tvIndex != null &&
+      workout?.exercises?.[tvIndex] &&
+      tvIndex !== currentExercise?.index
+    ) {
+      // Mark this as TV-driven so the local→TV effect doesn't echo it back.
+      tvDrivenIndexRef.current = tvIndex;
+      setCurrentExercise({
+        exercise: workout.exercises[tvIndex],
+        index: tvIndex,
+        completed:
+          workout.exercises.length > 1
+            ? Math.round((tvIndex / (workout.exercises.length - 1)) * 100)
+            : 0,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [receiverState?.exerciseIndex, castConnected]);
+
+  // Local → TV: when the exercise changes locally (e.g. picked from the video
+  // browser), jump the TV there. TV-driven changes are skipped (tvDrivenIndexRef)
+  // so there's no reload loop with the effect above.
+  useEffect(() => {
+    const idx = currentExercise?.index;
+    if (
+      castConnected &&
+      idx != null &&
+      idx !== prevLocalIndexRef.current &&
+      idx !== tvDrivenIndexRef.current
+    ) {
+      sendWorkoutToReceiver(
+        currentMusicRef.current.url,
+        currentMusicRef.current.volume,
+      );
+    }
+    prevLocalIndexRef.current = idx;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentExercise?.index, castConnected]);
 
   useEffect(() => {
     console.log("lworkout", exerciseWorkoutTimeTrack);
@@ -237,15 +305,17 @@ function PlayerControls(
     const rs = receiverState;
     const phaseLabel = rs?.phase || "connecting";
     const castElapsed = rs?.totalElapsed || 0;
-    const castTotal = rs?.totalDuration || 0;
+    // Total comes from the same source as the local player (the workout's
+    // summed duration), so the times match exactly and never show NaN — the
+    // receiver's totalDuration is only a fallback.
+    const castTotal = exerciseWorkoutTimeTrack?.total || rs?.totalDuration || 0;
     const castPaused = rs?.isPaused || false;
-    const castProgress = castTotal > 0 ? (castElapsed / castTotal) * 100 : 0;
 
     return (
       <>
         <div
           className="controls-wrapper-bottom"
-          style={{ position: "relative" }}
+          style={{ position: "relative", marginTop: "auto" }}
         >
           <span className="font-paragraph-white player-elasped-time-container">
             {formatTime(castElapsed)}
@@ -289,27 +359,6 @@ function PlayerControls(
           >
             {formatTime(castTotal)}
           </span>
-        </div>
-        {/* Progress bar */}
-        <div style={{ margin: "0 30px 10px 35px", paddingBottom: "10px" }}>
-          <div
-            style={{
-              width: "100%",
-              height: "4px",
-              background: "rgba(255,255,255,0.2)",
-              borderRadius: "2px",
-            }}
-          >
-            <div
-              style={{
-                width: `${Math.min(castProgress, 100)}%`,
-                height: "100%",
-                background: "#FF7700",
-                borderRadius: "2px",
-                transition: "width 1s linear",
-              }}
-            />
-          </div>
         </div>
         {/* Cast exercise stepper */}
         {rs && rs.totalExercises > 0 && (
@@ -394,6 +443,19 @@ function PlayerControls(
 
   return (
     <div>
+      {/* While casting, hide the local (frozen) player behind a cast screen —
+          standard sender behaviour. The top bar + cast remote render on top of
+          this; it's the lowest control layer so it dims the video only. */}
+      {castConnected && (
+        <div className="casting-overlay">
+          <img
+            src={PlayerChromeIcon}
+            alt=""
+            className="casting-overlay-icon"
+          />
+          <span className="casting-overlay-text">Casting to TV</span>
+        </div>
+      )}
       {/* Description area — cast vs local */}
       {castConnected ? (
         renderCastDescription()
