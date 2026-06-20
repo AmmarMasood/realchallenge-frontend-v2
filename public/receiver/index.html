@@ -539,6 +539,38 @@
       return m + ':' + String(s).padStart(2,'0');
     }
 
+    // Music play() can reject (e.g. autoplay policy). Log it AND forward it to
+    // the sender so the error is visible in the normal browser console without
+    // remote-inspecting the cast device.
+    function reportMusicPlayError(e) {
+      const name = e && e.name;
+      const message = e && e.message;
+      console.warn('[music] play failed:', name, message);
+      try {
+        if (castReceiverContext) {
+          castReceiverContext.sendCustomMessage(NAMESPACE, undefined, {
+            type: 'MUSIC_ERROR', data: { name: name, message: message },
+          });
+        }
+      } catch (_) {}
+    }
+
+    // Start the music robustly. The exercise videos have no audio track so they
+    // autoplay freely, but the music has real audio and can be blocked by the
+    // autoplay policy. Muted playback always satisfies autoplay, so start muted
+    // and unmute once it's actually running.
+    function playMusic() {
+      const el = dom.musicPlayer;
+      if (!el.src) return;
+      el.muted = true;
+      const p = el.play();
+      if (p && p.then) {
+        p.then(() => { el.muted = false; }).catch(reportMusicPlayError);
+      } else {
+        el.muted = false;
+      }
+    }
+
     function clearTimers() {
       if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
       if (exerciseInterval) { clearInterval(exerciseInterval); exerciseInterval = null; }
@@ -724,7 +756,7 @@
       // Music — duck volume while video plays
       duckMusic();
       if (dom.musicPlayer.src && dom.musicPlayer.paused) {
-        dom.musicPlayer.play().catch(() => {});
+        playMusic();
       }
 
       sendState();
@@ -844,7 +876,7 @@
       isPaused = false;
       dom.pausedOverlay.classList.remove('active');
       if (phase === 'exercise' && dom.video.src) dom.video.play().catch(() => {});
-      if (dom.musicPlayer.src) dom.musicPlayer.play().catch(() => {});
+      if (dom.musicPlayer.src) playMusic();
       updatePlayPauseIcon();
       sendState();
     }
@@ -852,7 +884,7 @@
 
     /* ─── MUSIC & VOLUME ─── */
     function changeMusic(url, volume) {
-      if (url) { dom.musicPlayer.src = url; dom.musicPlayer.play().catch(() => {}); }
+      if (url) { dom.musicPlayer.src = url; playMusic(); }
       else { dom.musicPlayer.pause(); dom.musicPlayer.src = ''; }
       if (volume != null) {
         userMusicVolume = volume;

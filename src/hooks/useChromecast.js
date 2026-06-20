@@ -84,6 +84,14 @@ export default function useChromecast({ workout, currentExercise }) {
                     typeof message === "string" ? JSON.parse(message) : message;
                   if (parsed.type === "STATE_UPDATE") {
                     setReceiverState(parsed.data);
+                  } else if (parsed.type === "MUSIC_ERROR") {
+                    // Surfaced from the receiver so cast music failures are
+                    // visible here without remote-inspecting the cast device.
+                    console.warn(
+                      "[cast] receiver music play failed:",
+                      parsed.data?.name,
+                      parsed.data?.message,
+                    );
                   }
                 } catch (e) {
                   console.warn("Failed to parse cast message:", e);
