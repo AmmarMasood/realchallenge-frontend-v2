@@ -23,7 +23,10 @@ function MusicPlayer({ visible, setMusicPlayerVisible, musicList, onMusicChange 
     name: "",
     url: "",
   });
-  const [volume, setVolume] = useState(100);
+  // ReactPlayer (and the cast receiver) expect volume in the 0–1 range. The
+  // slider works in 0–100 and divides by 100 in onVolumeChange, so the initial
+  // value must be 1 (= 100%), not 100 — passing 100 throws an IndexSizeError.
+  const [volume, setVolume] = useState(1);
   const [playing, setPlaying] = useState(false);
 
   useEffect(() => {

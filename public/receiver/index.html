@@ -668,7 +668,10 @@
         const pct = ((GET_READY_SECONDS - countdownValue) / GET_READY_SECONDS) * 100;
         dom.breakProgressBar.style.width = pct + '%';
 
-        if (countdownValue <= 3 && countdownValue > 0) {
+        // Play the full countdown sound ONCE at 3s remaining (the file is the
+        // entire "beep beep beep beeeep" pattern, timed to end as the break
+        // does). Restarting it every second chopped it and bled past the break.
+        if (countdownValue === 3) {
           try { dom.breakEndSound.currentTime = 0; dom.breakEndSound.play(); } catch(e) {}
         }
         if (countdownValue <= 0) {
@@ -787,7 +790,10 @@
         dom.breakCountdown.textContent = Math.max(countdownValue, 0);
         dom.breakProgressBar.style.width = ((breakTotal - countdownValue) / breakTotal * 100) + '%';
         updateProgressBar();
-        if (countdownValue <= 3 && countdownValue > 0) {
+        // Play the full countdown sound ONCE at 3s remaining (the file is the
+        // entire "beep beep beep beeeep" pattern, timed to end as the break
+        // does). Restarting it every second chopped it and bled past the break.
+        if (countdownValue === 3) {
           try { dom.breakEndSound.currentTime = 0; dom.breakEndSound.play(); } catch(e) {}
         }
         sendState();
