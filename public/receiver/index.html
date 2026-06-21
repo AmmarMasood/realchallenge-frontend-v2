@@ -491,7 +491,7 @@
 
     // DEBUG: bump this each receiver deploy so you can confirm on the TV which
     // build is live. Remove the badge + this constant once cast is stable.
-    const RECEIVER_VERSION = 'debug-7 (2026-06-21) no-duck-vollog';
+    const RECEIVER_VERSION = 'debug-8 (2026-06-21) mute-video-for-music';
 
     const $ = (id) => document.getElementById(id);
 
@@ -829,8 +829,11 @@
       updateProgressBar();
       updatePlayPauseIcon();
 
-      // Video
+      // Video — muted on purpose: the exercise videos have no audio track, and
+      // on cast a playing (even silent) video grabs the single audio output and
+      // suppresses the music. Muting it frees the channel so the music is heard.
       if (ex.videoURL) {
+        dom.video.muted = true;
         dom.video.src = ex.videoURL;
         dom.video.load();
         dom.video.play().catch(e => console.warn('Video play error:', e));
