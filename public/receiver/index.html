@@ -491,7 +491,7 @@
 
     // DEBUG: bump this each receiver deploy so you can confirm on the TV which
     // build is live. Remove the badge + this constant once cast is stable.
-    const RECEIVER_VERSION = 'debug-6 (2026-06-21) canplay-no-mute';
+    const RECEIVER_VERSION = 'debug-7 (2026-06-21) no-duck-vollog';
 
     const $ = (id) => document.getElementById(id);
 
@@ -537,8 +537,12 @@
       console.log('[music-debug]', text);
       if (!dom.musicDebug) return;
       const el = dom.musicPlayer;
-      const state = el ? ('p=' + el.paused + ' m=' + el.muted) : 'no-el';
-      musicDebugLog.push(text + '  [' + state + ']');
+      const v = dom.video;
+      const state = el
+        ? ('p=' + el.paused + ' m=' + el.muted + ' vol=' + (el.volume != null ? el.volume.toFixed(2) : '?') + ' rs=' + el.readyState)
+        : 'no-el';
+      const vid = v ? (' | VID p=' + v.paused + ' m=' + v.muted) : '';
+      musicDebugLog.push(text + '  [' + state + vid + ']');
       if (musicDebugLog.length > 5) musicDebugLog.shift();
       dom.musicDebug.innerHTML = 'MUSIC LOG:<br>' + musicDebugLog.join('<br>');
     }
@@ -561,7 +565,10 @@
 
     // Audio ducking: music volume during exercise vs break
     let userMusicVolume = 0.3; // volume set by user
-    const DUCK_RATIO = 0.3;   // during video, music plays at 30% of user volume
+    // No ducking: the exercise videos have no audio track, so there's nothing
+    // to duck against — keep music at full user volume. (Was 0.3, which made
+    // music near-silent during exercises.)
+    const DUCK_RATIO = 1;
 
     /* ─── Helpers ─── */
     function formatTime(seconds) {
