@@ -200,9 +200,9 @@ export default function useChromecast({ workout, currentExercise }) {
             // Small delay to let the session establish
             setTimeout(() => {
               sendWorkoutToReceiver(musicUrl, musicVolume);
-              // Start paused on the TV so the user presses play (on the cast
-              // remote) when ready, instead of it auto-running on connect.
-              setTimeout(() => sendMessage("PAUSE"), 600);
+              // NOTE: start-paused PAUSE removed — it raced with music play()
+              // (AbortError) and is the prime suspect for the prod cast crash.
+              // Re-add cleanly via a startPaused flag in LOAD_WORKOUT later.
             }, 500);
           })
           .catch((error) => {

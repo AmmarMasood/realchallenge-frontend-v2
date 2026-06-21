@@ -478,6 +478,11 @@
     font-family:monospace; font-size:13px; color:#FF7700; background:rgba(0,0,0,0.65);
     padding:3px 9px; border-radius:5px; pointer-events:none;"></div>
 
+  <!-- DEBUG: live music status (remove with the version badge later). -->
+  <div id="music-debug" style="position:fixed; bottom:8px; left:10px; z-index:99999;
+    font-family:monospace; font-size:13px; color:#00e0ff; background:rgba(0,0,0,0.65);
+    padding:3px 9px; border-radius:5px; pointer-events:none; max-width:70%;"></div>
+
   <script>
     'use strict';
 
@@ -486,7 +491,7 @@
 
     // DEBUG: bump this each receiver deploy so you can confirm on the TV which
     // build is live. Remove the badge + this constant once cast is stable.
-    const RECEIVER_VERSION = 'debug-2 (2026-06-21) music-abort-retry';
+    const RECEIVER_VERSION = 'debug-4 (2026-06-21) music-status-overlay';
 
     const $ = (id) => document.getElementById(id);
 
@@ -522,7 +527,19 @@
       breakStartSound:   $('break-start-sound'),
       breakEndSound:     $('break-end-sound'),
       receiverVersion:   $('receiver-version'),
+      musicDebug:        $('music-debug'),
     };
+
+    // DEBUG: show the music pipeline status on the TV (event + element state).
+    function setMusicDebug(text) {
+      console.log('[music-debug]', text);
+      if (!dom.musicDebug) return;
+      const el = dom.musicPlayer;
+      const state = el
+        ? ('src=' + (el.src ? 'set' : 'none') + ' paused=' + el.paused + ' muted=' + el.muted)
+        : 'no-el';
+      dom.musicDebug.textContent = 'MUSIC: ' + text + '  [' + state + ']';
+    }
 
     // DEBUG: show the running receiver version on the TV + receiver console.
     if (dom.receiverVersion) dom.receiverVersion.textContent = 'Receiver ' + RECEIVER_VERSION;
@@ -600,22 +617,29 @@
     // and unmute once it's actually running.
     function playMusic() {
       const el = dom.musicPlayer;
-      if (!el.src) return;
+      if (!el.src) { setMusicDebug('play skipped — no src'); return; }
+      setMusicDebug('play() called');
       el.muted = true;
       const p = el.play();
-      if (!p || !p.then) { el.muted = false; return; }
-      p.then(() => { el.muted = false; }).catch((e) => {
+      if (!p || !p.then) { el.muted = false; setMusicDebug('PLAYING (no-promise)'); return; }
+      p.then(() => { el.muted = false; setMusicDebug('PLAYING'); }).catch((e) => {
         // AbortError = play() was interrupted by a pause()/load() (a benign
         // race, common on cast when PAUSE lands while music is starting). If we
         // still intend to play, retry once after a short delay.
         if (e && e.name === 'AbortError') {
+          setMusicDebug('AbortError — retrying in 250ms');
           setTimeout(() => {
             if (!isPaused && el.src && el.paused) {
               el.muted = true;
-              el.play().then(() => { el.muted = false; }).catch(reportMusicPlayError);
+              el.play()
+                .then(() => { el.muted = false; setMusicDebug('PLAYING (after retry)'); })
+                .catch((e2) => { setMusicDebug('retry FAILED ' + (e2 && e2.name)); reportMusicPlayError(e2); });
+            } else {
+              setMusicDebug('retry skipped — isPaused=' + isPaused + ' elPaused=' + el.paused);
             }
           }, 250);
         } else {
+          setMusicDebug('play FAILED ' + (e && e.name));
           reportMusicPlayError(e);
         }
       });
@@ -715,6 +739,9 @@
         dom.musicPlayer.src = data.musicUrl;
         userMusicVolume = clamp01(data.musicVolume != null ? data.musicVolume : 0.3);
         dom.musicPlayer.volume = userMusicVolume;
+        setMusicDebug('LOAD_WORKOUT got music (vol=' + userMusicVolume + ')');
+      } else {
+        setMusicDebug('LOAD_WORKOUT no music');
       }
       if (data.breakStartSoundUrl) dom.breakStartSound.src = data.breakStartSoundUrl;
       if (data.breakEndSoundUrl) dom.breakEndSound.src = data.breakEndSoundUrl;
@@ -918,6 +945,7 @@
       isPaused = true;
       dom.video.pause();
       dom.musicPlayer.pause();
+      setMusicDebug('PAUSED (workout pause() called)');
       dom.pausedOverlay.classList.add('active');
       updatePlayPauseIcon();
       sendState();
@@ -934,6 +962,7 @@
 
     /* ─── MUSIC & VOLUME ─── */
     function changeMusic(url, volume) {
+      setMusicDebug('CHANGE_MUSIC received ' + (url ? '(url)' : '(stop)'));
       if (url) { dom.musicPlayer.src = url; playMusic(); }
       else { dom.musicPlayer.pause(); dom.musicPlayer.src = ''; }
       if (volume != null) {
@@ -1006,8 +1035,21 @@
         } catch (_) {}
       });
       castReceiverContext.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, () => {
-        if (castReceiverContext.getSenders().length === 0) {
-          clearTimers(); dom.video.pause(); dom.musicPlayer.pause(); window.close();
+        const remaining = castReceiverContext.getSenders().length;
+        // DEBUG: surface disconnects on the TV badge + console. window.close()
+        // is disabled so we can tell whether the "reset" is the sender dropping
+        // the connection (badge will flip to DISCONNECTED right before a reset)
+        // vs a framework/resource teardown (no badge change). Restore the
+        // close() once diagnosed.
+        console.warn('[Receiver] SENDER_DISCONNECTED, remaining senders:', remaining);
+        if (dom.receiverVersion) {
+          dom.receiverVersion.textContent =
+            'Receiver ' + RECEIVER_VERSION + ' — SENDER_DISCONNECTED (' + remaining + ')';
+          dom.receiverVersion.style.color = '#ff3b30';
+        }
+        if (remaining === 0) {
+          clearTimers(); dom.video.pause(); dom.musicPlayer.pause();
+          // window.close();  // DEBUG: disabled to isolate the reset cause
         }
       });
       const opts = new cast.framework.CastReceiverOptions();
