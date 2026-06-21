@@ -539,6 +539,15 @@
       return m + ':' + String(s).padStart(2,'0');
     }
 
+    // Media element .volume MUST be in [0,1]; anything outside throws an
+    // IndexSizeError. A stale/buggy sender (e.g. volume 100) would otherwise
+    // crash the receiver and reset the Chromecast — so clamp every assignment.
+    function clamp01(v) {
+      v = Number(v);
+      if (isNaN(v)) return 0;
+      return Math.max(0, Math.min(1, v));
+    }
+
     // Music play() can reject (e.g. autoplay policy). Log it AND forward it to
     // the sender so the error is visible in the normal browser console without
     // remote-inspecting the cast device.
@@ -611,10 +620,10 @@
 
     // Audio ducking: lower music when video is playing, restore during breaks
     function duckMusic() {
-      dom.musicPlayer.volume = userMusicVolume * DUCK_RATIO;
+      dom.musicPlayer.volume = clamp01(userMusicVolume * DUCK_RATIO);
     }
     function unduckMusic() {
-      dom.musicPlayer.volume = userMusicVolume;
+      dom.musicPlayer.volume = clamp01(userMusicVolume);
     }
 
     function updatePlayPauseIcon() {
@@ -663,7 +672,7 @@
       dom.workoutTitle.textContent = data.title || 'Workout';
       if (data.musicUrl) {
         dom.musicPlayer.src = data.musicUrl;
-        userMusicVolume = data.musicVolume != null ? data.musicVolume : 0.3;
+        userMusicVolume = clamp01(data.musicVolume != null ? data.musicVolume : 0.3);
         dom.musicPlayer.volume = userMusicVolume;
       }
       if (data.breakStartSoundUrl) dom.breakStartSound.src = data.breakStartSoundUrl;
@@ -887,16 +896,16 @@
       if (url) { dom.musicPlayer.src = url; playMusic(); }
       else { dom.musicPlayer.pause(); dom.musicPlayer.src = ''; }
       if (volume != null) {
-        userMusicVolume = volume;
+        userMusicVolume = clamp01(volume);
         // Apply ducking if currently in exercise phase
-        dom.musicPlayer.volume = phase === 'exercise' ? volume * DUCK_RATIO : volume;
+        dom.musicPlayer.volume = clamp01(phase === 'exercise' ? userMusicVolume * DUCK_RATIO : userMusicVolume);
       }
     }
     function setVolume(data) {
-      if (data.videoVolume != null) dom.video.volume = data.videoVolume;
+      if (data.videoVolume != null) dom.video.volume = clamp01(data.videoVolume);
       if (data.musicVolume != null) {
-        userMusicVolume = data.musicVolume;
-        dom.musicPlayer.volume = phase === 'exercise' ? data.musicVolume * DUCK_RATIO : data.musicVolume;
+        userMusicVolume = clamp01(data.musicVolume);
+        dom.musicPlayer.volume = clamp01(phase === 'exercise' ? userMusicVolume * DUCK_RATIO : userMusicVolume);
       }
     }
 
