@@ -472,26 +472,11 @@
   <audio id="break-start-sound" preload="auto"></audio>
   <audio id="break-end-sound" preload="auto"></audio>
 
-  <!-- DEBUG: receiver version badge — confirms which receiver build the TV is
-       actually running (vs a cached old one). Remove once cast is stable. -->
-  <div id="receiver-version" style="position:fixed; bottom:8px; right:10px; z-index:99999;
-    font-family:monospace; font-size:13px; color:#FF7700; background:rgba(0,0,0,0.65);
-    padding:3px 9px; border-radius:5px; pointer-events:none;"></div>
-
-  <!-- DEBUG: live music status (remove with the version badge later). -->
-  <div id="music-debug" style="position:fixed; bottom:8px; left:10px; z-index:99999;
-    font-family:monospace; font-size:13px; color:#00e0ff; background:rgba(0,0,0,0.65);
-    padding:3px 9px; border-radius:5px; pointer-events:none; max-width:70%;"></div>
-
   <script>
     'use strict';
 
     const NAMESPACE = 'urn:x-cast:com.realchallenge.workout';
     const GET_READY_SECONDS = 5;
-
-    // DEBUG: bump this each receiver deploy so you can confirm on the TV which
-    // build is live. Remove the badge + this constant once cast is stable.
-    const RECEIVER_VERSION = 'debug-9 (2026-06-21) revert-mute-stable';
 
     const $ = (id) => document.getElementById(id);
 
@@ -526,30 +511,7 @@
       musicPlayer:       $('music-player'),
       breakStartSound:   $('break-start-sound'),
       breakEndSound:     $('break-end-sound'),
-      receiverVersion:   $('receiver-version'),
-      musicDebug:        $('music-debug'),
     };
-
-    // DEBUG: show the music pipeline status on the TV as a short rolling log so
-    // the SEQUENCE of events is visible (e.g. play() -> PAUSED(x) -> AbortError).
-    let musicDebugLog = [];
-    function setMusicDebug(text) {
-      console.log('[music-debug]', text);
-      if (!dom.musicDebug) return;
-      const el = dom.musicPlayer;
-      const v = dom.video;
-      const state = el
-        ? ('p=' + el.paused + ' m=' + el.muted + ' vol=' + (el.volume != null ? el.volume.toFixed(2) : '?') + ' rs=' + el.readyState)
-        : 'no-el';
-      const vid = v ? (' | VID p=' + v.paused + ' m=' + v.muted) : '';
-      musicDebugLog.push(text + '  [' + state + vid + ']');
-      if (musicDebugLog.length > 5) musicDebugLog.shift();
-      dom.musicDebug.innerHTML = 'MUSIC LOG:<br>' + musicDebugLog.join('<br>');
-    }
-
-    // DEBUG: show the running receiver version on the TV + receiver console.
-    if (dom.receiverVersion) dom.receiverVersion.textContent = 'Receiver ' + RECEIVER_VERSION;
-    console.log('[Receiver] version', RECEIVER_VERSION);
 
     let workout = null;
     let exercises = [];
@@ -589,64 +551,23 @@
       return Math.max(0, Math.min(1, v));
     }
 
-    // Music play() can reject (e.g. autoplay policy). Log it AND forward it to
-    // the sender so the error is visible in the normal browser console without
-    // remote-inspecting the cast device.
-    function reportMusicPlayError(e) {
-      const name = e && e.name;
-      const message = e && e.message;
-      console.warn('[music] play failed:', name, message);
-      try {
-        if (castReceiverContext) {
-          castReceiverContext.sendCustomMessage(NAMESPACE, undefined, {
-            type: 'MUSIC_ERROR', data: { name: name, message: message },
-          });
-        }
-      } catch (_) {}
-    }
-
-    // Report any receiver-side error to the sender (browser console) so a crash
-    // surfaces as a message instead of silently resetting the Chromecast.
-    function reportReceiverError(context, e) {
-      const name = e && e.name;
-      const message = e && (e.message || String(e));
-      console.warn('[Receiver] error in', context, ':', name, message);
-      try {
-        if (castReceiverContext) {
-          castReceiverContext.sendCustomMessage(NAMESPACE, undefined, {
-            type: 'RECEIVER_ERROR', data: { context: context, name: name, message: message },
-          });
-        }
-      } catch (_) {}
-    }
-
-    // Start the music robustly. The exercise videos have no audio track so they
-    // autoplay freely, but the music has real audio and can be blocked by the
-    // autoplay policy. Muted playback always satisfies autoplay, so start muted
-    // and unmute once it's actually running.
+    // Start the music robustly. Wait for canplay (in changeMusic) before this,
+    // so play() doesn't race the load. An AbortError just means play() got
+    // interrupted by a pause()/load() — retry once if we still intend to play.
     function playMusic() {
       const el = dom.musicPlayer;
-      if (!el.src) { setMusicDebug('play skipped — no src'); return; }
-      setMusicDebug('play() called');
+      if (!el.src) return;
       const p = el.play();
-      if (!p || !p.then) { setMusicDebug('PLAYING (no-promise)'); return; }
-      p.then(() => { setMusicDebug('PLAYING'); }).catch((e) => {
-        // AbortError = play() was interrupted by a pause()/load(). Retry once
-        // if we still intend to play.
+      if (!p || !p.then) return;
+      p.catch((e) => {
         if (e && e.name === 'AbortError') {
-          setMusicDebug('AbortError — retrying in 300ms');
           setTimeout(() => {
             if (!isPaused && el.src && el.paused) {
-              el.play()
-                .then(() => setMusicDebug('PLAYING (after retry)'))
-                .catch((e2) => { setMusicDebug('retry FAILED ' + (e2 && e2.name)); reportMusicPlayError(e2); });
-            } else {
-              setMusicDebug('retry skipped — isPaused=' + isPaused + ' elPaused=' + el.paused);
+              el.play().catch((e2) => console.warn('[music] play failed:', e2 && e2.name));
             }
           }, 300);
         } else {
-          setMusicDebug('play FAILED ' + (e && e.name));
-          reportMusicPlayError(e);
+          console.warn('[music] play failed:', e && e.name);
         }
       });
     }
@@ -745,9 +666,6 @@
         dom.musicPlayer.src = data.musicUrl;
         userMusicVolume = clamp01(data.musicVolume != null ? data.musicVolume : 0.3);
         dom.musicPlayer.volume = userMusicVolume;
-        setMusicDebug('LOAD_WORKOUT got music (vol=' + userMusicVolume + ')');
-      } else {
-        setMusicDebug('LOAD_WORKOUT no music');
       }
       if (data.breakStartSoundUrl) dom.breakStartSound.src = data.breakStartSoundUrl;
       if (data.breakEndSoundUrl) dom.breakEndSound.src = data.breakEndSoundUrl;
@@ -942,7 +860,6 @@
       clearTimers(); hideAll();
       dom.video.pause();
       dom.musicPlayer.pause();
-      setMusicDebug('finishWorkout — music paused');
       dom.completeWorkout.textContent = workout ? (workout.title || '') : '';
       dom.completeScreen.classList.add('active');
       totalElapsed = totalDuration;
@@ -954,7 +871,6 @@
       isPaused = true;
       dom.video.pause();
       dom.musicPlayer.pause();
-      setMusicDebug('PAUSED (workout pause() called)');
       dom.pausedOverlay.classList.add('active');
       updatePlayPauseIcon();
       sendState();
@@ -971,7 +887,6 @@
 
     /* ─── MUSIC & VOLUME ─── */
     function changeMusic(url, volume) {
-      setMusicDebug('CHANGE_MUSIC received ' + (url ? '(url)' : '(stop)'));
       if (url) {
         const el = dom.musicPlayer;
         el.src = url;
@@ -979,10 +894,8 @@
         // Play only once the element is ready. Calling play() while the new src
         // is still loading races the internal load and rejects with AbortError,
         // so the music never starts.
-        setMusicDebug('loading new track…');
         const onReady = () => {
           el.removeEventListener('canplay', onReady);
-          setMusicDebug('canplay — starting');
           playMusic();
         };
         el.addEventListener('canplay', onReady);
@@ -1005,7 +918,6 @@
     /* ─── MESSAGE HANDLER ─── */
     function handleMessage(msg) {
       console.log('[Receiver]', msg.type, msg.data);
-      setMusicDebug('MSG ' + (msg && msg.type));  // DEBUG: show every incoming message
       try {
         switch (msg.type) {
           case 'LOAD_WORKOUT': loadWorkout(msg.data); break;
@@ -1018,20 +930,17 @@
           case 'SET_VOLUME': setVolume(msg.data); break;
         }
       } catch (e) {
-        // Never let a handler error bubble up and crash/reset the receiver.
-        // Report it back to the sender so it's visible in the browser console.
-        reportReceiverError(msg && msg.type, e);
+        // Never let a handler error bubble up and reset the receiver.
+        console.warn('[Receiver] handler error:', msg && msg.type, e && e.name, e && e.message);
       }
     }
 
-    /* ─── GLOBAL ERROR NET ─── */
-    // Catch any uncaught error / promise rejection and report it to the sender
-    // instead of letting it crash and reset the Chromecast.
+    // Safety net: keep an uncaught error / rejection from tearing down the receiver.
     window.addEventListener('error', (ev) => {
-      reportReceiverError('window.error', ev.error || { name: 'Error', message: ev.message });
+      console.warn('[Receiver] window error:', ev && ev.message);
     });
     window.addEventListener('unhandledrejection', (ev) => {
-      reportReceiverError('unhandledrejection', ev.reason || { name: 'Rejection', message: String(ev.reason) });
+      console.warn('[Receiver] unhandled rejection:', ev && ev.reason);
     });
 
     /* ─── ON-SCREEN BUTTONS ─── */
@@ -1050,30 +959,9 @@
     if (isCastEnvironment) {
       castReceiverContext = cast.framework.CastReceiverContext.getInstance();
       castReceiverContext.addCustomMessageListener(NAMESPACE, (e) => handleMessage(e.data));
-      // DEBUG: announce the running receiver version to each connecting sender.
-      castReceiverContext.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, () => {
-        try {
-          castReceiverContext.sendCustomMessage(NAMESPACE, undefined, {
-            type: 'RECEIVER_VERSION', data: { version: RECEIVER_VERSION },
-          });
-        } catch (_) {}
-      });
       castReceiverContext.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, () => {
-        const remaining = castReceiverContext.getSenders().length;
-        // DEBUG: surface disconnects on the TV badge + console. window.close()
-        // is disabled so we can tell whether the "reset" is the sender dropping
-        // the connection (badge will flip to DISCONNECTED right before a reset)
-        // vs a framework/resource teardown (no badge change). Restore the
-        // close() once diagnosed.
-        console.warn('[Receiver] SENDER_DISCONNECTED, remaining senders:', remaining);
-        if (dom.receiverVersion) {
-          dom.receiverVersion.textContent =
-            'Receiver ' + RECEIVER_VERSION + ' — SENDER_DISCONNECTED (' + remaining + ')';
-          dom.receiverVersion.style.color = '#ff3b30';
-        }
-        if (remaining === 0) {
-          clearTimers(); dom.video.pause(); dom.musicPlayer.pause();
-          // window.close();  // DEBUG: disabled to isolate the reset cause
+        if (castReceiverContext.getSenders().length === 0) {
+          clearTimers(); dom.video.pause(); dom.musicPlayer.pause(); window.close();
         }
       });
       const opts = new cast.framework.CastReceiverOptions();

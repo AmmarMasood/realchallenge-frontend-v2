@@ -2,11 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 const NAMESPACE = "urn:x-cast:com.realchallenge.workout";
 
-// DEBUG: bump alongside the receiver version. Lets us confirm the *sender*
-// bundle running on prod is actually the latest (vs a stale Amplify/CDN build).
-// Remove with the receiver version badge once cast is stable.
-const SENDER_VERSION = "sender-debug-6 (2026-06-21) no-breaksounds-test";
-
 // Replace with your custom receiver App ID after registering at https://cast.google.com/publish/
 // Until then, this placeholder will not work — the Default Media Receiver (CC1AD845)
 // does NOT support custom messages. You must register and get your own App ID.
@@ -22,7 +17,6 @@ export default function useChromecast({ workout, currentExercise }) {
 
   // ─── Initialize Cast SDK ───
   useEffect(() => {
-    console.log("[cast] SENDER version:", SENDER_VERSION);
     let attempts = 0;
     const maxAttempts = 50;
 
@@ -90,30 +84,6 @@ export default function useChromecast({ workout, currentExercise }) {
                     typeof message === "string" ? JSON.parse(message) : message;
                   if (parsed.type === "STATE_UPDATE") {
                     setReceiverState(parsed.data);
-                  } else if (parsed.type === "MUSIC_ERROR") {
-                    // Surfaced from the receiver so cast music failures are
-                    // visible here without remote-inspecting the cast device.
-                    console.warn(
-                      "[cast] receiver music play failed:",
-                      parsed.data?.name,
-                      parsed.data?.message,
-                    );
-                  } else if (parsed.type === "RECEIVER_ERROR") {
-                    // Any receiver-side error (would otherwise crash/reset the
-                    // Chromecast) surfaced here for debugging.
-                    console.error(
-                      "[cast] receiver error in",
-                      parsed.data?.context,
-                      ":",
-                      parsed.data?.name,
-                      parsed.data?.message,
-                    );
-                  } else if (parsed.type === "RECEIVER_VERSION") {
-                    // DEBUG: confirms which receiver build the TV is running.
-                    console.log(
-                      "[cast] receiver version:",
-                      parsed.data?.version,
-                    );
                   }
                 } catch (e) {
                   console.warn("Failed to parse cast message:", e);
@@ -180,10 +150,11 @@ export default function useChromecast({ workout, currentExercise }) {
         startIndex: currentExercise?.index || 0,
         musicUrl: musicUrl || null,
         musicVolume: musicVolume != null ? musicVolume : 0.3,
-        // DEBUG TEST: break sounds disabled. They're the only field that differs
-        // between localhost (unreachable → never load → music plays on TV) and
-        // prod (reachable → load → music silent). If the TV plays music now,
-        // the loaded break sounds were stealing the audio output. Restore after.
+        // Break sounds intentionally disabled: this Chromecast plays only one
+        // audio stream, and loaded break-sound elements steal the output from
+        // the music (music was silent on prod, fine on localhost where these
+        // URLs were unreachable). TODO: re-enable the countdown beep via a
+        // lazy-load that only holds the audio for the ~3s it plays.
         breakStartSoundUrl: null,
         breakEndSoundUrl: null,
       });
