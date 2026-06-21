@@ -486,7 +486,7 @@
 
     // DEBUG: bump this each receiver deploy so you can confirm on the TV which
     // build is live. Remove the badge + this constant once cast is stable.
-    const RECEIVER_VERSION = 'debug-1 (2026-06-21)';
+    const RECEIVER_VERSION = 'debug-2 (2026-06-21) music-abort-retry';
 
     const $ = (id) => document.getElementById(id);
 
@@ -603,11 +603,22 @@
       if (!el.src) return;
       el.muted = true;
       const p = el.play();
-      if (p && p.then) {
-        p.then(() => { el.muted = false; }).catch(reportMusicPlayError);
-      } else {
-        el.muted = false;
-      }
+      if (!p || !p.then) { el.muted = false; return; }
+      p.then(() => { el.muted = false; }).catch((e) => {
+        // AbortError = play() was interrupted by a pause()/load() (a benign
+        // race, common on cast when PAUSE lands while music is starting). If we
+        // still intend to play, retry once after a short delay.
+        if (e && e.name === 'AbortError') {
+          setTimeout(() => {
+            if (!isPaused && el.src && el.paused) {
+              el.muted = true;
+              el.play().then(() => { el.muted = false; }).catch(reportMusicPlayError);
+            }
+          }, 250);
+        } else {
+          reportMusicPlayError(e);
+        }
+      });
     }
 
     function clearTimers() {
