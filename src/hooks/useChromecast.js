@@ -5,7 +5,7 @@ const NAMESPACE = "urn:x-cast:com.realchallenge.workout";
 // DEBUG: bump alongside the receiver version. Lets us confirm the *sender*
 // bundle running on prod is actually the latest (vs a stale Amplify/CDN build).
 // Remove with the receiver version badge once cast is stable.
-const SENDER_VERSION = "sender-debug-5 (2026-06-21)";
+const SENDER_VERSION = "sender-debug-6 (2026-06-21) no-breaksounds-test";
 
 // Replace with your custom receiver App ID after registering at https://cast.google.com/publish/
 // Until then, this placeholder will not work — the Default Media Receiver (CC1AD845)
@@ -162,8 +162,6 @@ export default function useChromecast({ workout, currentExercise }) {
     (musicUrl, musicVolume) => {
       if (!workout?.exercises || !sessionRef.current) return;
 
-      const origin = window.location.origin;
-
       const exercises = workout.exercises.map((ex) => ({
         videoURL: ex.videoURL || "",
         title: ex.title || "",
@@ -182,8 +180,12 @@ export default function useChromecast({ workout, currentExercise }) {
         startIndex: currentExercise?.index || 0,
         musicUrl: musicUrl || null,
         musicVolume: musicVolume != null ? musicVolume : 0.3,
-        breakStartSoundUrl: origin + "/audio/break-start.mp3",
-        breakEndSoundUrl: origin + "/audio/break-end.mp3",
+        // DEBUG TEST: break sounds disabled. They're the only field that differs
+        // between localhost (unreachable → never load → music plays on TV) and
+        // prod (reachable → load → music silent). If the TV plays music now,
+        // the loaded break sounds were stealing the audio output. Restore after.
+        breakStartSoundUrl: null,
+        breakEndSoundUrl: null,
       });
     },
     [workout, currentExercise, sendMessage]
