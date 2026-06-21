@@ -491,7 +491,7 @@
 
     // DEBUG: bump this each receiver deploy so you can confirm on the TV which
     // build is live. Remove the badge + this constant once cast is stable.
-    const RECEIVER_VERSION = 'debug-5 (2026-06-21) music-log-history';
+    const RECEIVER_VERSION = 'debug-6 (2026-06-21) canplay-no-mute';
 
     const $ = (id) => document.getElementById(id);
 
@@ -621,25 +621,22 @@
       const el = dom.musicPlayer;
       if (!el.src) { setMusicDebug('play skipped — no src'); return; }
       setMusicDebug('play() called');
-      el.muted = true;
       const p = el.play();
-      if (!p || !p.then) { el.muted = false; setMusicDebug('PLAYING (no-promise)'); return; }
-      p.then(() => { el.muted = false; setMusicDebug('PLAYING'); }).catch((e) => {
-        // AbortError = play() was interrupted by a pause()/load() (a benign
-        // race, common on cast when PAUSE lands while music is starting). If we
-        // still intend to play, retry once after a short delay.
+      if (!p || !p.then) { setMusicDebug('PLAYING (no-promise)'); return; }
+      p.then(() => { setMusicDebug('PLAYING'); }).catch((e) => {
+        // AbortError = play() was interrupted by a pause()/load(). Retry once
+        // if we still intend to play.
         if (e && e.name === 'AbortError') {
-          setMusicDebug('AbortError — retrying in 250ms');
+          setMusicDebug('AbortError — retrying in 300ms');
           setTimeout(() => {
             if (!isPaused && el.src && el.paused) {
-              el.muted = true;
               el.play()
-                .then(() => { el.muted = false; setMusicDebug('PLAYING (after retry)'); })
+                .then(() => setMusicDebug('PLAYING (after retry)'))
                 .catch((e2) => { setMusicDebug('retry FAILED ' + (e2 && e2.name)); reportMusicPlayError(e2); });
             } else {
               setMusicDebug('retry skipped — isPaused=' + isPaused + ' elPaused=' + el.paused);
             }
-          }, 250);
+          }, 300);
         } else {
           setMusicDebug('play FAILED ' + (e && e.name));
           reportMusicPlayError(e);
@@ -966,7 +963,21 @@
     /* ─── MUSIC & VOLUME ─── */
     function changeMusic(url, volume) {
       setMusicDebug('CHANGE_MUSIC received ' + (url ? '(url)' : '(stop)'));
-      if (url) { dom.musicPlayer.src = url; playMusic(); }
+      if (url) {
+        const el = dom.musicPlayer;
+        el.src = url;
+        el.load();
+        // Play only once the element is ready. Calling play() while the new src
+        // is still loading races the internal load and rejects with AbortError,
+        // so the music never starts.
+        setMusicDebug('loading new track…');
+        const onReady = () => {
+          el.removeEventListener('canplay', onReady);
+          setMusicDebug('canplay — starting');
+          playMusic();
+        };
+        el.addEventListener('canplay', onReady);
+      }
       else { dom.musicPlayer.pause(); dom.musicPlayer.src = ''; }
       if (volume != null) {
         userMusicVolume = clamp01(volume);
