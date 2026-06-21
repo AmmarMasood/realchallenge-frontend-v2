@@ -491,7 +491,7 @@
 
     // DEBUG: bump this each receiver deploy so you can confirm on the TV which
     // build is live. Remove the badge + this constant once cast is stable.
-    const RECEIVER_VERSION = 'debug-4 (2026-06-21) music-status-overlay';
+    const RECEIVER_VERSION = 'debug-5 (2026-06-21) music-log-history';
 
     const $ = (id) => document.getElementById(id);
 
@@ -530,15 +530,17 @@
       musicDebug:        $('music-debug'),
     };
 
-    // DEBUG: show the music pipeline status on the TV (event + element state).
+    // DEBUG: show the music pipeline status on the TV as a short rolling log so
+    // the SEQUENCE of events is visible (e.g. play() -> PAUSED(x) -> AbortError).
+    let musicDebugLog = [];
     function setMusicDebug(text) {
       console.log('[music-debug]', text);
       if (!dom.musicDebug) return;
       const el = dom.musicPlayer;
-      const state = el
-        ? ('src=' + (el.src ? 'set' : 'none') + ' paused=' + el.paused + ' muted=' + el.muted)
-        : 'no-el';
-      dom.musicDebug.textContent = 'MUSIC: ' + text + '  [' + state + ']';
+      const state = el ? ('p=' + el.paused + ' m=' + el.muted) : 'no-el';
+      musicDebugLog.push(text + '  [' + state + ']');
+      if (musicDebugLog.length > 5) musicDebugLog.shift();
+      dom.musicDebug.innerHTML = 'MUSIC LOG:<br>' + musicDebugLog.join('<br>');
     }
 
     // DEBUG: show the running receiver version on the TV + receiver console.
@@ -934,6 +936,7 @@
       clearTimers(); hideAll();
       dom.video.pause();
       dom.musicPlayer.pause();
+      setMusicDebug('finishWorkout — music paused');
       dom.completeWorkout.textContent = workout ? (workout.title || '') : '';
       dom.completeScreen.classList.add('active');
       totalElapsed = totalDuration;
@@ -982,6 +985,7 @@
     /* ─── MESSAGE HANDLER ─── */
     function handleMessage(msg) {
       console.log('[Receiver]', msg.type, msg.data);
+      setMusicDebug('MSG ' + (msg && msg.type));  // DEBUG: show every incoming message
       try {
         switch (msg.type) {
           case 'LOAD_WORKOUT': loadWorkout(msg.data); break;
