@@ -472,11 +472,21 @@
   <audio id="break-start-sound" preload="auto"></audio>
   <audio id="break-end-sound" preload="auto"></audio>
 
+  <!-- DEBUG: receiver version badge — confirms which receiver build the TV is
+       actually running (vs a cached old one). Remove once cast is stable. -->
+  <div id="receiver-version" style="position:fixed; bottom:8px; right:10px; z-index:99999;
+    font-family:monospace; font-size:13px; color:#FF7700; background:rgba(0,0,0,0.65);
+    padding:3px 9px; border-radius:5px; pointer-events:none;"></div>
+
   <script>
     'use strict';
 
     const NAMESPACE = 'urn:x-cast:com.realchallenge.workout';
     const GET_READY_SECONDS = 5;
+
+    // DEBUG: bump this each receiver deploy so you can confirm on the TV which
+    // build is live. Remove the badge + this constant once cast is stable.
+    const RECEIVER_VERSION = 'debug-1 (2026-06-21)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -511,7 +521,12 @@
       musicPlayer:       $('music-player'),
       breakStartSound:   $('break-start-sound'),
       breakEndSound:     $('break-end-sound'),
+      receiverVersion:   $('receiver-version'),
     };
+
+    // DEBUG: show the running receiver version on the TV + receiver console.
+    if (dom.receiverVersion) dom.receiverVersion.textContent = 'Receiver ' + RECEIVER_VERSION;
+    console.log('[Receiver] version', RECEIVER_VERSION);
 
     let workout = null;
     let exercises = [];
@@ -559,6 +574,21 @@
         if (castReceiverContext) {
           castReceiverContext.sendCustomMessage(NAMESPACE, undefined, {
             type: 'MUSIC_ERROR', data: { name: name, message: message },
+          });
+        }
+      } catch (_) {}
+    }
+
+    // Report any receiver-side error to the sender (browser console) so a crash
+    // surfaces as a message instead of silently resetting the Chromecast.
+    function reportReceiverError(context, e) {
+      const name = e && e.name;
+      const message = e && (e.message || String(e));
+      console.warn('[Receiver] error in', context, ':', name, message);
+      try {
+        if (castReceiverContext) {
+          castReceiverContext.sendCustomMessage(NAMESPACE, undefined, {
+            type: 'RECEIVER_ERROR', data: { context: context, name: name, message: message },
           });
         }
       } catch (_) {}
@@ -912,17 +942,33 @@
     /* ─── MESSAGE HANDLER ─── */
     function handleMessage(msg) {
       console.log('[Receiver]', msg.type, msg.data);
-      switch (msg.type) {
-        case 'LOAD_WORKOUT': loadWorkout(msg.data); break;
-        case 'PLAY': resume(); break;
-        case 'PAUSE': pause(); break;
-        case 'TOGGLE_PAUSE': togglePause(); break;
-        case 'SKIP_NEXT': skipNext(); break;
-        case 'SKIP_PREV': skipPrev(); break;
-        case 'CHANGE_MUSIC': changeMusic(msg.data.musicUrl, msg.data.musicVolume); break;
-        case 'SET_VOLUME': setVolume(msg.data); break;
+      try {
+        switch (msg.type) {
+          case 'LOAD_WORKOUT': loadWorkout(msg.data); break;
+          case 'PLAY': resume(); break;
+          case 'PAUSE': pause(); break;
+          case 'TOGGLE_PAUSE': togglePause(); break;
+          case 'SKIP_NEXT': skipNext(); break;
+          case 'SKIP_PREV': skipPrev(); break;
+          case 'CHANGE_MUSIC': changeMusic(msg.data.musicUrl, msg.data.musicVolume); break;
+          case 'SET_VOLUME': setVolume(msg.data); break;
+        }
+      } catch (e) {
+        // Never let a handler error bubble up and crash/reset the receiver.
+        // Report it back to the sender so it's visible in the browser console.
+        reportReceiverError(msg && msg.type, e);
       }
     }
+
+    /* ─── GLOBAL ERROR NET ─── */
+    // Catch any uncaught error / promise rejection and report it to the sender
+    // instead of letting it crash and reset the Chromecast.
+    window.addEventListener('error', (ev) => {
+      reportReceiverError('window.error', ev.error || { name: 'Error', message: ev.message });
+    });
+    window.addEventListener('unhandledrejection', (ev) => {
+      reportReceiverError('unhandledrejection', ev.reason || { name: 'Rejection', message: String(ev.reason) });
+    });
 
     /* ─── ON-SCREEN BUTTONS ─── */
     dom.btnPlayPause.addEventListener('click', togglePause);
@@ -940,6 +986,14 @@
     if (isCastEnvironment) {
       castReceiverContext = cast.framework.CastReceiverContext.getInstance();
       castReceiverContext.addCustomMessageListener(NAMESPACE, (e) => handleMessage(e.data));
+      // DEBUG: announce the running receiver version to each connecting sender.
+      castReceiverContext.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, () => {
+        try {
+          castReceiverContext.sendCustomMessage(NAMESPACE, undefined, {
+            type: 'RECEIVER_VERSION', data: { version: RECEIVER_VERSION },
+          });
+        } catch (_) {}
+      });
       castReceiverContext.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, () => {
         if (castReceiverContext.getSenders().length === 0) {
           clearTimers(); dom.video.pause(); dom.musicPlayer.pause(); window.close();

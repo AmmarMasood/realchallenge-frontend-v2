@@ -92,6 +92,22 @@ export default function useChromecast({ workout, currentExercise }) {
                       parsed.data?.name,
                       parsed.data?.message,
                     );
+                  } else if (parsed.type === "RECEIVER_ERROR") {
+                    // Any receiver-side error (would otherwise crash/reset the
+                    // Chromecast) surfaced here for debugging.
+                    console.error(
+                      "[cast] receiver error in",
+                      parsed.data?.context,
+                      ":",
+                      parsed.data?.name,
+                      parsed.data?.message,
+                    );
+                  } else if (parsed.type === "RECEIVER_VERSION") {
+                    // DEBUG: confirms which receiver build the TV is running.
+                    console.log(
+                      "[cast] receiver version:",
+                      parsed.data?.version,
+                    );
                   }
                 } catch (e) {
                   console.warn("Failed to parse cast message:", e);
