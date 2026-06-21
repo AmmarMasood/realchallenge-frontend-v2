@@ -524,6 +524,11 @@
     let exerciseInterval = null;
     let totalElapsed = 0;
     let totalDuration = 0;
+    // Break-sound URLs are stored (not loaded) here; playBreakSound() sets the
+    // element src only while a sound plays, so it doesn't permanently hold the
+    // single audio channel and silence the music.
+    let breakStartUrl = '';
+    let breakEndUrl = '';
 
     // Audio ducking: music volume during exercise vs break
     let userMusicVolume = 0.3; // volume set by user
@@ -569,6 +574,38 @@
         } else {
           console.warn('[music] play failed:', e && e.name);
         }
+      });
+    }
+
+    // Lazy-play a break sound: load the src only now, play it, and clear the src
+    // again on 'ended' so the element doesn't keep holding the single audio
+    // channel (which would silence the music during exercises).
+    function playBreakSound(el, url) {
+      if (!el || !url) return;
+      const onEnded = () => {
+        el.removeEventListener('ended', onEnded);
+        el.pause();
+        el.removeAttribute('src');
+        el.load();
+      };
+      const onReady = () => {
+        el.removeEventListener('canplay', onReady);
+        el.play().catch((e) => console.warn('[break-sound] play failed:', e && e.name));
+      };
+      el.addEventListener('ended', onEnded);
+      el.addEventListener('canplay', onReady);
+      el.src = url;
+      el.load();
+    }
+
+    // Stop/unload both break sounds so they release the audio channel (e.g. when
+    // an exercise starts, so its music isn't suppressed by a lingering sound).
+    function stopBreakSounds() {
+      [dom.breakStartSound, dom.breakEndSound].forEach((el) => {
+        if (!el) return;
+        el.pause();
+        el.removeAttribute('src');
+        el.load();
       });
     }
 
@@ -667,8 +704,10 @@
         userMusicVolume = clamp01(data.musicVolume != null ? data.musicVolume : 0.3);
         dom.musicPlayer.volume = userMusicVolume;
       }
-      if (data.breakStartSoundUrl) dom.breakStartSound.src = data.breakStartSoundUrl;
-      if (data.breakEndSoundUrl) dom.breakEndSound.src = data.breakEndSoundUrl;
+      // Store the URLs only — playBreakSound() loads them on demand so they
+      // don't hold the audio channel and silence the music.
+      breakStartUrl = data.breakStartSoundUrl || '';
+      breakEndUrl = data.breakEndSoundUrl || '';
 
       startGetReady();
     }
@@ -705,7 +744,7 @@
         // entire "beep beep beep beeeep" pattern, timed to end as the break
         // does). Restarting it every second chopped it and bled past the break.
         if (countdownValue === 3) {
-          try { dom.breakEndSound.currentTime = 0; dom.breakEndSound.play(); } catch(e) {}
+          playBreakSound(dom.breakEndSound, breakEndUrl);
         }
         if (countdownValue <= 0) {
           clearInterval(countdownInterval); countdownInterval = null;
@@ -719,6 +758,9 @@
       phase = 'exercise';
       clearTimers();
       hideAll();
+      // Release any break sound so it can't hold the audio channel over the
+      // exercise's music.
+      stopBreakSounds();
 
       const ex = exercises[currentIndex];
       if (!ex) { finishWorkout(); return; }
@@ -815,7 +857,7 @@
       // Restore music volume during rest (no video audio competing)
       unduckMusic();
 
-      try { dom.breakStartSound.currentTime = 0; dom.breakStartSound.play(); } catch(e) {}
+      playBreakSound(dom.breakStartSound, breakStartUrl);
       sendState();
 
       countdownInterval = setInterval(() => {
@@ -829,7 +871,7 @@
         // entire "beep beep beep beeeep" pattern, timed to end as the break
         // does). Restarting it every second chopped it and bled past the break.
         if (countdownValue === 3) {
-          try { dom.breakEndSound.currentTime = 0; dom.breakEndSound.play(); } catch(e) {}
+          playBreakSound(dom.breakEndSound, breakEndUrl);
         }
         sendState();
         if (countdownValue <= 0) { clearInterval(countdownInterval); countdownInterval = null; advanceToNext(); }
