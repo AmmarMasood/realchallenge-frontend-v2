@@ -2,6 +2,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 const NAMESPACE = "urn:x-cast:com.realchallenge.workout";
 
+// DEBUG: bump alongside the receiver version. Lets us confirm the *sender*
+// bundle running on prod is actually the latest (vs a stale Amplify/CDN build).
+// Remove with the receiver version badge once cast is stable.
+const SENDER_VERSION = "sender-debug-5 (2026-06-21)";
+
 // Replace with your custom receiver App ID after registering at https://cast.google.com/publish/
 // Until then, this placeholder will not work — the Default Media Receiver (CC1AD845)
 // does NOT support custom messages. You must register and get your own App ID.
@@ -17,6 +22,7 @@ export default function useChromecast({ workout, currentExercise }) {
 
   // ─── Initialize Cast SDK ───
   useEffect(() => {
+    console.log("[cast] SENDER version:", SENDER_VERSION);
     let attempts = 0;
     const maxAttempts = 50;
 
