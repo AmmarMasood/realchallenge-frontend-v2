@@ -72,6 +72,12 @@ export function updateChallenge(challenge, id) {
         throw err;
       }
 
+      // Edit lock lost — challenge is now locked by someone else.
+      // Re-throw without the generic toast so the component can show the lock modal.
+      if (err.response?.status === 423 && err.response?.data?.error === "CHALLENGE_LOCKED") {
+        throw err;
+      }
+
       // Check for duplicate challenge name error
       if (err.response?.status === 409 && err.response?.data?.error === "DUPLICATE_CHALLENGE_NAME") {
         openNotificationWithIcon(
