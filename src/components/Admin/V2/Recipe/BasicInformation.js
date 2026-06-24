@@ -499,6 +499,17 @@ function BasicInformation(props) {
       renewRecipeLock(recipeId);
     }, 10 * 1000);
 
+    // Browsers throttle/pause setInterval in background tabs, which can let the
+    // 30s lock lapse while the editor is still "open". Renew immediately whenever
+    // the tab regains foreground so the heartbeat can't silently fall behind.
+    const renewOnForeground = () => {
+      if (document.visibilityState === "visible") {
+        renewRecipeLock(recipeId);
+      }
+    };
+    document.addEventListener("visibilitychange", renewOnForeground);
+    window.addEventListener("focus", renewOnForeground);
+
     const sendUnlock = () => {
       const url = `${process.env.REACT_APP_SERVER}/api/recipes/recipe/${recipeId}/unlock`;
       const token = localStorage.getItem("jwtToken");
@@ -520,6 +531,8 @@ function BasicInformation(props) {
 
     return () => {
       clearInterval(heartbeatInterval);
+      document.removeEventListener("visibilitychange", renewOnForeground);
+      window.removeEventListener("focus", renewOnForeground);
       window.removeEventListener("pagehide", handlePageHide);
       window.removeEventListener("beforeunload", handleBeforeUnload);
       releaseRecipeLock(recipeId);
@@ -722,6 +735,17 @@ function BasicInformation(props) {
       setLoading(false);
     } catch (err) {
       console.log("Error saving recipe:", err);
+
+      // Edit lock was lost and re-acquired by someone else while editing
+      // (e.g. our heartbeat lapsed in a background tab). Show the lock modal.
+      if (
+        err.response?.status === 423 &&
+        err.response?.data?.error === "RECIPE_LOCKED"
+      ) {
+        setEditLockDetails(err.response.data);
+        setEditLockBlocked(true);
+      }
+
       setLoading(false);
     }
   };

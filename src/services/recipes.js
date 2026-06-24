@@ -85,6 +85,11 @@ export function updateRecipe(values, id) {
       return res.data;
     })
     .catch((err) => {
+      // Edit lock lost — recipe is now locked by someone else.
+      // Re-throw without the generic toast so the component can show the lock modal.
+      if (err.response?.status === 423 && err.response?.data?.error === "RECIPE_LOCKED") {
+        throw err;
+      }
       if (err.response?.data?.header && err.response.data.header.message) {
         openNotificationWithIcon("error", err.response.data.header.message, "");
         return;
