@@ -1,6 +1,10 @@
 .challenge-player-container {
   background-color: #171e27;
   min-height: 100vh;
+  /* dvh = dynamic viewport height: tracks the mobile address bar so the
+     container doesn't resize/jump as it shows/hides on scroll (issue C).
+     Falls back to 100vh on browsers without dvh support. */
+  min-height: 100dvh;
   width: 100%;
 }
 .fullplayer-container {
@@ -86,6 +90,11 @@
 .custom-carousel-track {
   display: flex;
   overflow-x: auto;
+  /* Let horizontal swipes pan the carousel while vertical swipes scroll the
+     page — fixes the mobile "scroll trap" (issue B). pan-x = this element only
+     handles horizontal panning; vertical gestures bubble up to the page. */
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
   gap: 0;

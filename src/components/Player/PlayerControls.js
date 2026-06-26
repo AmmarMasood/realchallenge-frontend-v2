@@ -86,7 +86,7 @@ function PlayerControls(
   const [currentBreak, setCurrentBreak] = useContext(breakContext);
   const [, setTimerVisible] = useContext(timerVisibleContext);
   const [breakPaused, setBreakPaused] = useContext(breakPausedContext);
-  const { height, width } = useWindowDimensions();
+  const { width } = useWindowDimensions();
 
   // Track current music selection for cast forwarding
   const currentMusicRef = useRef({ url: null, volume: 0.3 });
@@ -183,16 +183,19 @@ function PlayerControls(
     console.log("lworkout", exerciseWorkoutTimeTrack);
   }, [exerciseWorkoutTimeTrack]);
 
+  // Detect fullscreen via the Fullscreen API events instead of comparing window
+  // vs container dimensions on every render. The old approach (no dep array) ran
+  // on every resize — and on mobile the address bar showing/hiding during scroll
+  // fires `resize`, which flipped `fullscreen` and made the player jump (issue C).
+  // Event-driven detection has no scroll coupling.
   useEffect(() => {
-    if (
-      width === playerContainerRef.current.clientWidth &&
-      height === playerContainerRef.current.clientHeight
-    ) {
-      setFullscreen(true);
-    } else {
-      setFullscreen(false);
-    }
-  });
+    if (!screenfull.isEnabled) return;
+    const syncFullscreen = () => setFullscreen(screenfull.isFullscreen);
+    syncFullscreen();
+    screenfull.on("change", syncFullscreen);
+    return () => screenfull.off("change", syncFullscreen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const currentTime = playerRef.current
     ? playerRef.current.getCurrentTime()
