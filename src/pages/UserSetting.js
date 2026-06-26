@@ -6,6 +6,7 @@ import {
   MailOutlined,
   LoadingOutlined,
   CloseOutlined,
+  IdcardOutlined,
 } from "@ant-design/icons";
 import { Input, notification } from "antd";
 import moment from "moment";
@@ -24,59 +25,154 @@ const emailIconStyle = {
   backgroundColor: "var(--color-orange-light)",
 };
 
+// Format a date for display, returning null (so the field is hidden) instead of
+// the literal "Invalid date" when the source value is missing/unparseable.
+const formatDate = (value) => {
+  if (!value) return null;
+  const m = moment(value);
+  return m.isValid() ? m.format("DD/MM/YYYY") : null;
+};
+
+// Renders a label/value pair only when the value is present — never shows an
+// empty or fabricated field (per the no-placeholder rule).
+function Field({ label, value }) {
+  if (value === null || value === undefined || value === "") return null;
+  return (
+    <div className="us-field">
+      <span className="us-field-label">{label}</span>
+      <span className="us-field-value">{value}</span>
+    </div>
+  );
+}
+
+// Loading placeholder shown while the profile/subscription data is fetched.
+// Mirrors the real layout (left: id + email cards + button; right: membership)
+// so nothing jumps when the data arrives.
+function SettingsSkeleton() {
+  return (
+    <div className="user-setting-container-body">
+      <div className="user-setting-container-body1">
+        {[0, 1].map((i) => (
+          <div className="user-setting-container-body1-box" key={i}>
+            <div className="us-skeleton us-skeleton-icon" />
+            <div style={{ width: "100%", padding: "10px" }}>
+              <div
+                className="us-skeleton us-skeleton-line"
+                style={{ width: "45%" }}
+              />
+              <div
+                className="us-skeleton us-skeleton-line"
+                style={{ width: "75%", marginTop: 10 }}
+              />
+            </div>
+          </div>
+        ))}
+        <div className="user-setting-body1-button-container">
+          <div
+            className="us-skeleton us-skeleton-button"
+            style={{ marginLeft: "10px" }}
+          />
+        </div>
+      </div>
+      <div className="user-setting-container-body2">
+        <div className="user-setting-container-body2-row1">
+          <div className="user-setting-container-body2-row1-column1">
+            <div
+              className="us-skeleton us-skeleton-line"
+              style={{ width: "55%", height: 16 }}
+            />
+            <div
+              className="us-skeleton us-skeleton-line"
+              style={{ width: "80%", marginTop: 12 }}
+            />
+          </div>
+          <div className="user-setting-container-body2-row1-column2">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i}>
+                <div
+                  className="us-skeleton us-skeleton-line"
+                  style={{ width: "40%" }}
+                />
+                <div
+                  className="us-skeleton us-skeleton-line"
+                  style={{ width: "60%", marginTop: 8 }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function UserSetting() {
   const { getPackage } = usePackageConfig();
   const history = useHistory();
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [userEmail, setUserEmail] = useState("");
   const [email, setEmail] = useState("");
-  // const [password, setPassword] = useState("");
-  // const [confirmPassword, setConfirmPassword] = useState("");
-  const [membershipDetails, setMembershipDetails] = useState({
-    name: "",
-    isValid: true,
-    startTime: new Date(),
-    endTime: new Date(),
-    total: null,
-    status: null,
-    methods: null,
-    date: null,
-  });
+  const [customerId, setCustomerId] = useState("");
+  const [memberships, setMemberships] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [userInfo, setUserInfo] = useContext(userInfoContext);
 
   const fetchData = async () => {
     try {
       const res = await getUserProfileInfo(userInfo.id);
       if (!res || !res.customer) return;
+      const customer = res.customer;
 
-      setUserEmail(res.customer.email);
+      setUserEmail(customer.email);
+      setCustomerId(customer.mollieId || customer._id || userInfo.id || "");
 
-      if (res.customer.mollieId) {
-        const subInfo = await getSubscribtionInformation(res.customer.mollieId);
+      const mems = customer.customerDetails?.membership || [];
+
+      // Pull live subscription data from Mollie (amount/status/method/dates).
+      let subscriptions = [];
+      if (customer.mollieId) {
+        const subInfo = await getSubscribtionInformation(customer.mollieId);
         if (subInfo && subInfo.response) {
-          const parsed = JSON.parse(subInfo.response);
-          const subscriptions = parsed?._embedded?.subscriptions;
-          if (subscriptions && subscriptions.length > 0) {
-            const f = subscriptions[0];
-            const membership = res.customer.customerDetails?.membership?.[0];
-            if (membership) {
-              setMembershipDetails({
-                name: membership.name,
-                isValid: membership.isValid,
-                startTime: membership.startTime,
-                endTime: membership.endTime,
-                total: f.amount?.value,
-                status: f.status,
-                methods: f.method,
-                date: f.createdAt,
-              });
-            }
+          try {
+            const parsed = JSON.parse(subInfo.response);
+            subscriptions = parsed?._embedded?.subscriptions || [];
+          } catch (e) {
+            console.error("Failed to parse subscription info:", e);
           }
         }
       }
+
+      // One card per membership; enrich with the matching subscription when present.
+      setMemberships(
+        mems.map((m, i) => {
+          const sub = subscriptions[i] || subscriptions[0] || null;
+          return {
+            name: m.name,
+            isValid: m.isValid,
+            startTime: m.startTime,
+            endTime: m.endTime,
+            price: m.price ?? sub?.amount?.value ?? null,
+            interval: sub?.interval || null,
+            status: sub?.status || null,
+          };
+        })
+      );
+
+      // Transactions come straight from the subscription records we actually have.
+      setTransactions(
+        subscriptions.map((s) => ({
+          date: s.createdAt,
+          method: s.method,
+          total: s.amount?.value,
+          status: s.status,
+          name: s.description,
+        }))
+      );
     } catch (error) {
       console.error("Failed to fetch user settings data:", error);
+    } finally {
+      setDataLoading(false);
     }
   };
 
@@ -117,8 +213,24 @@ function UserSetting() {
             <CloseOutlined />
           </button>
         </div>
+        {dataLoading ? (
+          <SettingsSkeleton />
+        ) : (
         <div className="user-setting-container-body">
           <div className="user-setting-container-body1">
+            {customerId ? (
+              <div className="user-setting-container-body1-box">
+                <IdcardOutlined style={emailIconStyle} />
+                <div style={{ width: "100%", padding: "10px" }}>
+                  <span className="font-paragraph-white">
+                    <T>user_setting.customer_id</T>
+                  </span>
+                  <div className="us-customer-id font-paragraph-white">
+                    {customerId}
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <div className="user-setting-container-body1-box">
               <MailOutlined style={emailIconStyle} />
               <div style={{ width: "100%", padding: "10px" }}>
@@ -185,130 +297,107 @@ function UserSetting() {
             </div>
           </div>
           <div className="user-setting-container-body2">
-            <div className="user-setting-container-body2-row1">
-              <div className="user-setting-container-body2-row1-column1">
-                <div className="font-paragraph-white">
-                  <T>user_setting.membership</T>
-                </div>
-              </div>
-              <div className="user-setting-container-body2-row1-column2">
-                <div>
-                  <span
-                    className="font-paragraph-white"
-                    style={{ fontSize: "1.8rem" }}
-                  >
-                    <T>user_setting.subscription</T>
-                  </span>
-                  <span className="font-paragraph-white">
-                    {membershipDetails.name && getPackage(membershipDetails.name)
-                      ? getPackage(membershipDetails.name).displayName
-                      : <T>user_setting.no_subscription</T>}
-                  </span>
-                </div>
-                <div>
-                  <span
-                    className="font-paragraph-white"
-                    style={{ fontSize: "1.8rem" }}
-                  >
-                    <T>user_setting.active</T>
-                  </span>
-                  <span className="font-paragraph-white">
-                    {membershipDetails.isValid === "active" ||
-                    membershipDetails.name !== "CHALLENGE_1"
-                      ? <T>user_setting.yes</T>
-                      : <T>user_setting.no</T>}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    justifyContent: "start",
-                  }}
-                >
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span
-                      className="font-paragraph-white"
-                      style={{ fontSize: "1.8rem" }}
-                    >
-                      <T>user_setting.created</T>
-                    </span>
-                    <span className="font-paragraph-white">
-                      {membershipDetails.name === "CHALLENGE_1"
-                        ? ""
-                        : moment(membershipDetails.startTime).format(
-                            "DD/MM/YYYY"
-                          )}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      marginLeft: "60px",
-                    }}
-                  >
-                    <span
-                      className="font-paragraph-white"
-                      style={{ fontSize: "1.8rem" }}
-                    >
-                      <T>user_setting.expires_on</T>
-                    </span>
-                    <span className="font-paragraph-white">
-                      {membershipDetails.name === "CHALLENGE_1"
-                        ? ""
-                        : moment(membershipDetails.endTime).format(
-                            "DD/MM/YYYY"
-                          )}
-                    </span>
+            {memberships.length === 0 ? (
+              <div className="user-setting-container-body2-row1">
+                <div className="user-setting-container-body2-row1-column1">
+                  <div className="font-paragraph-white">
+                    <T>user_setting.membership</T>
                   </div>
                 </div>
+                <div className="user-setting-container-body2-row1-column2">
+                  <Field
+                    label={translate("user_setting.subscription")}
+                    value={translate("user_setting.no_subscription")}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="user-setting-container-body2-row2">
-              <div className="font-paragraph-white">
-                <span style={{ fontSize: "1.8rem" }}>
-                  {" "}
-                  <T>user_setting.date</T>{" "}
-                </span>
-                <span>{moment(new Date()).format("DD/MM/YYYY")}</span>
+            ) : (
+              memberships.map((m, idx) => {
+                const pkg = m.name ? getPackage(m.name) : null;
+                const isActive =
+                  m.isValid === "active" || (m.name && m.name !== "CHALLENGE_1");
+                const autoRebill = m.price
+                  ? `€${m.price}${m.interval ? " / " + m.interval : ""}`
+                  : null;
+                return (
+                  <div className="user-setting-container-body2-row1" key={idx}>
+                    <div className="user-setting-container-body2-row1-column1">
+                      <div className="font-paragraph-white">
+                        <T>user_setting.membership</T>
+                      </div>
+                      {pkg ? (
+                        <div className="us-membership-name font-paragraph-white">
+                          {pkg.displayName}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="user-setting-container-body2-row1-column2">
+                      <Field
+                        label={translate("user_setting.subscription")}
+                        value={
+                          pkg
+                            ? pkg.displayName
+                            : translate("user_setting.no_subscription")
+                        }
+                      />
+                      <Field
+                        label={translate("user_setting.active")}
+                        value={translate(
+                          isActive ? "user_setting.yes" : "user_setting.no"
+                        )}
+                      />
+                      <Field
+                        label={translate("user_setting.auto_rebill")}
+                        value={autoRebill}
+                      />
+                      <Field
+                        label={translate("user_setting.created")}
+                        value={formatDate(m.startTime)}
+                      />
+                      <Field
+                        label={translate("user_setting.expires_on")}
+                        value={formatDate(m.endTime)}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+            {transactions.length > 0 ? (
+              <div className="us-transactions">
+                <div className="us-transactions-heading font-paragraph-white">
+                  <T>user_setting.transactions</T>
+                </div>
+                {transactions.map((t, i) => (
+                  <div className="us-transaction-card" key={i}>
+                    <Field
+                      label={translate("user_setting.date")}
+                      value={formatDate(t.date)}
+                    />
+                    <Field
+                      label={translate("user_setting.methods")}
+                      value={t.method}
+                    />
+                    <Field
+                      label={translate("user_setting.total")}
+                      value={t.total ? `€${t.total}` : null}
+                    />
+                    <Field
+                      label={translate("user_setting.status")}
+                      value={t.status}
+                    />
+                    <Field
+                      label={translate("user_setting.membership")}
+                      value={t.name}
+                    />
+                  </div>
+                ))}
               </div>
-              <div className="font-paragraph-white">
-                <span style={{ fontSize: "1.8rem" }}>
-                  {" "}
-                  <T>user_setting.methods</T>{" "}
-                </span>
-                <span>{membershipDetails.methods}</span>
-              </div>
-              <div className="font-paragraph-white">
-                <span style={{ fontSize: "1.8rem" }}>
-                  <T>user_setting.total</T>{" "}
-                </span>
-                <span>{membershipDetails.total}</span>
-              </div>
-              <div className="font-paragraph-white">
-                <span style={{ fontSize: "1.8rem" }}>
-                  <T>user_setting.status</T>
-                </span>
-                <span>{membershipDetails.status}</span>
-              </div>
-              <div className="font-paragraph-white">
-                <span style={{ fontSize: "1.8rem" }}>
-                  <T>user_setting.membership</T>
-                </span>
-                <span>
-                  {moment(membershipDetails.date).format("DD/MM/YYYY")}
-                </span>
-              </div>
-              {/* <div className="font-paragraph-white">
-                <span style={{ fontSize: "1.8rem" }}>
-                  {t("user_setting.invoice")}
-                </span>
-                <span>test</span>
-              </div> */}
-            </div>
+            ) : null}
           </div>
         </div>
+        )}
         </div>
       </div>
     </>
