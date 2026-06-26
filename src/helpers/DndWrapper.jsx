@@ -57,6 +57,17 @@ function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positio
 
     const EDGE_SIZE = 120;
 
+    // On touch, the finger can't move past the screen edge to trigger full
+    // speed, and the dragged card keeps the pointer mid-zone — so a linear
+    // ramp crawls. Reach full speed by the time the pointer is RAMP_FRACTION
+    // into the edge zone, and never drop below MIN_INTENSITY so it never crawls.
+    const MIN_INTENSITY = 0.5;
+    const RAMP_FRACTION = 0.5;
+    const edgeIntensity = (dist) => {
+      const t = 1 - dist / EDGE_SIZE; // 0 at the zone boundary → 1 at the edge
+      return Math.max(MIN_INTENSITY, Math.min(1, t / RAMP_FRACTION));
+    };
+
     const tick = () => {
       const container = scrollContainerRef?.current;
       if (!container) {
@@ -85,11 +96,9 @@ function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positio
           // Finger is right of container — scroll right at max speed
           container.scrollLeft += speed;
         } else if (distFromLeft < EDGE_SIZE) {
-          const intensity = 1 - distFromLeft / EDGE_SIZE;
-          container.scrollLeft -= speed * intensity;
+          container.scrollLeft -= speed * edgeIntensity(distFromLeft);
         } else if (distFromRight < EDGE_SIZE) {
-          const intensity = 1 - distFromRight / EDGE_SIZE;
-          container.scrollLeft += speed * intensity;
+          container.scrollLeft += speed * edgeIntensity(distFromRight);
         }
       } else {
         const distFromTop = y - rect.top;
@@ -100,11 +109,9 @@ function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positio
         } else if (distFromBottom < 0) {
           container.scrollTop += speed;
         } else if (distFromTop < EDGE_SIZE) {
-          const intensity = 1 - distFromTop / EDGE_SIZE;
-          container.scrollTop -= speed * intensity;
+          container.scrollTop -= speed * edgeIntensity(distFromTop);
         } else if (distFromBottom < EDGE_SIZE) {
-          const intensity = 1 - distFromBottom / EDGE_SIZE;
-          container.scrollTop += speed * intensity;
+          container.scrollTop += speed * edgeIntensity(distFromBottom);
         }
       }
 
