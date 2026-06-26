@@ -56,7 +56,13 @@ export const translate = (key, params = {}) => {
   // Try cached (database) translations first, fall back to static files
   const cached = getCachedTranslations(locale);
   const strings = cached || localeStrings[locale] || localeStrings.english;
-  const translatedString = get(strings, key, key);
+  // Key missing from the DB set? Fall back to the bundled locale before giving
+  // up — otherwise newly-added static keys would render as the raw key string.
+  let translatedString = get(strings, key, undefined);
+  if (translatedString === undefined) {
+    const fallback = localeStrings[locale] || localeStrings.english;
+    translatedString = get(fallback, key, key);
+  }
   return interpolate(translatedString, params);
 };
 
@@ -70,6 +76,12 @@ export const T = (props) => {
     ? strings
     : localeStrings[language] || localeStrings.english;
 
-  const translatedString = get(effectiveStrings, children, children);
+  // Key missing from the (DB-backed) context set? Fall back to the bundled
+  // locale before rendering the raw key string.
+  let translatedString = get(effectiveStrings, children, undefined);
+  if (translatedString === undefined) {
+    const fallback = localeStrings[language] || localeStrings.english;
+    translatedString = get(fallback, children, children);
+  }
   return interpolate(translatedString, params);
 };

@@ -72,9 +72,9 @@
 .user-setting-container-body2 {
   /* border: 1px solid blue; */
   background-color: var(--color-gray-dark);
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  grid-gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .user-setting-container-body2-row1 {
@@ -82,6 +82,7 @@
   /* border: 1px solid red; */
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
+  height: 100%;
 }
 .user-setting-container-body2-row1-column1 {
   border-right: 2px solid var(--color-gray-dark);
@@ -93,9 +94,8 @@
   padding: 10px;
 }
 .user-setting-container-body2-row1-column2 {
-  display: grid;
-
-  grid-template-rows: 1fr 1fr 1fr;
+  display: flex;
+  flex-direction: column;
 }
 .user-setting-container-body2-row1-column2 > div {
   border: 2px solid var(--color-gray-dark);
@@ -123,6 +123,101 @@
   padding: 10px;
   opacity: 0.8;
 }
+/* ---- Account settings: customer id, membership fields, transactions ---- */
+.us-customer-id {
+  margin-top: 5px;
+  font-size: 1.6rem;
+  opacity: 0.85;
+  word-break: break-all;
+}
+
+.us-membership-name {
+  margin-top: 6px;
+  font-size: 1.5rem;
+  opacity: 0.9;
+}
+
+/* Label/value pair (membership details + transaction rows) */
+.us-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.us-field-label {
+  font-size: 1.8rem;
+  color: #8e9298;
+}
+.us-field-value {
+  font-size: 1.5rem;
+  color: #fff;
+}
+
+.us-transactions {
+  background-color: #1b2531;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.us-transactions-heading {
+  font-size: 1.8rem;
+  color: var(--color-orange-light);
+  border-bottom: 1px solid var(--color-gray-dark);
+  padding-bottom: 8px;
+}
+.us-transaction-card {
+  background-color: var(--color-gray-dark);
+  border-radius: 6px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ---- Loading skeleton (SettingsSkeleton) ---- */
+.us-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: #283545;
+  border-radius: 4px;
+}
+.us-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  animation: us-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes us-skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.us-skeleton-icon {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+}
+.us-skeleton-line {
+  height: 12px;
+  width: 100%;
+}
+.us-skeleton-button {
+  width: 160px;
+  height: 40px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .us-skeleton::after {
+    animation: none;
+  }
+}
+
 @media screen and (max-width: 400px) {
   .user-setting-container {
     background-color: var(--color-gray-dark);

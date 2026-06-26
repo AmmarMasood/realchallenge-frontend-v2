@@ -55,6 +55,99 @@ const fitnessLevels = [
   },
 ];
 
+// Loading placeholder shown while the profile + fitness-interest data loads.
+// Mirrors the real form (header, goals, fitness levels, detail grid, interests,
+// photo boxes, action bar) so the layout doesn't jump when data arrives.
+function UpdateSkeleton({ onClose }) {
+  return (
+    <div className="uu-container">
+      <div className="uu-header">
+        <span
+          className="uu-section-title uu-section-title-light"
+          style={{ fontWeight: "600", margin: 0, padding: 0 }}
+        >
+          <T>user_update.update_values</T>
+        </span>
+        <button
+          type="button"
+          className="uu-header-close"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <CloseOutlined />
+        </button>
+      </div>
+
+      <div className="uu-card-block uu-block-withbg">
+        <div
+          className="uu-skeleton uu-skeleton-line"
+          style={{ width: 140, height: 16, marginBottom: 16 }}
+        />
+        <div className="uu-goal-row">
+          {[0, 1, 2].map((i) => (
+            <div className="uu-skeleton uu-skeleton-card" key={i} />
+          ))}
+        </div>
+        <div
+          className="uu-skeleton uu-skeleton-line"
+          style={{ width: 160, height: 16, margin: "16px 0" }}
+        />
+        <div className="uu-fitness-grid">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div className="uu-skeleton uu-skeleton-card" key={i} />
+          ))}
+        </div>
+        <div
+          className="uu-skeleton uu-skeleton-line"
+          style={{ width: 140, height: 16, margin: "16px 0" }}
+        />
+        <div className="uu-detail-grid">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div
+              className="uu-skeleton uu-skeleton-line"
+              style={{ height: 28 }}
+              key={i}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="uu-card-block uu-block-withbg">
+        <div
+          className="uu-skeleton uu-skeleton-line"
+          style={{ width: 160, height: 16, marginBottom: 16 }}
+        />
+        <div className="uu-interest-grid">
+          {[120, 90, 140, 100, 110, 80].map((w, i) => (
+            <div
+              className="uu-skeleton uu-skeleton-pill"
+              style={{ width: w }}
+              key={i}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="uu-card-block">
+        <div
+          className="uu-skeleton uu-skeleton-line"
+          style={{ width: 180, height: 16, marginBottom: 16 }}
+        />
+        <div className="uu-photo-grid">
+          {[0, 1].map((i) => (
+            <div className="uu-skeleton uu-skeleton-photo" key={i} />
+          ))}
+        </div>
+      </div>
+
+      <div className="uu-action-bar">
+        <div className="uu-skeleton uu-skeleton-btn" />
+        <div className="uu-skeleton uu-skeleton-btn" />
+      </div>
+    </div>
+  );
+}
+
 function UserUpdate() {
   const history = useHistory();
   const [userInfo] = useContext(userInfoContext);
@@ -420,9 +513,7 @@ function UserUpdate() {
     return (
       <div className="uu-page">
         <LoggedinNavbar />
-        <div className="uu-loading">
-          <LoadingOutlined style={{ fontSize: "80px", color: "#ff7700" }} />
-        </div>
+        <UpdateSkeleton onClose={() => history.goBack()} />
       </div>
     );
   }

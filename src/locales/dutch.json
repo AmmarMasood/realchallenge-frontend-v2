@@ -222,7 +222,11 @@
     "no_subscription": "Geen",
     "yes": "Ja",
     "no": "Nee",
-    "error": "Fout"
+    "error": "Fout",
+    "customer_id": "Klant-ID",
+    "auto_rebill": "Automatisch verlengen",
+    "transactions": "Transacties",
+    "no_transactions": "Nog geen transacties"
   },
   "user_profile": {
     "about_me": "Over mij",

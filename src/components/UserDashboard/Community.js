@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useContext } from "react";
-import { LoadingOutlined } from "@ant-design/icons";
 import { Pagination } from "antd";
 import CommentSection from "./CommentSection";
 import FeedCard from "./FeedCard";
+import FeedCardSkeleton from "./FeedCardSkeleton";
 import CommunityPostComposer from "./CommunityPostComposer";
 import {
   addLikeToPost,
@@ -106,9 +106,9 @@ function Community({ userInfo }) {
       >
         <CommunityPostComposer userInfo={userInfo} onPosted={handlePosted} />
         {loading ? (
-          <div style={{ textAlign: "center", width: "100%" }}>
-            <LoadingOutlined style={{ fontSize: "30px", color: "#ff7700" }} />
-          </div>
+          Array.from({ length: 6 }).map((_, i) => (
+            <FeedCardSkeleton key={`skeleton-${i}`} />
+          ))
         ) : data ? (
           data.map((d) => (
             <FeedCard

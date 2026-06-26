@@ -155,3 +155,61 @@
     display: none;
   }
 }
+
+/* ---- Skeleton loader (FeedCardSkeleton) ----
+ * Dark-theme shimmer blocks that mirror the card layout while posts load. */
+.feed-skeleton-block {
+  position: relative;
+  overflow: hidden;
+  background-color: #283545;
+  border-radius: 4px;
+}
+
+.feed-skeleton-block::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  animation: feed-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes feed-skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.feed-skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  flex: 0 0 auto;
+}
+
+.feed-skeleton-line {
+  height: 12px;
+  width: 100%;
+}
+
+.feed-skeleton-cover {
+  height: 250px;
+  border-radius: 6px;
+}
+
+.feed-skeleton-pill {
+  width: 64px;
+  height: 38px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-skeleton-block::after {
+    animation: none;
+  }
+}

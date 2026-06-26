@@ -222,7 +222,11 @@
     "no_subscription": "None",
     "yes": "Yes",
     "no": "No",
-    "error": "Error"
+    "error": "Error",
+    "customer_id": "Customer ID",
+    "auto_rebill": "Auto Rebill",
+    "transactions": "Transactions",
+    "no_transactions": "No transactions yet"
   },
   "user_profile": {
     "about_me": "About Me",
