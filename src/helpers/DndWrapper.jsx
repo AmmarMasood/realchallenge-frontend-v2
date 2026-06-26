@@ -68,7 +68,23 @@ function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positio
       return Math.max(MIN_INTENSITY, Math.min(1, t / RAMP_FRACTION));
     };
 
-    const tick = () => {
+    // Frame-rate-INDEPENDENT scroll. On mobile the main thread is busy during a
+    // drag (hover events + live-reorder re-renders), so rAF runs well below
+    // 60fps. A fixed px-per-frame step then scrolls proportionally slower — the
+    // "very slow on phone" symptom. Scale every step by elapsed time so the
+    // velocity stays constant no matter the frame rate. `speed` is treated as
+    // px-per-frame-at-60fps so existing tuning still maps 1:1 on desktop.
+    const FRAME_MS = 1000 / 60;
+    let lastTime = null;
+
+    const tick = (now) => {
+      if (lastTime == null) lastTime = now;
+      const dt = now - lastTime;
+      lastTime = now;
+      // Cap the multiplier so a long stall (GC pause, tab switch) can't fling
+      // the scroll across the whole list in a single frame.
+      const factor = Math.min(dt / FRAME_MS, 4) || 1;
+
       const container = scrollContainerRef?.current;
       if (!container) {
         rafRef.current = requestAnimationFrame(tick);
@@ -90,28 +106,26 @@ function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positio
 
         // Also scroll when finger is OUTSIDE the container (past edges)
         if (distFromLeft < 0) {
-          // Finger is left of container — scroll left at max speed
-          container.scrollLeft -= speed;
+          container.scrollLeft -= speed * factor;
         } else if (distFromRight < 0) {
-          // Finger is right of container — scroll right at max speed
-          container.scrollLeft += speed;
+          container.scrollLeft += speed * factor;
         } else if (distFromLeft < EDGE_SIZE) {
-          container.scrollLeft -= speed * edgeIntensity(distFromLeft);
+          container.scrollLeft -= speed * edgeIntensity(distFromLeft) * factor;
         } else if (distFromRight < EDGE_SIZE) {
-          container.scrollLeft += speed * edgeIntensity(distFromRight);
+          container.scrollLeft += speed * edgeIntensity(distFromRight) * factor;
         }
       } else {
         const distFromTop = y - rect.top;
         const distFromBottom = rect.bottom - y;
 
         if (distFromTop < 0) {
-          container.scrollTop -= speed;
+          container.scrollTop -= speed * factor;
         } else if (distFromBottom < 0) {
-          container.scrollTop += speed;
+          container.scrollTop += speed * factor;
         } else if (distFromTop < EDGE_SIZE) {
-          container.scrollTop -= speed * edgeIntensity(distFromTop);
+          container.scrollTop -= speed * edgeIntensity(distFromTop) * factor;
         } else if (distFromBottom < EDGE_SIZE) {
-          container.scrollTop += speed * edgeIntensity(distFromBottom);
+          container.scrollTop += speed * edgeIntensity(distFromBottom) * factor;
         }
       }
 
