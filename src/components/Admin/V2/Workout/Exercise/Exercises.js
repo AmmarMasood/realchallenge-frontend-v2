@@ -567,7 +567,7 @@ function Exercises({
                   setDraggedItemId(draggedId);
                 }}
                 scrollContainerRef={scrollContainerRef}
-                autoScrollSpeed={60}
+                autoScrollSpeed={95}
                 autoScrollThreshold={500}
               >
                 {remainingExercises &&
