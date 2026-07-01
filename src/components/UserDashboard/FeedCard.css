@@ -150,6 +150,15 @@
   padding-left: 10px;
 }
 
+/* On phones the shrunken root font-size makes 40rem narrower than the
+ * viewport, leaving a dead strip on the right — go fluid instead. */
+@media screen and (max-width: 767px) {
+  .dashboard-feed-container-card {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 @media screen and (max-width: 500px) {
   .dashboard-feed-container-card-row2-tag {
     display: none;

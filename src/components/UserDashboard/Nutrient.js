@@ -103,8 +103,11 @@ const responsive = {
     items: 2,
   },
   mobile: {
-    breakpoint: { max: 464, min: 0 },
+    // up to 750 so there's no uncovered 464-750 gap (react-multi-carousel
+    // has no fallback for widths outside every breakpoint)
+    breakpoint: { max: 750, min: 0 },
     items: 1,
+    partialVisibilityGutter: 40,
   },
 };
 
@@ -1626,6 +1629,11 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
                   opacity: meta.isPast ? 0.45 : 1,
                   fontWeight: meta.isToday ? 700 : 400,
                   position: "relative",
+                  paddingBottom: "6px",
+                  borderBottom:
+                    currentDay === day
+                      ? "2px solid var(--color-orange)"
+                      : "2px solid transparent",
                 }}
                 onClick={() => setCurrentDay(day)}
               >
@@ -1738,7 +1746,7 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
 
         <div className="divider"></div>
         <div className="dashboard-nutrient-row2-container">
-          <Carousel responsive={responsive}>
+          <Carousel responsive={responsive} partialVisible>
             {planLoading ? (
               [0, 1, 2, 3].map((i) => (
                 <div
@@ -1913,6 +1921,8 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
           <div
             style={{
               display: "flex",
+              // stacked full-width on phones, side by side on desktop
+              flexDirection: width < 700 ? "column" : "row",
               justifyContent: "flex-end",
               gap: "12px",
               marginTop: "16px",
@@ -1932,6 +1942,7 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: "8px",
               }}
             >
@@ -1954,6 +1965,7 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
                 opacity: regenerating ? 0.6 : 1,
                 display: "inline-flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: "8px",
               }}
             >
@@ -1964,29 +1976,6 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
                 <T>userDashboard.nutrient.regenerate_week</T>
               )}
             </button>
-          </div>
-        )}
-        {width < 700 && (
-          <div
-            style={{
-              marginBottom: "10px",
-              marginTop: "10px",
-              paddingLeft: "15px",
-            }}
-          >
-            <Link
-              to="/nutrition"
-              className="common-orange-button font-paragraph-white"
-            >
-              <T>userDashboard.nutrient.discoverR</T>
-            </Link>
-            <Link
-              to="/pricing"
-              style={{ marginLeft: "10px" }}
-              className="common-transparent-button font-paragraph-white"
-            >
-              <T>userDashboard.nutrient.seeP</T>
-            </Link>
           </div>
         )}
       </div>

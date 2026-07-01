@@ -200,6 +200,7 @@ export default function CommunityPostComposer({ userInfo, onPosted }) {
             className="font-paragraph-white"
             style={{
               flex: 1,
+              minWidth: 0,
               background: "#0F151D",
               border: "1px solid #2F3E50",
               borderRadius: "24px",
@@ -207,6 +208,9 @@ export default function CommunityPostComposer({ userInfo, onPosted }) {
               color: "#8e9298",
               fontSize: "15px",
               cursor: "pointer",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
           >
             {firstName

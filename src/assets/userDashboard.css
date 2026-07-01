@@ -1195,12 +1195,59 @@
     padding: 5px;
     font-size: 1.6rem;
   }
+  /* Nutrition of the week — phone layout per Figma: one scrollable row of
+     day tabs and a full-width card with roomy type/buttons (the card is
+     items:1 here, so there's space for the larger sizes). */
+  .dashboard-nutrient-row2-container-days {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 28px;
+    overflow-x: auto;
+    padding: 15px 5px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .dashboard-nutrient-row2-container-days::-webkit-scrollbar {
+    display: none;
+  }
+  .dashboard-nutrient-row2-container-day {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
   .dashboard-nutrient-row2-container-card-heading {
-    font-size: 16px;
+    font-size: 22px;
   }
   .dashboard-nutrient-row2-container-card-about {
-    font-size: 12px;
+    font-size: 14px;
     padding: 0;
+  }
+  .dashboard-nutrient-row2-container-card-bob {
+    font-size: 12px;
+  }
+  .dashboard-nutrient-row2-container-card-buttons {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .dashboard-nutrient-row2-container-card-buttons > div {
+    font-size: 13px;
+    padding: 10px 12px;
+    /* the base height:100% resolves against the two-line wrapped container,
+       inflating the pills and pushing the button past the card's clipped
+       edge — content height is what we want here */
+    height: auto;
+  }
+  /* kCal pill absorbs the leftover width so the pills span the full row */
+  .dashboard-nutrient-row2-container-card-buttons > div:first-of-type {
+    flex: 1 1 auto;
+  }
+  /* shopping button gets its own full-width line under the pills */
+  .dashboard-nutrient-row2-container-card-buttons > button {
+    font-size: 13px;
+    padding: 10px 14px;
+    flex: 1 1 100%;
+    margin-left: 0;
+    justify-content: center;
+    align-items: center;
   }
 }
 @media screen and (max-width: 500px) {
