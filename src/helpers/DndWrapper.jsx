@@ -187,11 +187,18 @@ export function DraggableArea({
   autoScrollThreshold = 120,
 }) {
   const childArray = React.Children.toArray(children);
-  const timeoutRef = React.useRef(null);
-  const lastChangeRef = React.useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   // Shared ref for drag position — updated by DraggableItem hover via monitor.getClientOffset()
   const dragPositionRef = useRef({ x: 0, y: 0 });
+  // id → DOM node for every rendered DraggableItem, used to measure and
+  // transform items during a drag without touching the DOM order.
+  const itemNodesRef = useRef(new Map());
+  // Active drag session. The DOM order is FROZEN for the whole drag and the
+  // pending order is shown purely with transforms; onChange commits once, on
+  // drop. Committing every swap mid-drag (the old approach) reordered the DOM
+  // under an active touch, which makes mobile browsers freeze or drop the
+  // touch stream — the "drag dies after the first swap" bug on phones.
+  const dragSessionRef = useRef(null);
 
   // Auto-scroll when dragging near container edges
   useAutoScroll(
@@ -203,54 +210,132 @@ export function DraggableArea({
     autoScrollThreshold
   );
 
-  const moveItem = useCallback((dragIndex, hoverIndex) => {
-    if (
-      dragIndex < 0 ||
-      hoverIndex < 0 ||
-      dragIndex >= childArray.length ||
-      hoverIndex >= childArray.length ||
-      dragIndex === hoverIndex
-    ) {
-      return;
+  const registerItemNode = useCallback((itemId, el) => {
+    if (el) itemNodesRef.current.set(itemId, el);
+    else itemNodesRef.current.delete(itemId);
+  }, []);
+
+  // Snapshot every item's slot (position + size along the drag axis) at drag
+  // start; slots can't change mid-drag since the DOM is frozen.
+  const beginDragSession = useCallback(() => {
+    const horizontal = direction === "horizontal";
+    const ids = childArray
+      .map((child) => child?.props?.id)
+      .filter((itemId) => itemId !== undefined);
+    const starts = new Map();
+    const sizes = new Map();
+    ids.forEach((itemId) => {
+      const el = itemNodesRef.current.get(itemId);
+      if (!el) return;
+      starts.set(itemId, horizontal ? el.offsetLeft : el.offsetTop);
+      sizes.set(itemId, horizontal ? el.offsetWidth : el.offsetHeight);
+    });
+    // Spacing between consecutive slots (margins / flex gaps), per pair
+    const gaps = [];
+    for (let i = 0; i < ids.length - 1; i++) {
+      gaps.push(
+        (starts.get(ids[i + 1]) || 0) -
+          ((starts.get(ids[i]) || 0) + (sizes.get(ids[i]) || 0))
+      );
     }
+    dragSessionRef.current = {
+      originalOrder: ids,
+      order: [...ids],
+      starts,
+      sizes,
+      gaps,
+      translates: new Map(),
+    };
+  }, [childArray, direction]);
 
-    const updatedItems = [...childArray];
-    const [removed] = updatedItems.splice(dragIndex, 1);
-    updatedItems.splice(hoverIndex, 0, removed);
+  // Show the pending order by translating each item from its frozen DOM slot
+  // to where it belongs: walk the pending order accumulating sizes + gaps.
+  const applyPendingTransforms = useCallback(
+    (draggedId) => {
+      const session = dragSessionRef.current;
+      if (!session || session.originalOrder.length === 0) return;
+      const horizontal = direction === "horizontal";
+      let cursor = session.starts.get(session.originalOrder[0]) || 0;
+      session.order.forEach((itemId, k) => {
+        const target = cursor;
+        cursor +=
+          (session.sizes.get(itemId) || 0) +
+          (k < session.gaps.length ? session.gaps[k] : 0);
+        const delta = target - (session.starts.get(itemId) || 0);
+        session.translates.set(itemId, delta);
+        const el = itemNodesRef.current.get(itemId);
+        if (!el) return;
+        const translate = horizontal
+          ? `translateX(${delta}px)`
+          : `translateY(${delta}px)`;
+        const scale = itemId === draggedId ? " scale(0.95)" : "";
+        el.style.transition = prefersReducedMotion()
+          ? "none"
+          : "transform 0.15s ease";
+        el.style.transform = delta || scale ? `${translate}${scale}` : "";
+      });
+    },
+    [direction]
+  );
 
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+  const moveItem = useCallback(
+    (dragId, hoverId) => {
+      const session = dragSessionRef.current;
+      if (!session) return;
+      const from = session.order.indexOf(dragId);
+      const to = session.order.indexOf(hoverId);
+      if (from === -1 || to === -1 || from === to) return;
+      session.order.splice(from, 1);
+      session.order.splice(to, 0, dragId);
+      applyPendingTransforms(dragId);
+    },
+    [applyPendingTransforms]
+  );
 
-    lastChangeRef.current = updatedItems;
-
-    timeoutRef.current = setTimeout(() => {
-      if (onChange && lastChangeRef.current) {
-        const mappedOrder = lastChangeRef.current.map((child) => {
-          if (!child || !child.props) return null;
-          const id = child.props.id;
-          return { key: id, id: id };
-        }).filter((item) => item !== null);
-
-        if (mappedOrder.length > 0) {
-          onChange(mappedOrder);
+  const handleDragStateChange = useCallback(
+    (dragging, draggedId) => {
+      if (dragging) {
+        beginDragSession();
+      } else {
+        // Drop: commit the pending order once. The touch/drag is already
+        // over, so the DOM reorder this triggers can't kill the gesture.
+        const session = dragSessionRef.current;
+        const changed =
+          session &&
+          session.order.some(
+            (itemId, i) => itemId !== session.originalOrder[i]
+          );
+        if (changed && onChange) {
+          onChange(
+            session.order.map((itemId) => ({ key: itemId, id: itemId }))
+          );
         }
       }
-    }, 50);
-  }, [childArray, onChange]);
+      setIsDragging(dragging);
+      if (!dragging) {
+        dragPositionRef.current = { x: 0, y: 0 };
+      }
+      if (onDragStateChange) {
+        onDragStateChange(dragging, draggedId);
+      }
+    },
+    [beginDragSession, onChange, onDragStateChange]
+  );
 
-  const handleDragStateChange = useCallback((dragging, draggedId) => {
-    setIsDragging(dragging);
-    if (!dragging) {
-      dragPositionRef.current = { x: 0, y: 0 };
-    }
-    if (onDragStateChange) {
-      onDragStateChange(dragging, draggedId);
-    }
-  }, [onDragStateChange]);
+  // After the drop commits, children re-render in their real new DOM order
+  // within this same task — remove the session transforms before paint so
+  // every item sits exactly in its (now real) slot with no visible jump.
+  useLayoutEffect(() => {
+    if (isDragging || !dragSessionRef.current) return;
+    dragSessionRef.current = null;
+    itemNodesRef.current.forEach((el) => {
+      el.style.transition = "none";
+      el.style.transform = "";
+    });
+  }, [isDragging]);
 
   return (
-    <DragContext.Provider value={{ moveItem, direction, itemType, onDragStateChange: handleDragStateChange, childArray, dragPositionRef }}>
+    <DragContext.Provider value={{ moveItem, direction, itemType, onDragStateChange: handleDragStateChange, dragPositionRef, dragSessionRef, registerItemNode }}>
       <div
         style={{
           display: direction === "horizontal" ? "inline-flex" : "block",
@@ -291,7 +376,16 @@ export function DraggableItem({ children, index, id, style, ...rest }) {
   const handleRef = useRef(null);
   const lastHoverTime = useRef(0);
   const lastLayoutPosRef = useRef(null);
-  const { moveItem, direction, itemType, onDragStateChange, childArray, dragPositionRef } = useContext(DragContext);
+  const { moveItem, direction, itemType, onDragStateChange, dragPositionRef, dragSessionRef, registerItemNode } = useContext(DragContext);
+
+  // Expose this item's DOM node to the area so it can measure slots at drag
+  // start and apply the pending-order transforms.
+  useEffect(() => {
+    if (registerItemNode) {
+      registerItemNode(id, ref.current);
+      return () => registerItemNode(id, null);
+    }
+  }, [id, registerItemNode]);
 
   const [, drop] = useDrop({
     accept: itemType,
@@ -308,44 +402,45 @@ export function DraggableItem({ children, index, id, style, ...rest }) {
       const now = Date.now();
       if (now - lastHoverTime.current < 30) return;
 
-      // Find the current index of the dragged item by its ID
-      const dragItemIndex = childArray.findIndex(
-        (child) => child?.props?.id === item.id
-      );
-
-      // Skip if item hasn't moved or indices are invalid
-      if (dragItemIndex === -1 || dragItemIndex === index) return;
-
-      // Hysteresis: only swap once the pointer is clearly past the hovered
-      // item's midpoint in the drag direction — otherwise the post-swap
-      // layout shift puts the pointer back over the other item and they
-      // oscillate. IMPORTANT: measure against the item's settled LAYOUT
-      // position (bounding rect minus any in-flight FLIP translate); using
-      // the animated rect lets a card sliding through the pointer re-trigger
-      // the swap instantly in reverse.
+      // Reorder happens in the drag session's PENDING order (the DOM order is
+      // frozen during the drag). No session here means the drag started in a
+      // different DraggableArea — cross-area drops aren't supported.
+      const session = dragSessionRef && dragSessionRef.current;
+      if (!session) return;
+      const dragIdx = session.order.indexOf(item.id);
+      const hoverIdx = session.order.indexOf(id);
+      if (dragIdx === -1 || hoverIdx === -1 || dragIdx === hoverIdx) return;
       if (!clientOffset) return;
-      const hoverBoundingRect = ref.current.getBoundingClientRect();
+
+      // Hysteresis: only swap once the pointer is clearly past this item's
+      // midpoint in the drag direction — otherwise the post-swap shift puts
+      // the pointer back over the other item and they oscillate. Measure at
+      // the item's SETTLED pending position (bounding rect minus in-flight
+      // animation, plus its assigned session translate) so a card sliding
+      // through the pointer can't re-trigger the swap in reverse.
+      const rect = ref.current.getBoundingClientRect();
       const inFlight = getCurrentTranslate(ref.current);
+      const applied = (session.translates && session.translates.get(id)) || 0;
 
       if (direction === "horizontal") {
-        const hoverMiddleX = (hoverBoundingRect.right - hoverBoundingRect.left) / 2;
-        const hoverClientX =
-          clientOffset.x - (hoverBoundingRect.left - inFlight.x);
+        const settledLeft = rect.left - inFlight.x + applied;
+        const half = rect.width / 2;
+        const pointerX = clientOffset.x - settledLeft;
 
         // Only move if cursor is clearly past the middle (30% threshold)
-        const threshold = hoverMiddleX * 0.3;
-        if (dragItemIndex < index && hoverClientX < hoverMiddleX - threshold) return;
-        if (dragItemIndex > index && hoverClientX > hoverMiddleX + threshold) return;
+        const threshold = half * 0.3;
+        if (dragIdx < hoverIdx && pointerX < half - threshold) return;
+        if (dragIdx > hoverIdx && pointerX > half + threshold) return;
       } else {
-        const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
-        const hoverClientY =
-          clientOffset.y - (hoverBoundingRect.top - inFlight.y);
-        if (dragItemIndex < index && hoverClientY < hoverMiddleY) return;
-        if (dragItemIndex > index && hoverClientY > hoverMiddleY) return;
+        const settledTop = rect.top - inFlight.y + applied;
+        const half = rect.height / 2;
+        const pointerY = clientOffset.y - settledTop;
+        if (dragIdx < hoverIdx && pointerY < half) return;
+        if (dragIdx > hoverIdx && pointerY > half) return;
       }
 
       lastHoverTime.current = now;
-      moveItem(dragItemIndex, index);
+      moveItem(item.id, id);
     },
   });
 
@@ -384,6 +479,10 @@ export function DraggableItem({ children, index, id, style, ...rest }) {
     const last = lastLayoutPosRef.current;
     lastLayoutPosRef.current = pos;
     if (!last || prefersReducedMotion()) return;
+    // While a drag session is active the area owns all transforms (pending-
+    // order preview + drop cleanup) — FLIP only animates non-drag layout
+    // moves such as delete/duplicate/add.
+    if (dragSessionRef && dragSessionRef.current) return;
     const movedX = last.left - pos.left;
     const movedY = last.top - pos.top;
     if (!movedX && !movedY) return;
