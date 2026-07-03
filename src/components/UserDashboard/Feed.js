@@ -90,10 +90,7 @@ function Feed({ userInfo }) {
         visible={open}
         setVisible={setOpen}
       />
-      <div
-        className="dashboard-feed-container"
-        style={{ justifyItems: "center" }}
-      >
+      <div className="dashboard-feed-container dashboard-feed-grid">
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <FeedCardSkeleton key={`skeleton-${i}`} />
@@ -113,7 +110,9 @@ function Feed({ userInfo }) {
             />
           ))
         ) : (
-          <h2 className="font-heading-white">No posts here!</h2>
+          <h2 className="font-heading-white feed-grid-fullrow">
+            No posts here!
+          </h2>
         )}
       </div>
       <div className="pagination-container">

@@ -46,6 +46,19 @@
   flex-wrap: wrap;
   gap: 20px;
 }
+/* Card-grid variant (News Feed + Community): as many 40rem-min columns as
+   fit, stretched to fill the row so the grid ends flush with the tab bar;
+   min(40rem, 100%) keeps a single column from overflowing viewports
+   narrower than 40rem. Challenges/Nutrients keep the plain flex wrapper. */
+.dashboard-feed-container.dashboard-feed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(40rem, 100%), 1fr));
+}
+/* full-width children inside the card grid (e.g. the Community post
+   composer) span every column instead of sitting in one track */
+.dashboard-feed-grid > .feed-grid-fullrow {
+  grid-column: 1 / -1;
+}
 /* FeedCard styles moved to components/UserDashboard/FeedCard.css */
 /* dashboard challenges */
 .dashboard-challenges-row1 {

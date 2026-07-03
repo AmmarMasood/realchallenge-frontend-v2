@@ -100,10 +100,7 @@ function Community({ userInfo }) {
         setVisible={setOpen}
         community={true}
       />
-      <div
-        className="dashboard-feed-container"
-        style={{ justifyItems: "center" }}
-      >
+      <div className="dashboard-feed-container dashboard-feed-grid">
         <CommunityPostComposer userInfo={userInfo} onPosted={handlePosted} />
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
@@ -124,7 +121,9 @@ function Community({ userInfo }) {
             />
           ))
         ) : (
-          <h2 className="font-heading-white">No posts here!</h2>
+          <h2 className="font-heading-white feed-grid-fullrow">
+            No posts here!
+          </h2>
         )}
       </div>
       <div className="pagination-container">

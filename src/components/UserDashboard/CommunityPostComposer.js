@@ -184,6 +184,7 @@ export default function CommunityPostComposer({ userInfo, onPosted }) {
 
       {/* ── Trigger card ── */}
       <div
+        className="feed-grid-fullrow"
         style={{
           width: "100%",
           background: "#1B2531",

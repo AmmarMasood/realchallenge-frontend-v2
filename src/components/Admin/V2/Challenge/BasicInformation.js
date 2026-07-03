@@ -218,6 +218,8 @@ function BasicInformation(props) {
   const [postCreating, setPostCreating] = useState(false);
   const [isDraggingWorkout, setIsDraggingWorkout] = useState(false);
   const [draggedWorkoutId, setDraggedWorkoutId] = useState(null);
+  const [isDraggingWeek, setIsDraggingWeek] = useState(false);
+  const [draggedWeekId, setDraggedWeekId] = useState(null);
   const [coverVideoLoading, setCoverVideoLoading] = useState(true);
   const [groupMode, setGroupMode] = useState("new"); // "new" | "existing"
   const [trainerGroups, setTrainerGroups] = useState([]);
@@ -2708,10 +2710,27 @@ function BasicInformation(props) {
                 <T>challengeStudio.your_personal_journey</T>
               </div>
               <div style={{ marginTop: "10px" }}>
+                <div
+                  style={{
+                    backgroundColor: isDraggingWeek
+                      ? "rgba(59, 130, 246, 0.1)"
+                      : "transparent",
+                    border: isDraggingWeek
+                      ? "2px dashed #3b82f6"
+                      : "2px solid transparent",
+                    transition: "all 0.3s ease",
+                    width: "100%",
+                    borderRadius: isDraggingWeek ? "8px" : "0px",
+                  }}
+                >
                 <DraggableArea
                   onChange={handleWeekReorder}
                   direction="vertical"
                   itemType={ItemTypeWeek}
+                  onDragStateChange={(dragging, draggedId) => {
+                    setIsDraggingWeek(dragging);
+                    setDraggedWeekId(draggedId);
+                  }}
                 >
                   {weeks &&
                     weeks.map((w, i) => (
@@ -2720,8 +2739,20 @@ function BasicInformation(props) {
                           defaultActiveKey={[]}
                           onChange={(e) => setShowChangePanel(e)}
                           style={{
-                            backgroundColor: "#171e27",
+                            backgroundColor:
+                              draggedWeekId === (w.id || w._id)
+                                ? "rgba(34, 197, 94, 0.15)"
+                                : "#171e27",
                             padding: "10px",
+                            border:
+                              draggedWeekId === (w.id || w._id)
+                                ? "2px solid #22c55e"
+                                : "2px solid transparent",
+                            borderRadius:
+                              draggedWeekId === (w.id || w._id) ? "8px" : "0px",
+                            opacity:
+                              draggedWeekId === (w.id || w._id) ? "0.8" : "1",
+                            transition: "all 0.3s ease",
                           }}
                           key={w.id}
                         >
@@ -3193,6 +3224,7 @@ function BasicInformation(props) {
                       </DraggableItem>
                     ))}
                 </DraggableArea>
+                </div>
                 <AddNewButton onClick={onAddWeek} type="big" />
               </div>
             </div>

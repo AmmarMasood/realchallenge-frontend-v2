@@ -568,7 +568,7 @@ function Exercises({
                 }}
                 scrollContainerRef={scrollContainerRef}
                 autoScrollSpeed={95}
-                autoScrollThreshold={500}
+                autoScrollThreshold={300}
               >
                 {remainingExercises &&
                   remainingExercises.map((e, i) => {

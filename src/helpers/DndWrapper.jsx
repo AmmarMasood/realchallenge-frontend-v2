@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useRef, useCallback, useMemo, useEffect, useState } from "react";
+import React, { createContext, useContext, useRef, useCallback, useMemo, useEffect, useLayoutEffect, useState } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TouchBackend } from "react-dnd-touch-backend";
@@ -43,7 +43,7 @@ const DragContext = createContext();
 
 // Hook: auto-scroll a container when the drag position is near its visible edges
 // Uses a shared positionRef (updated by DraggableItem hover + native events) so it works on both backends
-function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positionRef) {
+function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positionRef, edgeSize = 120) {
   const rafRef = useRef(null);
 
   useEffect(() => {
@@ -55,16 +55,14 @@ function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positio
       return;
     }
 
-    const EDGE_SIZE = 120;
-
     // On touch, the finger can't move past the screen edge to trigger full
     // speed, and the dragged card keeps the pointer mid-zone — so a linear
     // ramp crawls. Reach full speed by the time the pointer is RAMP_FRACTION
     // into the edge zone, and never drop below MIN_INTENSITY so it never crawls.
     const MIN_INTENSITY = 0.5;
     const RAMP_FRACTION = 0.5;
-    const edgeIntensity = (dist) => {
-      const t = 1 - dist / EDGE_SIZE; // 0 at the zone boundary → 1 at the edge
+    const edgeIntensity = (dist, zone) => {
+      const t = 1 - dist / zone; // 0 at the zone boundary → 1 at the edge
       return Math.max(MIN_INTENSITY, Math.min(1, t / RAMP_FRACTION));
     };
 
@@ -85,13 +83,22 @@ function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positio
       // the scroll across the whole list in a single frame.
       const factor = Math.min(dt / FRAME_MS, 4) || 1;
 
-      const container = scrollContainerRef?.current;
-      if (!container) {
-        rafRef.current = requestAnimationFrame(tick);
-        return;
-      }
-
-      const rect = container.getBoundingClientRect();
+      // With an explicit container, scroll that; otherwise fall back to the
+      // page itself so lists living in normal document flow (weeks, workouts)
+      // still auto-scroll when the drag nears the viewport edges. Native
+      // HTML5 drag autoscroll only exists on some desktop browsers and not
+      // at all on the touch backend.
+      const container = scrollContainerRef?.current || null;
+      const scrollEl =
+        container || document.scrollingElement || document.documentElement;
+      const rect = container
+        ? container.getBoundingClientRect()
+        : {
+            top: 0,
+            left: 0,
+            right: window.innerWidth,
+            bottom: window.innerHeight,
+          };
       const { x, y } = positionRef.current;
 
       // Skip if position hasn't been set yet
@@ -100,32 +107,41 @@ function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positio
         return;
       }
 
+      // Clamp the activation zone so the two edge zones can never overlap and
+      // cover the whole strip (e.g. a 500px zone on a phone-width container) —
+      // always leave at least the middle third neutral.
+      const axisLength =
+        direction === "horizontal"
+          ? rect.right - rect.left
+          : rect.bottom - rect.top;
+      const zone = Math.max(1, Math.min(edgeSize, axisLength / 3));
+
       if (direction === "horizontal") {
         const distFromLeft = x - rect.left;
         const distFromRight = rect.right - x;
 
         // Also scroll when finger is OUTSIDE the container (past edges)
         if (distFromLeft < 0) {
-          container.scrollLeft -= speed * factor;
+          scrollEl.scrollLeft -= speed * factor;
         } else if (distFromRight < 0) {
-          container.scrollLeft += speed * factor;
-        } else if (distFromLeft < EDGE_SIZE) {
-          container.scrollLeft -= speed * edgeIntensity(distFromLeft) * factor;
-        } else if (distFromRight < EDGE_SIZE) {
-          container.scrollLeft += speed * edgeIntensity(distFromRight) * factor;
+          scrollEl.scrollLeft += speed * factor;
+        } else if (distFromLeft < zone) {
+          scrollEl.scrollLeft -= speed * edgeIntensity(distFromLeft, zone) * factor;
+        } else if (distFromRight < zone) {
+          scrollEl.scrollLeft += speed * edgeIntensity(distFromRight, zone) * factor;
         }
       } else {
         const distFromTop = y - rect.top;
         const distFromBottom = rect.bottom - y;
 
         if (distFromTop < 0) {
-          container.scrollTop -= speed * factor;
+          scrollEl.scrollTop -= speed * factor;
         } else if (distFromBottom < 0) {
-          container.scrollTop += speed * factor;
-        } else if (distFromTop < EDGE_SIZE) {
-          container.scrollTop -= speed * edgeIntensity(distFromTop) * factor;
-        } else if (distFromBottom < EDGE_SIZE) {
-          container.scrollTop += speed * edgeIntensity(distFromBottom) * factor;
+          scrollEl.scrollTop += speed * factor;
+        } else if (distFromTop < zone) {
+          scrollEl.scrollTop -= speed * edgeIntensity(distFromTop, zone) * factor;
+        } else if (distFromBottom < zone) {
+          scrollEl.scrollTop += speed * edgeIntensity(distFromBottom, zone) * factor;
         }
       }
 
@@ -154,7 +170,7 @@ function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positio
         rafRef.current = null;
       }
     };
-  }, [isDragging, scrollContainerRef, direction, speed, positionRef]);
+  }, [isDragging, scrollContainerRef, direction, speed, positionRef, edgeSize]);
 }
 
 export function DraggableArea({
@@ -165,7 +181,10 @@ export function DraggableArea({
   onDragStateChange,
   scrollContainerRef,
   autoScrollSpeed = 12,
-  autoScrollThreshold = 50,  // kept for API compat
+  // Size (px) of the edge zones where auto-scroll activates, measured inward
+  // from the scroll container's visible edges. Clamped to a third of the
+  // container so the zones never meet in the middle.
+  autoScrollThreshold = 120,
 }) {
   const childArray = React.Children.toArray(children);
   const timeoutRef = React.useRef(null);
@@ -175,7 +194,14 @@ export function DraggableArea({
   const dragPositionRef = useRef({ x: 0, y: 0 });
 
   // Auto-scroll when dragging near container edges
-  useAutoScroll(scrollContainerRef, isDragging, direction, autoScrollSpeed, dragPositionRef);
+  useAutoScroll(
+    scrollContainerRef,
+    isDragging,
+    direction,
+    autoScrollSpeed,
+    dragPositionRef,
+    autoScrollThreshold
+  );
 
   const moveItem = useCallback((dragIndex, hoverIndex) => {
     if (
@@ -240,10 +266,31 @@ export function DraggableArea({
   );
 }
 
-export function DraggableItem({ children, index, id, ...rest }) {
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Current translate applied to an element (e.g. an in-flight FLIP slide).
+// Used to (a) continue interrupted slides from where they visually are and
+// (b) do hover math against the settled layout position instead of a
+// mid-animation snapshot.
+const getCurrentTranslate = (el) => {
+  const t = window.getComputedStyle(el).transform;
+  if (!t || t === "none") return { x: 0, y: 0 };
+  try {
+    const m = new DOMMatrixReadOnly(t);
+    return { x: m.m41, y: m.m42 };
+  } catch (err) {
+    return { x: 0, y: 0 };
+  }
+};
+
+export function DraggableItem({ children, index, id, style, ...rest }) {
   const ref = useRef(null);
   const handleRef = useRef(null);
   const lastHoverTime = useRef(0);
+  const lastLayoutPosRef = useRef(null);
   const { moveItem, direction, itemType, onDragStateChange, childArray, dragPositionRef } = useContext(DragContext);
 
   const [, drop] = useDrop({
@@ -269,17 +316,32 @@ export function DraggableItem({ children, index, id, ...rest }) {
       // Skip if item hasn't moved or indices are invalid
       if (dragItemIndex === -1 || dragItemIndex === index) return;
 
-      // For horizontal drag, add a minimum distance threshold to reduce jitter
+      // Hysteresis: only swap once the pointer is clearly past the hovered
+      // item's midpoint in the drag direction — otherwise the post-swap
+      // layout shift puts the pointer back over the other item and they
+      // oscillate. IMPORTANT: measure against the item's settled LAYOUT
+      // position (bounding rect minus any in-flight FLIP translate); using
+      // the animated rect lets a card sliding through the pointer re-trigger
+      // the swap instantly in reverse.
+      if (!clientOffset) return;
+      const hoverBoundingRect = ref.current.getBoundingClientRect();
+      const inFlight = getCurrentTranslate(ref.current);
+
       if (direction === "horizontal") {
-        const hoverBoundingRect = ref.current.getBoundingClientRect();
         const hoverMiddleX = (hoverBoundingRect.right - hoverBoundingRect.left) / 2;
-        if (!clientOffset) return;
-        const hoverClientX = clientOffset.x - hoverBoundingRect.left;
+        const hoverClientX =
+          clientOffset.x - (hoverBoundingRect.left - inFlight.x);
 
         // Only move if cursor is clearly past the middle (30% threshold)
         const threshold = hoverMiddleX * 0.3;
         if (dragItemIndex < index && hoverClientX < hoverMiddleX - threshold) return;
         if (dragItemIndex > index && hoverClientX > hoverMiddleX + threshold) return;
+      } else {
+        const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+        const hoverClientY =
+          clientOffset.y - (hoverBoundingRect.top - inFlight.y);
+        if (dragItemIndex < index && hoverClientY < hoverMiddleY) return;
+        if (dragItemIndex > index && hoverClientY > hoverMiddleY) return;
       }
 
       lastHoverTime.current = now;
@@ -309,6 +371,39 @@ export function DraggableItem({ children, index, id, ...rest }) {
   // But DON'T attach drag here - drag is only from handle
   preview(drop(ref));
 
+  // FLIP slide: when a reorder commits, React moves elements to their new
+  // layout slots in a single instant jump. Measure the layout position
+  // (offsetLeft/offsetTop — unaffected by page scroll or in-flight
+  // transforms, unlike getBoundingClientRect) on every render; if it moved,
+  // start the element back at its old slot and transition to the new one.
+  // The dragged item keeps its scale so the faded placeholder slides too.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const pos = { left: el.offsetLeft, top: el.offsetTop };
+    const last = lastLayoutPosRef.current;
+    lastLayoutPosRef.current = pos;
+    if (!last || prefersReducedMotion()) return;
+    const movedX = last.left - pos.left;
+    const movedY = last.top - pos.top;
+    if (!movedX && !movedY) return;
+    // If a previous slide is still in flight, start from where the element
+    // visually is (layout delta + current translate) — otherwise a rapid
+    // second reorder snaps it back to its old slot before sliding again.
+    const inFlight = getCurrentTranslate(el);
+    const dx = movedX + inFlight.x;
+    const dy = movedY + inFlight.y;
+    const scale = isDragging ? " scale(0.95)" : "";
+    el.style.transition = "none";
+    el.style.transform = `translate(${dx}px, ${dy}px)${scale}`;
+    void el.offsetWidth; // flush styles so the jump back isn't transitioned
+    el.style.transition = "transform 0.15s ease, opacity 0.1s ease-out";
+    el.style.transform = isDragging ? "scale(0.95)" : "";
+  });
+
+  // Merge caller styles on top instead of letting {...rest} replace the
+  // whole style object — Exercises passes style={{ zIndex: 1 }}, which used
+  // to wipe out the drag opacity/scale styling entirely.
   const itemStyle = useMemo(
     () => ({
       opacity: isDragging ? 0.4 : 1,
@@ -316,8 +411,9 @@ export function DraggableItem({ children, index, id, ...rest }) {
       flexShrink: direction === "horizontal" ? 0 : undefined,
       transition: "opacity 0.1s ease-out, transform 0.1s ease-out",
       transform: isDragging ? "scale(0.95)" : "scale(1)",
+      ...style,
     }),
-    [isDragging, direction]
+    [isDragging, direction, style]
   );
 
   return (

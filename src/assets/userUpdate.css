@@ -258,7 +258,7 @@
   background-color: #1D2631;
   border-radius: 4px;
   padding: 10px;
-  min-height: 300px;
+  height: 460px;
   display: flex;
   flex-direction: column;
 }
@@ -279,9 +279,9 @@
 
 .uu-photo-img {
   flex: 1;
+  min-height: 0;
   width: 100%;
   object-fit: contain;
-  max-height: 450px;
   margin-bottom: 6px;
 }
 
