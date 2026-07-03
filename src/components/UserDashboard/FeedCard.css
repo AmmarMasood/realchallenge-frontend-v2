@@ -10,8 +10,9 @@
 
 .dashboard-feed-container-card {
   background-color: #1d2631;
-  width: 40rem;
-  min-width: 40rem;
+  /* sizing comes from the parent grid (.dashboard-feed-container);
+     min-width: 0 lets the card shrink inside its track on small screens */
+  min-width: 0;
   padding: 10px;
   position: relative;
   border-radius: 8px;
@@ -148,15 +149,6 @@
   color: #8083A0;
   border-left: 1px solid #8083A0;
   padding-left: 10px;
-}
-
-/* On phones the shrunken root font-size makes 40rem narrower than the
- * viewport, leaving a dead strip on the right — go fluid instead. */
-@media screen and (max-width: 767px) {
-  .dashboard-feed-container-card {
-    width: 100%;
-    min-width: 0;
-  }
 }
 
 @media screen and (max-width: 500px) {
