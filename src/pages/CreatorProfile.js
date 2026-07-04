@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import "../assets/creatorprofile.css";
 import "../assets/home.css";
 import Navbar from "../components/Navbar";
+import CreatorProfileSkeleton from "../components/CreatorProfileSkeleton";
 import Footer from "../components/Footer";
 import { LoadingOutlined } from "@ant-design/icons";
 import { Link, withRouter } from "react-router-dom";
@@ -47,7 +48,8 @@ function CreatorProfile(props) {
   const [filterChallenges, setFilterChallenges] = useState([]);
   const [recipes, setRecipes] = useState([]);
   const [filterRecipes, setFilterRecipes] = useState([]);
-  const [loading, setLoading] = useState(false);
+  // Start true so the first paint is the skeleton, not the empty page
+  const [loading, setLoading] = useState(true);
   const [creator, setCreator] = useState({});
   const [calculatedRating, setCalculatedRating] = useState(0);
   const [allComments, setAllComments] = useState([]);
@@ -144,9 +146,7 @@ function CreatorProfile(props) {
   const hasContentSection = isTrainer || isNutrist;
 
   return loading ? (
-    <div className="center-inpage">
-      <LoadingOutlined style={{ fontSize: "50px", color: "#ff7700" }} />
-    </div>
+    <CreatorProfileSkeleton />
   ) : (
     <div>
       <Helmet>

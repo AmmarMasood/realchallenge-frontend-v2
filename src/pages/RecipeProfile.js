@@ -4,6 +4,7 @@ import "../assets/home.css";
 import "../assets/challengeProfile.css";
 import "../assets/recipeProfile.css";
 import Navbar from "../components/Navbar";
+import RecipeProfileSkeleton from "../components/RecipeProfileSkeleton";
 import Footer from "../components/Footer";
 import {
   StarOutlined,
@@ -65,7 +66,10 @@ function RecipeProfile(props) {
   const [commentButtonLoading, setCommentButtomLoading] = useState(false);
   const [userInfo, serUserInfo] = useContext(userInfoContext);
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // Start true: the first paint must be the skeleton, not the empty page —
+  // initializing false flashed the unfilled layout until fetchData's
+  // setLoading(true) landed after mount.
+  const [loading, setLoading] = useState(true);
   const [translationNotAvailable, setTranslationNotAvailable] = useState(false);
   const [isFavourited, setIsFavourited] = useState(false);
   const [isInCart, setIsInCart] = useState(false);
@@ -144,8 +148,10 @@ function RecipeProfile(props) {
         setAllComments(res.comments);
         setRecipe(res);
         updateLanguage(res.language);
-        setLoading(false);
       }
+      // Always clear, even on a failed fetch — otherwise the skeleton
+      // never goes away
+      setLoading(false);
     }
   };
 
@@ -206,9 +212,7 @@ function RecipeProfile(props) {
     }
   };
   return loading ? (
-    <div className="center-inpage">
-      <LoadingOutlined style={{ fontSize: "50px", color: "#ff7700" }} />
-    </div>
+    <RecipeProfileSkeleton />
   ) : (
     <div>
       <Helmet>

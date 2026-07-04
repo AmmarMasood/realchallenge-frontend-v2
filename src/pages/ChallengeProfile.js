@@ -3,6 +3,7 @@ import "../assets/creatorprofile.css";
 import "../assets/home.css";
 import "../assets/challengeProfile.css";
 import Navbar from "../components/Navbar";
+import ChallengeProfileSkeleton from "../components/ChallengeProfileSkeleton";
 import {
   ArrowRightOutlined,
   LoadingOutlined,
@@ -921,9 +922,7 @@ function ChallengeProfile(props) {
   };
 
   return loading ? (
-    <div className="center-inpage">
-      <LoadingOutlined style={{ fontSize: "50px", color: "#ff7700" }} />
-    </div>
+    <ChallengeProfileSkeleton />
   ) : (
     <div>
       <Helmet>
