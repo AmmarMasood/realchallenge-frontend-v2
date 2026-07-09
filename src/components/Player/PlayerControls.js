@@ -37,6 +37,20 @@ const playerIconStyle = {
   cursor: "pointer",
   marginRight: "10px",
 };
+// Decompose seconds into spoken-style parts for the idle overlay:
+// 42 → [42 Sec], 330 → [5 Min, 30 Sec], 3730 → [1 Hr, 2 Min, 10 Sec].
+// Zero units are skipped (300 → "5 Min", not "5 Min 0 Sec").
+const formatOverlayParts = (totalSeconds) => {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = Math.floor(totalSeconds % 60);
+  const parts = [];
+  if (h > 0) parts.push({ value: h, unit: "Hr" });
+  if (m > 0) parts.push({ value: m, unit: "Min" });
+  if (s > 0 || parts.length === 0) parts.push({ value: s, unit: "Sec" });
+  return parts;
+};
+
 const formatTime = (seconds) => {
   if (isNaN(seconds)) {
     return "00:00";
@@ -206,6 +220,21 @@ function PlayerControls(
   const elapsedTime = formatTime(currentTime);
   const totalDuration = formatTime(duration);
 
+  // Seconds shown on the idle overlay. Exercise workouts have a real
+  // countdown (exerciseSeconds, from the rendered player); video/audio
+  // players tick the remaining time of the current media file instead.
+  const overlaySeconds =
+    Number.isFinite(exerciseSeconds) && exerciseSeconds >= 0
+      ? Math.round(exerciseSeconds)
+      : Number.isFinite(duration) && duration > 0
+        ? Math.max(
+            0,
+            Math.round(
+              duration - (Number.isFinite(currentTime) ? currentTime : 0),
+            ),
+          )
+        : null;
+
   const dismissBreak = () => {
     setCurrentBreak(false);
     setTimerVisible(false);
@@ -281,7 +310,12 @@ function PlayerControls(
   };
 
   // ─── Cast icon rendering (shared between fullscreen and non-fullscreen) ───
-  const renderCastIcon = (iconSrc) => (
+  // Cast is only offered for exercise (rendered) workouts — the receiver is
+  // built around the timed-exercise flow. Video and audio workout cast
+  // support is deferred to the next sprint (client-agreed scope).
+  const castSupported = !!(workout?.renderWorkout || workout?.isRendered);
+  const renderCastIcon = (iconSrc) =>
+    castSupported && (
     <img
       src={iconSrc}
       alt="player-chrome-icon"
@@ -301,7 +335,7 @@ function PlayerControls(
           : "Cast to device"
       }
     />
-  );
+    );
 
   // ─── Casting Remote UI (replaces normal controls when casting) ───
   const renderCastingRemote = () => {
@@ -466,12 +500,21 @@ function PlayerControls(
         <div className="controls-details" ref={descriptionRef}>
           <div className="controls-details-top-title font-paragraph-white">
             <span>{exerciseTitle}</span>
-            {(exerciseSeconds || exerciseLength) && (
+            {overlaySeconds !== null && (
               <span style={{ marginTop: "10px" }}>
-                <span style={{ fontSize: "26px", marginRight: "5px" }}>
-                  {Math.round(exerciseSeconds)}
-                </span>
-                Sec
+                {formatOverlayParts(overlaySeconds).map((part, idx) => (
+                  <React.Fragment key={part.unit}>
+                    <span
+                      style={{
+                        fontSize: "26px",
+                        margin: idx === 0 ? "0 5px 0 0" : "0 5px",
+                      }}
+                    >
+                      {part.value}
+                    </span>
+                    {part.unit}
+                  </React.Fragment>
+                ))}
               </span>
             )}
           </div>
@@ -501,14 +544,17 @@ function PlayerControls(
             currentExercise={currentExercise}
           />
         )}
-        <div>
-          <MusicPlayer
-            musicList={musicList}
-            setMusicPlayerVisible={setMusicPlayerVisible}
-            visible={musicPlayerVisible}
-            onMusicChange={handleMusicChange}
-          />
-        </div>
+        {/* No music in audio workouts — the audio track is the only sound */}
+        {workout?.workoutType !== "audio" && (
+          <div>
+            <MusicPlayer
+              musicList={musicList}
+              setMusicPlayerVisible={setMusicPlayerVisible}
+              visible={musicPlayerVisible}
+              onMusicChange={handleMusicChange}
+            />
+          </div>
+        )}
 
         <div className="controls-wrapper-top">
           <div>
@@ -556,12 +602,14 @@ function PlayerControls(
                   />
                 )}
                 {renderCastIcon(PlayerChromeIcon)}
-                <img
-                  src={PlayerMusicIcon}
-                  onClick={() => setMusicPlayerVisible(!musicPlayerVisible)}
-                  alt="player-music-icon"
-                  style={playerIconStyle}
-                />
+                {workout?.workoutType !== "audio" && (
+                  <img
+                    src={PlayerMusicIcon}
+                    onClick={() => setMusicPlayerVisible(!musicPlayerVisible)}
+                    alt="player-music-icon"
+                    style={playerIconStyle}
+                  />
+                )}
                 <img
                   src={PlayerSmallFullscreenIcon}
                   alt="player-fullscreen-icon"
@@ -587,12 +635,14 @@ function PlayerControls(
                   />
                 )}
                 {renderCastIcon(SmPlayerChromeIcon)}
-                <img
-                  src={SmPlayerMusicIcon}
-                  onClick={() => setMusicPlayerVisible(!musicPlayerVisible)}
-                  alt="player-music-icon"
-                  style={playerIconStyle}
-                />
+                {workout?.workoutType !== "audio" && (
+                  <img
+                    src={SmPlayerMusicIcon}
+                    onClick={() => setMusicPlayerVisible(!musicPlayerVisible)}
+                    alt="player-music-icon"
+                    style={playerIconStyle}
+                  />
+                )}
                 {!inCreation && (
                   <img
                     src={SmPlayerFullscreenIcon}

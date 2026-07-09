@@ -711,6 +711,10 @@ function BasicInformation(props) {
         title: "",
         subtitle: "",
         renderWorkout: true, // Default to "with exercises"
+        workoutType: "exercise",
+        audioLink: "",
+        backgroundImageLink: "",
+        backgroundVideoLink: "",
         exercises: [
           {
             break: 0,
@@ -1119,17 +1123,28 @@ function BasicInformation(props) {
           : "",
         introVideoLength: introExercise ? introExercise.exerciseLength : "",
         isRendered: workout.renderWorkout,
-        exercises: workout.renderWorkout
-          ? remainingExercises.map((e) => ({
-              exerciseId: e.exerciseId,
-              exerciseLength: e.exerciseLength,
-              break: e.break,
-              groupName: e.exerciseGroupName,
-            }))
-          : remainingExercises.map((e) => ({
-              renderedWorkoutExerciseName: e.title,
-              renderedWorkoutExerciseVideo: e.videoURL,
-            })),
+        workoutType:
+          workout.workoutType ||
+          (workout.renderWorkout ? "exercise" : "video"),
+        audioLink: workout.audioLink || "",
+        backgroundImageLink: workout.backgroundImageLink || "",
+        backgroundVideoLink: workout.backgroundVideoLink || "",
+        exercises:
+          workout.workoutType === "audio"
+            ? // Audio workouts carry no exercises — the content is the audio
+              // track (plus the workout-level intro video mapped above)
+              []
+            : workout.renderWorkout
+              ? remainingExercises.map((e) => ({
+                  exerciseId: e.exerciseId,
+                  exerciseLength: e.exerciseLength,
+                  break: e.break,
+                  groupName: e.exerciseGroupName,
+                }))
+              : remainingExercises.map((e) => ({
+                  renderedWorkoutExerciseName: e.title,
+                  renderedWorkoutExerciseVideo: e.videoURL,
+                })),
       };
     };
 
@@ -1191,6 +1206,12 @@ function BasicInformation(props) {
         title: workout.title,
         subtitle: workout.subtitle,
         renderWorkout: workout.renderWorkout,
+        workoutType:
+          workout.workoutType ||
+          (workout.renderWorkout ? "exercise" : "video"),
+        audioLink: workout.audioLink || "",
+        backgroundImageLink: workout.backgroundImageLink || "",
+        backgroundVideoLink: workout.backgroundVideoLink || "",
         equipments: [],
         infoFile: workout.infoFile,
         exercises: workout.exercises.map((exercise) => ({
@@ -1209,6 +1230,12 @@ function BasicInformation(props) {
       title: workout.title,
       subtitle: workout.subtitle,
       renderWorkout: workout.renderWorkout, // Keep same type as original
+      workoutType:
+        workout.workoutType ||
+        (workout.renderWorkout ? "exercise" : "video"),
+      audioLink: workout.audioLink || "",
+      backgroundImageLink: workout.backgroundImageLink || "",
+      backgroundVideoLink: workout.backgroundVideoLink || "",
       equipments: workout.equipments || [],
       infoFile: workout.infoFile,
       id: v4(),
@@ -1261,6 +1288,16 @@ function BasicInformation(props) {
 
   // Helper function to check if workout has content (is locked)
   const isWorkoutLocked = (workout) => {
+    // Audio content locks the type too — switching type would strand the
+    // audio/visual fields under a schema that doesn't use them
+    if (
+      workout.audioLink ||
+      workout.backgroundImageLink ||
+      workout.backgroundVideoLink
+    ) {
+      return true;
+    }
+
     if (!workout.exercises || workout.exercises.length === 0) return false;
 
     // Check if any exercise has content
@@ -3036,14 +3073,20 @@ function BasicInformation(props) {
                                                 gap: "8px",
                                               }}
                                             >
-                                              <Checkbox
+                                              <Select
+                                                className="adminV2-bi-select"
+                                                dropdownClassName="adminV2-bi-select-dropdown"
                                                 style={{
-                                                  color: "#fff",
-                                                  fontSize: "13px",
+                                                  minWidth: "200px",
                                                   margin: "0 0 12px 5px",
                                                 }}
-                                                checked={!workout.renderWorkout}
-                                                onChange={(e) => {
+                                                value={
+                                                  workout.workoutType ||
+                                                  (workout.renderWorkout
+                                                    ? "exercise"
+                                                    : "video")
+                                                }
+                                                onChange={(newType) => {
                                                   // Check if workout is locked
                                                   if (
                                                     isWorkoutLocked(workout)
@@ -3081,27 +3124,44 @@ function BasicInformation(props) {
                                                           workout.id,
                                                       );
                                                     if (workoutIndex !== -1) {
-                                                      // Invert the checkbox logic
-                                                      newWeeks[
-                                                        weekIndex
-                                                      ].workouts[
-                                                        workoutIndex
-                                                      ].renderWorkout =
-                                                        !e.target.checked;
+                                                      const target =
+                                                        newWeeks[weekIndex]
+                                                          .workouts[
+                                                          workoutIndex
+                                                        ];
+                                                      target.workoutType =
+                                                        newType;
+                                                      // Keep the legacy flag in
+                                                      // sync — most of the app
+                                                      // still keys off it
+                                                      target.renderWorkout =
+                                                        newType === "exercise";
                                                       setWeeks(newWeeks);
                                                     }
                                                   }
                                                 }}
                                               >
-                                                <T>
-                                                  challengeStudio.workout_no_exercises
-                                                </T>
-                                              </Checkbox>
+                                                <Select.Option value="exercise">
+                                                  <T>
+                                                    challengeStudio.workout_type_exercise
+                                                  </T>
+                                                </Select.Option>
+                                                <Select.Option value="video">
+                                                  <T>
+                                                    challengeStudio.workout_type_video
+                                                  </T>
+                                                </Select.Option>
+                                                <Select.Option value="audio">
+                                                  <T>
+                                                    challengeStudio.workout_type_audio
+                                                  </T>
+                                                </Select.Option>
+                                              </Select>
                                               <Tooltip
                                                 title={get(
                                                   strings,
                                                   "challengeStudio.workout_type_tooltip",
-                                                  "Workouts are 'with exercises' by default. Turn this on to create a workout without exercises",
+                                                  "Exercise = structured blocks with timers. Video = one continuous video. Audio = meditation/breathing audio with a photo or looping background video. The type locks once content is added.",
                                                 )}
                                                 placement="top"
                                               >

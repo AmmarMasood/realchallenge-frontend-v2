@@ -118,6 +118,28 @@
   align-items: center;
   flex-wrap: wrap;
   padding: 10px;
+  /* Feathered header edge (client request): a wide diffuse shadow plus the
+     ::after gradient below dissolve the hard boundary into the page */
+  position: relative;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+/* Soft gradient tail under the header — fades the header's bottom edge into
+   the page instead of ending on a hard line. Absolutely positioned so it
+   overlays the first strip of content without taking up layout space. */
+.loggedin-nav-container::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 26px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.1),
+    rgba(0, 0, 0, 0)
+  );
+  pointer-events: none;
+  z-index: 2;
 }
 .loggedin-nav-userinfo {
   /* border: 1px solid green; */
@@ -410,7 +432,9 @@
     border-radius: 0;
   }
 
-  .navbar-logo {
+  /* Scoped to the public navbar only — the logged-in navbar logo must stay
+     in flow, otherwise it pins to the viewport top on mobile scroll */
+  .navbar .navbar-logo {
     position: absolute;
     top: 0;
     left: 0;

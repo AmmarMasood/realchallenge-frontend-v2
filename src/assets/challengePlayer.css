@@ -208,6 +208,12 @@
   text-align: center;
   padding: 50px;
 }
+/* Workout-complete modal: fixed spacious height on desktop; on phones it
+   hugs its content (see the 500px media block) so the icon/cards never get
+   pushed against the inset outline by centered overflow */
+.workout-complete-modal {
+  height: min(580px, calc(100vh - 80px));
+}
 .finish-workout-popup-container--reviewbox {
   display: flex;
   align-items: center;
@@ -298,12 +304,27 @@
   .finish-workout-popup-container {
     padding: 0px;
   }
+  .workout-complete-modal {
+    height: auto;
+    max-height: calc(100vh - 60px);
+  }
   .finish-workout-popup-container--reviewbox {
     flex-direction: column;
     width: 100%;
+    /* small extra gutter — the modal's own 24px side padding already keeps
+       the cards inside the inset outline */
+    padding: 0 8px;
+    box-sizing: border-box;
+    gap: 10px;
+    margin-top: 10px;
   }
   .finish-workout-popup-container--reviewbox > div {
     width: 100%;
+    margin: 0;
+    box-sizing: border-box;
+    /* comfortable but slim: enough air around the icon + label without
+       making the stacked cards look bloated */
+    padding: 8px 12px;
   }
   .challenge-player-container-exercies {
     padding: 0 5px;

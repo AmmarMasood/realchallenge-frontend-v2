@@ -134,10 +134,18 @@ function PlayerVideoBrowser({
     >
       <div className="video-browser-container">
         <div className="custom-carousel-wrapper">
+          {/* Arrows show only when the strip actually overflows — video and
+              audio workouts (2 cards) and short exercise lists don't scroll.
+              visibility (not conditional render) keeps their 36px footprint
+              so the track's alignment never shifts. */}
           <button
             className="custom-carousel-arrow custom-carousel-arrow--left"
             onClick={() => scrollCarousel(-1)}
-            style={{ opacity: canScrollLeft ? 1 : 0.3 }}
+            style={{
+              opacity: canScrollLeft ? 1 : 0.3,
+              visibility:
+                canScrollLeft || canScrollRight ? "visible" : "hidden",
+            }}
           >
             <img src={LeftArrow} alt="left" />
           </button>
@@ -319,7 +327,11 @@ function PlayerVideoBrowser({
           <button
             className="custom-carousel-arrow custom-carousel-arrow--right"
             onClick={() => scrollCarousel(1)}
-            style={{ opacity: canScrollRight ? 1 : 0.3 }}
+            style={{
+              opacity: canScrollRight ? 1 : 0.3,
+              visibility:
+                canScrollLeft || canScrollRight ? "visible" : "hidden",
+            }}
           >
             <img src={RightArrow} alt="right" />
           </button>

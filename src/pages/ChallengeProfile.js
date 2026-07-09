@@ -11,6 +11,7 @@ import {
   UpOutlined,
   UndoOutlined,
   HeartFilled,
+  CustomerServiceOutlined,
 } from "@ant-design/icons";
 import Attachment from "../assets/icons/attachement-symbol.png";
 import Ellipse from "../assets/icons/ellipse.svg";
@@ -705,6 +706,25 @@ function ChallengeProfile(props) {
                             flexWrap: "wrap",
                           }}
                         >
+                          {workout.workoutType === "audio" && (
+                            <span
+                              className="font-paragraph-white"
+                              style={{
+                                backgroundColor: "#354c63",
+                                padding: "3px 10px",
+                                margin: "0 2px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                              }}
+                              title="Audio session"
+                            >
+                              <CustomerServiceOutlined
+                                style={{ color: "#ff7700" }}
+                              />
+                              Audio
+                            </span>
+                          )}
                           {workout.introVideoLink && (
                             <span
                               className="font-paragraph-white"
@@ -868,7 +888,18 @@ function ChallengeProfile(props) {
                           backgroundColor: "transparent",
                         }}
                       >
-                        <span>{workout.title}</span>
+                        <span>
+                          {workout.title}
+                          {workout.workoutType === "audio" && (
+                            <CustomerServiceOutlined
+                              style={{
+                                color: "#ff7700",
+                                marginLeft: "8px",
+                              }}
+                              title="Audio session"
+                            />
+                          )}
+                        </span>
                         <span
                           className="font-paragraph-white"
                           style={{ fontSize: "13px" }}

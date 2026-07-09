@@ -83,7 +83,6 @@ const responsive = {
   },
 };
 
-
 function Challenges({ userProfile, gender, recommandedChal }) {
   const { height, width } = useWindowDimensions();
   // eslint-disable-next-line
@@ -195,12 +194,18 @@ function Challenges({ userProfile, gender, recommandedChal }) {
     if (recommandedChal) {
       setRecommandedChallenges(recommandedChal.recommendedchallenge);
     }
+    // Measurements are stored as 12-month arrays (UserUpdate stamps the
+    // current month's slot) — My Body shows the latest recorded value.
+    const latestOf = (v) => {
+      const arr = Array.isArray(v) ? v : [v];
+      return [...arr].reverse().find((n) => Number(n) > 0) || 0;
+    };
     setMybody({
       gender: gender,
-      waist: userProfile.waistSize,
-      hip: userProfile.hipSize,
-      breast: userProfile.chestSize,
-      shoulders: userProfile.shoulderSize,
+      waist: latestOf(userProfile.waistSize),
+      hip: latestOf(userProfile.hipSize),
+      breast: latestOf(userProfile.chestSize),
+      shoulders: latestOf(userProfile.shoulderSize),
       unit: userProfile.measureSystem === "imperial" ? "in" : "cm",
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -283,213 +288,213 @@ function Challenges({ userProfile, gender, recommandedChal }) {
 
   return (
     <div>
-      <div className="dashboard-feed-container" style={{ display: "grid" }}>
-        <div className="dashboard-challenges-row1">
-          <div className="dashboard-challenges-mychallenge">
+      {/* One wrapping flex row for the four top cards; .dashboard-challenges-break
+          splits Development/Body onto their own line, and the tablet breakpoint
+          re-pairs My Shape with My Body */}
+      <div className="dashboard-challenges-top">
+        <div className="dashboard-challenges-mychallenge">
+          <div
+            className="dashboard-challenges-mychallenge-heading"
+            style={{
+              marginTop: "8px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "10px",
+            }}
+          >
+            <span className="user-update-container-box-row2-heading font-card-heading">
+              <T>userDashboard.challenges.mcc</T>
+            </span>
+            <div className="cards-view-toggle">
+              <button
+                type="button"
+                className={`cards-view-btn${
+                  myChallengesLayout === "vertical" ? " active" : ""
+                }`}
+                onClick={() => setMyChallengesLayout("vertical")}
+                aria-label="Grid view"
+              >
+                <img src={ListIcon} alt="list-icon" />
+              </button>
+              <button
+                type="button"
+                className={`cards-view-btn${
+                  myChallengesLayout === "horizontal" ? " active" : ""
+                }`}
+                onClick={() => setMyChallengesLayout("horizontal")}
+                aria-label="List view"
+              >
+                <img src={HorizontalListIcon} alt="horizontal-list-icon" />
+              </button>
+            </div>
+          </div>
+          <div className="divider"></div>
+          {(!Array.isArray(myChallenges) || myChallenges.length === 0) && (
+            <div
+              className="font-paragraph-white"
+              style={{
+                opacity: 0.7,
+                padding: "20px 10px",
+                textAlign: "center",
+              }}
+            >
+              <T>userDashboard.challenges.no_my_challenges</T>
+            </div>
+          )}
+          {Array.isArray(myChallenges) &&
+            myChallenges.length > 0 &&
+            (() => {
+              const cards = myChallenges.map((d, i) => {
+                const { nextId, daysLeft } = getActiveCardData(
+                  d,
+                  challengeProgress[i],
+                );
+                const isLastPlayed =
+                  String(userProfile?.lastPlayedChallenge) === String(d._id);
+                const detailLink = `/challenge/${slug(d.challengeName)}/${
+                  d._id
+                }`;
+                const playerLink = nextId
+                  ? `/play-challenge/${slug(d.challengeName)}/${
+                      d._id
+                    }/${nextId}`
+                  : detailLink;
+                return (
+                  <ChallengeCard
+                    key={d._id}
+                    horizontal={myChallengesLayout === "horizontal"}
+                    showDifficultyIcon
+                    active
+                    borderColor="#FFAE42"
+                    picture={getThumbnailLink(d.thumbnailLink)}
+                    name={d.challengeName}
+                    description={d.description}
+                    intensity={d.intensity}
+                    to={detailLink}
+                    daysLeft={daysLeft}
+                    continueTo={isLastPlayed ? playerLink : undefined}
+                  />
+                );
+              });
+              return myChallengesLayout === "horizontal" ? (
+                <div style={{ maxHeight: "500px", overflowY: "auto" }}>
+                  <div className="dashboard-challenges-mychallenge-body">
+                    {cards}
+                  </div>
+                </div>
+              ) : (
+                <div className="mychallenges-carousel-wrapper">
+                  <button
+                    type="button"
+                    className="mychallenges-carousel-arrow"
+                    onClick={() => scrollMyChallenges(-1)}
+                    style={{ opacity: mcCanScrollLeft ? 1 : 0.3 }}
+                    aria-label="Scroll left"
+                  >
+                    <img src={LeftArrow} alt="left" />
+                  </button>
+                  <div className="mychallenges-carousel-track" ref={mcTrackRef}>
+                    {cards}
+                  </div>
+                  <button
+                    type="button"
+                    className="mychallenges-carousel-arrow"
+                    onClick={() => scrollMyChallenges(1)}
+                    style={{ opacity: mcCanScrollRight ? 1 : 0.3 }}
+                    aria-label="Scroll right"
+                  >
+                    <img src={RightArrow} alt="right" />
+                  </button>
+                </div>
+              );
+            })()}
+        </div>
+        {!userProfile?.hideMyShape && (
+          <div className="dashboard-challenges-myshape">
             <div
               className="dashboard-challenges-mychallenge-heading"
               style={{
-                marginTop: "8px",
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center",
                 flexWrap: "wrap",
-                gap: "10px",
               }}
             >
               <span className="user-update-container-box-row2-heading font-card-heading">
-                <T>userDashboard.challenges.mcc</T>
+                <T>userDashboard.challenges.ms</T>
               </span>
-              <div className="cards-view-toggle">
-                <button
-                  type="button"
-                  className={`cards-view-btn${
-                    myChallengesLayout === "vertical" ? " active" : ""
-                  }`}
-                  onClick={() => setMyChallengesLayout("vertical")}
-                  aria-label="Grid view"
-                >
-                  <img src={ListIcon} alt="list-icon" />
-                </button>
-                <button
-                  type="button"
-                  className={`cards-view-btn${
-                    myChallengesLayout === "horizontal" ? " active" : ""
-                  }`}
-                  onClick={() => setMyChallengesLayout("horizontal")}
-                  aria-label="List view"
-                >
-                  <img src={HorizontalListIcon} alt="horizontal-list-icon" />
-                </button>
-              </div>
-            </div>
-            <div className="divider"></div>
-            {(!Array.isArray(myChallenges) || myChallenges.length === 0) && (
-              <div
-                className="font-paragraph-white"
-                style={{
-                  opacity: 0.7,
-                  padding: "20px 10px",
-                  textAlign: "center",
-                }}
-              >
-                <T>userDashboard.challenges.no_my_challenges</T>
-              </div>
-            )}
-            {Array.isArray(myChallenges) &&
-              myChallenges.length > 0 &&
-              (() => {
-                const cards = myChallenges.map((d, i) => {
-                  const { nextId, daysLeft } = getActiveCardData(
-                    d,
-                    challengeProgress[i],
-                  );
-                  const isLastPlayed =
-                    String(userProfile?.lastPlayedChallenge) === String(d._id);
-                  const detailLink = `/challenge/${slug(d.challengeName)}/${
-                    d._id
-                  }`;
-                  const playerLink = nextId
-                    ? `/play-challenge/${slug(d.challengeName)}/${
-                        d._id
-                      }/${nextId}`
-                    : detailLink;
-                  return (
-                    <ChallengeCard
-                      key={d._id}
-                      horizontal={myChallengesLayout === "horizontal"}
-                      showDifficultyIcon
-                      active
-                      borderColor="#FFAE42"
-                      picture={getThumbnailLink(d.thumbnailLink)}
-                      name={d.challengeName}
-                      description={d.description}
-                      intensity={d.intensity}
-                      to={detailLink}
-                      daysLeft={daysLeft}
-                      continueTo={isLastPlayed ? playerLink : undefined}
-                    />
-                  );
-                });
-                return myChallengesLayout === "horizontal" ? (
-                  <div style={{ maxHeight: "500px", overflowY: "auto" }}>
-                    <div className="dashboard-challenges-mychallenge-body">
-                      {cards}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mychallenges-carousel-wrapper">
-                    <button
-                      type="button"
-                      className="mychallenges-carousel-arrow"
-                      onClick={() => scrollMyChallenges(-1)}
-                      style={{ opacity: mcCanScrollLeft ? 1 : 0.3 }}
-                      aria-label="Scroll left"
-                    >
-                      <img src={LeftArrow} alt="left" />
-                    </button>
-                    <div className="mychallenges-carousel-track" ref={mcTrackRef}>
-                      {cards}
-                    </div>
-                    <button
-                      type="button"
-                      className="mychallenges-carousel-arrow"
-                      onClick={() => scrollMyChallenges(1)}
-                      style={{ opacity: mcCanScrollRight ? 1 : 0.3 }}
-                      aria-label="Scroll right"
-                    >
-                      <img src={RightArrow} alt="right" />
-                    </button>
-                  </div>
-                );
-              })()}
-          </div>
-          {!userProfile?.hideMyShape && (
-            <div className="dashboard-challenges-myshape">
-              <div
-                className="dashboard-challenges-mychallenge-heading"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                }}
-              >
-                <span className="user-update-container-box-row2-heading font-card-heading">
-                  <T>userDashboard.challenges.ms</T>
-                </span>
 
-                <div style={{ marginBottom: "10px" }}>
-                  <Link
-                    to="/user/update"
-                    className="font-paragraph-white hover-orange"
-                    style={{ fontSize: "15px" }}
-                  >
-                    <T>userDashboard.challenges.update</T>
-                  </Link>
-                </div>
-                <div className="divider"></div>
+              <div style={{ marginBottom: "10px" }}>
+                <Link
+                  to="/user/update"
+                  className="font-paragraph-white hover-orange"
+                  style={{ fontSize: "15px" }}
+                >
+                  <T>userDashboard.challenges.update</T>
+                </Link>
               </div>
-              <div className="dashboard-challenges-myshape-container">
-                <ReactCompareSlider
-                  /* Per the design: plain orange dot with a translucent halo,
+              <div className="divider"></div>
+            </div>
+            <div className="dashboard-challenges-myshape-container">
+              <ReactCompareSlider
+                /* Per the design: plain orange dot with a translucent halo,
                      no arrows or divider line. The wrapper spans the slider's
                      full height so the dot centers vertically. */
-                  handle={
-                    <div className="myshape-handle-wrap">
-                      <div className="myshape-handle" />
-                    </div>
-                  }
-                  itemOne={
-                    <div
-                      className="font-paragraph-white"
-                      style={{ backgroundColor: "#2F3E50", height: "100%" }}
-                    >
-                      {pics[0] ? (
-                        <img
-                          src={pics[0]}
-                          alt="users-before"
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            display: "block",
-                          }}
-                        />
-                      ) : null}
-                    </div>
-                  }
-                  itemTwo={
-                    <div
-                      className="font-paragraph-white"
-                      style={{ backgroundColor: "#3C618F", height: "100%" }}
-                    >
-                      {pics[1] ? (
-                        <img
-                          src={pics[1]}
-                          alt="users-after"
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            display: "block",
-                          }}
-                        />
-                      ) : null}
-                    </div>
-                  }
-                />
-                <span className="myshape-label myshape-label-before">
-                  <T>user_update.before</T>
-                </span>
-                <span className="myshape-label myshape-label-after">
-                  <T>user_update.after</T>
-                </span>
-              </div>
+                handle={
+                  <div className="myshape-handle-wrap">
+                    <div className="myshape-handle" />
+                  </div>
+                }
+                itemOne={
+                  <div
+                    className="font-paragraph-white"
+                    style={{ backgroundColor: "#2F3E50", height: "100%" }}
+                  >
+                    {pics[0] ? (
+                      <img
+                        src={pics[0]}
+                        alt="users-before"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          display: "block",
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                }
+                itemTwo={
+                  <div
+                    className="font-paragraph-white"
+                    style={{ backgroundColor: "#3C618F", height: "100%" }}
+                  >
+                    {pics[1] ? (
+                      <img
+                        src={pics[1]}
+                        alt="users-after"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          display: "block",
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                }
+              />
+              <span className="myshape-label myshape-label-before">
+                <T>user_update.before</T>
+              </span>
+              <span className="myshape-label myshape-label-after">
+                <T>user_update.after</T>
+              </span>
             </div>
-          )}
-        </div>
-      </div>
-      <div className="dashboard-challenges-row2">
+          </div>
+        )}
+        <div className="dashboard-challenges-break" aria-hidden="true"></div>
         {(() => {
           // ── Derive everything the My-Development cards need from state ──
           const series = myDevelopment[selectedMetric] || [];
@@ -782,20 +787,20 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                   only when the user has actually recorded them. */}
                 <div className="body-line body-line1">
                   <span className="font-paragraph-white">
+                    <T>userDashboard.challenges.breast</T>{" "}
                     {myBody.breast > 0
                       ? `(${myBody.breast} ${myBody.unit}) `
                       : ""}
-                    <T>userDashboard.challenges.breast</T>
-                  </span>{" "}
+                  </span>
                   <div></div>
                 </div>
                 <div className="body-line body-line2">
                   <span className="font-paragraph-white">
+                    <T>userDashboard.challenges.waist</T>{" "}
                     {myBody.waist > 0
                       ? `(${myBody.waist} ${myBody.unit}) `
                       : ""}
-                    <T>userDashboard.challenges.waist</T>
-                  </span>{" "}
+                  </span>
                   <div></div>
                 </div>
                 <div className="body-line body-line3">

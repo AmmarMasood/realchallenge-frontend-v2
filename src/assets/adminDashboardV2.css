@@ -196,8 +196,11 @@
   width: fit-content;
 }
 
-/* Country selector styling to match other inputs */
-.adminV2-country-selector .ant-select-selector {
+/* Dark dashed styling for antd Selects so they match the page's inputs.
+ * .adminV2-bi-select is the generic class (e.g. workout type selector);
+ * .adminV2-country-selector predates it and shares the same look. */
+.adminV2-country-selector .ant-select-selector,
+.adminV2-bi-select .ant-select-selector {
   background-color: rgba(255, 255, 255, 0.1) !important;
   border: 2px dashed #fff !important;
   border-radius: 2px !important;
@@ -208,47 +211,64 @@
 }
 
 .adminV2-country-selector .ant-select-selector:hover,
-.adminV2-country-selector.ant-select-focused .ant-select-selector {
+.adminV2-country-selector.ant-select-focused .ant-select-selector,
+.adminV2-bi-select .ant-select-selector:hover,
+.adminV2-bi-select.ant-select-focused .ant-select-selector {
   border: 2px dashed #ff950a !important;
 }
 
-.adminV2-country-selector .ant-select-selection-search-input {
+.adminV2-country-selector .ant-select-selection-search-input,
+.adminV2-bi-select .ant-select-selection-search-input {
   color: #fff !important;
 }
 
-.adminV2-country-selector .ant-select-selection-placeholder {
+.adminV2-country-selector .ant-select-selection-placeholder,
+.adminV2-bi-select .ant-select-selection-placeholder {
   color: rgba(255, 255, 255, 0.5) !important;
 }
 
-.adminV2-country-selector .ant-select-selection-item {
+.adminV2-country-selector .ant-select-selection-item,
+.adminV2-bi-select .ant-select-selection-item {
   color: #fff !important;
 }
 
-.adminV2-country-selector .ant-select-arrow {
+.adminV2-country-selector .ant-select-arrow,
+.adminV2-bi-select .ant-select-arrow {
   color: #fff !important;
 }
 
-.adminV2-country-selector .ant-select-clear {
+.adminV2-country-selector .ant-select-clear,
+.adminV2-bi-select .ant-select-clear {
   background: transparent !important;
   color: #fff !important;
 }
 
-.adminV2-country-selector-dropdown .ant-select-item {
+.adminV2-country-selector-dropdown .ant-select-item,
+.adminV2-bi-select-dropdown .ant-select-item {
   color: #fff !important;
   background-color: transparent !important;
   min-height: 32px;
 }
 .adminV2-country-selector-dropdown .ant-select-item-option-active:not(.ant-select-item-option-disabled),
-.adminV2-country-selector-dropdown .ant-select-item-option:hover {
+.adminV2-country-selector-dropdown .ant-select-item-option:hover,
+.adminV2-bi-select-dropdown .ant-select-item-option-active:not(.ant-select-item-option-disabled),
+.adminV2-bi-select-dropdown .ant-select-item-option:hover {
   background-color: rgba(255, 149, 10, 0.15) !important;
 }
-.adminV2-country-selector-dropdown .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+.adminV2-country-selector-dropdown .ant-select-item-option-selected:not(.ant-select-item-option-disabled),
+.adminV2-bi-select-dropdown .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
   background-color: rgba(255, 149, 10, 0.3) !important;
   color: #fff !important;
   font-weight: 600;
 }
-.adminV2-country-selector-dropdown .ant-select-item-empty {
+.adminV2-country-selector-dropdown .ant-select-item-empty,
+.adminV2-bi-select-dropdown .ant-select-item-empty {
   color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Dark dropdown panel for the generic select */
+.adminV2-bi-select-dropdown {
+  background-color: #1b2632 !important;
 }
 
 /* Mobile responsive - add top padding for navbar spacing */

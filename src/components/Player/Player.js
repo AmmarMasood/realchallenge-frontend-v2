@@ -1,6 +1,7 @@
 import React, { useContext, useRef, useEffect } from "react";
 import NonRenderedVideoPlayer from "./NonRenderedVideoPlayer";
 import RenderedVideoPlayer from "./RenderedVideoPlayer";
+import AudioWorkoutPlayer from "./AudioWorkoutPlayer";
 
 var count = 0;
 
@@ -21,7 +22,24 @@ function Player({
   inCreation,
   onWorkoutComplete,
 }) {
-  return workout.renderWorkout || workout.isRendered ? (
+  // The audio session of an audio workout. The intro video (exercise 0, no
+  // isAudio flag) still goes through the simple video player below.
+  return exercise?.isAudio ? (
+    <div>
+      <AudioWorkoutPlayer
+        exercise={exercise}
+        moveToNextExercise={moveToNextExercise}
+        moveToPrevExercise={moveToPrevExercise}
+        // for full screen player video browser
+        workout={workout}
+        setExerciseForHelpModal={setExerciseForHelpModal}
+        setOpenHelpModal={setOpenHelpModal}
+        setCurrentExercise={setCurrentExercise}
+        currentExercise={currentExercise}
+        challengePageAddress={challengePageAddress}
+      />
+    </div>
+  ) : workout.renderWorkout || workout.isRendered ? (
     <div>
       {" "}
       <RenderedVideoPlayer

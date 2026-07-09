@@ -32,12 +32,15 @@ import DumbbellIcon from "../assets/icons/Dumbell-icon.png";
 import ShopIcon from "../assets/icons/shoppingbag-icon.png";
 import useWindowDimensions from "../helpers/useWindowDimensions";
 import WorkoutCompleteModal from "../components/Challenge/WorkoutCompleteModal";
+import ChallengePlayerSkeleton from "../components/ChallengePlayerSkeleton";
 import { T } from "../components/Translate";
 
 function ChallengePlayer(props) {
   // for non-rendered workouts
 
-  const [loading, setLoading] = useState(false);
+  // Starts true so the skeleton shows from first paint — the workout fetch
+  // always runs on mount (once userInfo resolves) and flips it off.
+  const [loading, setLoading] = useState(true);
   const [workout, setWorkout] = useState({});
   const [userInfo, setUserInfo] = useContext(userInfoContext);
   const [customerDetails, setCustomerDetails] = useState("");
@@ -119,32 +122,53 @@ function ChallengePlayer(props) {
     console.log("challengeProgress", challengeProgress);
     console.log("workout", res);
     const resExercises =
-      res && res.isRendered
-        ? res.exercises.map((e) => ({
-            break: e.break,
-            createdAt: e.exerciseId?.createdAt,
-            exerciseGroupName: e.groupName,
-            exerciseLength: e.exerciseLength,
-            title: e.exerciseId?.title,
-            videoURL: e.exerciseId?.videoURL,
-            voiceOverLink: e.exerciseId?.voiceOverLink,
-            videoThumbnailURL: e.exerciseId?.videoThumbnailURL,
-            description: e.exerciseId?.description,
-            _id: e.exerciseId?._id,
-            exerciseId: e.exerciseId?._id,
-          }))
-        : res.exercises.map((e) => ({
-            title: e.renderedWorkoutExerciseName,
-            videoURL: e.renderedWorkoutExerciseVideo,
-            _id: e._id,
-          }));
+      res && res.workoutType === "audio"
+        ? [
+            // The whole audio session is one pseudo-exercise: the player
+            // advances/completes through the same moveToNextExercise flow as
+            // the other types. videoURL carries the audio file (ReactPlayer
+            // plays audio URLs natively); isAudio routes it to the audio
+            // player with the background visual.
+            {
+              title: res.title || "Audio session",
+              videoURL: res.audioLink,
+              videoThumbnailURL:
+                res.backgroundImageLink || res.introVideoThumbnailLink || "",
+              isAudio: true,
+              _id: v4(),
+            },
+          ]
+        : res && res.isRendered
+          ? res.exercises.map((e) => ({
+              break: e.break,
+              createdAt: e.exerciseId?.createdAt,
+              exerciseGroupName: e.groupName,
+              exerciseLength: e.exerciseLength,
+              title: e.exerciseId?.title,
+              videoURL: e.exerciseId?.videoURL,
+              voiceOverLink: e.exerciseId?.voiceOverLink,
+              videoThumbnailURL: e.exerciseId?.videoThumbnailURL,
+              description: e.exerciseId?.description,
+              _id: e.exerciseId?._id,
+              exerciseId: e.exerciseId?._id,
+            }))
+          : res.exercises.map((e) => ({
+              title: e.renderedWorkoutExerciseName,
+              videoURL: e.renderedWorkoutExerciseVideo,
+              _id: e._id,
+            }));
     res.exercises = resExercises;
     console.log("ressssssss", res);
+    // Audio workouts save introVideoLength as 0 (the studio's duration input
+    // only exists for exercise workouts) — their intro plays to its natural
+    // end via onEnded, so a length isn't required to include it.
     res &&
       res.introVideoLink &&
-      res.introVideoLength > 0 &&
+      (res.introVideoLength > 0 || res.workoutType === "audio") &&
       res.exercises.unshift({
-        break: 5,
+        // Audio workouts have no rest phase — the intro flows straight into
+        // the audio session, so don't advertise "Up next: Rest 5 sec"
+        break: res.workoutType === "audio" ? 0 : 5,
         createdAt: "",
         exerciseGroupName: "Introduction",
         exerciseLength: res.introVideoLength,
@@ -155,17 +179,27 @@ function ChallengePlayer(props) {
         _id: v4(),
       });
 
-    const musics = await getMusicByChallengeId(challengeId);
-    const cd = await getUserProfileInfo(userInfo.id);
-
-    if (musics) {
-      setMusics(musics.music);
+    // Audio workouts: no challenge background music — the audio track is the
+    // only sound (client-confirmed; also the cast one-stream constraint).
+    if (res.workoutType === "audio") {
+      setMusics([]);
+    } else {
+      const musics = await getMusicByChallengeId(challengeId);
+      if (musics) {
+        setMusics(musics.music);
+      }
     }
+    const cd = await getUserProfileInfo(userInfo.id);
     if (cd) {
       setCustomerDetails(cd);
     }
 
-    setWorkout({ ...res, renderWorkout: res.isRendered });
+    setWorkout({
+      ...res,
+      renderWorkout: res.isRendered,
+      workoutType:
+        res.workoutType || (res.isRendered ? "exercise" : "video"),
+    });
     // Resume at the saved exercise if it's still in range, otherwise start over.
     const resumeIndex =
       resumeIndexRef.current < (res.exercises?.length || 0)
@@ -342,9 +376,7 @@ function ChallengePlayer(props) {
   };
 
   return loading ? (
-    <div className="center-inpage">
-      <LoadingOutlined style={{ fontSize: "50px", color: "#ff7700" }} />
-    </div>
+    <ChallengePlayerSkeleton />
   ) : (
     <div
       className="challenge-player-container "

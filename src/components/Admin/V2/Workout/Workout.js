@@ -132,6 +132,29 @@ function Workout() {
           return exercise;
         }),
       });
+
+      // Auto-fill the duration from the video file's real length — the
+      // intro plays once, so its duration IS the video's duration. The
+      // input stays editable as an override; on metadata failure the
+      // back-button guard still catches a missing duration.
+      if (introVideoFile.link) {
+        const link = introVideoFile.link;
+        const probe = document.createElement("video");
+        probe.preload = "metadata";
+        probe.onloadedmetadata = () => {
+          const seconds = Math.round(probe.duration);
+          if (!seconds || !isFinite(seconds)) return;
+          setWorkoutInfo((prev) => ({
+            ...prev,
+            exercises: prev.exercises?.map((exercise) =>
+              exercise.videoURL === link
+                ? { ...exercise, exerciseLength: seconds }
+                : exercise,
+            ),
+          }));
+        };
+        probe.src = link;
+      }
     }
   }, [introVideoFile]);
 
@@ -226,13 +249,35 @@ function Workout() {
     }
   };
 
-  const moveToNextExercise = (playerProgress) => {
-    if (workoutInfo.exercises[selectedExercise.index + 1]) {
-      const nextIndex = selectedExercise.index + 1;
-      const nextExercise = workoutInfo.exercises[nextIndex];
+  // Playback list for the studio preview. For audio workouts the stored
+  // exercises hold only the intro — append the audio session as a pseudo-
+  // exercise (same shape ChallengePlayer builds for users) so the preview
+  // flows intro → audio exactly like the real player.
+  const playbackExercises = React.useMemo(() => {
+    if (workoutInfo?.workoutType === "audio" && workoutInfo.audioLink) {
+      return [
+        ...(workoutInfo.exercises || []),
+        {
+          id: "studio-audio-session",
+          title: workoutInfo.title || "Audio session",
+          videoURL: workoutInfo.audioLink,
+          isAudio: true,
+        },
+      ];
+    }
+    return workoutInfo?.exercises || [];
+  }, [workoutInfo]);
+  const playerWorkout = { ...workoutInfo, exercises: playbackExercises };
 
-      // Validate intro exercise has duration if it has a video
+  const moveToNextExercise = (playerProgress) => {
+    if (playbackExercises[selectedExercise.index + 1]) {
+      const nextIndex = selectedExercise.index + 1;
+      const nextExercise = playbackExercises[nextIndex];
+
+      // Validate intro exercise has duration if it has a video — only for
+      // exercise (rendered) workouts; video/audio intros play to their end
       if (
+        workoutInfo.renderWorkout &&
         nextIndex === 0 &&
         nextExercise.videoURL &&
         (!nextExercise.exerciseLength || nextExercise.exerciseLength <= 0)
@@ -247,7 +292,7 @@ function Workout() {
       }
 
       const completeionRate = Math.round(
-        (nextIndex / (workoutInfo.exercises.length - 1)) * 100
+        (nextIndex / (playbackExercises.length - 1)) * 100
       );
       setSelectedExercise({
         exercise: nextExercise,
@@ -256,7 +301,9 @@ function Workout() {
       });
 
       updateExerciseWorkoutTimer("next", nextIndex);
-      setPlayerState({ ...playerState, playing: false });
+      // Audio session: keep playing so intro → audio flows without a tap
+      // (studio preview only; the user player waits for a tap on mobile)
+      setPlayerState({ ...playerState, playing: !!nextExercise.isAudio });
       return;
     } else {
       setPlayerState({ ...playerState, playing: false });
@@ -270,12 +317,14 @@ function Workout() {
   };
 
   const moveToPrevExercise = (playerProgress) => {
-    if (workoutInfo.exercises[selectedExercise.index - 1]) {
+    if (playbackExercises[selectedExercise.index - 1]) {
       const prevIndex = selectedExercise.index - 1;
-      const prevExercise = workoutInfo.exercises[prevIndex];
+      const prevExercise = playbackExercises[prevIndex];
 
-      // Validate intro exercise has duration if it has a video
+      // Validate intro exercise has duration if it has a video — only for
+      // exercise (rendered) workouts; video/audio intros play to their end
       if (
+        workoutInfo.renderWorkout &&
         prevIndex === 0 &&
         prevExercise.videoURL &&
         (!prevExercise.exerciseLength || prevExercise.exerciseLength <= 0)
@@ -290,7 +339,7 @@ function Workout() {
       }
 
       const completeionRate = Math.round(
-        (prevIndex / (workoutInfo.exercises.length - 1)) * 100
+        (prevIndex / (playbackExercises.length - 1)) * 100
       );
       setSelectedExercise({
         exercise: prevExercise,
@@ -371,6 +420,34 @@ function Workout() {
             <div style={{ display: "flex", alignItems: "center" }}>
               <img
                 onClick={() => {
+                  // Exercise (rendered) workouts: an intro video without a
+                  // duration would blow up later on the user player (its
+                  // countdown needs exerciseLength) — catch it here instead
+                  // of letting the workout leave the studio broken.
+                  const introExercise = workoutInfo.exercises?.[0];
+                  if (
+                    workoutInfo.renderWorkout &&
+                    introExercise?.videoURL &&
+                    (!introExercise.exerciseLength ||
+                      introExercise.exerciseLength <= 0)
+                  ) {
+                    notification.error({
+                      message: get(
+                        strings,
+                        "workoutStudio.duration_required",
+                        "Duration Required",
+                      ),
+                      description: get(
+                        strings,
+                        "workoutStudio.enter_duration_intro_before_leaving",
+                        "Please enter a duration for the intro exercise before leaving the workout studio.",
+                      ),
+                      placement: "topRight",
+                      duration: 5,
+                    });
+                    return;
+                  }
+
                   const updatedWeeks = weeks?.map((week) => {
                     if (week.id === selectedWorkoutForStudioId.weekId) {
                       return {
@@ -424,27 +501,30 @@ function Workout() {
             <img src={WorkoutStudio} alt="workout-studio" />
           </div>
 
-          <button className="music-icon-button" style={musicChooseModalVisible ? { zIndex: 1 } : undefined} onClick={openMusicAdder}>
-            <span><T>workoutStudio.add_background_music</T></span>
-            <img src={MusicIcon} alt="music-icon" />
-          </button>
+          {/* Audio workouts have no background music (the audio track is the
+              only sound) — hide the button to avoid trainer confusion */}
+          {workoutInfo.workoutType !== "audio" && (
+            <button className="music-icon-button" style={musicChooseModalVisible ? { zIndex: 1 } : undefined} onClick={openMusicAdder}>
+              <span><T>workoutStudio.add_background_music</T></span>
+              <img src={MusicIcon} alt="music-icon" />
+            </button>
+          )}
 
           <div className="v2workout-studio-middle">
             <Player
               moveToNextExercise={moveToNextExercise}
               moveToPrevExercise={moveToPrevExercise}
-              musics={musics}
+              musics={workoutInfo.workoutType === "audio" ? [] : musics}
               nextExerciseTitle={
-                workoutInfo.exercises &&
-                workoutInfo.exercises[selectedExercise.index + 1]
-                  ? workoutInfo.exercises[selectedExercise.index + 1].title
+                playbackExercises[selectedExercise.index + 1]
+                  ? playbackExercises[selectedExercise.index + 1].title
                   : ""
               }
               exercise={selectedExercise.exercise}
               // challengePageAddress={`/challenge/${challengeName}/${challengeId}`}
               key={selectedExercise.exercise?.id}
               // for full screen player video browser
-              workout={workoutInfo}
+              workout={playerWorkout}
               setExerciseForHelpModal={setExerciseForHelpModal}
               setOpenHelpModal={setOpenHelpModal}
               setCurrentExercise={setSelectedExercise}

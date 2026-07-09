@@ -19,6 +19,7 @@ import {
   ItemTypeExercise,
 } from "../../../../../helpers/DndWrapper";
 import DragAndDropIcon from "../../../../../assets/icons/drag-drop-icon-white.svg";
+import AudioWorkoutSetup from "../AudioWorkoutSetup";
 import SquarePT from "../../../../../assets/icons/Square-PT.png";
 import SquarePlay from "../../../../../assets/icons/player-video-browser-play-icon.svg";
 import { LanguageContext } from "../../../../../contexts/LanguageContext";
@@ -90,8 +91,12 @@ function Exercises({
   const handleChangeExercise = (i) => {
     const selectedExercise = workout.exercises[i];
 
-    // Validate intro exercise has duration if it has a video
+    // Validate intro exercise has duration if it has a video. Only exercise
+    // (rendered) workouts need this — their countdown player runs on
+    // exerciseLength. Video/audio workout intros play to their natural end,
+    // and their intro card doesn't even render a duration input.
     const hasValidationError =
+      workout.renderWorkout &&
       i === 0 &&
       selectedExercise.videoURL &&
       (!selectedExercise.exerciseLength ||
@@ -368,6 +373,27 @@ function Exercises({
   };
   const firstExercise = workout.exercises && workout.exercises[0];
   const remainingExercises = workout.exercises && workout.exercises.slice(1);
+  // Audio workouts have no exercise strip — the intro card stays (intro video
+  // works like the other types), followed by the audio session card.
+  const isAudioWorkout = workout.workoutType === "audio";
+  // The audio session lives one slot past the stored exercises (mirrors the
+  // playbackExercises list Workout.js builds for the studio preview).
+  const audioSessionIndex = workout.exercises ? workout.exercises.length : 0;
+  const selectAudioSession = () => {
+    if (!workout.audioLink) return;
+    setCurrentExercise({
+      // Same pseudo-exercise shape Workout.js appends for playback
+      exercise: {
+        id: "studio-audio-session",
+        title: workout.title || "Audio session",
+        videoURL: workout.audioLink,
+        isAudio: true,
+      },
+      index: audioSessionIndex,
+      completed: 100,
+    });
+    setPlayerState({ ...playerState, playing: true, muted: false });
+  };
 
   return (
     <>
@@ -545,6 +571,14 @@ function Exercises({
               </div>
             )}
 
+            {isAudioWorkout ? (
+              <AudioWorkoutSetup
+                workout={workout}
+                setWorkout={setWorkout}
+                onSelectSession={selectAudioSession}
+                isSessionActive={currentExercise.index === audioSessionIndex}
+              />
+            ) : (
             <div
               style={{
                 backgroundColor: isDragging
@@ -777,6 +811,7 @@ function Exercises({
                   })}
               </DraggableArea>
             </div>
+            )}
           </div>
 
           <div
@@ -788,7 +823,8 @@ function Exercises({
               flexShrink: 0,
             }}
           >
-            {!workout.renderWorkout && workout.exercises?.length === 2 ? (
+            {isAudioWorkout ||
+            (!workout.renderWorkout && workout.exercises?.length === 2) ? (
               <div></div>
             ) : (
               <img

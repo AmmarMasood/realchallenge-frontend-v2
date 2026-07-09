@@ -1,15 +1,23 @@
-import React, { useContext, useRef } from "react";
+import React, { useContext, useEffect, useRef } from "react";
 import "../../assets/video-player-design.css";
 import "../../assets/player.css";
 import ReactPlayer from "react-player";
 import PlayerControls from "./PlayerControls";
-import { playBreakStart } from "../../utils/audioHelper";
 import { playerStateContext } from "../../contexts/PlayerState";
 
+/* Player for the audio workout type (meditation / breathing / mindset).
+ * Structured like NonRenderedVideoPlayer: the track plays natively to its
+ * end (duration = the audio file), onEnded advances/completes through the
+ * same flow as the other players. The ReactPlayer instance is invisible —
+ * it only drives the audio — while a static photo or a muted looping video
+ * (workout.backgroundImageLink / backgroundVideoLink) fills the screen.
+ * No background music here: musicList is always empty — the audio track is
+ * the only sound (client-confirmed). */
+
 var count = 0;
-function NonRenderedVideoPlayer({
+
+function AudioWorkoutPlayer({
   exercise,
-  musics,
   moveToNextExercise,
   moveToPrevExercise,
   // for full screen player video browser
@@ -25,17 +33,31 @@ function NonRenderedVideoPlayer({
   const playerContainerRef = useRef(null);
   const controlsRef = useRef(null);
   const descriptionRef = useRef(null);
+  const bgVideoRef = useRef(null);
+
+  // Freeze the looping background video together with the audio: pausing
+  // the session should still the whole screen, not leave the visual moving.
+  useEffect(() => {
+    const bgVideo = bgVideoRef.current;
+    if (!bgVideo) return;
+    if (playerState.playing) {
+      const p = bgVideo.play();
+      if (p && p.catch) p.catch(() => {});
+    } else {
+      bgVideo.pause();
+    }
+  }, [playerState.playing]);
+
+  const visualStyle = {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  };
 
   const handleProgress = (changeState) => {
-    if (
-      playerState.progress.loadedSeconds === playerState.progress.playedSeconds
-    ) {
-      setPlayerState({ ...playerState, loading: true });
-      // setPlayerState({ ...playerState, playing: false });
-    } else {
-      setPlayerState({ ...playerState, loading: false });
-      // setPlayerState({ ...playerState, playing: true });
-    }
     if (count > 1) {
       controlsRef.current.style.visibility = "hidden";
       descriptionRef.current.style.visibility = "visible";
@@ -60,41 +82,42 @@ function NonRenderedVideoPlayer({
       ref={playerContainerRef}
       onMouseMove={handleMouseMove}
     >
+      {/* Background visual: muted looping video, static photo, or plain dark */}
+      {workout.backgroundVideoLink ? (
+        <video
+          ref={bgVideoRef}
+          src={workout.backgroundVideoLink}
+          muted
+          loop
+          autoPlay
+          playsInline
+          style={visualStyle}
+        />
+      ) : workout.backgroundImageLink ? (
+        <img src={workout.backgroundImageLink} alt="" style={visualStyle} />
+      ) : (
+        <div style={{ ...visualStyle, backgroundColor: "#171e27" }} />
+      )}
+
+      {/* Invisible audio engine */}
       <ReactPlayer
         ref={playerRef}
-        className="react-player"
         playing={playerState.playing}
         muted={playerState.muted}
         volume={playerState.volume}
         url={exercise?.videoURL ? `${exercise.videoURL}` : ""}
         progress={playerState.progress}
         onProgress={handleProgress}
-        width="100%"
-        height="100%"
+        width="0%"
+        height="0%"
+        style={{ display: "none" }}
         controls={false}
         onEnded={() => {
-          // this will not work when the video is on loop, because onEnded doesnt work on videos that are looping.
-          // Audio workouts (this player handles their intro video): no break
-          // sound — the audio track must be the only sound (client-confirmed),
-          // and a beep right before a meditation session is jarring.
-          if (workout.workoutType !== "audio") {
-            playBreakStart();
-          }
-          if (workout.exercises[currentExercise.index + 1]) {
-            // this was how it was originall
-            setPlayerState({ ...playerState, playing: false });
-            // setTimerVisible(true);
-            // these are new stuff
-            // setPlayerState({ ...playerState, playing: false });
-            moveToNextExercise();
-            // setTimerVisible(true);
-          } else {
-            moveToNextExercise();
-            // setPlayerState({ ...playerState, playing: true });
-          }
+          setPlayerState({ ...playerState, playing: false });
+          moveToNextExercise();
         }}
       />
-      {console.log("teging", exercise)}
+
       <PlayerControls
         ref={controlsRef}
         descriptionRef={descriptionRef}
@@ -103,7 +126,7 @@ function NonRenderedVideoPlayer({
         exerciseLength={exercise?.exerciseLength ? exercise.exerciseLength : ""}
         breakTime={exercise?.break ? exercise.break : ""}
         playerContainerRef={playerContainerRef}
-        musicList={musics}
+        musicList={[]}
         challengePageAddress={challengePageAddress}
         // for full screen player video browser
         workout={workout}
@@ -114,10 +137,8 @@ function NonRenderedVideoPlayer({
         moveToNextExercise={moveToNextExercise}
         moveToPrevExercise={moveToPrevExercise}
       />
-
-      <div></div>
     </div>
   );
 }
 
-export default NonRenderedVideoPlayer;
+export default AudioWorkoutPlayer;

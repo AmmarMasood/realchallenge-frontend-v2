@@ -61,14 +61,21 @@
 }
 /* FeedCard styles moved to components/UserDashboard/FeedCard.css */
 /* dashboard challenges */
-.dashboard-challenges-row1 {
-  /* border: 1px solid red; */
+/* Single wrapping flex row for the four top cards (My Challenges, My Shape,
+   My Development, My Body). Keeping them in one container lets breakpoints
+   re-pair them: desktop pairs Challenges+Shape / Development+Body, tablet
+   pairs Shape+Body instead. */
+.dashboard-challenges-top {
+  padding-top: 30px;
   display: flex;
   flex-wrap: wrap;
-  /* height: 600px; */
-  /* grid item of the feed container — allow it to shrink so the inner card
-     scroller can scroll instead of pushing the row past the screen */
   min-width: 0;
+}
+/* Invisible full-width flex item: forces Development + Body onto their own
+   line so they can never float up next to the first row on wide screens */
+.dashboard-challenges-break {
+  flex-basis: 100%;
+  height: 0;
 }
 .dashboard-challenges-mychallenge {
   /* border: 1px solid yellow; */
@@ -274,17 +281,15 @@
 }
 
 /* row 2 */
-.dashboard-challenges-row2 {
-  /* border: 1px solid red; */
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(50rem, 1fr));
-  /* height: 560px; */
-}
 .dashboard-challenges-row2-mybody {
   background-color: #1d2631;
   padding: 20px;
   margin: 10px;
   min-height: 550px;
+  /* pairs 50/50 with My Development after the flex line break; wraps to a
+     full-width row when the pair doesn't fit (same as the old 50rem grid) */
+  flex: 1 1 50rem;
+  min-width: 0;
 }
 .dashboard-challenges-row2-mybody img {
   height: 400px;
@@ -293,11 +298,18 @@
   position: absolute;
   display: flex;
   align-items: center;
+  /* "(value) Label" stays on one line; the connector flexes to fill the rest */
+  white-space: nowrap;
+}
+.body-line span {
+  flex: 0 0 auto;
 }
 .body-line > div {
   border-bottom: 1px solid var(--color-orange);
   margin: 5px;
   position: relative;
+  /* connector line absorbs the space between the label and the body dot */
+  flex: 1;
 }
 /* Orange dot where the connector line touches the body, per the design */
 .body-line > div::after {
@@ -327,43 +339,37 @@
   display: inline-block;
 }
 
-/* Left labels hang outside the image; the line tip (dot) reaches inward to
-   the body part. right: calc(100% - Xpx) puts the tip X px into the image. */
+/* Each callout is pinned at BOTH ends: the dot tip sits X px into the image
+   (right/left: calc(100% - Xpx)) and the outer end sits a fixed 130px outside
+   the figure. The label keeps its natural width and the connector line
+   flexes to bridge the gap — long values just shorten the line. */
 
 /* Breast — left, chest height */
 .body-line1 {
   top: 100px;
   right: calc(100% - 75px);
-}
-.body-line1 > div {
-  width: 150px;
+  left: -130px;
 }
 
 /* Waist — left, lower torso */
 .body-line2 {
   top: 160px;
   right: calc(100% - 70px);
-}
-.body-line2 > div {
-  width: 160px;
+  left: -130px;
 }
 
 /* Shoulders — right, top */
 .body-line3 {
   top: 70px;
   left: calc(100% - 65px);
-}
-.body-line3 > div {
-  width: 120px;
+  right: -130px;
 }
 
 /* Hips — right, below waist level */
 .body-line4 {
   top: 190px;
   left: calc(100% - 70px);
-}
-.body-line4 > div {
-  width: 160px;
+  right: -130px;
 }
 
 .dashboard-challenges-row2-mydevelopment {
@@ -373,6 +379,7 @@
   min-height: 550px;
   overflow: hidden;
   min-width: 0;
+  flex: 1 1 50rem;
 }
 .dashboard-challenges-row2-mydevelopment-insidebox-1 {
   background-color: var(--color-gray-light);
@@ -1190,6 +1197,64 @@
   .dashboard-challenges-mychallenge {
     width: 100%;
   }
+  /* Tablet re-pairing: My Challenges takes the full first row, then My Shape
+     and My Body share a row 50/50, then My Development gets its own row.
+     Achieved purely with flex order — DOM order stays desktop-first. */
+  .dashboard-challenges-myshape {
+    width: auto;
+    flex: 1 1 calc(50% - 20px);
+    order: 1;
+  }
+  .dashboard-challenges-row2-mybody {
+    flex: 1 1 calc(50% - 20px);
+    order: 2;
+  }
+  .dashboard-challenges-break {
+    order: 3;
+  }
+  .dashboard-challenges-row2-mydevelopment {
+    flex-basis: 100%;
+    order: 4;
+  }
+  /* The My Body card is ~half the viewport here — the figure (129px wide at
+     its fixed 400px height) leaves no room for side callout lines, so the
+     labels reflow into a 2×2 legend under the figure instead */
+  .body-figure {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, auto));
+    gap: 8px 28px;
+    justify-content: center;
+  }
+  .body-figure img {
+    grid-column: 1 / -1;
+    justify-self: center;
+    margin-bottom: 14px;
+  }
+  .body-line {
+    position: static;
+  }
+  /* the connector line becomes the legend bullet */
+  .body-line > div {
+    order: -1;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--color-orange);
+    border-bottom: none;
+    margin: 0 8px 0 0;
+    flex: 0 0 auto;
+  }
+  .body-line > div::after {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  /* Too narrow to pair — My Shape and My Body stack full-width */
+  .dashboard-challenges-myshape,
+  .dashboard-challenges-row2-mybody {
+    flex-basis: 100%;
+  }
 }
 
 @media screen and (max-width: 700px) {
@@ -1267,19 +1332,8 @@
   .dashboard-container {
     padding: 10px;
   }
-  .body-line1 > div {
-    width: 50px;
-  }
-  .body-line2 > div {
-    width: 50px;
-  }
-  .body-line3 > div {
-    width: 20px;
-  }
-  .body-line4 > div {
-    width: 60px;
-  }
-  /*  */
+  /* body-part labels reflow into a legend under the figure at the 1024px
+     breakpoint (where the My Body card first drops to half-width) */
   .dashboard-challenges-mychallenge-body {
     margin: 0;
     overflow: hidden;

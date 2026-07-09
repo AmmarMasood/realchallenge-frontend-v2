@@ -5,6 +5,32 @@
   font-family: var(--font-family-poppins);
   color: #fff;
 }
+
+/* Picker buttons overlaying the audio session card's thumbnail.
+ * cursor stays the default arrow (per design) — the hand pointer is
+ * reserved for the card itself, which loads the session into the player. */
+.audio-setup-overlay-btn {
+  background-color: #f37720;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: default;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  font-family: var(--font-family-poppins);
+  pointer-events: auto;
+  min-width: 190px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.audio-setup-overlay-btn:hover {
+  background-color: #ff8a3d;
+}
+.audio-setup-overlay-btn:active {
+  transform: scale(0.97);
+}
 .v2workout-field-withborder {
   border: 2px dotted #fff; /* 2px wide, dotted style, white color *
 }

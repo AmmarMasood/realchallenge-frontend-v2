@@ -39,11 +39,11 @@ function WorkoutCompleteModal({
       }}
     >
       <div
+        className="workout-complete-modal"
         onClick={(e) => e.stopPropagation()}
         style={{
           position: "relative",
           width: "min(940px, calc(100vw - 32px))",
-          height: "min(580px, calc(100vh - 80px))",
           background:
             "linear-gradient(180deg, rgba(0, 0, 0, 1) 25%, rgba(78, 95, 112, 1) 100%)",
           outline: "1px solid #4E5F70",
@@ -53,6 +53,10 @@ function WorkoutCompleteModal({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          // breathing room inside the inset outline; scroll instead of
+          // clipping if a short phone screen can't fit everything
+          padding: "28px 24px",
+          overflowY: "auto",
         }}
       >
         {/* Close × — kept on this first modal per design */}

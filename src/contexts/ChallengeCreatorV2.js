@@ -121,6 +121,13 @@ export function ChallengeProvider({ children }) {
           ...workout,
           id: v4(),
           renderWorkout: workout.isRendered,
+          // Older documents have no workoutType — derive it from isRendered
+          workoutType:
+            workout.workoutType ||
+            (workout.isRendered ? "exercise" : "video"),
+          audioLink: workout.audioLink || "",
+          backgroundImageLink: workout.backgroundImageLink || "",
+          backgroundVideoLink: workout.backgroundVideoLink || "",
           infoFile: workout.infoFile && {
             name: workout.infoTitle || "Workout Info",
             link: workout.infoFile || "",

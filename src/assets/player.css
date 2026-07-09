@@ -21,6 +21,9 @@
 @media screen and (min-width: 831px) {
   .player-wrapper {
     max-height: calc(100vh - 350px);
+    /* short windows (DevTools docked, half-snapped): never collapse below
+       the height where the centered controls reach the exercise title */
+    min-height: 280px;
   }
 }
 .helpPopOut-player-wrapper {
@@ -567,6 +570,9 @@
     aspect-ratio: auto;
     height: 60svh;
     max-height: 60svh;
+    /* split-screen / in-app webviews can shrink svh drastically — keep the
+       player tall enough that the controls never overlap the title */
+    min-height: 280px;
   }
   .react-player > video {
     object-fit: cover !important;
@@ -630,6 +636,7 @@
     aspect-ratio: auto;
     height: 55svh;
     max-height: 55svh;
+    min-height: 280px;
   }
   .exercise-browser-card {
     min-width: 136px;
@@ -807,9 +814,30 @@
     height: auto;
     max-height: none;
     aspect-ratio: 16 / 9;
-    min-height: 250px;
+    /* 250px was already inside the title/controls collision zone */
+    min-height: 280px;
   }
   .react-player > video {
     object-fit: contain !important;
+  }
+}
+
+/* Very short viewports (split-screen, in-app webviews, short desktop
+   windows): compact the fixed-size overlay rows so that even at the 280px
+   player floor the centered controls stay clear of the exercise title */
+@media screen and (max-height: 450px) {
+  .controls-wrapper-middle-icons {
+    font-size: 34px;
+  }
+  .controls-details-top-title {
+    margin-top: 8px;
+    font-size: 14px;
+  }
+  .controls-details-bottom-title {
+    margin-bottom: 14px;
+    font-size: 14px;
+  }
+  .controls-wrapper-top {
+    padding: 10px 20px;
   }
 }
