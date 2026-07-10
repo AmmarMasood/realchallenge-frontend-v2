@@ -103,7 +103,7 @@
       /* the app uses 50px, but its control bar auto-hides — on the TV the
          bottom controls (stepper/progress/buttons, ~110px) are always
          visible, so the "Up next" line must clear them */
-      margin-bottom: 140px;
+      margin-bottom: 110px;
       font-size: 18px;
       font-weight: 800;
       padding-right: 30px;
@@ -487,7 +487,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v2.4 — 2026-07-10 (up-next text above controls)';
+    const RECEIVER_VERSION = 'v2.5 — 2026-07-11 (web-audio beep, music never pauses)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -536,30 +536,33 @@
     let totalElapsed = 0;
     let totalDuration = 0;
 
-    // Countdown beep URL — stored, NOT attached to the audio element. This
-    // device outputs a single audio stream: an element that *holds* a loaded
-    // src permanently steals the output from the music (the prod silent-music
-    // bug). playCountdownBeep() attaches it only for the ~3s the beep plays.
-    // Prefetched into a blob URL so playback starts instantly at the 3s mark
-    // (a fetch moves bytes only — it never occupies the audio pipeline);
-    // attaching the network URL directly made the beep start ~2s late while
-    // the device downloaded it, and it then got cut off by the music resume.
-    let breakEndSoundUrl = '';
-    let musicResumePending = false;
+    // Countdown beep via Web Audio — NOT a media element. Media elements
+    // fight over this device's single media audio stream (a loaded <audio>
+    // stole the music output; pausing music to hand the stream to a beep
+    // element made the beep start seconds late and silenced 5s breaks
+    // entirely). A decoded AudioContext buffer plays instantly and mixes
+    // OVER the music, so the music never has to pause at all.
+    let audioCtx = null;
+    let beepBuffer = null;
 
     function prefetchBeep(url) {
-      if (breakEndSoundUrl && breakEndSoundUrl.indexOf('blob:') === 0) {
-        URL.revokeObjectURL(breakEndSoundUrl);
-      }
-      breakEndSoundUrl = '';
+      beepBuffer = null;
       if (!url) return;
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {
+        console.warn('[beep] AudioContext unavailable:', e);
+        return;
+      }
       fetch(url)
-        .then(function (r) { return r.blob(); })
-        .then(function (b) { breakEndSoundUrl = URL.createObjectURL(b); })
-        .catch(function (e) {
-          console.warn('[beep] prefetch failed, falling back to network URL:', e);
-          breakEndSoundUrl = url;
-        });
+        .then(function (r) { return r.arrayBuffer(); })
+        .then(function (buf) {
+          return new Promise(function (resolve, reject) {
+            audioCtx.decodeAudioData(buf, resolve, reject);
+          });
+        })
+        .then(function (decoded) { beepBuffer = decoded; })
+        .catch(function (e) { console.warn('[beep] prefetch/decode failed:', e); });
     }
 
     // Audio ducking: music volume during exercise vs break
@@ -592,47 +595,15 @@
     // pause the music, attach the beep src just for this playback, and fully
     // release it (remove src + load()) the moment it ends or errors. Music
     // resumes when the next exercise starts (startExercise → playMusic).
-    // Called one tick BEFORE the beep (at "4") — the device needs a moment to
-    // release its single audio stream after pause() before the beep can claim
-    // it; pausing and playing in the same instant made the beep flaky.
-    function pauseMusicForBeep() {
-      if (!breakEndSoundUrl) return;
-      if (dom.musicPlayer.src && !dom.musicPlayer.paused) dom.musicPlayer.pause();
-    }
-
     function playCountdownBeep() {
-      if (!breakEndSoundUrl) return;
+      if (!beepBuffer || !audioCtx) return;
       try {
-        // safety net if pauseMusicForBeep didn't run (e.g. break shorter than 4s)
-        if (dom.musicPlayer.src && !dom.musicPlayer.paused) dom.musicPlayer.pause();
-        const el = dom.breakEndSound;
-        const release = function () {
-          el.onended = null; el.onerror = null;
-          el.removeAttribute('src');
-          el.load();
-          // startExercise wanted the music back while the beep was still
-          // playing — hand the (single) audio stream over now
-          if (musicResumePending) {
-            musicResumePending = false;
-            if (!isPaused && dom.musicPlayer.src) playMusic();
-          }
-        };
-        el.onended = release;
-        el.onerror = release;
-        el.src = breakEndSoundUrl;
-        el.currentTime = 0;
-        const p = el.play();
-        if (p && p.catch) p.catch(function () {
-          // one retry — the stream may still be mid-release after the pause
-          setTimeout(function () {
-            const p2 = el.play();
-            if (p2 && p2.catch) p2.catch(function (e2) {
-              console.warn('[beep] play failed:', e2 && e2.name);
-              release();
-            });
-          }, 250);
-        });
-      } catch (e) { console.warn('[beep] error:', e); }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const source = audioCtx.createBufferSource();
+        source.buffer = beepBuffer;
+        source.connect(audioCtx.destination);
+        source.start(0);
+      } catch (e) { console.warn('[beep] play error:', e); }
     }
 
     // Start the music robustly. Wait for canplay (in changeMusic) before this,
@@ -795,10 +766,7 @@
 
         // Play the full countdown sound ONCE at 3s remaining (the file is the
         // entire "beep beep beep beeeep" pattern, timed to end as the break
-        // does). Music is paused one tick earlier so the audio stream is free.
-        if (countdownValue === 4) {
-          pauseMusicForBeep();
-        }
+        // does). Web Audio — mixes over the music, which keeps playing.
         if (countdownValue === 3) {
           playCountdownBeep();
         }
@@ -852,18 +820,11 @@
         dom.video.play().catch(e => console.warn('Video play error:', e));
       }
 
-      // Music — duck volume while video plays. If the countdown beep is still
-      // finishing, let it complete and take the audio stream back on its
-      // 'ended' (resuming now would cut the beep off mid-pattern).
+      // Music — duck volume while video plays. The beep runs on Web Audio and
+      // mixes over the music, so there's no hand-off to wait for anymore.
       duckMusic();
       if (dom.musicPlayer.src && dom.musicPlayer.paused) {
-        const beep = dom.breakEndSound;
-        const beepActive = beep.getAttribute('src') && !beep.paused && !beep.ended;
-        if (beepActive) {
-          musicResumePending = true;
-        } else {
-          playMusic();
-        }
+        playMusic();
       }
 
       sendState();
@@ -936,10 +897,7 @@
         updateProgressBar();
         // Play the full countdown sound ONCE at 3s remaining (the file is the
         // entire "beep beep beep beeeep" pattern, timed to end as the break
-        // does). Music is paused one tick earlier so the audio stream is free.
-        if (countdownValue === 4) {
-          pauseMusicForBeep();
-        }
+        // does). Web Audio — mixes over the music, which keeps playing.
         if (countdownValue === 3) {
           playCountdownBeep();
         }
