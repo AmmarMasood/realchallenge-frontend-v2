@@ -490,7 +490,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v2.9.1 — 2026-07-11 (one-element audio engine)';
+    const RECEIVER_VERSION = 'v2.9.2 — 2026-07-11 (park beep, 800ms bounce)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -574,15 +574,18 @@
     // + play. Only needed when the element is "playing" (possibly silently).
     function bounceMusic(reason) {
       const m = dom.musicPlayer;
-      if (beepActive || !m.getAttribute('src') || m.paused || isPaused) return;
+      if (beepActive || !hasMusicSrc() || m.paused || isPaused) return;
       pauseMusic(reason);
       if (bounceTimer) clearTimeout(bounceTimer);
+      // 800ms: the one delay we KNOW re-grabs the route on this device
+      // (v2.7's exercise-start resume) — 250ms was too close to the video
+      // transition and the music stayed silent
       bounceTimer = setTimeout(function () {
         bounceTimer = null;
-        if (!beepActive && !isPaused && dom.musicPlayer.getAttribute('src') && dom.musicPlayer.paused) {
+        if (!beepActive && !isPaused && hasMusicSrc() && dom.musicPlayer.paused) {
           playMusic();
         }
-      }, 250);
+      }, 800);
     }
 
     function playCountdownBeep() {
@@ -626,10 +629,21 @@
         };
         m.addEventListener('canplay', onReady);
       } else {
-        m.removeAttribute('src');
-        m.load();
+        // No music to restore. Do NOT removeAttribute()+load() here — tearing
+        // the element down right after playback crashes this device (confirmed
+        // on hardware: beep with no music selected crashed at beep end).
+        // Leave the beep src parked on the paused element; every music-resume
+        // path checks hasMusicSrc() and ignores a parked beep.
+        m.loop = false;
         m.volume = clamp01(userMusicVolume);
       }
+    }
+
+    // True only when the element holds an actual music track (not the
+    // parked/playing beep)
+    function hasMusicSrc() {
+      const s = dom.musicPlayer.getAttribute('src');
+      return !!s && s !== beepBlobUrl;
     }
 
     // Audio ducking: music volume during exercise vs break
@@ -668,6 +682,8 @@
     function playMusic() {
       const el = dom.musicPlayer;
       if (!el.src) return;
+      // never "resume" the parked beep as if it were music
+      if (beepBlobUrl && el.getAttribute('src') === beepBlobUrl) return;
       const p = el.play();
       if (!p || !p.then) return;
       p.catch((e) => {
@@ -770,7 +786,7 @@
         !beepActive &&
         !musicRestore &&
         !bounceTimer &&
-        dom.musicPlayer.src &&
+        hasMusicSrc() &&
         phase !== 'idle' &&
         phase !== 'complete'
       );
@@ -951,7 +967,7 @@
       // it ends; otherwise re-grab the route broken by video.play() (bounce)
       // or restart a paused track.
       duckMusic();
-      if (dom.musicPlayer.getAttribute('src') && !beepActive) {
+      if (hasMusicSrc() && !beepActive) {
         if (dom.musicPlayer.paused) {
           if (!isPaused) playMusic();
         } else {
@@ -1018,7 +1034,7 @@
       // The video pause we just did silently breaks the music's audio route
       // (element keeps "playing" with no sound) — bounce it to re-grab the
       // route, or restart it if something left it paused
-      if (dom.musicPlayer.getAttribute('src') && !beepActive) {
+      if (hasMusicSrc() && !beepActive) {
         if (dom.musicPlayer.paused) {
           if (!isPaused) playMusic();
         } else {
@@ -1123,10 +1139,10 @@
       else {
         // removeAttribute, not src='': assigning '' resolves .src to the page
         // URL (truthy), which would let the music watchdog restart "music"
-        // after the user picked No Music
+        // after the user picked No Music. No load() after the teardown —
+        // resetting the element right after playback crashes this device.
         pauseMusic('changeMusic');
         dom.musicPlayer.removeAttribute('src');
-        dom.musicPlayer.load();
       }
       if (volume != null) {
         userMusicVolume = clamp01(volume);
@@ -1188,13 +1204,16 @@
     setInterval(function () {
       try {
         const m = dom.musicPlayer;
-        const musicState = !m.getAttribute('src')
+        const src = m.getAttribute('src');
+        const musicState = !src
           ? 'no-src'
-          : m.error
-            ? 'ERR' + m.error.code
-            : m.paused
-              ? 'paused'
-              : 'playing';
+          : src === beepBlobUrl
+            ? (beepActive ? 'beep-playing' : 'beep-parked')
+            : m.error
+              ? 'ERR' + m.error.code
+              : m.paused
+                ? 'paused'
+                : 'playing';
         $('receiver-diag').textContent =
           phase +
           ' | music: ' + musicState +
