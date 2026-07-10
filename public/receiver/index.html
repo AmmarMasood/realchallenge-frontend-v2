@@ -484,7 +484,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v2.1 — 2026-07-10 (lazy beep, no last break)';
+    const RECEIVER_VERSION = 'v2.2 — 2026-07-10 (blob-prefetched beep)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -537,7 +537,27 @@
     // device outputs a single audio stream: an element that *holds* a loaded
     // src permanently steals the output from the music (the prod silent-music
     // bug). playCountdownBeep() attaches it only for the ~3s the beep plays.
+    // Prefetched into a blob URL so playback starts instantly at the 3s mark
+    // (a fetch moves bytes only — it never occupies the audio pipeline);
+    // attaching the network URL directly made the beep start ~2s late while
+    // the device downloaded it, and it then got cut off by the music resume.
     let breakEndSoundUrl = '';
+    let musicResumePending = false;
+
+    function prefetchBeep(url) {
+      if (breakEndSoundUrl && breakEndSoundUrl.indexOf('blob:') === 0) {
+        URL.revokeObjectURL(breakEndSoundUrl);
+      }
+      breakEndSoundUrl = '';
+      if (!url) return;
+      fetch(url)
+        .then(function (r) { return r.blob(); })
+        .then(function (b) { breakEndSoundUrl = URL.createObjectURL(b); })
+        .catch(function (e) {
+          console.warn('[beep] prefetch failed, falling back to network URL:', e);
+          breakEndSoundUrl = url;
+        });
+    }
 
     // Audio ducking: music volume during exercise vs break
     let userMusicVolume = 0.3; // volume set by user
@@ -578,6 +598,12 @@
           el.onended = null; el.onerror = null;
           el.removeAttribute('src');
           el.load();
+          // startExercise wanted the music back while the beep was still
+          // playing — hand the (single) audio stream over now
+          if (musicResumePending) {
+            musicResumePending = false;
+            if (!isPaused && dom.musicPlayer.src) playMusic();
+          }
         };
         el.onended = release;
         el.onerror = release;
@@ -711,9 +737,9 @@
         dom.musicPlayer.volume = userMusicVolume;
       }
       if (data.breakStartSoundUrl) dom.breakStartSound.src = data.breakStartSoundUrl;
-      // Countdown beep: store the URL only — never preload (single audio
-      // stream device; a loaded element steals the output from the music)
-      breakEndSoundUrl = data.breakEndSoundUrl || '';
+      // Countdown beep: prefetch to a blob, never attach to the element here
+      // (single audio stream device; a loaded element steals the music output)
+      prefetchBeep(data.breakEndSoundUrl);
 
       startGetReady();
     }
@@ -802,10 +828,18 @@
         dom.video.play().catch(e => console.warn('Video play error:', e));
       }
 
-      // Music — duck volume while video plays
+      // Music — duck volume while video plays. If the countdown beep is still
+      // finishing, let it complete and take the audio stream back on its
+      // 'ended' (resuming now would cut the beep off mid-pattern).
       duckMusic();
       if (dom.musicPlayer.src && dom.musicPlayer.paused) {
-        playMusic();
+        const beep = dom.breakEndSound;
+        const beepActive = beep.getAttribute('src') && !beep.paused && !beep.ended;
+        if (beepActive) {
+          musicResumePending = true;
+        } else {
+          playMusic();
+        }
       }
 
       sendState();
