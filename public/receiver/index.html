@@ -487,7 +487,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v2.6 — 2026-07-11 (music watchdog, early ctx wake, video stop on reload)';
+    const RECEIVER_VERSION = 'v2.7 — 2026-07-11 (beep window: music & beep never overlap)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -595,9 +595,27 @@
     // pause the music, attach the beep src just for this playback, and fully
     // release it (remove src + load()) the moment it ends or errors. Music
     // resumes when the next exercise starts (startExercise → playMusic).
+    // ── Single-audio-producer rule ──
+    // This device crashes/silences when two things output audio at once —
+    // even Web Audio mixed over a media element. So the beep and the music
+    // must NEVER overlap: the music is paused 2s before the beep (the
+    // "beep window"), the beep plays as the sole producer, and the music
+    // returns when the exercise starts. The watchdog respects the window.
+    let beepWindowActive = false;
+
+    function armBeepWindow() {
+      if (!beepBuffer) return;
+      beepWindowActive = true;
+      if (dom.musicPlayer.src && !dom.musicPlayer.paused) {
+        dom.musicPlayer.pause();
+      }
+    }
+
     function playCountdownBeep() {
       if (!beepBuffer || !audioCtx) return;
       try {
+        // defensive: the music must be silent before the beep starts
+        if (dom.musicPlayer.src && !dom.musicPlayer.paused) dom.musicPlayer.pause();
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const source = audioCtx.createBufferSource();
         source.buffer = beepBuffer;
@@ -681,9 +699,11 @@
     // Music watchdog: this device sometimes knocks the music element over
     // around video pause/play transitions. If the music pauses or stalls
     // while the workout is active and the user hasn't paused, restart it.
+    // (Not during the beep window — that pause is deliberate.)
     function musicShouldBePlaying() {
       return (
         !isPaused &&
+        !beepWindowActive &&
         dom.musicPlayer.src &&
         phase !== 'idle' &&
         phase !== 'complete'
@@ -783,6 +803,9 @@
       const ex = exercises[currentIndex];
       dom.breakLabelText.textContent = 'Get Ready';
       dom.breakNextText.textContent = ex ? (ex.title || 'Exercise ' + (currentIndex + 1)) : '';
+      // Get Ready is only 5s — whole countdown is beep window (music, if any
+      // from a mid-workout reload, stays out of the beep's way)
+      armBeepWindow();
       countdownValue = GET_READY_SECONDS;
       dom.breakCountdown.textContent = countdownValue;
       dom.breakProgressBar.style.width = '0%';
@@ -802,9 +825,12 @@
         const pct = ((GET_READY_SECONDS - countdownValue) / GET_READY_SECONDS) * 100;
         dom.breakProgressBar.style.width = pct + '%';
 
-        // Play the full countdown sound ONCE at 3s remaining (the file is the
-        // entire "beep beep beep beeeep" pattern, timed to end as the break
-        // does). Web Audio — mixes over the music, which keeps playing.
+        // Pause the music 2s ahead of the beep (single-audio-producer rule),
+        // then play the full countdown sound ONCE at 3s remaining (the file
+        // is the entire "beep beep beep beeeep" pattern).
+        if (countdownValue === 5) {
+          armBeepWindow();
+        }
         if (countdownValue === 3) {
           playCountdownBeep();
         }
@@ -858,11 +884,20 @@
         dom.video.play().catch(e => console.warn('Video play error:', e));
       }
 
-      // Music — duck volume while video plays. The beep runs on Web Audio and
-      // mixes over the music, so there's no hand-off to wait for anymore.
+      // Beep window ends with the countdown — the exercise phase hands the
+      // single audio stream back to the music
+      beepWindowActive = false;
+
+      // Music — duck volume while video plays. Resume slightly delayed: the
+      // beep's final tone can spill past the countdown, and music starting
+      // on top of it violates the single-producer rule (crashes the device)
       duckMusic();
       if (dom.musicPlayer.src && dom.musicPlayer.paused) {
-        playMusic();
+        setTimeout(function () {
+          if (!isPaused && !beepWindowActive && dom.musicPlayer.src && dom.musicPlayer.paused) {
+            playMusic();
+          }
+        }, 800);
       }
 
       sendState();
@@ -934,6 +969,11 @@
         playMusic();
       }
 
+      // Breaks too short to hit the "5" tick: the whole break is beep window
+      if (breakTotal <= 5) {
+        armBeepWindow();
+      }
+
       // NOTE: no break-start sound here. The sender sends its URL as null,
       // and calling play() on the empty element at break start can grab this
       // device's single audio output and silence the music for the whole rest.
@@ -946,9 +986,12 @@
         dom.breakCountdown.textContent = Math.max(countdownValue, 0);
         dom.breakProgressBar.style.width = ((breakTotal - countdownValue) / breakTotal * 100) + '%';
         updateProgressBar();
-        // Play the full countdown sound ONCE at 3s remaining (the file is the
-        // entire "beep beep beep beeeep" pattern, timed to end as the break
-        // does). Web Audio — mixes over the music, which keeps playing.
+        // Pause the music 2s ahead of the beep (single-audio-producer rule),
+        // then play the full countdown sound ONCE at 3s remaining (the file
+        // is the entire "beep beep beep beeeep" pattern).
+        if (countdownValue === 5) {
+          armBeepWindow();
+        }
         if (countdownValue === 3) {
           playCountdownBeep();
         }
