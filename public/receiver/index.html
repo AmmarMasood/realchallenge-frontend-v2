@@ -525,6 +525,12 @@
     let totalElapsed = 0;
     let totalDuration = 0;
 
+    // Countdown beep URL — stored, NOT attached to the audio element. This
+    // device outputs a single audio stream: an element that *holds* a loaded
+    // src permanently steals the output from the music (the prod silent-music
+    // bug). playCountdownBeep() attaches it only for the ~3s the beep plays.
+    let breakEndSoundUrl = '';
+
     // Audio ducking: music volume during exercise vs break
     let userMusicVolume = 0.3; // volume set by user
     // No ducking: the exercise videos have no audio track, so there's nothing
@@ -549,6 +555,29 @@
       v = Number(v);
       if (isNaN(v)) return 0;
       return Math.max(0, Math.min(1, v));
+    }
+
+    // Countdown beep (3-2-1) with the single-audio-stream constraint:
+    // pause the music, attach the beep src just for this playback, and fully
+    // release it (remove src + load()) the moment it ends or errors. Music
+    // resumes when the next exercise starts (startExercise → playMusic).
+    function playCountdownBeep() {
+      if (!breakEndSoundUrl) return;
+      try {
+        if (dom.musicPlayer.src && !dom.musicPlayer.paused) dom.musicPlayer.pause();
+        const el = dom.breakEndSound;
+        const release = function () {
+          el.onended = null; el.onerror = null;
+          el.removeAttribute('src');
+          el.load();
+        };
+        el.onended = release;
+        el.onerror = release;
+        el.src = breakEndSoundUrl;
+        el.currentTime = 0;
+        const p = el.play();
+        if (p && p.catch) p.catch(function (e) { console.warn('[beep] play failed:', e && e.name); release(); });
+      } catch (e) { console.warn('[beep] error:', e); }
     }
 
     // Start the music robustly. Wait for canplay (in changeMusic) before this,
@@ -673,7 +702,9 @@
         dom.musicPlayer.volume = userMusicVolume;
       }
       if (data.breakStartSoundUrl) dom.breakStartSound.src = data.breakStartSoundUrl;
-      if (data.breakEndSoundUrl) dom.breakEndSound.src = data.breakEndSoundUrl;
+      // Countdown beep: store the URL only — never preload (single audio
+      // stream device; a loaded element steals the output from the music)
+      breakEndSoundUrl = data.breakEndSoundUrl || '';
 
       startGetReady();
     }
@@ -710,7 +741,7 @@
         // entire "beep beep beep beeeep" pattern, timed to end as the break
         // does). Restarting it every second chopped it and bled past the break.
         if (countdownValue === 3) {
-          try { dom.breakEndSound.currentTime = 0; dom.breakEndSound.play(); } catch(e) {}
+          playCountdownBeep();
         }
         if (countdownValue <= 0) {
           clearInterval(countdownInterval); countdownInterval = null;
@@ -838,7 +869,7 @@
         // entire "beep beep beep beeeep" pattern, timed to end as the break
         // does). Restarting it every second chopped it and bled past the break.
         if (countdownValue === 3) {
-          try { dom.breakEndSound.currentTime = 0; dom.breakEndSound.play(); } catch(e) {}
+          playCountdownBeep();
         }
         sendState();
         if (countdownValue <= 0) { clearInterval(countdownInterval); countdownInterval = null; advanceToNext(); }
