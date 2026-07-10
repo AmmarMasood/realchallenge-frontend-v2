@@ -357,6 +357,9 @@
     <!-- Version badge: always visible in the corner so we can confirm which
          receiver build the TV actually loaded (text set from RECEIVER_VERSION) -->
     <div id="receiver-version" style="position: fixed; bottom: 10px; right: 14px; font-size: 13px; color: rgba(255,255,255,0.35); z-index: 99; font-family: inherit;"></div>
+    <!-- Live audio diagnostics (v2.8): readable straight off the TV, so no
+         DevTools session is needed to debug the music/beep behavior -->
+    <div id="receiver-diag" style="position: fixed; bottom: 28px; right: 14px; font-size: 13px; color: rgba(255,255,255,0.55); z-index: 99; font-family: monospace;"></div>
 
     <!-- Complete Screen -->
     <div id="complete-screen" class="screen-overlay">
@@ -487,7 +490,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v2.7 — 2026-07-11 (beep window: music & beep never overlap)';
+    const RECEIVER_VERSION = 'v2.8 — 2026-07-11 (on-screen diagnostics)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -607,7 +610,7 @@
       if (!beepBuffer) return;
       beepWindowActive = true;
       if (dom.musicPlayer.src && !dom.musicPlayer.paused) {
-        dom.musicPlayer.pause();
+        pauseMusic('beepWindow');
       }
     }
 
@@ -615,7 +618,7 @@
       if (!beepBuffer || !audioCtx) return;
       try {
         // defensive: the music must be silent before the beep starts
-        if (dom.musicPlayer.src && !dom.musicPlayer.paused) dom.musicPlayer.pause();
+        if (dom.musicPlayer.src && !dom.musicPlayer.paused) pauseMusic('beepWindow');
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const source = audioCtx.createBufferSource();
         source.buffer = beepBuffer;
@@ -696,6 +699,30 @@
       dom.musicPlayer.volume = clamp01(userMusicVolume);
     }
 
+    // ── Music stop forensics ──
+    // Every deliberate music stop goes through pauseMusic(reason). If the
+    // element fires 'pause' without a recent tag, the DEVICE stopped it —
+    // that distinction is the whole point of the v2.8 instrumentation.
+    let lastMusicStop = { reason: 'none', at: 0 };
+    let lastDeliberatePauseAt = 0;
+
+    function pauseMusic(reason) {
+      lastMusicStop = { reason: reason, at: Date.now() };
+      lastDeliberatePauseAt = Date.now();
+      dom.musicPlayer.pause();
+    }
+
+    dom.musicPlayer.addEventListener('pause', function () {
+      if (Date.now() - lastDeliberatePauseAt > 300) {
+        lastMusicStop = { reason: 'device/unknown', at: Date.now() };
+      }
+    });
+
+    function fmtLastStop() {
+      if (!lastMusicStop.at) return 'none';
+      return lastMusicStop.reason + '@' + Math.round((Date.now() - lastMusicStop.at) / 1000) + 's';
+    }
+
     // Music watchdog: this device sometimes knocks the music element over
     // around video pause/play transitions. If the music pauses or stalls
     // while the workout is active and the user hasn't paused, restart it.
@@ -747,8 +774,10 @@
             // receiverState, so remote tests can tell us what the music
             // element/beep context are doing without TV-side debugging
             musicPaused: dom.musicPlayer.paused,
+            musicTime: Math.round((dom.musicPlayer.currentTime || 0) * 10) / 10,
             musicReadyState: dom.musicPlayer.readyState,
             musicError: dom.musicPlayer.error ? dom.musicPlayer.error.code : 0,
+            musicLastStop: fmtLastStop(),
             beepCtxState: audioCtx ? audioCtx.state : 'none',
             beepLoaded: !!beepBuffer,
             phase, exerciseIndex: currentIndex,
@@ -1023,7 +1052,7 @@
       phase = 'complete';
       clearTimers(); hideAll();
       dom.video.pause();
-      dom.musicPlayer.pause();
+      pauseMusic('finish');
       dom.completeWorkout.textContent = workout ? (workout.title || '') : '';
       dom.completeScreen.classList.add('active');
       totalElapsed = totalDuration;
@@ -1034,7 +1063,7 @@
     function pause() {
       isPaused = true;
       dom.video.pause();
-      dom.musicPlayer.pause();
+      pauseMusic('userPause');
       dom.pausedOverlay.classList.add('active');
       updatePlayPauseIcon();
       sendState();
@@ -1068,7 +1097,7 @@
         // removeAttribute, not src='': assigning '' resolves .src to the page
         // URL (truthy), which would let the music watchdog restart "music"
         // after the user picked No Music
-        dom.musicPlayer.pause();
+        pauseMusic('changeMusic');
         dom.musicPlayer.removeAttribute('src');
         dom.musicPlayer.load();
       }
@@ -1124,6 +1153,33 @@
     $('receiver-version').textContent = RECEIVER_VERSION;
     console.log('[Receiver] version:', RECEIVER_VERSION);
 
+    // Live on-TV audio diagnostics (v2.8): everything needed to debug the
+    // music/beep behavior, readable straight off the screen. Key signal: a
+    // frozen music t= while "playing" means the element is feeding a dead
+    // audio sink; "paused | last-stop: device/unknown" means the device
+    // itself stopped the element.
+    setInterval(function () {
+      try {
+        const m = dom.musicPlayer;
+        const musicState = !m.getAttribute('src')
+          ? 'no-src'
+          : m.error
+            ? 'ERR' + m.error.code
+            : m.paused
+              ? 'paused'
+              : 'playing';
+        $('receiver-diag').textContent =
+          phase +
+          ' | music: ' + musicState +
+          ' t=' + (m.currentTime || 0).toFixed(1) +
+          ' ready=' + m.readyState +
+          ' vol=' + m.volume.toFixed(2) +
+          ' | last-stop: ' + fmtLastStop() +
+          ' | ctx: ' + (audioCtx ? audioCtx.state : 'none') +
+          ' | beep: ' + (beepBuffer ? 'loaded' : 'none');
+      } catch (e) { /* diagnostics must never break playback */ }
+    }, 500);
+
     let castReceiverContext = null;
     const urlParams = new URLSearchParams(window.location.search);
     const forceDebug = urlParams.has('debug');
@@ -1136,7 +1192,7 @@
       castReceiverContext.addCustomMessageListener(NAMESPACE, (e) => handleMessage(e.data));
       castReceiverContext.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, () => {
         if (castReceiverContext.getSenders().length === 0) {
-          clearTimers(); dom.video.pause(); dom.musicPlayer.pause(); window.close();
+          clearTimers(); dom.video.pause(); pauseMusic('disconnect'); window.close();
         }
       });
       const opts = new cast.framework.CastReceiverOptions();
