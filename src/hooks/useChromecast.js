@@ -147,7 +147,9 @@ export default function useChromecast({ workout, currentExercise }) {
         title: workout.title || "Workout",
         subtitle: workout.subtitle || "",
         exercises,
-        startIndex: currentExercise?.index || 0,
+        // clamp: -1 is the local "workout finished" sentinel and must never
+        // reach the receiver as a start position
+        startIndex: Math.max(currentExercise?.index || 0, 0),
         musicUrl: musicUrl || null,
         musicVolume: musicVolume != null ? musicVolume : 0.3,
         // Break sounds intentionally disabled: this Chromecast plays only one

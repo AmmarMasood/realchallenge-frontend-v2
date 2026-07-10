@@ -117,6 +117,7 @@ function PlayerControls(
     castConnected,
     receiverState,
     toggleCast,
+    stopCasting,
     sendWorkoutToReceiver,
     sendTogglePause,
     sendSkipNext,
@@ -189,6 +190,11 @@ function PlayerControls(
     if (phase === "complete" && !castCompleteHandledRef.current) {
       castCompleteHandledRef.current = true;
       moveToNextExercise();
+      // Let the TV show its finish screen for a few seconds, then end the
+      // cast session for this workout (client spec — casting can be started
+      // again from the next workout). Deliberately not cancelled on unmount:
+      // picking a rating navigates away, and the TV must still disconnect.
+      setTimeout(() => stopCasting(), 6000);
     } else if (phase && phase !== "complete") {
       // a new run started on the TV (workout reloaded/restarted) — re-arm
       castCompleteHandledRef.current = false;
@@ -204,6 +210,9 @@ function PlayerControls(
     if (
       castConnected &&
       idx != null &&
+      // -1 is the "workout finished" sentinel — re-sending LOAD_WORKOUT here
+      // made the TV restart the workout from the beginning at completion
+      idx >= 0 &&
       idx !== prevLocalIndexRef.current &&
       idx !== tvDrivenIndexRef.current
     ) {
