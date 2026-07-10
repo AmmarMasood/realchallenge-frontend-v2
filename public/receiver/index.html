@@ -487,7 +487,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v2.5 — 2026-07-11 (web-audio beep, music never pauses)';
+    const RECEIVER_VERSION = 'v2.6 — 2026-07-11 (music watchdog, early ctx wake, video stop on reload)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -678,6 +678,28 @@
       dom.musicPlayer.volume = clamp01(userMusicVolume);
     }
 
+    // Music watchdog: this device sometimes knocks the music element over
+    // around video pause/play transitions. If the music pauses or stalls
+    // while the workout is active and the user hasn't paused, restart it.
+    function musicShouldBePlaying() {
+      return (
+        !isPaused &&
+        dom.musicPlayer.src &&
+        phase !== 'idle' &&
+        phase !== 'complete'
+      );
+    }
+    ['pause', 'stalled', 'suspend'].forEach(function (evt) {
+      dom.musicPlayer.addEventListener(evt, function () {
+        setTimeout(function () {
+          if (musicShouldBePlaying() && dom.musicPlayer.paused) {
+            console.warn('[music] watchdog restart after "' + evt + '"');
+            playMusic();
+          }
+        }, 400);
+      });
+    });
+
     function updatePlayPauseIcon() {
       dom.iconPause.style.display = isPaused ? 'none' : '';
       dom.iconPlay.style.display = isPaused ? '' : 'none';
@@ -701,6 +723,14 @@
           type: 'STATE_UPDATE',
           data: {
             receiverVersion: RECEIVER_VERSION,
+            // Audio diagnostics — readable from the sender console via
+            // receiverState, so remote tests can tell us what the music
+            // element/beep context are doing without TV-side debugging
+            musicPaused: dom.musicPlayer.paused,
+            musicReadyState: dom.musicPlayer.readyState,
+            musicError: dom.musicPlayer.error ? dom.musicPlayer.error.code : 0,
+            beepCtxState: audioCtx ? audioCtx.state : 'none',
+            beepLoaded: !!beepBuffer,
             phase, exerciseIndex: currentIndex,
             exerciseTitle: ex ? (ex.title || '') : '',
             exerciseTimeRemaining: phase === 'exercise' ? Math.max((ex?.exerciseLength || 0) - exerciseElapsed, 0) : 0,
@@ -732,6 +762,14 @@
       // attached audio element steals this device's single audio stream.
       // Countdown beep: prefetch to a blob, never attach to the element here.
       prefetchBeep(data.breakEndSoundUrl);
+
+      // A LOAD_WORKOUT can arrive mid-exercise (user picked another exercise
+      // on the phone) — stop the running video or it keeps playing behind
+      // the Get Ready countdown
+      dom.video.onended = null;
+      dom.video.pause();
+      dom.video.removeAttribute('src');
+      dom.video.load();
 
       startGetReady();
     }
@@ -883,6 +921,19 @@
       // Restore music volume during rest (no video audio competing)
       unduckMusic();
 
+      // Wake the beep's AudioContext now — the device suspends an idle
+      // context during the exercise, and resuming it inside the beep call
+      // is async/slow, which pushed the beep from "3" toward "1"
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(function () {});
+      }
+
+      // Self-heal: pausing the exercise video can knock the music element
+      // over on this device — if the music should be playing, restart it
+      if (dom.musicPlayer.src && dom.musicPlayer.paused && !isPaused) {
+        playMusic();
+      }
+
       // NOTE: no break-start sound here. The sender sends its URL as null,
       // and calling play() on the empty element at break start can grab this
       // device's single audio output and silence the music for the whole rest.
@@ -970,7 +1021,14 @@
         };
         el.addEventListener('canplay', onReady);
       }
-      else { dom.musicPlayer.pause(); dom.musicPlayer.src = ''; }
+      else {
+        // removeAttribute, not src='': assigning '' resolves .src to the page
+        // URL (truthy), which would let the music watchdog restart "music"
+        // after the user picked No Music
+        dom.musicPlayer.pause();
+        dom.musicPlayer.removeAttribute('src');
+        dom.musicPlayer.load();
+      }
       if (volume != null) {
         userMusicVolume = clamp01(volume);
         // Apply ducking if currently in exercise phase
