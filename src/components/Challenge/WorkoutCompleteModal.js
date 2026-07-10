@@ -21,6 +21,24 @@ function WorkoutCompleteModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [finishWorkoutPopupVisible, setFinishWorkoutPopupVisible]);
 
+  // Client spec: once the user acts on the finish screen on this device
+  // (closes it or picks a rating, which navigates away), the cast session for
+  // this workout ends — the TV keeps its finish screen only while this modal
+  // is open. Casting can be started again from the next workout's player.
+  // No-op when not casting (getCurrentSession() is null).
+  useEffect(() => {
+    if (!finishWorkoutPopupVisible) return;
+    return () => {
+      try {
+        const session = window.cast?.framework?.CastContext?.getInstance?.()
+          ?.getCurrentSession?.();
+        if (session) session.endSession(true);
+      } catch (e) {
+        console.warn("Failed to end cast session on workout finish:", e);
+      }
+    };
+  }, [finishWorkoutPopupVisible]);
+
   if (!finishWorkoutPopupVisible) return null;
 
   return ReactDOM.createPortal(
