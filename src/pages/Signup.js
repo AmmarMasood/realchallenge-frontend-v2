@@ -143,25 +143,25 @@ function Signup(props) {
   };
   return wizCompleted ? (
     <div className="signup-background">
-      <button
-        onClick={() => setWizCompleted(false)}
-        className="font-paragraph-white"
-        style={{
-          color: "#fff",
-          fontSize: "18px",
-          backgroundColor: "var(--mirage)",
-          padding: "10px ",
-          float: "left",
-          margin: "10px 0 0 50px",
-          position: "absolute",
-          top: "10px",
-          border: "none",
-          cursor: "pointer",
-        }}
-      >
-        <ArrowLeftOutlined />
-        <T>signup.back</T>
-      </button>
+      {/* In-flow top bar (same pattern as the wizard): the Back button has
+          its own row, so the form card can't scroll over it on phones */}
+      <div className="wizard-topbar">
+        <button
+          onClick={() => setWizCompleted(false)}
+          className="font-paragraph-white"
+          style={{
+            color: "#fff",
+            fontSize: "18px",
+            backgroundColor: "var(--mirage)",
+            padding: "10px",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          <ArrowLeftOutlined />
+          <T>signup.back</T>
+        </button>
+      </div>
       <div className="signup-container">
         <h1 className="font-heading-white">
           <T>signup.join</T>

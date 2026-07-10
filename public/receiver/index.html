@@ -579,7 +579,12 @@
 
     function calculateTotalDuration() {
       let t = 0;
-      for (const ex of exercises) { t += (ex.exerciseLength || 0) + (ex.break || 0); }
+      for (let i = 0; i < exercises.length; i++) {
+        t += (exercises[i].exerciseLength || 0);
+        // the final exercise's break never plays, so keep it out of the
+        // total or the progress bar tops out short of 100%
+        if (i < exercises.length - 1) t += (exercises[i].break || 0);
+      }
       return t;
     }
 
@@ -735,9 +740,10 @@
       dom.exerciseTimer.textContent = exLen > 0 ? exLen : '';
       dom.exerciseTimerWrap.style.display = exLen > 0 ? '' : 'none';
 
-      // "Up next: Rest X sec" in bottom-right
+      // "Up next: Rest X sec" in bottom-right — not on the last exercise,
+      // whose trailing break is skipped
       const brk = ex.break || 0;
-      if (brk > 0) {
+      if (brk > 0 && currentIndex < exercises.length - 1) {
         dom.detailsBreakInfo.innerHTML = 'Up next: Rest <span style="font-size:26px;margin:0 5px;">' + brk + '</span> sec';
       } else {
         dom.detailsBreakInfo.textContent = '';
@@ -789,7 +795,10 @@
       dom.video.pause();
       const ex = exercises[currentIndex];
       const brk = ex ? (ex.break || 0) : 0;
-      if (brk > 0) startBreak(brk); else advanceToNext();
+      // No trailing break after the final exercise (matches the local
+      // player) — go straight to the completion screen
+      const isLast = currentIndex >= exercises.length - 1;
+      if (brk > 0 && !isLast) startBreak(brk); else advanceToNext();
     }
 
     /* ─── BREAK (uses same .break-layout-for-player overlay) ─── */

@@ -45,11 +45,16 @@ function Wizard({ setWizardCompleted }) {
   const [bodyFat, setBodyFat] = useState(null);
   // eslint-disable-next-line
   const [calories, setCalories] = useState(null);
+  // Drives the step-change animation: forward slides the new step in from
+  // the right, backward from the left (see .wizard-step-* in wizard.css)
+  const [stepDirection, setStepDirection] = useState("forward");
   const next = () => {
+    setStepDirection("forward");
     setCurrent(current + 1);
   };
 
   const prev = () => {
+    setStepDirection("backward");
     setCurrent(current - 1);
   };
   useEffect(() => {
@@ -593,33 +598,49 @@ function Wizard({ setWizardCompleted }) {
 
   return (
     <div style={{ background: "#2a2f36" }}>
-      {current >= 1 && (
-        <button
-          onClick={prev}
-          className="font-paragraph-white"
-          style={{
-            color: "#fff",
-            fontSize: "18px",
-            backgroundColor: "var(--mirage)",
-            padding: "10px ",
-            float: "left",
-            margin: "10px 0 0 50px",
-            position: "absolute",
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          <ArrowLeftOutlined /> Back
-        </button>
-      )}
       <div className="wizard-background">
-        <Steps current={current} style={{ width: "280px", marginTop: "20px" }}>
+        {/* In-flow top bar (not absolutely positioned): the Back button gets
+            its own reserved row, so the card/stepper can never overlap it on
+            short screens and it scrolls away with the page */}
+        <div className="wizard-topbar">
+          {current >= 1 && (
+            <button
+              onClick={prev}
+              className="font-paragraph-white"
+              style={{
+                color: "#fff",
+                fontSize: "18px",
+                backgroundColor: "var(--mirage)",
+                padding: "10px",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              <ArrowLeftOutlined /> Back
+            </button>
+          )}
+        </div>
+        {/* responsive={false}: antd would otherwise switch to a vertical
+            step rail under 532px, which eats half the phone screen — the
+            titleless dots fit horizontally at any width */}
+        <Steps
+          current={current}
+          responsive={false}
+          style={{ width: "280px", marginTop: "20px" }}
+        >
           {steps.map((item) => (
             <Step key={item.title} title={item.title} />
           ))}
         </Steps>
         <div className="wizard-container">
-          <div className="steps-content">{steps[current].content}</div>
+          {/* key={current} remounts the step so the entry animation replays
+              on every Next/Back click */}
+          <div
+            key={current}
+            className={`steps-content wizard-step-${stepDirection}`}
+          >
+            {steps[current].content}
+          </div>
           <div className="steps-action">
             {/* {current > 0 && (
               <Button

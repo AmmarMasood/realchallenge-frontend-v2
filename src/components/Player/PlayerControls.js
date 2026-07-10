@@ -173,6 +173,29 @@ function PlayerControls(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receiverState?.exerciseIndex, castConnected]);
 
+  // TV → local completion: when the receiver finishes the workout it reports
+  // phase "complete". Run the normal local completion flow — the local index
+  // has been kept on the last exercise by the sync effect above, so
+  // moveToNextExercise() hits its completion branch: progress is saved and
+  // the "Well done" modal shows on this device too, instead of the phone
+  // sitting silently on the cast screen. One-shot per cast session.
+  const castCompleteHandledRef = useRef(false);
+  useEffect(() => {
+    if (!castConnected) {
+      castCompleteHandledRef.current = false;
+      return;
+    }
+    const phase = receiverState?.phase;
+    if (phase === "complete" && !castCompleteHandledRef.current) {
+      castCompleteHandledRef.current = true;
+      moveToNextExercise();
+    } else if (phase && phase !== "complete") {
+      // a new run started on the TV (workout reloaded/restarted) — re-arm
+      castCompleteHandledRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [receiverState?.phase, castConnected]);
+
   // Local → TV: when the exercise changes locally (e.g. picked from the video
   // browser), jump the TV there. TV-driven changes are skipped (tvDrivenIndexRef)
   // so there's no reload loop with the effect above.

@@ -50,8 +50,11 @@ function RenderedVideoPlayer({
 
   useEffect(() => {
     if (workout) {
+      // The final exercise's break never plays (skipped straight to the
+      // completion popup), so leave it out of the workout total
       const sumAllBreakTime = workout.exercises?.reduce(
-        (a, b) => a + (b["break"] || 0),
+        (a, b, i) =>
+          i < workout.exercises.length - 1 ? a + (b["break"] || 0) : a,
         0
       );
       const sumAllExerciseDuration = workout.exercises?.reduce(
@@ -89,33 +92,36 @@ function RenderedVideoPlayer({
   useEffect(() => {
     if (exerciseSeconds === 0 && !hasHandledEnd.current) {
       hasHandledEnd.current = true;
-      if (!inCreation) {
-        playBreakStart();
-      }
 
       // Get current exercise data
       const currentExerciseData = workout?.exercises?.[currentExercise.index];
       const isCurrentlyLastExercise = workout?.exercises && currentExercise.index === workout.exercises.length - 1;
-      
-      // Show break timer if current exercise has break > 0
-      if (currentExerciseData && currentExerciseData.break > 0) {
+
+      // The chime plays on the final exercise too — it doubles as the
+      // end-of-workout cue even though no break follows
+      if (!inCreation) {
+        playBreakStart();
+      }
+
+      if (isCurrentlyLastExercise) {
+        // Last exercise: skip any trailing break (there's nothing to rest
+        // for) — update progress first, then show the success popup
+        setPlayerState((prev) => ({ ...prev, playing: false }));
+        moveToNextExercise(); // This updates backend progress
+        if (onWorkoutComplete) {
+          setTimeout(() => {
+            onWorkoutComplete();
+          }, 100);
+        }
+      } else if (currentExerciseData && currentExerciseData.break > 0) {
+        // Show break timer if current exercise has break > 0
         setPlayerState((prev) => ({ ...prev, playing: false }));
         setTimeout(() => {
           setTimerVisible(true);
         }, 500);
       } else {
-        // No break time
-        if (isCurrentlyLastExercise && onWorkoutComplete) {
-          // Last exercise with no break - update progress first, then show success popup
-          setPlayerState((prev) => ({ ...prev, playing: false }));
-          moveToNextExercise(); // This updates backend progress
-          setTimeout(() => {
-            onWorkoutComplete();
-          }, 100);
-        } else {
-          // Move to next exercise
-          moveToNextExercise();
-        }
+        // No break time — move to next exercise
+        moveToNextExercise();
       }
     }
 

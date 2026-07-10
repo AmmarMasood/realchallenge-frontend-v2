@@ -20,6 +20,8 @@
   background-color: var(--color-gray-dark);
   margin-right: auto;
   justify-self: center;
+  /* clip the step slide-in animation to the card */
+  overflow-x: hidden;
 }
 .wizard-gender-selection-container {
   display: grid;
@@ -86,10 +88,56 @@
   cursor: pointer;
 }
 
-@media screen and (max-width: 550px) {
-  .wizard-background {
-    padding-top: 60px;
+/* Step-change animation: the freshly mounted step content slides in from
+   the side you're moving toward — from the right on Next, from the left on
+   Back — with a quick fade. */
+@keyframes wizard-step-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
   }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes wizard-step-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.wizard-step-forward {
+  animation: wizard-step-in-right 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.wizard-step-backward {
+  animation: wizard-step-in-left 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wizard-step-forward,
+  .wizard-step-backward {
+    animation: none;
+  }
+}
+
+/* In-flow header row above the stepper. Reserves its height on every step
+   (even step 1, which has no Back button) so the layout doesn't jump when
+   the button appears, and nothing can scroll over it. */
+.wizard-topbar {
+  width: 100%;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 10px 16px 0;
+  box-sizing: border-box;
+}
+
+@media screen and (max-width: 550px) {
   /* CSS */
   .wizard-container {
     width: 400px;
