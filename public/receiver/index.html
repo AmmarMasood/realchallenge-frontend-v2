@@ -351,6 +351,10 @@
       <div class="idle-subtitle">Waiting for workout...</div>
     </div>
 
+    <!-- Version badge: always visible in the corner so we can confirm which
+         receiver build the TV actually loaded (text set from RECEIVER_VERSION) -->
+    <div id="receiver-version" style="position: fixed; bottom: 10px; right: 14px; font-size: 13px; color: rgba(255,255,255,0.35); z-index: 99; font-family: inherit;"></div>
+
     <!-- Complete Screen -->
     <div id="complete-screen" class="screen-overlay">
       <div class="complete-check">&#10003;</div>
@@ -477,6 +481,10 @@
 
     const NAMESPACE = 'urn:x-cast:com.realchallenge.workout';
     const GET_READY_SECONDS = 5;
+
+    // Bump on every receiver change — shown in the corner of the TV and sent
+    // in every STATE_UPDATE so the sender can log which build the TV runs.
+    const RECEIVER_VERSION = 'v2.1 — 2026-07-10 (lazy beep, no last break)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -674,6 +682,7 @@
         castReceiverContext.sendCustomMessage(NAMESPACE, undefined, {
           type: 'STATE_UPDATE',
           data: {
+            receiverVersion: RECEIVER_VERSION,
             phase, exerciseIndex: currentIndex,
             exerciseTitle: ex ? (ex.title || '') : '',
             exerciseTimeRemaining: phase === 'exercise' ? Math.max((ex?.exerciseLength || 0) - exerciseElapsed, 0) : 0,
@@ -989,6 +998,10 @@
     dom.btnPrev.addEventListener('click', skipPrev);
 
     /* ─── CAST RECEIVER INIT ─── */
+    // Stamp the version badge so the TV visibly shows which build it loaded
+    $('receiver-version').textContent = RECEIVER_VERSION;
+    console.log('[Receiver] version:', RECEIVER_VERSION);
+
     let castReceiverContext = null;
     const urlParams = new URLSearchParams(window.location.search);
     const forceDebug = urlParams.has('debug');

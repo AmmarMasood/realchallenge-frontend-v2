@@ -78,11 +78,21 @@ export default function useChromecast({ workout, currentExercise }) {
 
             // Listen for messages from receiver
             if (connected && session) {
+              let loggedReceiverVersion = false;
               session.addMessageListener(NAMESPACE, (ns, message) => {
                 try {
                   const parsed =
                     typeof message === "string" ? JSON.parse(message) : message;
                   if (parsed.type === "STATE_UPDATE") {
+                    // Surface which receiver build the TV is actually running
+                    // (once per session) — old receivers send no version field
+                    if (!loggedReceiverVersion) {
+                      loggedReceiverVersion = true;
+                      console.log(
+                        "[Cast] receiver version:",
+                        parsed.data?.receiverVersion || "(pre-versioning build)"
+                      );
+                    }
                     setReceiverState(parsed.data);
                   }
                 } catch (e) {
