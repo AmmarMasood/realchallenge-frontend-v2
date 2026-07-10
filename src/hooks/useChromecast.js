@@ -104,7 +104,7 @@ export default function useChromecast({ workout, currentExercise }) {
                         `[Cast] phase=${d.phase} musicPaused=${d.musicPaused} ` +
                           `musicTime=${d.musicTime} musicReady=${d.musicReadyState} ` +
                           `musicErr=${d.musicError} lastStop=${d.musicLastStop} ` +
-                          `beepCtx=${d.beepCtxState} beepLoaded=${d.beepLoaded}`
+                          `beepActive=${d.beepActive} beepLoaded=${d.beepLoaded}`
                       );
                     }
                     setReceiverState(parsed.data);

@@ -357,9 +357,9 @@
     <!-- Version badge: always visible in the corner so we can confirm which
          receiver build the TV actually loaded (text set from RECEIVER_VERSION) -->
     <div id="receiver-version" style="position: fixed; bottom: 10px; right: 14px; font-size: 13px; color: rgba(255,255,255,0.35); z-index: 99; font-family: inherit;"></div>
-    <!-- Live audio diagnostics (v2.8): readable straight off the TV, so no
-         DevTools session is needed to debug the music/beep behavior -->
-    <div id="receiver-diag" style="position: fixed; bottom: 28px; right: 14px; font-size: 13px; color: rgba(255,255,255,0.55); z-index: 99; font-family: monospace;"></div>
+    <!-- Live audio diagnostics: readable straight off the TV (even from a
+         photo), so no DevTools session is needed to debug music/beep issues -->
+    <div id="receiver-diag" style="position: fixed; bottom: 30px; right: 14px; font-size: 20px; font-weight: 600; color: #ff5252; background: rgba(0,0,0,0.85); padding: 6px 12px; border-radius: 4px; z-index: 99; font-family: monospace; max-width: 90vw;"></div>
 
     <!-- Complete Screen -->
     <div id="complete-screen" class="screen-overlay">
@@ -490,7 +490,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v2.8 — 2026-07-11 (on-screen diagnostics)';
+    const RECEIVER_VERSION = 'v2.9.1 — 2026-07-11 (one-element audio engine)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -539,33 +539,97 @@
     let totalElapsed = 0;
     let totalDuration = 0;
 
-    // Countdown beep via Web Audio — NOT a media element. Media elements
-    // fight over this device's single media audio stream (a loaded <audio>
-    // stole the music output; pausing music to hand the stream to a beep
-    // element made the beep start seconds late and silenced 5s breaks
-    // entirely). A decoded AudioContext buffer plays instantly and mixes
-    // OVER the music, so the music never has to pause at all.
-    let audioCtx = null;
-    let beepBuffer = null;
+    // ── ONE-ELEMENT AUDIO ENGINE (v2.9) ──
+    // On-device diagnostics (v2.8) established three hardware facts:
+    //  1. Audio routes to ONE media element session. Web Audio output is
+    //     queued while any media element holds the route — the beep only
+    //     sounded when the pipeline reconfigured at exercise start.
+    //  2. A video play()/pause() transition silently breaks the music route:
+    //     the element keeps "playing" (t advances) with no sound, and only a
+    //     fresh play() call re-grabs the route. (Why the watchdog never
+    //     fired — the element wasn't paused.)
+    //  3. Web Audio + a media element together crash the device.
+    // Therefore ALL sound goes through the single #music-player element:
+    // the beep is a temporary src-swap on it, and the music is "bounced"
+    // (pause → play) after every video transition to re-grab the route.
+    let beepBlobUrl = '';
+    let beepActive = false;   // beep currently playing through the element
+    let musicRestore = null;  // { src, time } to restore after the beep
+    let bounceTimer = null;
 
     function prefetchBeep(url) {
-      beepBuffer = null;
+      if (beepBlobUrl && beepBlobUrl.indexOf('blob:') === 0) URL.revokeObjectURL(beepBlobUrl);
+      beepBlobUrl = '';
       if (!url) return;
-      try {
-        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-      } catch (e) {
-        console.warn('[beep] AudioContext unavailable:', e);
-        return;
-      }
       fetch(url)
-        .then(function (r) { return r.arrayBuffer(); })
-        .then(function (buf) {
-          return new Promise(function (resolve, reject) {
-            audioCtx.decodeAudioData(buf, resolve, reject);
-          });
-        })
-        .then(function (decoded) { beepBuffer = decoded; })
-        .catch(function (e) { console.warn('[beep] prefetch/decode failed:', e); });
+        .then(function (r) { return r.blob(); })
+        .then(function (b) { beepBlobUrl = URL.createObjectURL(b); })
+        .catch(function (e) {
+          console.warn('[beep] prefetch failed, using network URL:', e);
+          beepBlobUrl = url;
+        });
+    }
+
+    // Re-grab the audio route after a video transition: pause + short delay
+    // + play. Only needed when the element is "playing" (possibly silently).
+    function bounceMusic(reason) {
+      const m = dom.musicPlayer;
+      if (beepActive || !m.getAttribute('src') || m.paused || isPaused) return;
+      pauseMusic(reason);
+      if (bounceTimer) clearTimeout(bounceTimer);
+      bounceTimer = setTimeout(function () {
+        bounceTimer = null;
+        if (!beepActive && !isPaused && dom.musicPlayer.getAttribute('src') && dom.musicPlayer.paused) {
+          playMusic();
+        }
+      }, 250);
+    }
+
+    function playCountdownBeep() {
+      if (!beepBlobUrl || beepActive) return;
+      const m = dom.musicPlayer;
+      const currentSrc = m.getAttribute('src');
+      const hadMusic = !!currentSrc && currentSrc !== beepBlobUrl;
+      musicRestore = hadMusic ? { src: currentSrc, time: m.currentTime || 0 } : null;
+      beepActive = true;
+      if (hadMusic) pauseMusic('beep');
+      m.onended = finishBeep;
+      m.onerror = finishBeep;
+      m.loop = false; // the music element loops; the beep must not
+      m.src = beepBlobUrl;
+      m.volume = 1;
+      m.load();
+      const p = m.play();
+      if (p && p.catch) p.catch(function (e) {
+        console.warn('[beep] play failed:', e && e.name);
+        finishBeep();
+      });
+    }
+
+    function finishBeep() {
+      const m = dom.musicPlayer;
+      if (!beepActive) return;
+      beepActive = false;
+      m.onended = null;
+      m.onerror = null;
+      m.loop = true;
+      if (musicRestore) {
+        const r = musicRestore;
+        musicRestore = null;
+        m.src = r.src;
+        m.load();
+        const onReady = function () {
+          m.removeEventListener('canplay', onReady);
+          try { m.currentTime = r.time; } catch (e) {}
+          m.volume = clamp01(phase === 'exercise' ? userMusicVolume * DUCK_RATIO : userMusicVolume);
+          if (!isPaused) playMusic();
+        };
+        m.addEventListener('canplay', onReady);
+      } else {
+        m.removeAttribute('src');
+        m.load();
+        m.volume = clamp01(userMusicVolume);
+      }
     }
 
     // Audio ducking: music volume during exercise vs break
@@ -598,35 +662,6 @@
     // pause the music, attach the beep src just for this playback, and fully
     // release it (remove src + load()) the moment it ends or errors. Music
     // resumes when the next exercise starts (startExercise → playMusic).
-    // ── Single-audio-producer rule ──
-    // This device crashes/silences when two things output audio at once —
-    // even Web Audio mixed over a media element. So the beep and the music
-    // must NEVER overlap: the music is paused 2s before the beep (the
-    // "beep window"), the beep plays as the sole producer, and the music
-    // returns when the exercise starts. The watchdog respects the window.
-    let beepWindowActive = false;
-
-    function armBeepWindow() {
-      if (!beepBuffer) return;
-      beepWindowActive = true;
-      if (dom.musicPlayer.src && !dom.musicPlayer.paused) {
-        pauseMusic('beepWindow');
-      }
-    }
-
-    function playCountdownBeep() {
-      if (!beepBuffer || !audioCtx) return;
-      try {
-        // defensive: the music must be silent before the beep starts
-        if (dom.musicPlayer.src && !dom.musicPlayer.paused) pauseMusic('beepWindow');
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const source = audioCtx.createBufferSource();
-        source.buffer = beepBuffer;
-        source.connect(audioCtx.destination);
-        source.start(0);
-      } catch (e) { console.warn('[beep] play error:', e); }
-    }
-
     // Start the music robustly. Wait for canplay (in changeMusic) before this,
     // so play() doesn't race the load. An AbortError just means play() got
     // interrupted by a pause()/load() — retry once if we still intend to play.
@@ -693,9 +728,11 @@
 
     // Audio ducking: lower music when video is playing, restore during breaks
     function duckMusic() {
+      if (beepActive) return; // don't re-volume the beep; finishBeep restores
       dom.musicPlayer.volume = clamp01(userMusicVolume * DUCK_RATIO);
     }
     function unduckMusic() {
+      if (beepActive) return;
       dom.musicPlayer.volume = clamp01(userMusicVolume);
     }
 
@@ -723,14 +760,16 @@
       return lastMusicStop.reason + '@' + Math.round((Date.now() - lastMusicStop.at) / 1000) + 's';
     }
 
-    // Music watchdog: this device sometimes knocks the music element over
-    // around video pause/play transitions. If the music pauses or stalls
-    // while the workout is active and the user hasn't paused, restart it.
-    // (Not during the beep window — that pause is deliberate.)
+    // Music watchdog: if the music element pauses/stalls while the workout is
+    // active and the user hasn't paused, restart it. Not while the beep is
+    // using the element or a post-beep restore is pending — those manage the
+    // element themselves.
     function musicShouldBePlaying() {
       return (
         !isPaused &&
-        !beepWindowActive &&
+        !beepActive &&
+        !musicRestore &&
+        !bounceTimer &&
         dom.musicPlayer.src &&
         phase !== 'idle' &&
         phase !== 'complete'
@@ -778,8 +817,8 @@
             musicReadyState: dom.musicPlayer.readyState,
             musicError: dom.musicPlayer.error ? dom.musicPlayer.error.code : 0,
             musicLastStop: fmtLastStop(),
-            beepCtxState: audioCtx ? audioCtx.state : 'none',
-            beepLoaded: !!beepBuffer,
+            beepActive: beepActive,
+            beepLoaded: !!beepBlobUrl,
             phase, exerciseIndex: currentIndex,
             exerciseTitle: ex ? (ex.title || '') : '',
             exerciseTimeRemaining: phase === 'exercise' ? Math.max((ex?.exerciseLength || 0) - exerciseElapsed, 0) : 0,
@@ -832,9 +871,6 @@
       const ex = exercises[currentIndex];
       dom.breakLabelText.textContent = 'Get Ready';
       dom.breakNextText.textContent = ex ? (ex.title || 'Exercise ' + (currentIndex + 1)) : '';
-      // Get Ready is only 5s — whole countdown is beep window (music, if any
-      // from a mid-workout reload, stays out of the beep's way)
-      armBeepWindow();
       countdownValue = GET_READY_SECONDS;
       dom.breakCountdown.textContent = countdownValue;
       dom.breakProgressBar.style.width = '0%';
@@ -854,12 +890,9 @@
         const pct = ((GET_READY_SECONDS - countdownValue) / GET_READY_SECONDS) * 100;
         dom.breakProgressBar.style.width = pct + '%';
 
-        // Pause the music 2s ahead of the beep (single-audio-producer rule),
-        // then play the full countdown sound ONCE at 3s remaining (the file
-        // is the entire "beep beep beep beeeep" pattern).
-        if (countdownValue === 5) {
-          armBeepWindow();
-        }
+        // Play the full countdown sound ONCE at 3s remaining (the file is
+        // the entire "beep beep beep beeeep" pattern) — a src-swap on the
+        // music element, restored automatically when it ends.
         if (countdownValue === 3) {
           playCountdownBeep();
         }
@@ -913,20 +946,17 @@
         dom.video.play().catch(e => console.warn('Video play error:', e));
       }
 
-      // Beep window ends with the countdown — the exercise phase hands the
-      // single audio stream back to the music
-      beepWindowActive = false;
-
-      // Music — duck volume while video plays. Resume slightly delayed: the
-      // beep's final tone can spill past the countdown, and music starting
-      // on top of it violates the single-producer rule (crashes the device)
+      // Music — duck volume while video plays. If the beep is still playing
+      // through the element, finishBeep() restores + resumes the music when
+      // it ends; otherwise re-grab the route broken by video.play() (bounce)
+      // or restart a paused track.
       duckMusic();
-      if (dom.musicPlayer.src && dom.musicPlayer.paused) {
-        setTimeout(function () {
-          if (!isPaused && !beepWindowActive && dom.musicPlayer.src && dom.musicPlayer.paused) {
-            playMusic();
-          }
-        }, 800);
+      if (dom.musicPlayer.getAttribute('src') && !beepActive) {
+        if (dom.musicPlayer.paused) {
+          if (!isPaused) playMusic();
+        } else {
+          bounceMusic('reroute-exercise');
+        }
       }
 
       sendState();
@@ -985,22 +1015,15 @@
       // Restore music volume during rest (no video audio competing)
       unduckMusic();
 
-      // Wake the beep's AudioContext now — the device suspends an idle
-      // context during the exercise, and resuming it inside the beep call
-      // is async/slow, which pushed the beep from "3" toward "1"
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume().catch(function () {});
-      }
-
-      // Self-heal: pausing the exercise video can knock the music element
-      // over on this device — if the music should be playing, restart it
-      if (dom.musicPlayer.src && dom.musicPlayer.paused && !isPaused) {
-        playMusic();
-      }
-
-      // Breaks too short to hit the "5" tick: the whole break is beep window
-      if (breakTotal <= 5) {
-        armBeepWindow();
+      // The video pause we just did silently breaks the music's audio route
+      // (element keeps "playing" with no sound) — bounce it to re-grab the
+      // route, or restart it if something left it paused
+      if (dom.musicPlayer.getAttribute('src') && !beepActive) {
+        if (dom.musicPlayer.paused) {
+          if (!isPaused) playMusic();
+        } else {
+          bounceMusic('reroute-break');
+        }
       }
 
       // NOTE: no break-start sound here. The sender sends its URL as null,
@@ -1015,12 +1038,9 @@
         dom.breakCountdown.textContent = Math.max(countdownValue, 0);
         dom.breakProgressBar.style.width = ((breakTotal - countdownValue) / breakTotal * 100) + '%';
         updateProgressBar();
-        // Pause the music 2s ahead of the beep (single-audio-producer rule),
-        // then play the full countdown sound ONCE at 3s remaining (the file
-        // is the entire "beep beep beep beeeep" pattern).
-        if (countdownValue === 5) {
-          armBeepWindow();
-        }
+        // Play the full countdown sound ONCE at 3s remaining (the file is
+        // the entire "beep beep beep beeeep" pattern) — a src-swap on the
+        // music element, restored automatically when it ends.
         if (countdownValue === 3) {
           playCountdownBeep();
         }
@@ -1080,6 +1100,13 @@
 
     /* ─── MUSIC & VOLUME ─── */
     function changeMusic(url, volume) {
+      // The beep is borrowing the element right now — redirect the change to
+      // the post-beep restore target instead of stomping the beep playback
+      if (beepActive) {
+        musicRestore = url ? { src: url, time: 0 } : null;
+        if (volume != null) userMusicVolume = clamp01(volume);
+        return;
+      }
       if (url) {
         const el = dom.musicPlayer;
         el.src = url;
@@ -1175,8 +1202,7 @@
           ' ready=' + m.readyState +
           ' vol=' + m.volume.toFixed(2) +
           ' | last-stop: ' + fmtLastStop() +
-          ' | ctx: ' + (audioCtx ? audioCtx.state : 'none') +
-          ' | beep: ' + (beepBuffer ? 'loaded' : 'none');
+          ' | beep: ' + (beepActive ? 'PLAYING' : (beepBlobUrl ? 'ready' : 'none'));
       } catch (e) { /* diagnostics must never break playback */ }
     }, 500);
 
