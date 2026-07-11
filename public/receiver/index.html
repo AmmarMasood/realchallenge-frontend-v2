@@ -495,7 +495,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v3.1.1 — 2026-07-11 (fade + loop-point kept out of beep window)';
+    const RECEIVER_VERSION = 'v3.1.2 — 2026-07-11 (fade out AND back in around the beep)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -621,14 +621,28 @@
             if (beepFadeArmed && !beepActive) {
               beepFadeArmed = false;
               if (!isPaused && hasMusicSrc() && dom.musicPlayer.paused) {
-                dom.musicPlayer.volume = clamp01(
-                  phase === 'exercise' ? userMusicVolume * DUCK_RATIO : userMusicVolume
-                );
+                fadeInMusic(800);
                 playMusic();
               }
             }
           }, 3000);
         }
+      }, 80);
+    }
+
+    // Mirror of the fade-out: ramp from silence up to the phase-appropriate
+    // volume so the music returns softly instead of at full blast.
+    function fadeInMusic(ms) {
+      const el = dom.musicPlayer;
+      const target = clamp01(phase === 'exercise' ? userMusicVolume * DUCK_RATIO : userMusicVolume);
+      if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; }
+      const steps = Math.max(1, Math.round(ms / 80));
+      let i = 0;
+      el.volume = 0;
+      fadeTimer = setInterval(function () {
+        i++;
+        el.volume = clamp01(target * (i / steps));
+        if (i >= steps) { clearInterval(fadeTimer); fadeTimer = null; }
       }, 80);
     }
 
@@ -671,8 +685,13 @@
         const onReady = function () {
           m.removeEventListener('canplay', onReady);
           try { m.currentTime = r.time; } catch (e) {}
-          m.volume = clamp01(phase === 'exercise' ? userMusicVolume * DUCK_RATIO : userMusicVolume);
-          if (!isPaused) playMusic();
+          if (!isPaused) {
+            // fade back up — mirrors the fade-out into the beep
+            fadeInMusic(1200);
+            playMusic();
+          } else {
+            m.volume = clamp01(phase === 'exercise' ? userMusicVolume * DUCK_RATIO : userMusicVolume);
+          }
         };
         m.addEventListener('canplay', onReady);
       } else {
