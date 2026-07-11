@@ -495,7 +495,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v3.0.1 — 2026-07-11 (beep swap fires at "4" to land on "3")';
+    const RECEIVER_VERSION = 'v3.1.1 — 2026-07-11 (fade + loop-point kept out of beep window)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -594,8 +594,48 @@
       }, 800);
     }
 
+    // Fade the music out over ~1s ahead of the beep swap, so the inherent
+    // 1–2s session-switch gap on this device reads as a designed transition
+    // (music fades → beeps → exercise) instead of an abrupt cut to silence.
+    let fadeTimer = null;
+    let beepFadeArmed = false;
+
+    function fadeOutMusicForBeep(ms) {
+      if (!beepBlobUrl || beepActive || !hasMusicSrc() || dom.musicPlayer.paused) return;
+      if (fadeTimer) clearInterval(fadeTimer);
+      beepFadeArmed = true;
+      const el = dom.musicPlayer;
+      const startVol = el.volume;
+      const steps = Math.max(1, Math.round(ms / 80));
+      let i = 0;
+      fadeTimer = setInterval(function () {
+        i++;
+        el.volume = clamp01(startVol * (1 - i / steps));
+        if (i >= steps) {
+          clearInterval(fadeTimer);
+          fadeTimer = null;
+          pauseMusic('beepFade');
+          // Safety: if the beep never fires (e.g. skip mid-fade), un-arm and
+          // bring the music back rather than leaving it silently paused
+          setTimeout(function () {
+            if (beepFadeArmed && !beepActive) {
+              beepFadeArmed = false;
+              if (!isPaused && hasMusicSrc() && dom.musicPlayer.paused) {
+                dom.musicPlayer.volume = clamp01(
+                  phase === 'exercise' ? userMusicVolume * DUCK_RATIO : userMusicVolume
+                );
+                playMusic();
+              }
+            }
+          }, 3000);
+        }
+      }, 80);
+    }
+
     function playCountdownBeep() {
       if (!beepBlobUrl || beepActive) return;
+      if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; }
+      beepFadeArmed = false;
       const m = dom.musicPlayer;
       const currentSrc = m.getAttribute('src');
       const hadMusic = !!currentSrc && currentSrc !== beepBlobUrl;
@@ -619,6 +659,7 @@
       const m = dom.musicPlayer;
       if (!beepActive) return;
       beepActive = false;
+      beepFadeArmed = false;
       m.onended = null;
       m.onerror = null;
       m.loop = true;
@@ -790,6 +831,7 @@
       return (
         !isPaused &&
         !beepActive &&
+        !beepFadeArmed &&
         !musicRestore &&
         !bounceTimer &&
         hasMusicSrc() &&
@@ -1025,6 +1067,10 @@
         // playing + looping, invisible behind the opaque break overlay.
         dom.video.onended = null;
         dom.video.loop = true;
+        // Restart from 0 so the loop point lands as late as possible — a
+        // loop restart is a mini pipeline transition that can cut the beep
+        // or blip the music mid-break
+        try { dom.video.currentTime = 0; } catch (e) {}
         if (dom.video.src && dom.video.paused) {
           dom.video.play().catch(function () {});
         }
@@ -1089,11 +1135,26 @@
         dom.breakCountdown.textContent = Math.max(countdownValue, 0);
         dom.breakProgressBar.style.width = ((breakTotal - countdownValue) / breakTotal * 100) + '%';
         updateProgressBar();
-        // Fire the beep swap ONE TICK EARLY (at "4"): tearing down the music
-        // session and starting the beep's takes this device ~1s, so the
-        // sound lands on "3" and the full beep-beep-beep-chime pattern
-        // finishes before the exercise's video swap can clip it. (Get Ready
-        // triggers at "3" — its element is idle and starts instantly.)
+        // "5": start fading the music out (~1s) so the transition into the
+        // beep reads as intentional. "4": fire the beep swap ONE TICK EARLY —
+        // tearing down the music session and starting the beep's takes this
+        // device ~1s, so the sound lands on "3" and the full
+        // beep-beep-beep-chime pattern finishes before the exercise's video
+        // swap can clip it. (Get Ready triggers at "3" — idle element,
+        // instant start.)
+        if (countdownValue === 5) {
+          fadeOutMusicForBeep(900);
+          // Loop-point guard: if the hidden video would wrap within the next
+          // ~7s (i.e. during the beep), rewind it NOW — the seek's pipeline
+          // blip lands in the fade where it's inaudible, and the beep window
+          // is guaranteed loop-free
+          try {
+            const v = dom.video;
+            if (v.duration && !v.paused && v.duration - v.currentTime < 7) {
+              v.currentTime = 0;
+            }
+          } catch (e) {}
+        }
         if (countdownValue === 4) {
           playCountdownBeep();
         }
