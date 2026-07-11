@@ -495,7 +495,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v3.0 — 2026-07-11 (video never pauses in breaks — pipeline stays alive)';
+    const RECEIVER_VERSION = 'v3.0.1 — 2026-07-11 (beep swap fires at "4" to land on "3")';
 
     const $ = (id) => document.getElementById(id);
 
@@ -1071,6 +1071,12 @@
         playMusic();
       }
 
+      // Breaks too short to reach the "4" tick: start the beep swap now
+      // (its ~1s session-init means the sound lands mid-break)
+      if (breakTotal <= 4) {
+        playCountdownBeep();
+      }
+
       // NOTE: no break-start sound here. The sender sends its URL as null,
       // and calling play() on the empty element at break start can grab this
       // device's single audio output and silence the music for the whole rest.
@@ -1083,10 +1089,12 @@
         dom.breakCountdown.textContent = Math.max(countdownValue, 0);
         dom.breakProgressBar.style.width = ((breakTotal - countdownValue) / breakTotal * 100) + '%';
         updateProgressBar();
-        // Play the full countdown sound ONCE at 3s remaining (the file is
-        // the entire "beep beep beep beeeep" pattern) — a src-swap on the
-        // music element, restored automatically when it ends.
-        if (countdownValue === 3) {
+        // Fire the beep swap ONE TICK EARLY (at "4"): tearing down the music
+        // session and starting the beep's takes this device ~1s, so the
+        // sound lands on "3" and the full beep-beep-beep-chime pattern
+        // finishes before the exercise's video swap can clip it. (Get Ready
+        // triggers at "3" — its element is idle and starts instantly.)
+        if (countdownValue === 4) {
           playCountdownBeep();
         }
         sendState();
