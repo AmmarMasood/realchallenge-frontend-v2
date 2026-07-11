@@ -77,7 +77,6 @@ function MusicPlayer({ visible, setMusicPlayerVisible, musicList, onMusicChange 
       className="music-player-modal-container"
       style={{ display: visible ? "flex" : "none" }}
     >
-      {console.log("currentPlaying", musicList)}
       <CloseOutlined
         onClick={() => setMusicPlayerVisible(false)}
         style={{
@@ -150,7 +149,6 @@ function MusicPlayer({ visible, setMusicPlayerVisible, musicList, onMusicChange 
           </div>
           {musicList.map((m) => (
             <div key={m._id} onClick={() => handleOnMusicSelect(m)}>
-              {console.log("ammar", currentPlaying, m)}
               <span
                 className="font-paragraph-white"
                 style={{

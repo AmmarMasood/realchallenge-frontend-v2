@@ -616,18 +616,10 @@ function Exercises({
                               : "exercise-browser-card exercise-browser-card-update"
                           }`}
                           style={{
-                            backgroundColor:
-                              draggedItemId === e.id
-                                ? "rgba(34, 197, 94, 0.15)"
-                                : undefined,
-                            border:
-                              draggedItemId === e.id
-                                ? "2px solid #22c55e"
-                                : "2px solid transparent",
+                            // dragged-state visuals now live in DndWrapper:
+                            // dashed placeholder + floating card in hand
+                            border: "2px solid transparent",
                             transition: "all 0.15s ease-out",
-                            borderRadius:
-                              draggedItemId === e.id ? "8px" : "0px",
-                            opacity: draggedItemId === e.id ? "0.8" : "1",
                           }}
                         >
                           {workout.renderWorkout && (

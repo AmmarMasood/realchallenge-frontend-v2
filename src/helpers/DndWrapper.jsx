@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useRef, useCallback, useMemo, useEffect, useLayoutEffect, useState } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import { HTML5Backend, getEmptyImage } from "react-dnd-html5-backend";
 import { TouchBackend } from "react-dnd-touch-backend";
 
 // Detect if device supports touch
@@ -74,14 +74,21 @@ function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positio
     // px-per-frame-at-60fps so existing tuning still maps 1:1 on desktop.
     const FRAME_MS = 1000 / 60;
     let lastTime = null;
+    // The container's BOX doesn't move while its content scrolls, so measure
+    // it once and refresh only occasionally — calling getBoundingClientRect
+    // every tick right after the scrollLeft write forced a layout per frame.
+    let cachedRect = null;
+    let rectAge = 0;
 
     const tick = (now) => {
       if (lastTime == null) lastTime = now;
       const dt = now - lastTime;
       lastTime = now;
-      // Cap the multiplier so a long stall (GC pause, tab switch) can't fling
-      // the scroll across the whole list in a single frame.
-      const factor = Math.min(dt / FRAME_MS, 4) || 1;
+      // Compensate for slow frames so velocity stays constant. Cap 8 (~130ms
+      // frames fully compensated): the old cap of 4 silently LIMITED scroll
+      // speed under load — the "edge scroll crawls" symptom — while still
+      // preventing a multi-second stall from flinging across the whole list.
+      const factor = Math.min(dt / FRAME_MS, 8) || 1;
 
       // With an explicit container, scroll that; otherwise fall back to the
       // page itself so lists living in normal document flow (weeks, workouts)
@@ -91,14 +98,18 @@ function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positio
       const container = scrollContainerRef?.current || null;
       const scrollEl =
         container || document.scrollingElement || document.documentElement;
-      const rect = container
-        ? container.getBoundingClientRect()
-        : {
-            top: 0,
-            left: 0,
-            right: window.innerWidth,
-            bottom: window.innerHeight,
-          };
+      if (!cachedRect || ++rectAge > 30) {
+        rectAge = 0;
+        cachedRect = container
+          ? container.getBoundingClientRect()
+          : {
+              top: 0,
+              left: 0,
+              right: window.innerWidth,
+              bottom: window.innerHeight,
+            };
+      }
+      const rect = cachedRect;
       const { x, y } = positionRef.current;
 
       // Skip if position hasn't been set yet
@@ -200,6 +211,24 @@ export function DraggableArea({
   // touch stream — the "drag dies after the first swap" bug on phones.
   const dragSessionRef = useRef(null);
 
+  // Floating pointer-attached preview ("the card in your hand"): the native
+  // HTML5 ghost is suppressed and the touch backend never had one, so this
+  // snapshot is what DragLayerPreview renders under the pointer. `settle` is
+  // the drop animation state (release position → final slot), and settlingId
+  // keeps the real item invisible until the floating card lands on it.
+  const [floatingPreview, setFloatingPreview] = useState(null);
+  const floatingPreviewRef = useRef(null);
+  const [settle, setSettle] = useState(null);
+  const [settlingId, setSettlingId] = useState(null);
+  const grabDeltaRef = useRef({ dx: 0, dy: 0 });
+
+  const handleSettleDone = useCallback(() => {
+    floatingPreviewRef.current = null;
+    setFloatingPreview(null);
+    setSettle(null);
+    setSettlingId(null);
+  }, []);
+
   // Auto-scroll when dragging near container edges
   useAutoScroll(
     scrollContainerRef,
@@ -224,11 +253,22 @@ export function DraggableArea({
       .filter((itemId) => itemId !== undefined);
     const starts = new Map();
     const sizes = new Map();
+    const rects = new Map();
     ids.forEach((itemId) => {
       const el = itemNodesRef.current.get(itemId);
       if (!el) return;
       starts.set(itemId, horizontal ? el.offsetLeft : el.offsetTop);
       sizes.set(itemId, horizontal ? el.offsetWidth : el.offsetHeight);
+      // Viewport-space slot origin, captured ONCE — hover math derives the
+      // current settled position from this + scroll deltas, so the hot
+      // hover path never has to force a layout (getBoundingClientRect
+      // during active auto-scroll = forced reflow every frame, the main
+      // source of drag lag on the exercise strip).
+      // NOTE: deliberately NO will-change here — promoting a dozen tall
+      // cards to compositor layers overloaded weaker GPUs and made frames
+      // longer, which the auto-scroll then paid for as reduced velocity.
+      const r = el.getBoundingClientRect();
+      rects.set(itemId, { left: r.left, top: r.top });
     });
     // Spacing between consecutive slots (margins / flex gaps), per pair
     const gaps = [];
@@ -238,15 +278,24 @@ export function DraggableArea({
           ((starts.get(ids[i]) || 0) + (sizes.get(ids[i]) || 0))
       );
     }
+    const containerEl = scrollContainerRef?.current || null;
     dragSessionRef.current = {
       originalOrder: ids,
       order: [...ids],
       starts,
       sizes,
       gaps,
+      rects,
+      scrollContainer: containerEl,
+      scroll0: {
+        cx: containerEl ? containerEl.scrollLeft : 0,
+        cy: containerEl ? containerEl.scrollTop : 0,
+        wx: window.pageXOffset,
+        wy: window.pageYOffset,
+      },
       translates: new Map(),
     };
-  }, [childArray, direction]);
+  }, [childArray, direction, scrollContainerRef]);
 
   // Show the pending order by translating each item from its frozen DOM slot
   // to where it belongs: walk the pending order accumulating sizes + gaps.
@@ -262,17 +311,21 @@ export function DraggableArea({
           (session.sizes.get(itemId) || 0) +
           (k < session.gaps.length ? session.gaps[k] : 0);
         const delta = target - (session.starts.get(itemId) || 0);
+        const prev = session.translates.get(itemId);
         session.translates.set(itemId, delta);
+        // Only touch the DOM for items whose slot actually changed — a swap
+        // moves two items, so rewriting all N transforms every hover was
+        // needless style churn that competed with the auto-scroll rAF
+        if (prev === delta) return;
         const el = itemNodesRef.current.get(itemId);
         if (!el) return;
         const translate = horizontal
           ? `translateX(${delta}px)`
           : `translateY(${delta}px)`;
-        const scale = itemId === draggedId ? " scale(0.95)" : "";
         el.style.transition = prefersReducedMotion()
           ? "none"
-          : "transform 0.15s ease";
-        el.style.transform = delta || scale ? `${translate}${scale}` : "";
+          : "transform 0.18s cubic-bezier(0.2, 0, 0, 1)";
+        el.style.transform = delta ? translate : "";
       });
     },
     [direction]
@@ -296,6 +349,28 @@ export function DraggableArea({
     (dragging, draggedId) => {
       if (dragging) {
         beginDragSession();
+        // Snapshot the dragged card for the floating preview. rectLeft/Top
+        // anchor the grab-point math to the CARD itself — the react-dnd
+        // "source" is the handle, so its offsets would wrongly glue the
+        // card's top-left corner to the pointer.
+        const el = itemNodesRef.current.get(draggedId);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          const fp = {
+            id: draggedId,
+            // Strip <video> tags from the clone — exercise cards embed
+            // hidden thumbnail-generator videos, and a cloned <video>
+            // starts LOADING its src in the drag layer (a visible hitch
+            // right at pickup). The rendered <img> thumbnails remain.
+            html: el.outerHTML.replace(/<video[\s\S]*?(?:<\/video>|\/>)/gi, ""),
+            width: el.offsetWidth,
+            height: el.offsetHeight,
+            rectLeft: rect.left,
+            rectTop: rect.top,
+          };
+          floatingPreviewRef.current = fp;
+          setFloatingPreview(fp);
+        }
       } else {
         // Drop: commit the pending order once. The touch/drag is already
         // over, so the DOM reorder this triggers can't kill the gesture.
@@ -310,6 +385,33 @@ export function DraggableArea({
             session.order.map((itemId) => ({ key: itemId, id: itemId }))
           );
         }
+
+        // Drop-settle: glide the floating card from where it was released
+        // into its final slot, keeping the real item hidden (settlingId)
+        // until it lands. Position must be captured before the reset below.
+        const fp = floatingPreviewRef.current;
+        const last = { ...dragPositionRef.current };
+        if (fp && (last.x !== 0 || last.y !== 0)) {
+          setSettlingId(fp.id);
+          requestAnimationFrame(() => {
+            const el = itemNodesRef.current.get(fp.id);
+            if (!el) {
+              handleSettleDone();
+              return;
+            }
+            const rect = el.getBoundingClientRect();
+            setSettle({
+              ...fp,
+              from: {
+                x: last.x - grabDeltaRef.current.dx,
+                y: last.y - grabDeltaRef.current.dy,
+              },
+              to: { x: rect.left, y: rect.top },
+            });
+          });
+        } else {
+          handleSettleDone();
+        }
       }
       setIsDragging(dragging);
       if (!dragging) {
@@ -319,7 +421,7 @@ export function DraggableArea({
         onDragStateChange(dragging, draggedId);
       }
     },
-    [beginDragSession, onChange, onDragStateChange]
+    [beginDragSession, onChange, onDragStateChange, handleSettleDone]
   );
 
   // After the drop commits, children re-render in their real new DOM order
@@ -335,7 +437,14 @@ export function DraggableArea({
   }, [isDragging]);
 
   return (
-    <DragContext.Provider value={{ moveItem, direction, itemType, onDragStateChange: handleDragStateChange, dragPositionRef, dragSessionRef, registerItemNode }}>
+    <DragContext.Provider value={{ moveItem, direction, itemType, onDragStateChange: handleDragStateChange, dragPositionRef, dragSessionRef, registerItemNode, settlingId }}>
+      <DragLayerPreview
+        preview={floatingPreview}
+        settle={settle}
+        grabDeltaRef={grabDeltaRef}
+        dragPositionRef={dragPositionRef}
+        onSettleDone={handleSettleDone}
+      />
       <div
         style={{
           display: direction === "horizontal" ? "inline-flex" : "block",
@@ -348,6 +457,124 @@ export function DraggableArea({
         )}
       </div>
     </DragContext.Provider>
+  );
+}
+
+// Floating pointer-attached drag preview + drop-settle animation.
+// The native HTML5 drag ghost is suppressed (getEmptyImage) and the touch
+// backend never rendered one at all — this layer is the single "card in
+// your hand" on both backends: it tracks the pointer exactly (keeping the
+// original grab point under the finger/cursor) and, on release, glides
+// into the final slot instead of vanishing.
+//
+// Pointer-following is IMPERATIVE: a rAF loop writes the transform straight
+// to the element from dragPositionRef (already fed by capture-phase
+// dragover/touchmove listeners). The earlier useDragLayer version re-rendered
+// through React on every pointer move — ~60 commits/sec that visibly starved
+// the auto-scroll on the exercise strip.
+function DragLayerPreview({ preview, settle, grabDeltaRef, dragPositionRef, onSettleDone }) {
+  const floatElRef = useRef(null);
+  const settleElRef = useRef(null);
+  const doneRef = useRef(onSettleDone);
+  doneRef.current = onSettleDone;
+
+  useLayoutEffect(() => {
+    if (!preview || settle) return;
+    let grabReady = false;
+    let raf;
+    const tick = () => {
+      const el = floatElRef.current;
+      const pos = dragPositionRef.current;
+      if (el && (pos.x !== 0 || pos.y !== 0)) {
+        if (!grabReady) {
+          // First known pointer position: lock the grab point against the
+          // card's rect at drag start (NOT the handle — the react-dnd source
+          // is the handle, whose offset would glue the card's corner to the
+          // pointer), then reveal the floating card.
+          grabReady = true;
+          grabDeltaRef.current = {
+            dx: pos.x - preview.rectLeft,
+            dy: pos.y - preview.rectTop,
+          };
+          el.style.opacity = "0.98";
+        }
+        el.style.transform = `translate(${pos.x - grabDeltaRef.current.dx}px, ${
+          pos.y - grabDeltaRef.current.dy
+        }px) scale(1.03) rotate(1.2deg)`;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [preview, settle, dragPositionRef, grabDeltaRef]);
+
+  // Drop-settle: start at the release position, glide into the final slot.
+  useLayoutEffect(() => {
+    if (!settle) return;
+    const el = settleElRef.current;
+    if (!el) return;
+    let doneTimer = null;
+    const raf = requestAnimationFrame(() => {
+      el.style.transition = prefersReducedMotion()
+        ? "none"
+        : "transform 0.18s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.18s ease";
+      el.style.transform = `translate(${settle.to.x}px, ${settle.to.y}px)`;
+      el.style.boxShadow = "0 0 0 rgba(0, 0, 0, 0)";
+      doneTimer = setTimeout(() => doneRef.current(), 200);
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      if (doneTimer) clearTimeout(doneTimer);
+    };
+  }, [settle]);
+
+  if (settle) {
+    return (
+      <div
+        ref={settleElRef}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: settle.width,
+          height: settle.height,
+          transform: `translate(${settle.from.x}px, ${settle.from.y}px)`,
+          zIndex: 9999,
+          pointerEvents: "none",
+          boxShadow: "0 12px 32px rgba(0, 0, 0, 0.45)",
+          borderRadius: 8,
+        }}
+        dangerouslySetInnerHTML={{ __html: settle.html }}
+      />
+    );
+  }
+
+  if (!preview) {
+    return null;
+  }
+
+  // Rendered ONCE per drag; hidden off-screen until the first pointer
+  // position arrives, then positioned imperatively by the rAF loop above.
+  return (
+    <div
+      ref={floatElRef}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: preview.width,
+        height: preview.height,
+        transform: "translate(-99999px, -99999px)",
+        transformOrigin: "50% 50%",
+        zIndex: 9999,
+        pointerEvents: "none",
+        boxShadow: "0 12px 32px rgba(0, 0, 0, 0.45)",
+        borderRadius: 8,
+        opacity: 0,
+        willChange: "transform",
+      }}
+      dangerouslySetInnerHTML={{ __html: preview.html }}
+    />
   );
 }
 
@@ -376,7 +603,7 @@ export function DraggableItem({ children, index, id, style, ...rest }) {
   const handleRef = useRef(null);
   const lastHoverTime = useRef(0);
   const lastLayoutPosRef = useRef(null);
-  const { moveItem, direction, itemType, onDragStateChange, dragPositionRef, dragSessionRef, registerItemNode } = useContext(DragContext);
+  const { moveItem, direction, itemType, onDragStateChange, dragPositionRef, dragSessionRef, registerItemNode, settlingId } = useContext(DragContext);
 
   // Expose this item's DOM node to the area so it can measure slots at drag
   // start and apply the pending-order transforms.
@@ -398,9 +625,12 @@ export function DraggableItem({ children, index, id, style, ...rest }) {
         dragPositionRef.current = { x: clientOffset.x, y: clientOffset.y };
       }
 
-      // Throttle hover events to reduce vibration (minimum 30ms between moves)
+      // Throttle hover events: each processed hover forces layout/style
+      // recalc (rect + computed transform), and during edge auto-scroll
+      // dragover fires continuously — 16ms starved the scroll rAF and made
+      // it chunky. 24ms is still ~immediate to the eye.
       const now = Date.now();
-      if (now - lastHoverTime.current < 30) return;
+      if (now - lastHoverTime.current < 24) return;
 
       // Reorder happens in the drag session's PENDING order (the DOM order is
       // frozen during the drag). No session here means the drag started in a
@@ -414,17 +644,22 @@ export function DraggableItem({ children, index, id, style, ...rest }) {
 
       // Hysteresis: only swap once the pointer is clearly past this item's
       // midpoint in the drag direction — otherwise the post-swap shift puts
-      // the pointer back over the other item and they oscillate. Measure at
-      // the item's SETTLED pending position (bounding rect minus in-flight
-      // animation, plus its assigned session translate) so a card sliding
-      // through the pointer can't re-trigger the swap in reverse.
-      const rect = ref.current.getBoundingClientRect();
-      const inFlight = getCurrentTranslate(ref.current);
+      // the pointer back over the other item and they oscillate. The item's
+      // SETTLED position is derived purely from session data (slot rect at
+      // drag start + assigned translate − scroll deltas): no DOM reads here,
+      // because forcing layout on every hover while the auto-scroll is
+      // mutating scrollLeft each frame was the main source of drag lag.
+      const rect0 = session.rects && session.rects.get(id);
+      if (!rect0) return;
       const applied = (session.translates && session.translates.get(id)) || 0;
+      const c = session.scrollContainer;
+      const half = (session.sizes.get(id) || 0) / 2;
 
       if (direction === "horizontal") {
-        const settledLeft = rect.left - inFlight.x + applied;
-        const half = rect.width / 2;
+        const scrollDx =
+          (c ? c.scrollLeft - session.scroll0.cx : 0) +
+          (window.pageXOffset - session.scroll0.wx);
+        const settledLeft = rect0.left + applied - scrollDx;
         const pointerX = clientOffset.x - settledLeft;
 
         // Only move if cursor is clearly past the middle (30% threshold)
@@ -432,8 +667,10 @@ export function DraggableItem({ children, index, id, style, ...rest }) {
         if (dragIdx < hoverIdx && pointerX < half - threshold) return;
         if (dragIdx > hoverIdx && pointerX > half + threshold) return;
       } else {
-        const settledTop = rect.top - inFlight.y + applied;
-        const half = rect.height / 2;
+        const scrollDy =
+          (c ? c.scrollTop - session.scroll0.cy : 0) +
+          (window.pageYOffset - session.scroll0.wy);
+        const settledTop = rect0.top + applied - scrollDy;
         const pointerY = clientOffset.y - settledTop;
         if (dragIdx < hoverIdx && pointerY < half) return;
         if (dragIdx > hoverIdx && pointerY > half) return;
@@ -462,9 +699,15 @@ export function DraggableItem({ children, index, id, style, ...rest }) {
     }),
   });
 
-  // Attach drop target and preview to the item container
-  // But DON'T attach drag here - drag is only from handle
-  preview(drop(ref));
+  // Attach drop target to the item container.
+  // But DON'T attach drag here - drag is only from handle.
+  drop(ref);
+
+  // Suppress the native HTML5 drag ghost — DragLayerPreview renders the
+  // pointer-attached card on both backends instead. (No-op on touch.)
+  useEffect(() => {
+    preview(getEmptyImage(), { captureDraggingState: true });
+  }, [preview]);
 
   // FLIP slide: when a reorder commits, React moves elements to their new
   // layout slots in a single instant jump. Measure the layout position
@@ -492,27 +735,32 @@ export function DraggableItem({ children, index, id, style, ...rest }) {
     const inFlight = getCurrentTranslate(el);
     const dx = movedX + inFlight.x;
     const dy = movedY + inFlight.y;
-    const scale = isDragging ? " scale(0.95)" : "";
     el.style.transition = "none";
-    el.style.transform = `translate(${dx}px, ${dy}px)${scale}`;
+    el.style.transform = `translate(${dx}px, ${dy}px)`;
     void el.offsetWidth; // flush styles so the jump back isn't transitioned
-    el.style.transition = "transform 0.15s ease, opacity 0.1s ease-out";
-    el.style.transform = isDragging ? "scale(0.95)" : "";
+    el.style.transition = "transform 0.18s cubic-bezier(0.2, 0, 0, 1), opacity 0.1s ease-out";
+    el.style.transform = "";
   });
 
   // Merge caller styles on top instead of letting {...rest} replace the
   // whole style object — Exercises passes style={{ zIndex: 1 }}, which used
-  // to wipe out the drag opacity/scale styling entirely.
+  // to wipe out the drag styling entirely.
   const itemStyle = useMemo(
     () => ({
-      opacity: isDragging ? 0.4 : 1,
+      // While dragging, this element is the drop-slot PLACEHOLDER (dashed
+      // outline, dimmed) — the "card in your hand" is the floating
+      // DragLayerPreview. While settling, it stays invisible until the
+      // floating card glides onto it.
+      opacity: settlingId === id ? 0 : isDragging ? 0.35 : 1,
+      outline: isDragging ? "2px dashed rgba(243, 119, 32, 0.75)" : undefined,
+      outlineOffset: -2,
+      borderRadius: isDragging ? 8 : undefined,
       display: direction === "horizontal" ? "inline-block" : "block",
       flexShrink: direction === "horizontal" ? 0 : undefined,
-      transition: "opacity 0.1s ease-out, transform 0.1s ease-out",
-      transform: isDragging ? "scale(0.95)" : "scale(1)",
+      transition: "opacity 0.12s ease-out",
       ...style,
     }),
-    [isDragging, direction, style]
+    [isDragging, direction, style, settlingId, id]
   );
 
   return (

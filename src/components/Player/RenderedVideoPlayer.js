@@ -62,7 +62,12 @@ function RenderedVideoPlayer({
         0
       );
       const d = sumAllExerciseDuration + sumAllBreakTime;
-      setExerciseWorkoutTimeTrack((prev) => ({ ...prev, total: d }));
+      // Bail out when unchanged: returning prev lets React skip the update,
+      // so an unstable `workout` identity upstream can't spin a render loop
+      // through this context (the studio page froze exactly that way).
+      setExerciseWorkoutTimeTrack((prev) =>
+        prev.total === d ? prev : { ...prev, total: d }
+      );
     }
   }, [workout]);
 

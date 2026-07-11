@@ -225,10 +225,6 @@ function PlayerControls(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentExercise?.index, castConnected]);
 
-  useEffect(() => {
-    console.log("lworkout", exerciseWorkoutTimeTrack);
-  }, [exerciseWorkoutTimeTrack]);
-
   // Detect fullscreen via the Fullscreen API events instead of comparing window
   // vs container dimensions on every render. The old approach (no dep array) ran
   // on every resize — and on mobile the address bar showing/hiding during scroll
@@ -550,7 +546,6 @@ function PlayerControls(
               </span>
             )}
           </div>
-          {console.log(workout, currentExercise)}
           <div className="controls-details-bottom-title font-paragraph-white">
             {breakTime && (
               <span>

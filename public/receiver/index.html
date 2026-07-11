@@ -360,9 +360,6 @@
     <!-- Version badge: always visible in the corner so we can confirm which
          receiver build the TV actually loaded (text set from RECEIVER_VERSION) -->
     <div id="receiver-version" style="position: fixed; bottom: 10px; right: 14px; font-size: 13px; color: rgba(255,255,255,0.35); z-index: 99; font-family: inherit;"></div>
-    <!-- Live audio diagnostics: readable straight off the TV (even from a
-         photo), so no DevTools session is needed to debug music/beep issues -->
-    <div id="receiver-diag" style="position: fixed; bottom: 30px; right: 14px; font-size: 20px; font-weight: 600; color: #ff5252; background: rgba(0,0,0,0.85); padding: 6px 12px; border-radius: 4px; z-index: 99; font-family: monospace; max-width: 90vw;"></div>
 
     <!-- Complete Screen -->
     <div id="complete-screen" class="screen-overlay">
@@ -495,7 +492,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v3.1.2 — 2026-07-11 (fade out AND back in around the beep)';
+    const RECEIVER_VERSION = 'v3.2 — 2026-07-11 (on-screen diagnostics removed)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -1314,35 +1311,6 @@
     // Stamp the version badge so the TV visibly shows which build it loaded
     $('receiver-version').textContent = RECEIVER_VERSION;
     console.log('[Receiver] version:', RECEIVER_VERSION);
-
-    // Live on-TV audio diagnostics (v2.8): everything needed to debug the
-    // music/beep behavior, readable straight off the screen. Key signal: a
-    // frozen music t= while "playing" means the element is feeding a dead
-    // audio sink; "paused | last-stop: device/unknown" means the device
-    // itself stopped the element.
-    setInterval(function () {
-      try {
-        const m = dom.musicPlayer;
-        const src = m.getAttribute('src');
-        const musicState = !src
-          ? 'no-src'
-          : src === beepBlobUrl
-            ? (beepActive ? 'beep-playing' : 'beep-parked')
-            : m.error
-              ? 'ERR' + m.error.code
-              : m.paused
-                ? 'paused'
-                : 'playing';
-        $('receiver-diag').textContent =
-          phase +
-          ' | music: ' + musicState +
-          ' t=' + (m.currentTime || 0).toFixed(1) +
-          ' ready=' + m.readyState +
-          ' vol=' + m.volume.toFixed(2) +
-          ' | last-stop: ' + fmtLastStop() +
-          ' | beep: ' + (beepActive ? 'PLAYING' : (beepBlobUrl ? 'ready' : 'none'));
-      } catch (e) { /* diagnostics must never break playback */ }
-    }, 500);
 
     let castReceiverContext = null;
     const urlParams = new URLSearchParams(window.location.search);

@@ -79,7 +79,6 @@ export default function useChromecast({ workout, currentExercise }) {
             // Listen for messages from receiver
             if (connected && session) {
               let loggedReceiverVersion = false;
-              let lastLoggedPhase = null;
               session.addMessageListener(NAMESPACE, (ns, message) => {
                 try {
                   const parsed =
@@ -92,19 +91,6 @@ export default function useChromecast({ workout, currentExercise }) {
                       console.log(
                         "[Cast] receiver version:",
                         parsed.data?.receiverVersion || "(pre-versioning build)"
-                      );
-                    }
-                    // Audio diagnostics on every phase change — tells us what
-                    // the TV's music element / beep context are doing without
-                    // needing TV-side debugging
-                    if (parsed.data?.phase !== lastLoggedPhase) {
-                      lastLoggedPhase = parsed.data?.phase;
-                      const d = parsed.data || {};
-                      console.log(
-                        `[Cast] phase=${d.phase} musicPaused=${d.musicPaused} ` +
-                          `musicTime=${d.musicTime} musicReady=${d.musicReadyState} ` +
-                          `musicErr=${d.musicError} lastStop=${d.musicLastStop} ` +
-                          `beepActive=${d.beepActive} beepLoaded=${d.beepLoaded}`
                       );
                     }
                     setReceiverState(parsed.data);

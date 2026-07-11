@@ -267,7 +267,13 @@ function Workout() {
     }
     return workoutInfo?.exercises || [];
   }, [workoutInfo]);
-  const playerWorkout = { ...workoutInfo, exercises: playbackExercises };
+  // Memoized: a fresh object here on every render re-fired RenderedVideoPlayer's
+  // [workout] effect, which sets the shared time-track context that THIS
+  // component consumes — an infinite render loop that froze the studio page.
+  const playerWorkout = React.useMemo(
+    () => ({ ...workoutInfo, exercises: playbackExercises }),
+    [workoutInfo, playbackExercises]
+  );
 
   const moveToNextExercise = (playerProgress) => {
     if (playbackExercises[selectedExercise.index + 1]) {

@@ -227,7 +227,6 @@ function stripHtml(html) {
               </span>
               <span style={{ color: "#677182", fontSize: "1.6rem" }}>
                 <img src={Coins} /> {userPoints}
-                {console.log("ammar", userPoints)}
               </span>
             </div>
           </Popover>

@@ -2776,19 +2776,11 @@ function BasicInformation(props) {
                           defaultActiveKey={[]}
                           onChange={(e) => setShowChangePanel(e)}
                           style={{
-                            backgroundColor:
-                              draggedWeekId === (w.id || w._id)
-                                ? "rgba(34, 197, 94, 0.15)"
-                                : "#171e27",
+                            // dragged-state visuals now live in DndWrapper
+                            // (dashed placeholder + floating card in hand)
+                            backgroundColor: "#171e27",
                             padding: "10px",
-                            border:
-                              draggedWeekId === (w.id || w._id)
-                                ? "2px solid #22c55e"
-                                : "2px solid transparent",
-                            borderRadius:
-                              draggedWeekId === (w.id || w._id) ? "8px" : "0px",
-                            opacity:
-                              draggedWeekId === (w.id || w._id) ? "0.8" : "1",
+                            border: "2px solid transparent",
                             transition: "all 0.3s ease",
                           }}
                           key={w.id}
@@ -2963,25 +2955,14 @@ function BasicInformation(props) {
                                             flexDirection: "column",
                                             justifyContent: "space-between",
                                             alignItems: "flex-start",
-                                            backgroundColor:
-                                              draggedWorkoutId === workout.id
-                                                ? "rgba(34, 197, 94, 0.15)"
-                                                : "#2A2F368C",
+                                            // dragged-state visuals now live
+                                            // in DndWrapper (placeholder +
+                                            // floating card)
+                                            backgroundColor: "#2A2F368C",
                                             position: "relative",
-                                            border:
-                                              draggedWorkoutId === workout.id
-                                                ? "2px solid #22c55e"
-                                                : "2px solid transparent",
+                                            border: "2px solid transparent",
                                             transition: "all 0.3s ease",
                                             width: "100%",
-                                            borderRadius:
-                                              draggedWorkoutId === workout.id
-                                                ? "8px"
-                                                : "0px",
-                                            opacity:
-                                              draggedWorkoutId === workout.id
-                                                ? "0.8"
-                                                : "1",
                                           }}
                                         >
                                           <input
