@@ -212,12 +212,15 @@
        BREAK OVERLAY — copied from player.css
     ═══════════════════════════════════════════ */
     .break-layout-for-player {
-      background-color: rgba(29, 36, 44, 0.8);
+      /* OPAQUE on the TV (the app uses a translucent overlay over a paused
+         frame): the video keeps PLAYING during breaks here — pausing it
+         stalls the device's whole media pipeline (music + beep) — so the
+         overlay must fully hide it */
+      background-color: #1d242c;
       position: absolute;
       top: 0px;
       width: 100%;
       z-index: 10;
-      opacity: 0.9;
       height: 100%;
       display: none;
       align-items: center;
@@ -389,6 +392,8 @@
         <div class="inner-layout-break-text">
           <span id="break-label-text">Rest</span>
           <span id="break-next-text"></span>
+          <!-- Next exercise preview (client spec: rest = pause + next preview) -->
+          <img id="break-next-thumb" alt="" style="display: none; margin-top: 16px; height: 180px; border-radius: 6px; object-fit: cover; align-self: center;" />
         </div>
       </div>
     </div>
@@ -490,7 +495,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v2.9.2 — 2026-07-11 (park beep, 800ms bounce)';
+    const RECEIVER_VERSION = 'v3.0 — 2026-07-11 (video never pauses in breaks — pipeline stays alive)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -504,6 +509,7 @@
       breakProgressBar:  $('break-progress-bar'),
       breakLabelText:    $('break-label-text'),
       breakNextText:     $('break-next-text'),
+      breakNextThumb:    $('break-next-thumb'),
       pausedOverlay:     $('paused-overlay'),
       workoutTitleBar:   $('workout-title-bar'),
       workoutTitle:      $('workout-title-text'),
@@ -887,6 +893,12 @@
       const ex = exercises[currentIndex];
       dom.breakLabelText.textContent = 'Get Ready';
       dom.breakNextText.textContent = ex ? (ex.title || 'Exercise ' + (currentIndex + 1)) : '';
+      if (ex && ex.videoThumbnailURL) {
+        dom.breakNextThumb.src = ex.videoThumbnailURL;
+        dom.breakNextThumb.style.display = '';
+      } else {
+        dom.breakNextThumb.style.display = 'none';
+      }
       countdownValue = GET_READY_SECONDS;
       dom.breakCountdown.textContent = countdownValue;
       dom.breakProgressBar.style.width = '0%';
@@ -956,6 +968,7 @@
       // NOTE: muting the video to free the audio output for the music crashes
       // this Chromecast (can't decode video + output a 2nd audio stream). Left
       // unmuted for stability — cast music handled on the sender side instead.
+      dom.video.loop = false; // break-time looping ends with the break
       if (ex.videoURL) {
         dom.video.src = ex.videoURL;
         dom.video.load();
@@ -999,13 +1012,27 @@
     }
 
     function onExerciseEnd() {
-      dom.video.pause();
       const ex = exercises[currentIndex];
       const brk = ex ? (ex.break || 0) : 0;
       // No trailing break after the final exercise (matches the local
       // player) — go straight to the completion screen
       const isLast = currentIndex >= exercises.length - 1;
-      if (brk > 0 && !isLast) startBreak(brk); else advanceToNext();
+      if (brk > 0 && !isLast) {
+        // Do NOT pause the video for a break: a paused video element holds
+        // this device's media pipeline hostage — the music stalls (t frozen,
+        // silent, no error) and the beep queues until the next video.play()
+        // flushes it (proven by the v2.9.2 on-screen diagnostics). Keep it
+        // playing + looping, invisible behind the opaque break overlay.
+        dom.video.onended = null;
+        dom.video.loop = true;
+        if (dom.video.src && dom.video.paused) {
+          dom.video.play().catch(function () {});
+        }
+        startBreak(brk);
+      } else {
+        dom.video.pause();
+        advanceToNext();
+      }
     }
 
     /* ─── BREAK (uses same .break-layout-for-player overlay) ─── */
@@ -1024,6 +1051,12 @@
       dom.breakNextText.textContent = nextEx
         ? 'Next Exercise: ' + (nextEx.title || 'Exercise ' + (currentIndex + 2))
         : 'Finish';
+      if (nextEx && nextEx.videoThumbnailURL) {
+        dom.breakNextThumb.src = nextEx.videoThumbnailURL;
+        dom.breakNextThumb.style.display = '';
+      } else {
+        dom.breakNextThumb.style.display = 'none';
+      }
 
       dom.breakOverlay.classList.add('active');
       dom.workoutTitleBar.classList.add('active');
@@ -1031,15 +1064,11 @@
       // Restore music volume during rest (no video audio competing)
       unduckMusic();
 
-      // The video pause we just did silently breaks the music's audio route
-      // (element keeps "playing" with no sound) — bounce it to re-grab the
-      // route, or restart it if something left it paused
-      if (hasMusicSrc() && !beepActive) {
-        if (dom.musicPlayer.paused) {
-          if (!isPaused) playMusic();
-        } else {
-          bounceMusic('reroute-break');
-        }
+      // The video keeps playing (hidden) through the break, so there's no
+      // pipeline transition here — the music just continues. Only restart it
+      // if something left it paused.
+      if (hasMusicSrc() && !beepActive && dom.musicPlayer.paused && !isPaused) {
+        playMusic();
       }
 
       // NOTE: no break-start sound here. The sender sends its URL as null,
@@ -1107,7 +1136,9 @@
     function resume() {
       isPaused = false;
       dom.pausedOverlay.classList.remove('active');
-      if (phase === 'exercise' && dom.video.src) dom.video.play().catch(() => {});
+      // 'break' too: the hidden video must keep playing through breaks or the
+      // paused element blocks the media pipeline (music/beep go silent)
+      if ((phase === 'exercise' || phase === 'break') && dom.video.src) dom.video.play().catch(() => {});
       if (dom.musicPlayer.src) playMusic();
       updatePlayPauseIcon();
       sendState();
