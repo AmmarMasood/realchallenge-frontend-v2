@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useRef, useCallback, useMemo, useEffect, useLayoutEffect, useState } from "react";
-import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { useDrag, useDrop } from "react-dnd";
 import { HTML5Backend, getEmptyImage } from "react-dnd-html5-backend";
 import { TouchBackend } from "react-dnd-touch-backend";
 
