@@ -592,6 +592,11 @@ function Exercises({
                 flexShrink: 0,
               }}
             >
+              {/* autoScrollSpeed 95 was compensation for the global
+                  scroll-behavior:smooth bug (see useAutoScroll in
+                  DndWrapper) — every write only advanced a few px. Writes
+                  are instant now: 18px/frame at 60fps is about one card
+                  width per 200ms at full intensity. */}
               <DraggableArea
                 onChange={(newOrder) => handleExerciseOrder(newOrder)}
                 direction="horizontal"
@@ -601,8 +606,8 @@ function Exercises({
                   setDraggedItemId(draggedId);
                 }}
                 scrollContainerRef={scrollContainerRef}
-                autoScrollSpeed={95}
-                autoScrollThreshold={300}
+                autoScrollSpeed={18}
+                autoScrollThreshold={200}
               >
                 {remainingExercises &&
                   remainingExercises.map((e, i) => {

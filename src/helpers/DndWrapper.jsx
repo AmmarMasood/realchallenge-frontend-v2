@@ -55,6 +55,21 @@ function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positio
       return;
     }
 
+    // index.css puts `scroll-behavior: smooth` on EVERY element (universal
+    // selector), and programmatic scrollLeft/scrollTop writes honor it. Each
+    // per-frame nudge below therefore started a ~300ms smooth animation that
+    // the next frame's write restarted — the scroll only ever advanced by the
+    // animation's first few px per frame. That, not raw speed, was the
+    // "auto-scroll crawls / chunky" symptom (worst on phones, where slower
+    // frames restart the animation even earlier in its ramp). Force instant
+    // scrolling on the element we drive, only for the drag's duration.
+    const behaviorEl =
+      scrollContainerRef?.current ||
+      document.scrollingElement ||
+      document.documentElement;
+    const prevScrollBehavior = behaviorEl.style.scrollBehavior;
+    behaviorEl.style.scrollBehavior = "auto";
+
     // On touch, the finger can't move past the screen edge to trigger full
     // speed, and the dragged card keeps the pointer mid-zone — so a linear
     // ramp crawls. Reach full speed by the time the pointer is RAMP_FRACTION
@@ -176,6 +191,7 @@ function useAutoScroll(scrollContainerRef, isDragging, direction, speed, positio
     return () => {
       document.removeEventListener("dragover", handleDragOver, true);
       document.removeEventListener("touchmove", handleTouchMove, true);
+      behaviorEl.style.scrollBehavior = prevScrollBehavior;
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
