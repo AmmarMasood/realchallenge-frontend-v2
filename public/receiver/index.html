@@ -528,7 +528,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v4.1 — 2026-07-15 (manual re-select jumps in; Get Ready only on first load)';
+    const RECEIVER_VERSION = 'v4.2 — 2026-07-15 (hard backstop kills stray/looping beep)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -834,17 +834,22 @@
       if (beepSafetyTimer) { clearTimeout(beepSafetyTimer); beepSafetyTimer = null; }
       if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; }
       beepFadeArmed = false;
-      if (!beepActive) return;
       const m = dom.musicPlayer;
+      const cur = m.getAttribute('src');
+      const isSound = cur === beepBlobUrl || cur === chimeBlobUrl;
+      // Act if a one-shot is officially active OR a sound blob is stray on the
+      // element. A looping/stuck beep can have beepActive already FALSE — that's
+      // the case the old `if(!beepActive) return` skipped, so switching never
+      // silenced it. Now we kill the stray sound too.
+      if (!beepActive && !isSound) return;
       m.onended = null;
       m.onerror = null;
       beepActive = false;
       m.loop = false;
       const restore = musicRestore;
       musicRestore = null;
-      const cur = m.getAttribute('src');
-      if (cur === beepBlobUrl || cur === chimeBlobUrl) {
-        try { if (!m.paused) m.pause(); } catch (e) {}
+      if (isSound) {
+        try { m.pause(); } catch (e) {}
         if (restore && restore.src) {
           m.src = restore.src;
           m.loop = true;
@@ -863,6 +868,7 @@
 
     // Audio ducking: music volume during exercise vs break
     let userMusicVolume = 0.3; // volume set by user
+    let lastMusicUrl = '';     // last real music track (to restore after a stray beep)
     // No ducking: the exercise videos have no audio track, so there's nothing
     // to duck against — keep music at full user volume. (Was 0.3, which made
     // music near-silent during exercises.)
@@ -1021,6 +1027,31 @@
       });
     });
 
+    // Stray one-shot guard — the hard backstop for "the 3-2-1 keeps looping in
+    // the background." A beep/chime blob must NEVER be playing while no one-shot
+    // is officially active (beepActive false). If this device leaves one looping
+    // by any path, force-stop it and put the music back. Runs continuously, so
+    // it also catches a loop that appears without a manual switch.
+    setInterval(function () {
+      const m = dom.musicPlayer;
+      const cur = m.getAttribute('src');
+      const isStraySound =
+        (cur === beepBlobUrl || cur === chimeBlobUrl) && !beepActive && !m.paused;
+      if (!isStraySound) return;
+      console.warn('[oneshot] stray sound with no active one-shot — stopping');
+      m.loop = false;
+      try { m.pause(); } catch (e) {}
+      // Restore the current track so killing the stray beep doesn't leave the
+      // rest of the workout silent.
+      if (lastMusicUrl) {
+        m.src = lastMusicUrl;
+        m.loop = true;
+        m.load();
+        m.volume = clamp01(phase === 'exercise' ? userMusicVolume * DUCK_RATIO : userMusicVolume);
+        if (!isPaused && phase !== 'idle' && phase !== 'complete') playMusic();
+      }
+    }, 700);
+
     function updatePlayPauseIcon() {
       dom.iconPause.style.display = isPaused ? 'none' : '';
       dom.iconPlay.style.display = isPaused ? '' : 'none';
@@ -1094,8 +1125,11 @@
       if (data.musicUrl) {
         dom.musicPlayer.src = data.musicUrl;
         dom.musicPlayer.loop = true; // music loops (no HTML loop attr anymore)
+        lastMusicUrl = data.musicUrl;
         userMusicVolume = clamp01(data.musicVolume != null ? data.musicVolume : 0.3);
         dom.musicPlayer.volume = userMusicVolume;
+      } else {
+        lastMusicUrl = '';
       }
       // Both sounds are prefetched to blobs and played later via a src-swap on
       // the single music element (playOneShot) — never attached as their own
@@ -1506,6 +1540,7 @@
 
     /* ─── MUSIC & VOLUME ─── */
     function changeMusic(url, volume) {
+      lastMusicUrl = url || '';
       // The beep is borrowing the element right now — redirect the change to
       // the post-beep restore target instead of stomping the beep playback
       if (beepActive) {
