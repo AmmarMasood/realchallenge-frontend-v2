@@ -496,10 +496,16 @@
 
     const NAMESPACE = 'urn:x-cast:com.realchallenge.workout';
     const GET_READY_SECONDS = 5;
+    // Fire the exercise-end chime this many seconds BEFORE the exercise timer
+    // hits 0. The device's ~1s audio session-switch means a sound triggered
+    // exactly at 0 is heard ~1s late; leading it makes the chime land right on
+    // the exercise→break transition (same reason the countdown beep fires at
+    // "4" to be heard at "3"). Tunable if the device runs faster/slower.
+    const CHIME_LEAD_SECONDS = 1;
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v3.4 — 2026-07-14 (exercise-end chime, sound parity)';
+    const RECEIVER_VERSION = 'v3.7 — 2026-07-14 (protect the "Go" beep tail)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -546,6 +552,8 @@
     let countdownInterval = null;
     let exerciseElapsed = 0;
     let exerciseInterval = null;
+    let chimeFired = false;       // guards the exercise-end chime to once per exercise
+    let chimeFadeStarted = false; // guards the pre-chime music fade-out to once per exercise
     let totalElapsed = 0;
     let totalDuration = 0;
 
@@ -651,7 +659,9 @@
     let beepFadeArmed = false;
 
     function fadeOutMusicForBeep(ms) {
-      if (!beepBlobUrl || beepActive || !hasMusicSrc() || dom.musicPlayer.paused) return;
+      // Used ahead of BOTH one-shot sounds (countdown beep and exercise-end
+      // chime) — fade only if some sound will follow and music is playing.
+      if ((!beepBlobUrl && !chimeBlobUrl) || beepActive || !hasMusicSrc() || dom.musicPlayer.paused) return;
       if (fadeTimer) clearInterval(fadeTimer);
       beepFadeArmed = true;
       const el = dom.musicPlayer;
@@ -1103,6 +1113,8 @@
       // Exercise title & countdown
       dom.exerciseTitle.textContent = ex.title || 'Exercise ' + (currentIndex + 1);
       exerciseElapsed = 0;
+      chimeFired = false;
+      chimeFadeStarted = false;
       const exLen = ex.exerciseLength || 0;
       dom.exerciseTimer.textContent = exLen > 0 ? exLen : '';
       dom.exerciseTimerWrap.style.display = exLen > 0 ? '' : 'none';
@@ -1129,20 +1141,35 @@
       dom.video.loop = false; // break-time looping ends with the break
       if (videoStartTimer) { clearTimeout(videoStartTimer); videoStartTimer = null; }
       if (ex.videoURL) {
-        dom.video.src = ex.videoURL;
-        dom.video.load();
-        const startVideo = function () {
-          videoStartTimer = null;
+        const loadAndPlayVideo = function () {
+          dom.video.src = ex.videoURL;
+          dom.video.load();
           dom.video.play().catch(e => console.warn('Video play error:', e));
         };
-        // If the countdown beep is still finishing (natural break → exercise),
-        // starting the video now reconfigures the device audio pipeline and
-        // clips the final "...Go". Hold the video ~900ms so the beep completes.
-        // On skips/loads no beep is active, so playback starts immediately.
         if (beepActive) {
-          videoStartTimer = setTimeout(startVideo, 900);
+          // A countdown beep is still finishing (natural break → exercise).
+          // Touching the video AT ALL now — even src=/load(), not just play() —
+          // reconfigures this device's single audio pipeline and clips the
+          // beep's "...Go" tail (the intermittent "go disappears" bug; the
+          // 3-2-1 is already out, only the tail is lost). So wait until the
+          // beep has fully ended, THEN load the video. It also breaks the music
+          // route on this device, so bounce the music to re-grab it afterwards.
+          // Capped so a stuck beep can't hold the video forever (the beep's own
+          // 4.5s safety timer clears beepActive well within this).
+          const afterBeep = function () {
+            videoStartTimer = null;
+            loadAndPlayVideo();
+            if (hasMusicSrc() && !isPaused) bounceMusic('reroute-after-beep');
+          };
+          let waited = 0;
+          const poll = function () {
+            if (!beepActive || waited >= 2500) { afterBeep(); }
+            else { waited += 100; videoStartTimer = setTimeout(poll, 100); }
+          };
+          videoStartTimer = setTimeout(poll, 100);
         } else {
-          startVideo();
+          // No beep in flight (skip/load) — start immediately, no clip risk.
+          loadAndPlayVideo();
         }
       }
 
@@ -1168,6 +1195,21 @@
         const remaining = Math.max(exLen - exerciseElapsed, 0);
         if (exLen > 0) dom.exerciseTimer.textContent = remaining;
         updateProgressBar();
+        // Softly fade the background music down ~1s BEFORE the chime fires, so
+        // the music dips out gracefully instead of cutting abruptly (finishBeep
+        // fades it back up afterwards). Same transition as the countdown beep.
+        if (exLen > 0 && !chimeFadeStarted && remaining <= CHIME_LEAD_SECONDS + 1) {
+          chimeFadeStarted = true;
+          fadeOutMusicForBeep(900);
+        }
+        // Fire the exercise-end chime a beat EARLY so the ~1s session-switch
+        // lands it right on the transition (see CHIME_LEAD_SECONDS). Only for
+        // timed exercises — video-length ones have no predictable end, so their
+        // chime fires from onExerciseEnd instead.
+        if (exLen > 0 && !chimeFired && remaining <= CHIME_LEAD_SECONDS) {
+          chimeFired = true;
+          playChime(currentIndex >= exercises.length - 1);
+        }
         sendState();
         if (exLen > 0 && exerciseElapsed >= exLen) {
           clearInterval(exerciseInterval); exerciseInterval = null;
@@ -1200,18 +1242,21 @@
         // playing + looping, invisible behind the opaque break overlay.
         dom.video.onended = null;
         dom.video.loop = true;
-        // Restart from 0 so the loop point lands as late as possible — a
-        // loop restart is a mini pipeline transition that can cut the beep
-        // or blip the music mid-break
-        try { dom.video.currentTime = 0; } catch (e) {}
+        // Restart from 0 so the loop point lands as late as possible — but NOT
+        // while the (early-fired) chime is still sounding: the seek's pipeline
+        // blip would clip it. The break's "5" guard re-seeks before the
+        // countdown beep anyway.
+        if (!beepActive) { try { dom.video.currentTime = 0; } catch (e) {} }
         if (dom.video.src && dom.video.paused) {
           dom.video.play().catch(function () {});
         }
-        playChime(false); // music resumes (restored) once the chime ends
+        // Timed exercises already fired the chime early; only video-length ones
+        // (no predictable end) still need it fired here.
+        if (!chimeFired) playChime(false);
         startBreak(brk);
       } else {
         dom.video.pause();
-        playChime(true); // final chime — nothing resumes after (workout over)
+        if (!chimeFired) playChime(true); // final chime — nothing resumes after
         advanceToNext();
       }
     }

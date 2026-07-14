@@ -379,9 +379,27 @@ function PlayerControls(
 
     return (
       <>
+        {/* Clear "Stop Casting" action — placed ABOVE the transport controls so
+            it's the first thing the user reaches to end the session. */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            marginTop: "auto",
+            marginBottom: "16px",
+          }}
+        >
+          <button
+            type="button"
+            className="stop-casting-btn"
+            onClick={stopCasting}
+          >
+            {translate("player.stop_casting")}
+          </button>
+        </div>
         <div
           className="controls-wrapper-bottom"
-          style={{ position: "relative", marginTop: "auto" }}
+          style={{ position: "relative" }}
         >
           <span className="font-paragraph-white player-elasped-time-container">
             {formatTime(castElapsed)}
@@ -425,23 +443,6 @@ function PlayerControls(
           >
             {formatTime(castTotal)}
           </span>
-        </div>
-        {/* Clear "Stop Casting" button — client asked for an obvious way to end
-            the session, placed centrally beneath the play button. */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            marginTop: "14px",
-          }}
-        >
-          <button
-            type="button"
-            className="stop-casting-btn"
-            onClick={stopCasting}
-          >
-            {translate("player.stop_casting")}
-          </button>
         </div>
         {/* Cast exercise stepper */}
         {rs && rs.totalExercises > 0 && (
