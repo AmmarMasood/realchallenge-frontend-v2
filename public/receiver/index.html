@@ -505,8 +505,12 @@
     </div>
   </div>
 
-  <!-- Audio -->
-  <audio id="music-player" loop></audio>
+  <!-- Audio. NOTE: no `loop` attribute — looping is set in JS (loop=true only
+       for music tracks, never for a beep/chime). A content `loop` attribute
+       can be re-applied by this device on load(), which makes a one-shot beep
+       loop for the rest of the workout — the bug that showed up when switching
+       exercises repeatedly (each switch fires extra load()s). -->
+  <audio id="music-player"></audio>
   <audio id="break-start-sound" preload="auto"></audio>
   <audio id="break-end-sound" preload="auto"></audio>
 
@@ -524,7 +528,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v3.9 — 2026-07-15 (smooth exercise switch, no old-clip flash)';
+    const RECEIVER_VERSION = 'v4.1 — 2026-07-15 (manual re-select jumps in; Get Ready only on first load)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -755,6 +759,8 @@
       m.src = blobUrl;
       m.volume = 1;
       m.load();
+      m.loop = false; // re-assert AFTER load() — the device can re-apply a
+                      // content loop attribute on load; this guarantees off
       // Hard safety net: if 'ended' never fires (a device media quirk we've
       // seen) the sound must still terminate. Force-finish it after roughly its
       // own length so it can't linger — let alone loop — for the whole workout.
@@ -815,6 +821,36 @@
         m.loop = false;
         m.volume = clamp01(userMusicVolume);
         if (!m.paused) { try { m.pause(); } catch (e) {} }
+      }
+    }
+
+    // Cleanly abort any in-flight beep/chime — called when the user manually
+    // jumps (skip or re-select). Without this, a manual switch mid-one-shot
+    // leaves a half-played sound on the element and (before prefetch revokes
+    // its blob) churns load()s — exactly the state that left the beep looping
+    // when switching exercises repeatedly. Puts the captured music track back
+    // so the next exercise's normal music flow can resume it.
+    function stopActiveOneShot() {
+      if (beepSafetyTimer) { clearTimeout(beepSafetyTimer); beepSafetyTimer = null; }
+      if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; }
+      beepFadeArmed = false;
+      if (!beepActive) return;
+      const m = dom.musicPlayer;
+      m.onended = null;
+      m.onerror = null;
+      beepActive = false;
+      m.loop = false;
+      const restore = musicRestore;
+      musicRestore = null;
+      const cur = m.getAttribute('src');
+      if (cur === beepBlobUrl || cur === chimeBlobUrl) {
+        try { if (!m.paused) m.pause(); } catch (e) {}
+        if (restore && restore.src) {
+          m.src = restore.src;
+          m.loop = true;
+          m.load();
+          m.volume = clamp01(userMusicVolume);
+        }
       }
     }
 
@@ -1032,7 +1068,14 @@
 
     /* ─── LOAD WORKOUT ─── */
     function loadWorkout(data) {
+      // Get Ready (5-4-3-2-1) only on the FIRST load of a cast session. A
+      // LOAD_WORKOUT that arrives mid-session is a manual exercise re-select
+      // from the phone — jump straight into it, like the skip buttons and the
+      // in-app player do (no countdown). Capture BEFORE anything changes phase.
+      const wasIdle = (phase === 'idle' || phase === 'complete');
       clearTimers();
+      stopActiveOneShot(); // a re-select can arrive mid beep/chime — end it
+                           // before prefetch revokes the sound blobs
       workout = data;
       exercises = data.exercises || [];
       currentIndex = data.startIndex || 0;
@@ -1050,6 +1093,7 @@
       dom.workoutTitle.textContent = data.title || labels.workout;
       if (data.musicUrl) {
         dom.musicPlayer.src = data.musicUrl;
+        dom.musicPlayer.loop = true; // music loops (no HTML loop attr anymore)
         userMusicVolume = clamp01(data.musicVolume != null ? data.musicVolume : 0.3);
         dom.musicPlayer.volume = userMusicVolume;
       }
@@ -1062,14 +1106,16 @@
       prefetchChime(data.breakStartSoundUrl);
 
       // A LOAD_WORKOUT can arrive mid-exercise (user picked another exercise
-      // on the phone) — stop the running video or it keeps playing behind
-      // the Get Ready countdown
+      // on the phone) — stop the running video so it can't play behind the
+      // next screen (startExercise/startGetReady load the new clip themselves).
       dom.video.onended = null;
       dom.video.pause();
       dom.video.removeAttribute('src');
       dom.video.load();
 
-      startGetReady();
+      // First load of the session → Get Ready countdown; a mid-session
+      // re-select → straight into the exercise (matches skip + the app player).
+      if (wasIdle) startGetReady(); else startExercise();
     }
 
     /* ─── GET READY (uses break overlay with "Get Ready" text) ─── */
@@ -1409,12 +1455,14 @@
     }
     function skipNext() {
       clearTimers();
+      stopActiveOneShot(); // don't carry a half-played beep/chime into the jump
       currentIndex++;
       if (currentIndex >= exercises.length) finishWorkout();
       else { totalElapsed = calculateElapsedAtIndex(currentIndex); startExercise(); }
     }
     function skipPrev() {
       clearTimers();
+      stopActiveOneShot(); // don't carry a half-played beep/chime into the jump
       if (currentIndex > 0) currentIndex--;
       totalElapsed = calculateElapsedAtIndex(currentIndex);
       startExercise();
