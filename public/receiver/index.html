@@ -74,6 +74,19 @@
       background: #000;
     }
 
+    /* Exercise-start cover (see #exercise-loading-cover in the markup). Same
+       colour as the break overlay so the hand-off is seamless. Sits above the
+       video + controls; hidden the moment the new video reports 'playing'. */
+    #exercise-loading-cover {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #1d242c;
+      z-index: 11;
+      display: none;
+    }
+    #exercise-loading-cover.active { display: block; }
+
     /* ═══════════════════════════════════════════
        CONTROLS DETAILS — exercise title overlay
        Copied exactly from player.css
@@ -378,6 +391,12 @@
     <!-- Video -->
     <video id="exercise-video" playsinline></video>
 
+    <!-- Dark cover shown from exercise-start until the NEW video is actually
+         playing — hides the previous exercise (which keeps looping through the
+         break to hold the audio pipeline) and the black load gap, so the switch
+         reads as break → dark → new video with no flash of the old clip. -->
+    <div id="exercise-loading-cover"></div>
+
     <!-- Break / Get Ready overlay (matches .break-layout-for-player) -->
     <div id="break-overlay" class="break-layout-for-player">
       <div class="inner-layout-break">
@@ -505,7 +524,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v3.8 — 2026-07-14 (countdown waits for video to play)';
+    const RECEIVER_VERSION = 'v3.9 — 2026-07-15 (smooth exercise switch, no old-clip flash)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -514,6 +533,7 @@
       completeScreen:    $('complete-screen'),
       completeWorkout:   $('complete-workout-name'),
       video:             $('exercise-video'),
+      exerciseCover:     $('exercise-loading-cover'),
       breakOverlay:      $('break-overlay'),
       breakCountdown:    $('break-countdown'),
       breakProgressBar:  $('break-progress-bar'),
@@ -978,6 +998,7 @@
       dom.controlsWrapper.classList.remove('active');
       dom.workoutTitleBar.classList.remove('active');
       dom.pausedOverlay.classList.remove('active');
+      dom.exerciseCover.classList.remove('active');
     }
 
     function sendState() {
@@ -1144,6 +1165,10 @@
       dom.video.loop = false; // break-time looping ends with the break
       if (videoStartTimer) { clearTimeout(videoStartTimer); videoStartTimer = null; }
       if (ex.videoURL) {
+        // Cover the video until the NEW clip is playing, so the previous
+        // exercise (still looping behind the scenes) never flashes on screen
+        // and the black load gap is hidden. Revealed in kickTimer on 'playing'.
+        dom.exerciseCover.classList.add('active');
         const loadAndPlayVideo = function () {
           dom.video.src = ex.videoURL;
           dom.video.load();
@@ -1200,6 +1225,10 @@
       // exercise's handler if the user skips before the video plays.
       const myGen = ++exerciseGen;
       const kickTimer = function () {
+        // Reveal the new video regardless of gen/interval state: 'playing'
+        // only fires when the current clip is actually rendering, so this is
+        // exactly the right moment to drop the cover.
+        dom.exerciseCover.classList.remove('active');
         if (myGen !== exerciseGen || exerciseInterval) return;
         if (exerciseTimerFallback) { clearTimeout(exerciseTimerFallback); exerciseTimerFallback = null; }
         beginExerciseTimer(exLen);
