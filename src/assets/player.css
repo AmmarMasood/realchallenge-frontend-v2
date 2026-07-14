@@ -89,6 +89,30 @@
   letter-spacing: 0.04em;
 }
 
+/* Clear "Stop Casting" action in the cast remote (client asked for an obvious
+   way to end the session, sitting under the play button). */
+.stop-casting-btn {
+  background: transparent;
+  color: #fff;
+  border: 1.5px solid rgba(255, 119, 0, 0.8);
+  border-radius: 22px;
+  padding: 9px 26px;
+  font-family: "Poppins", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.stop-casting-btn:hover {
+  background: var(--color-orange, #ff7700);
+  color: #fff;
+  border-color: var(--color-orange, #ff7700);
+}
+.stop-casting-btn:active {
+  transform: translateY(1px);
+}
+
 .controls-wrapper-top {
   display: flex;
   justify-content: space-between;

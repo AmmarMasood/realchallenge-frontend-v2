@@ -523,7 +523,17 @@
     "related": "RELATED PRODUCT FROM E-SHOP",
     "start_exercise": "Start",
     "first_exercise": "First Exercise",
-    "next_exercise": "Next Exercise"
+    "next_exercise": "Next Exercise",
+    "rest": "Rest",
+    "get_ready": "Get Ready",
+    "up_next": "Up next",
+    "finish": "Finish",
+    "workout_complete": "Workout Complete!",
+    "casting_to_tv": "Casting to TV",
+    "waiting_for_workout": "Waiting for workout...",
+    "stop_casting": "Stop Casting",
+    "sec": "Sec",
+    "workout": "Workout"
   },
   "admin": {
     "profile_setting": "Profile Setting",

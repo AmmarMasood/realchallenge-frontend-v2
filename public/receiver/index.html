@@ -90,24 +90,26 @@
       display: flex;
     }
     .controls-details-top-title {
-      margin-top: 20px;
-      font-size: 18px;
+      margin-top: 30px;
+      /* TV readability: these labels are viewed from across a room, so they
+         run much larger than the in-app player's 18px */
+      font-size: 40px;
       font-weight: 800;
       display: flex;
       flex-direction: column;
-      margin-left: 30px;
-      text-shadow: 1px 1px 2px rgba(150, 150, 150, 0.6);
+      margin-left: 45px;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
     }
     .controls-details-bottom-title {
       text-align: right;
       /* the app uses 50px, but its control bar auto-hides — on the TV the
          bottom controls (stepper/progress/buttons, ~110px) are always
          visible, so the "Up next" line must clear them */
-      margin-bottom: 110px;
-      font-size: 18px;
+      margin-bottom: 120px;
+      font-size: 30px;
       font-weight: 800;
-      padding-right: 30px;
-      text-shadow: 1px 1px 2px rgba(150, 150, 150, 0.6);
+      padding-right: 45px;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
     }
 
     /* ═══════════════════════════════════════════
@@ -238,14 +240,16 @@
       justify-content: space-between;
     }
     .inner-layout-break-totalsecs {
-      font-size: 35px;
+      font-size: 64px;
+      font-weight: 700;
       margin-right: 5px;
     }
     .inner-layout-break-sec {
-      font-size: 20px;
+      font-size: 30px;
     }
     .inner-layout-break-text {
-      font-size: 20px;
+      font-size: 34px;
+      font-weight: 600;
       display: flex;
       flex-direction: column;
       text-align: center;
@@ -286,12 +290,12 @@
     }
     .screen-overlay.active { display: flex; }
 
-    .idle-title { font-size: 48px; font-weight: 700; color: var(--color-orange); }
-    .idle-subtitle { font-size: 20px; color: rgba(255,255,255,0.5); margin-top: 12px; }
+    .idle-title { font-size: 56px; font-weight: 700; color: var(--color-orange); }
+    .idle-subtitle { font-size: 26px; color: rgba(255,255,255,0.6); margin-top: 14px; }
 
     .complete-check { font-size: 70px; color: var(--color-orange); margin-bottom: 15px; }
-    .complete-title { font-size: 32px; font-weight: 700; color: var(--color-orange); }
-    .complete-subtitle { font-size: 18px; color: rgba(255,255,255,0.6); margin-top: 10px; }
+    .complete-title { font-size: 44px; font-weight: 700; color: var(--color-orange); }
+    .complete-subtitle { font-size: 26px; color: rgba(255,255,255,0.7); margin-top: 14px; }
 
     /* ═══════════════════════════════════════════
        PAUSED OVERLAY
@@ -336,12 +340,15 @@
       transition: width 1s linear;
     }
 
-    /* Workout title in top-right */
+    /* Workout title in top-right (the "Day 1" label the client flagged as
+       barely visible — enlarged and brightened for TV viewing distance) */
     .player-workout-title {
       position: absolute;
-      top: 20px; right: 30px;
-      font-size: 16px;
-      color: rgba(255,255,255,0.5);
+      top: 26px; right: 40px;
+      font-size: 32px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
       z-index: 2;
       display: none;
     }
@@ -377,7 +384,7 @@
         <div style="width: 30%; text-align: center;">
           <span style="margin-top: 10px;">
             <span class="inner-layout-break-totalsecs" id="break-countdown"></span>
-            <span class="inner-layout-break-sec">Sec</span>
+            <span class="inner-layout-break-sec" id="break-sec-unit">Sec</span>
           </span>
           <!-- Progress bar (mimics Ant Design Progress) -->
           <div class="ant-progress-outer">
@@ -412,9 +419,9 @@
     <div id="controls-details" class="controls-details">
       <div class="controls-details-top-title font-paragraph-white">
         <span id="exercise-title"></span>
-        <span id="exercise-timer-wrap" style="margin-top: 10px;">
-          <span id="exercise-timer" style="font-size: 26px; margin-right: 5px;"></span>
-          Sec
+        <span id="exercise-timer-wrap" style="margin-top: 14px;">
+          <span id="exercise-timer" style="font-size: 44px; margin-right: 6px;"></span>
+          <span id="exercise-timer-unit">Sec</span>
         </span>
       </div>
       <div class="controls-details-bottom-title font-paragraph-white">
@@ -492,7 +499,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v3.2 — 2026-07-11 (on-screen diagnostics removed)';
+    const RECEIVER_VERSION = 'v3.3 — 2026-07-14 (bigger fonts, i18n, beep loop fix)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -542,6 +549,36 @@
     let totalElapsed = 0;
     let totalDuration = 0;
 
+    // ── Localization ──
+    // The receiver is a static page, so the sender (which has the app's i18n)
+    // passes a pre-translated label set in LOAD_WORKOUT. These English values
+    // are the fallback for older senders that don't send `labels`. Exercise
+    // titles are never translated — they render exactly as entered.
+    let labels = {
+      rest: 'Rest',
+      getReady: 'Get Ready',
+      upNext: 'Up next',
+      nextExercise: 'Next Exercise',
+      finish: 'Finish',
+      workoutComplete: 'Workout Complete!',
+      waitingForWorkout: 'Waiting for workout...',
+      sec: 'Sec',
+      workout: 'Workout',
+    };
+
+    // Push the localized strings into the static screens (idle/complete) and
+    // the fixed unit labels. Phase-specific text is set in each phase handler.
+    function applyStaticLabels() {
+      const idleSub = document.querySelector('#idle-screen .idle-subtitle');
+      if (idleSub) idleSub.textContent = labels.waitingForWorkout;
+      const completeTitle = document.querySelector('#complete-screen .complete-title');
+      if (completeTitle) completeTitle.textContent = labels.workoutComplete;
+      const exUnit = $('exercise-timer-unit');
+      if (exUnit) exUnit.textContent = labels.sec;
+      const breakUnit = $('break-sec-unit');
+      if (breakUnit) breakUnit.textContent = labels.sec;
+    }
+
     // ── ONE-ELEMENT AUDIO ENGINE (v2.9) ──
     // On-device diagnostics (v2.8) established three hardware facts:
     //  1. Audio routes to ONE media element session. Web Audio output is
@@ -559,6 +596,8 @@
     let beepActive = false;   // beep currently playing through the element
     let musicRestore = null;  // { src, time } to restore after the beep
     let bounceTimer = null;
+    let beepSafetyTimer = null; // force-ends a beep whose 'ended' never fires
+    let videoStartTimer = null; // defers exercise video so it can't cut the beep
 
     function prefetchBeep(url) {
       if (beepBlobUrl && beepBlobUrl.indexOf('blob:') === 0) URL.revokeObjectURL(beepBlobUrl);
@@ -655,10 +694,18 @@
       if (hadMusic) pauseMusic('beep');
       m.onended = finishBeep;
       m.onerror = finishBeep;
-      m.loop = false; // the music element loops; the beep must not
+      m.loop = false; // CRITICAL: the beep must never loop (client's "stuck
+                      // looping the whole workout" bug is loop=true + beep src)
       m.src = beepBlobUrl;
       m.volume = 1;
       m.load();
+      // Hard safety net: if 'ended' never fires (a device media quirk we've
+      // seen) the beep must still terminate. Force-finish it after roughly its
+      // own length so it can't linger — let alone loop — for the whole workout.
+      if (beepSafetyTimer) clearTimeout(beepSafetyTimer);
+      beepSafetyTimer = setTimeout(function () {
+        if (beepActive) { console.warn('[beep] safety timer force-finish'); finishBeep(); }
+      }, 4500);
       const p = m.play();
       if (p && p.catch) p.catch(function (e) {
         console.warn('[beep] play failed:', e && e.name);
@@ -671,13 +718,18 @@
       if (!beepActive) return;
       beepActive = false;
       beepFadeArmed = false;
+      if (beepSafetyTimer) { clearTimeout(beepSafetyTimer); beepSafetyTimer = null; }
       m.onended = null;
       m.onerror = null;
-      m.loop = true;
+      // Keep loop OFF until a real music track is back on the element — never
+      // leave the element with loop=true AND the beep src (that's the looping
+      // bug). loop is re-enabled below only after the music src is assigned.
+      m.loop = false;
       if (musicRestore) {
         const r = musicRestore;
         musicRestore = null;
         m.src = r.src;
+        m.loop = true; // music track is back — restore looping
         m.load();
         const onReady = function () {
           m.removeEventListener('canplay', onReady);
@@ -695,10 +747,12 @@
         // No music to restore. Do NOT removeAttribute()+load() here — tearing
         // the element down right after playback crashes this device (confirmed
         // on hardware: beep with no music selected crashed at beep end).
-        // Leave the beep src parked on the paused element; every music-resume
-        // path checks hasMusicSrc() and ignores a parked beep.
+        // Park the beep src on the PAUSED element (loop off). Every music-resume
+        // path checks hasMusicSrc() and ignores a parked beep. Force the pause
+        // in case the device kept the beep going despite loop=false.
         m.loop = false;
         m.volume = clamp01(userMusicVolume);
+        if (!m.paused) { try { m.pause(); } catch (e) {} }
       }
     }
 
@@ -765,6 +819,7 @@
     function clearTimers() {
       if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
       if (exerciseInterval) { clearInterval(exerciseInterval); exerciseInterval = null; }
+      if (videoStartTimer) { clearTimeout(videoStartTimer); videoStartTimer = null; }
     }
 
     function calculateTotalDuration() {
@@ -920,7 +975,14 @@
       totalElapsed = calculateElapsedAtIndex(currentIndex);
       isPaused = false;
 
-      dom.workoutTitle.textContent = data.title || 'Workout';
+      // Localization: merge the sender's translated label set (older senders
+      // send none — keep the English defaults) and push into the static UI.
+      if (data.labels && typeof data.labels === 'object') {
+        labels = Object.assign({}, labels, data.labels);
+      }
+      applyStaticLabels();
+
+      dom.workoutTitle.textContent = data.title || labels.workout;
       if (data.musicUrl) {
         dom.musicPlayer.src = data.musicUrl;
         userMusicVolume = clamp01(data.musicVolume != null ? data.musicVolume : 0.3);
@@ -949,7 +1011,8 @@
       hideAll();
 
       const ex = exercises[currentIndex];
-      dom.breakLabelText.textContent = 'Get Ready';
+      dom.breakLabelText.textContent = labels.getReady;
+      // Exercise name is shown verbatim (never translated, per client)
       dom.breakNextText.textContent = ex ? (ex.title || 'Exercise ' + (currentIndex + 1)) : '';
       if (ex && ex.videoThumbnailURL) {
         dom.breakNextThumb.src = ex.videoThumbnailURL;
@@ -1014,7 +1077,10 @@
       // whose trailing break is skipped
       const brk = ex.break || 0;
       if (brk > 0 && currentIndex < exercises.length - 1) {
-        dom.detailsBreakInfo.innerHTML = 'Up next: Rest <span style="font-size:26px;margin:0 5px;">' + brk + '</span> sec';
+        dom.detailsBreakInfo.innerHTML =
+          labels.upNext + ': ' + labels.rest +
+          ' <span style="font-size:40px;margin:0 6px;">' + brk + '</span> ' +
+          labels.sec.toLowerCase();
       } else {
         dom.detailsBreakInfo.textContent = '';
       }
@@ -1027,10 +1093,23 @@
       // this Chromecast (can't decode video + output a 2nd audio stream). Left
       // unmuted for stability — cast music handled on the sender side instead.
       dom.video.loop = false; // break-time looping ends with the break
+      if (videoStartTimer) { clearTimeout(videoStartTimer); videoStartTimer = null; }
       if (ex.videoURL) {
         dom.video.src = ex.videoURL;
         dom.video.load();
-        dom.video.play().catch(e => console.warn('Video play error:', e));
+        const startVideo = function () {
+          videoStartTimer = null;
+          dom.video.play().catch(e => console.warn('Video play error:', e));
+        };
+        // If the countdown beep is still finishing (natural break → exercise),
+        // starting the video now reconfigures the device audio pipeline and
+        // clips the final "...Go". Hold the video ~900ms so the beep completes.
+        // On skips/loads no beep is active, so playback starts immediately.
+        if (beepActive) {
+          videoStartTimer = setTimeout(startVideo, 900);
+        } else {
+          startVideo();
+        }
       }
 
       // Music — duck volume while video plays. If the beep is still playing
@@ -1107,12 +1186,13 @@
       countdownValue = duration;
       dom.breakCountdown.textContent = countdownValue;
       dom.breakProgressBar.style.width = '0%';
-      dom.breakLabelText.textContent = 'Rest';
+      dom.breakLabelText.textContent = labels.rest;
 
       const nextEx = exercises[currentIndex + 1];
+      // Label localized; exercise name verbatim
       dom.breakNextText.textContent = nextEx
-        ? 'Next Exercise: ' + (nextEx.title || 'Exercise ' + (currentIndex + 2))
-        : 'Finish';
+        ? labels.nextExercise + ': ' + (nextEx.title || 'Exercise ' + (currentIndex + 2))
+        : labels.finish;
       if (nextEx && nextEx.videoThumbnailURL) {
         dom.breakNextThumb.src = nextEx.videoThumbnailURL;
         dom.breakNextThumb.style.display = '';
@@ -1242,6 +1322,8 @@
       if (url) {
         const el = dom.musicPlayer;
         el.src = url;
+        el.loop = true; // music always loops (a prior no-music beep may have
+                        // parked the element with loop off — restore it)
         el.load();
         // Play only once the element is ready. Calling play() while the new src
         // is still loading races the internal load and rejects with AbortError,

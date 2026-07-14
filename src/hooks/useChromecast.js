@@ -1,6 +1,26 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { translate } from "../components/Translate";
+import { getLocale } from "../helpers/translationHelpers";
 
 const NAMESPACE = "urn:x-cast:com.realchallenge.workout";
+
+// UI strings the TV receiver renders. The receiver is a static page and can't
+// run the app's i18n, so we translate here (in the user's chosen language) and
+// hand it a ready-made dictionary. Exercise titles are NOT included — per the
+// client, exercise names always stay as entered (no translation).
+function buildReceiverLabels() {
+  return {
+    rest: translate("player.rest"),
+    getReady: translate("player.get_ready"),
+    upNext: translate("player.up_next"),
+    nextExercise: translate("player.next_exercise"),
+    finish: translate("player.finish"),
+    workoutComplete: translate("player.workout_complete"),
+    waitingForWorkout: translate("player.waiting_for_workout"),
+    sec: translate("player.sec"),
+    workout: translate("player.workout"),
+  };
+}
 
 // Replace with your custom receiver App ID after registering at https://cast.google.com/publish/
 // Until then, this placeholder will not work — the Default Media Receiver (CC1AD845)
@@ -156,6 +176,11 @@ export default function useChromecast({ workout, currentExercise }) {
       sendMessage("LOAD_WORKOUT", {
         title: workout.title || "Workout",
         subtitle: workout.subtitle || "",
+        // Localization: the TV must follow the user's selected language. We
+        // pass the locale + a pre-translated label set so the receiver renders
+        // "Rest"/"Rust", "Get Ready"/"Maak je klaar" etc. to match the phone.
+        language: getLocale() || "english",
+        labels: buildReceiverLabels(),
         exercises,
         // clamp: -1 is the local "workout finished" sentinel and must never
         // reach the receiver as a start position

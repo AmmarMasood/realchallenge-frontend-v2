@@ -523,7 +523,17 @@
     "related": "Gerelateerd product van e-shop",
     "start_exercise": "Starten",
     "first_exercise": "Eerste oefening",
-    "next_exercise": "Volgende oefening"
+    "next_exercise": "Volgende oefening",
+    "rest": "Rust",
+    "get_ready": "Maak je klaar",
+    "up_next": "Hierna",
+    "finish": "Voltooien",
+    "workout_complete": "Training voltooid!",
+    "casting_to_tv": "Casten naar tv",
+    "waiting_for_workout": "Wachten op training...",
+    "stop_casting": "Casten stoppen",
+    "sec": "Sec",
+    "workout": "Training"
   },
   "admin": {
     "profile_setting": "Profielinstelling",

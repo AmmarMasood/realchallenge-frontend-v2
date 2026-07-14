@@ -31,6 +31,7 @@ import PlayerPauseIcon from "../../assets/icons/player-pause-icon.svg";
 import BackButton from "../../assets/icons/big-back-button.svg";
 import useWindowDimensions from "../../helpers/useWindowDimensions";
 import useChromecast from "../../hooks/useChromecast";
+import { translate } from "../Translate";
 
 const playerIconStyle = {
   // width: "24px",
@@ -425,6 +426,23 @@ function PlayerControls(
             {formatTime(castTotal)}
           </span>
         </div>
+        {/* Clear "Stop Casting" button — client asked for an obvious way to end
+            the session, placed centrally beneath the play button. */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            marginTop: "14px",
+          }}
+        >
+          <button
+            type="button"
+            className="stop-casting-btn"
+            onClick={stopCasting}
+          >
+            {translate("player.stop_casting")}
+          </button>
+        </div>
         {/* Cast exercise stepper */}
         {rs && rs.totalExercises > 0 && (
           <div
@@ -469,7 +487,7 @@ function PlayerControls(
       <div className="controls-details" ref={descriptionRef}>
         <div className="controls-details-top-title font-paragraph-white">
           <span>
-            {phaseLabel === "break" ? "Rest" : exerciseName}
+            {phaseLabel === "break" ? translate("player.rest") : exerciseName}
           </span>
           <span
             style={{
@@ -481,24 +499,27 @@ function PlayerControls(
               gap: "5px",
             }}
           >
-            Casting to TV
-            {phaseLabel === "get_ready" && " - Get Ready"}
-            {phaseLabel === "complete" && " - Workout Complete!"}
+            {translate("player.casting_to_tv")}
+            {phaseLabel === "get_ready" &&
+              ` - ${translate("player.get_ready")}`}
+            {phaseLabel === "complete" &&
+              ` - ${translate("player.workout_complete")}`}
           </span>
           {timeRemaining != null && (
             <span style={{ marginTop: "10px" }}>
               <span style={{ fontSize: "26px", marginRight: "5px" }}>
                 {Math.round(timeRemaining)}
               </span>
-              Sec
+              {translate("player.sec")}
             </span>
           )}
         </div>
         <div className="controls-details-bottom-title font-paragraph-white">
           {phaseLabel === "break" && rs?.exerciseIndex != null && (
             <span>
-              Up next:{" "}
-              {workout?.exercises?.[rs.exerciseIndex + 1]?.title || "Finish"}
+              {translate("player.up_next")}:{" "}
+              {workout?.exercises?.[rs.exerciseIndex + 1]?.title ||
+                translate("player.finish")}
             </span>
           )}
         </div>
@@ -518,7 +539,9 @@ function PlayerControls(
             alt=""
             className="casting-overlay-icon"
           />
-          <span className="casting-overlay-text">Casting to TV</span>
+          <span className="casting-overlay-text">
+            {translate("player.casting_to_tv")}
+          </span>
         </div>
       )}
       {/* Description area — cast vs local */}
