@@ -505,7 +505,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v3.7 — 2026-07-14 (protect the "Go" beep tail)';
+    const RECEIVER_VERSION = 'v3.8 — 2026-07-14 (countdown waits for video to play)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -554,6 +554,8 @@
     let exerciseInterval = null;
     let chimeFired = false;       // guards the exercise-end chime to once per exercise
     let chimeFadeStarted = false; // guards the pre-chime music fade-out to once per exercise
+    let exerciseTimerFallback = null; // starts the countdown if the video never fires 'playing'
+    let exerciseGen = 0;              // invalidates stale video 'playing' handlers after a skip
     let totalElapsed = 0;
     let totalDuration = 0;
 
@@ -861,6 +863,7 @@
       if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
       if (exerciseInterval) { clearInterval(exerciseInterval); exerciseInterval = null; }
       if (videoStartTimer) { clearTimeout(videoStartTimer); videoStartTimer = null; }
+      if (exerciseTimerFallback) { clearTimeout(exerciseTimerFallback); exerciseTimerFallback = null; }
     }
 
     function calculateTotalDuration() {
@@ -1188,6 +1191,38 @@
 
       sendState();
 
+      // Start the countdown IN SYNC WITH THE VIDEO. If we start it now, a slow
+      // video load lets the timer run ahead — the user saw the video begin when
+      // the count had already dropped ~3s. So wait for the video's 'playing'
+      // event; the timer display already shows the full duration until then.
+      // A fallback starts it anyway after 4s so a stalled/broken video (or one
+      // with no source) can't freeze the exercise. exerciseGen invalidates this
+      // exercise's handler if the user skips before the video plays.
+      const myGen = ++exerciseGen;
+      const kickTimer = function () {
+        if (myGen !== exerciseGen || exerciseInterval) return;
+        if (exerciseTimerFallback) { clearTimeout(exerciseTimerFallback); exerciseTimerFallback = null; }
+        beginExerciseTimer(exLen);
+      };
+      if (ex.videoURL) {
+        dom.video.addEventListener('playing', kickTimer, { once: true });
+        if (exerciseTimerFallback) clearTimeout(exerciseTimerFallback);
+        exerciseTimerFallback = setTimeout(kickTimer, 4000);
+      } else {
+        kickTimer(); // no video to wait on
+      }
+
+      if (!exLen || exLen <= 0) {
+        dom.video.onended = () => { clearInterval(exerciseInterval); exerciseInterval = null; onExerciseEnd(); };
+      } else {
+        dom.video.onended = null;
+      }
+    }
+
+    // The per-second exercise countdown, split out so it can be started only
+    // once the video is actually playing (see startExercise / kickTimer).
+    function beginExerciseTimer(exLen) {
+      if (exerciseInterval) return; // never double-start
       exerciseInterval = setInterval(() => {
         if (isPaused) return;
         exerciseElapsed++;
@@ -1216,12 +1251,6 @@
           onExerciseEnd();
         }
       }, 1000);
-
-      if (!exLen || exLen <= 0) {
-        dom.video.onended = () => { clearInterval(exerciseInterval); exerciseInterval = null; onExerciseEnd(); };
-      } else {
-        dom.video.onended = null;
-      }
     }
 
     function onExerciseEnd() {
