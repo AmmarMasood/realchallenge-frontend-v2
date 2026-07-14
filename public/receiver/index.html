@@ -528,7 +528,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v4.2 — 2026-07-15 (hard backstop kills stray/looping beep)';
+    const RECEIVER_VERSION = 'v4.3 — 2026-07-15 (root fix: stale beep blob no longer mistaken for music)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -628,6 +628,19 @@
     // (pause → play) after every video transition to re-grab the route.
     let beepBlobUrl = '';     // break-end.mp3  — 3-2-1 countdown before next exercise
     let chimeBlobUrl = '';    // break-start.mp3 — exercise-END chime (matches local player)
+    let beepSourceUrl = '';   // source URL already prefetched (skip re-fetch → no blob churn)
+    let chimeSourceUrl = '';
+
+    // A one-shot sound is ALWAYS a blob: URL (or the network-fallback sound URL).
+    // Music is ALWAYS a real https URL. Checking "is this a blob" — rather than
+    // matching the CURRENT beepBlobUrl — means a STALE blob left on the element
+    // (after a prefetch swapped the URL) is still recognised as a sound, not
+    // mistaken for a music track (the bug that looped a low-volume beep after a
+    // manual re-select).
+    function isSoundUrl(s) {
+      if (!s) return false;
+      return s.indexOf('blob:') === 0 || s === beepBlobUrl || s === chimeBlobUrl;
+    }
     let beepActive = false;   // a one-shot sound is playing through the element
     let musicRestore = null;  // { src, time } to restore after the one-shot
     let bounceTimer = null;
@@ -635,6 +648,11 @@
     let videoStartTimer = null; // defers exercise video so it can't cut the beep
 
     function prefetchBeep(url) {
+      // Idempotent: the beep URL never changes across loads, so fetch once and
+      // reuse the blob. Re-creating it every loadWorkout left stale blob URLs
+      // floating that got mistaken for music (looping low-volume beep).
+      if ((url || '') === beepSourceUrl && beepBlobUrl) return;
+      beepSourceUrl = url || '';
       if (beepBlobUrl && beepBlobUrl.indexOf('blob:') === 0) URL.revokeObjectURL(beepBlobUrl);
       beepBlobUrl = '';
       if (!url) return;
@@ -648,6 +666,8 @@
     }
 
     function prefetchChime(url) {
+      if ((url || '') === chimeSourceUrl && chimeBlobUrl) return;
+      chimeSourceUrl = url || '';
       if (chimeBlobUrl && chimeBlobUrl.indexOf('blob:') === 0) URL.revokeObjectURL(chimeBlobUrl);
       chimeBlobUrl = '';
       if (!url) return;
@@ -745,7 +765,7 @@
       beepFadeArmed = false;
       const m = dom.musicPlayer;
       const currentSrc = m.getAttribute('src');
-      const isSoundSrc = currentSrc === beepBlobUrl || currentSrc === chimeBlobUrl;
+      const isSoundSrc = isSoundUrl(currentSrc);
       const hadMusic = !!currentSrc && !isSoundSrc;
       musicRestore = (hadMusic && !forceNoRestore)
         ? { src: currentSrc, time: m.currentTime || 0 }
@@ -836,7 +856,7 @@
       beepFadeArmed = false;
       const m = dom.musicPlayer;
       const cur = m.getAttribute('src');
-      const isSound = cur === beepBlobUrl || cur === chimeBlobUrl;
+      const isSound = isSoundUrl(cur);
       // Act if a one-shot is officially active OR a sound blob is stray on the
       // element. A looping/stuck beep can have beepActive already FALSE — that's
       // the case the old `if(!beepActive) return` skipped, so switching never
@@ -860,10 +880,10 @@
     }
 
     // True only when the element holds an actual music track (not a
-    // parked/playing one-shot sound — the beep or the chime)
+    // parked/playing one-shot sound, including a STALE beep/chime blob)
     function hasMusicSrc() {
       const s = dom.musicPlayer.getAttribute('src');
-      return !!s && s !== beepBlobUrl && s !== chimeBlobUrl;
+      return !!s && !isSoundUrl(s);
     }
 
     // Audio ducking: music volume during exercise vs break
@@ -903,9 +923,9 @@
     function playMusic() {
       const el = dom.musicPlayer;
       if (!el.src) return;
-      // never "resume" a parked one-shot sound (beep/chime) as if it were music
-      const cur = el.getAttribute('src');
-      if ((beepBlobUrl && cur === beepBlobUrl) || (chimeBlobUrl && cur === chimeBlobUrl)) return;
+      // never "resume" a parked one-shot sound (beep/chime, incl. a stale blob)
+      // as if it were music
+      if (isSoundUrl(el.getAttribute('src'))) return;
       const p = el.play();
       if (!p || !p.then) return;
       p.catch((e) => {
@@ -1034,10 +1054,10 @@
     // it also catches a loop that appears without a manual switch.
     setInterval(function () {
       const m = dom.musicPlayer;
-      const cur = m.getAttribute('src');
-      const isStraySound =
-        (cur === beepBlobUrl || cur === chimeBlobUrl) && !beepActive && !m.paused;
-      if (!isStraySound) return;
+      // A stray sound = the element is actively playing a sound (blob / stale
+      // blob) while no one-shot is officially active. isSoundUrl catches a
+      // stale blob whose URL no longer matches the current beepBlobUrl.
+      if (!isSoundUrl(m.getAttribute('src')) || beepActive || m.paused) return;
       console.warn('[oneshot] stray sound with no active one-shot — stopping');
       m.loop = false;
       try { m.pause(); } catch (e) {}
@@ -1050,7 +1070,7 @@
         m.volume = clamp01(phase === 'exercise' ? userMusicVolume * DUCK_RATIO : userMusicVolume);
         if (!isPaused && phase !== 'idle' && phase !== 'complete') playMusic();
       }
-    }, 700);
+    }, 500);
 
     function updatePlayPauseIcon() {
       dom.iconPause.style.display = isPaused ? 'none' : '';
