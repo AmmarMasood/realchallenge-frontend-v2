@@ -499,7 +499,7 @@
 
     // Bump on every receiver change — shown in the corner of the TV and sent
     // in every STATE_UPDATE so the sender can log which build the TV runs.
-    const RECEIVER_VERSION = 'v3.3 — 2026-07-14 (bigger fonts, i18n, beep loop fix)';
+    const RECEIVER_VERSION = 'v3.4 — 2026-07-14 (exercise-end chime, sound parity)';
 
     const $ = (id) => document.getElementById(id);
 
@@ -592,11 +592,12 @@
     // Therefore ALL sound goes through the single #music-player element:
     // the beep is a temporary src-swap on it, and the music is "bounced"
     // (pause → play) after every video transition to re-grab the route.
-    let beepBlobUrl = '';
-    let beepActive = false;   // beep currently playing through the element
-    let musicRestore = null;  // { src, time } to restore after the beep
+    let beepBlobUrl = '';     // break-end.mp3  — 3-2-1 countdown before next exercise
+    let chimeBlobUrl = '';    // break-start.mp3 — exercise-END chime (matches local player)
+    let beepActive = false;   // a one-shot sound is playing through the element
+    let musicRestore = null;  // { src, time } to restore after the one-shot
     let bounceTimer = null;
-    let beepSafetyTimer = null; // force-ends a beep whose 'ended' never fires
+    let beepSafetyTimer = null; // force-ends a one-shot whose 'ended' never fires
     let videoStartTimer = null; // defers exercise video so it can't cut the beep
 
     function prefetchBeep(url) {
@@ -609,6 +610,19 @@
         .catch(function (e) {
           console.warn('[beep] prefetch failed, using network URL:', e);
           beepBlobUrl = url;
+        });
+    }
+
+    function prefetchChime(url) {
+      if (chimeBlobUrl && chimeBlobUrl.indexOf('blob:') === 0) URL.revokeObjectURL(chimeBlobUrl);
+      chimeBlobUrl = '';
+      if (!url) return;
+      fetch(url)
+        .then(function (r) { return r.blob(); })
+        .then(function (b) { chimeBlobUrl = URL.createObjectURL(b); })
+        .catch(function (e) {
+          console.warn('[chime] prefetch failed, using network URL:', e);
+          chimeBlobUrl = url;
         });
     }
 
@@ -682,36 +696,52 @@
       }, 80);
     }
 
-    function playCountdownBeep() {
-      if (!beepBlobUrl || beepActive) return;
+    // Play a short one-shot sound (the 3-2-1 countdown beep OR the exercise-end
+    // chime) through the single shared audio element. This device mixes only
+    // one audio stream, so a "sound" is a temporary src-swap on the music
+    // element; the music is captured and restored when the sound ends.
+    //   blobUrl        — which sound (beepBlobUrl / chimeBlobUrl)
+    //   forceNoRestore — true for the FINAL exercise-end chime: the workout is
+    //                    ending, so don't bring music back afterwards.
+    function playOneShot(blobUrl, forceNoRestore) {
+      if (!blobUrl || beepActive) return;
       if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null; }
       beepFadeArmed = false;
       const m = dom.musicPlayer;
       const currentSrc = m.getAttribute('src');
-      const hadMusic = !!currentSrc && currentSrc !== beepBlobUrl;
-      musicRestore = hadMusic ? { src: currentSrc, time: m.currentTime || 0 } : null;
+      const isSoundSrc = currentSrc === beepBlobUrl || currentSrc === chimeBlobUrl;
+      const hadMusic = !!currentSrc && !isSoundSrc;
+      musicRestore = (hadMusic && !forceNoRestore)
+        ? { src: currentSrc, time: m.currentTime || 0 }
+        : null;
       beepActive = true;
       if (hadMusic) pauseMusic('beep');
       m.onended = finishBeep;
       m.onerror = finishBeep;
-      m.loop = false; // CRITICAL: the beep must never loop (client's "stuck
-                      // looping the whole workout" bug is loop=true + beep src)
-      m.src = beepBlobUrl;
+      m.loop = false; // CRITICAL: a one-shot must never loop (client's "stuck
+                      // looping the whole workout" bug is loop=true + sound src)
+      m.src = blobUrl;
       m.volume = 1;
       m.load();
       // Hard safety net: if 'ended' never fires (a device media quirk we've
-      // seen) the beep must still terminate. Force-finish it after roughly its
+      // seen) the sound must still terminate. Force-finish it after roughly its
       // own length so it can't linger — let alone loop — for the whole workout.
       if (beepSafetyTimer) clearTimeout(beepSafetyTimer);
       beepSafetyTimer = setTimeout(function () {
-        if (beepActive) { console.warn('[beep] safety timer force-finish'); finishBeep(); }
+        if (beepActive) { console.warn('[oneshot] safety timer force-finish'); finishBeep(); }
       }, 4500);
       const p = m.play();
       if (p && p.catch) p.catch(function (e) {
-        console.warn('[beep] play failed:', e && e.name);
+        console.warn('[oneshot] play failed:', e && e.name);
         finishBeep();
       });
     }
+
+    // 3-2-1 countdown beep (break-end.mp3) — music resumes after into the exercise.
+    function playCountdownBeep() { playOneShot(beepBlobUrl, false); }
+    // Exercise-end chime (break-start.mp3) — mirrors the local player. On the
+    // final exercise it's the end-of-workout cue, after which nothing resumes.
+    function playChime(isFinal) { playOneShot(chimeBlobUrl, isFinal); }
 
     function finishBeep() {
       const m = dom.musicPlayer;
@@ -756,11 +786,11 @@
       }
     }
 
-    // True only when the element holds an actual music track (not the
-    // parked/playing beep)
+    // True only when the element holds an actual music track (not a
+    // parked/playing one-shot sound — the beep or the chime)
     function hasMusicSrc() {
       const s = dom.musicPlayer.getAttribute('src');
-      return !!s && s !== beepBlobUrl;
+      return !!s && s !== beepBlobUrl && s !== chimeBlobUrl;
     }
 
     // Audio ducking: music volume during exercise vs break
@@ -799,8 +829,9 @@
     function playMusic() {
       const el = dom.musicPlayer;
       if (!el.src) return;
-      // never "resume" the parked beep as if it were music
-      if (beepBlobUrl && el.getAttribute('src') === beepBlobUrl) return;
+      // never "resume" a parked one-shot sound (beep/chime) as if it were music
+      const cur = el.getAttribute('src');
+      if ((beepBlobUrl && cur === beepBlobUrl) || (chimeBlobUrl && cur === chimeBlobUrl)) return;
       const p = el.play();
       if (!p || !p.then) return;
       p.catch((e) => {
@@ -988,10 +1019,13 @@
         userMusicVolume = clamp01(data.musicVolume != null ? data.musicVolume : 0.3);
         dom.musicPlayer.volume = userMusicVolume;
       }
-      // Break-start sound intentionally ignored (sender sends null) — an
-      // attached audio element steals this device's single audio stream.
-      // Countdown beep: prefetch to a blob, never attach to the element here.
+      // Both sounds are prefetched to blobs and played later via a src-swap on
+      // the single music element (playOneShot) — never attached as their own
+      // <audio>, which would steal this device's one audio stream.
+      //   break-end   → 3-2-1 countdown before the next exercise
+      //   break-start → exercise-END chime (matches the local player)
       prefetchBeep(data.breakEndSoundUrl);
+      prefetchChime(data.breakStartSoundUrl);
 
       // A LOAD_WORKOUT can arrive mid-exercise (user picked another exercise
       // on the phone) — stop the running video or it keeps playing behind
@@ -1154,6 +1188,10 @@
       // No trailing break after the final exercise (matches the local
       // player) — go straight to the completion screen
       const isLast = currentIndex >= exercises.length - 1;
+      // Exercise-end chime — the local player plays break-start.mp3 the moment
+      // the exercise timer hits 0, on every exercise INCLUDING the last (where
+      // it doubles as the end-of-workout cue). Fire it AFTER the video
+      // transition below so the seek/pause pipeline blip can't clip the chime.
       if (brk > 0 && !isLast) {
         // Do NOT pause the video for a break: a paused video element holds
         // this device's media pipeline hostage — the music stalls (t frozen,
@@ -1169,9 +1207,11 @@
         if (dom.video.src && dom.video.paused) {
           dom.video.play().catch(function () {});
         }
+        playChime(false); // music resumes (restored) once the chime ends
         startBreak(brk);
       } else {
         dom.video.pause();
+        playChime(true); // final chime — nothing resumes after (workout over)
         advanceToNext();
       }
     }
@@ -1282,7 +1322,10 @@
       phase = 'complete';
       clearTimers(); hideAll();
       dom.video.pause();
-      pauseMusic('finish');
+      // Don't pause the element while the end-of-workout chime is still playing
+      // through it — that would cut the chime. It parks itself silent when it
+      // ends (playChime(true) → no music restore). Only stop music otherwise.
+      if (!beepActive) pauseMusic('finish');
       dom.completeWorkout.textContent = workout ? (workout.title || '') : '';
       dom.completeScreen.classList.add('active');
       totalElapsed = totalDuration;

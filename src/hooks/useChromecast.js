@@ -187,15 +187,16 @@ export default function useChromecast({ workout, currentExercise }) {
         startIndex: Math.max(currentExercise?.index || 0, 0),
         musicUrl: musicUrl || null,
         musicVolume: musicVolume != null ? musicVolume : 0.3,
-        // Break-start sound stays disabled: this Chromecast plays only one
-        // audio stream, and loaded break-sound elements steal the output from
-        // the music (music was silent on prod, fine on localhost where these
-        // URLs were unreachable).
-        breakStartSoundUrl: null,
-        // Countdown beep (3-2-1): re-enabled via lazy-load — the receiver
-        // only attaches this src for the ~3s the beep plays (music pauses for
-        // that window and resumes with the next exercise), so it can't hold
-        // the device's single audio stream like the preloaded version did.
+        // Both workout sounds now play through the receiver's single audio
+        // element via a temporary src-swap (playOneShot), so neither one holds
+        // the device's one audio stream the way a preloaded <audio> element
+        // did (which silenced the music on prod). This gives the cast parity
+        // with the local player's two sounds:
+        //   break-start → exercise-END chime (plays when each exercise ends)
+        //   break-end   → 3-2-1 countdown before the next exercise
+        breakStartSoundUrl: `${window.location.origin}${
+          process.env.PUBLIC_URL || ""
+        }/audio/break-start.mp3`,
         breakEndSoundUrl: `${window.location.origin}${
           process.env.PUBLIC_URL || ""
         }/audio/break-end.mp3`,
