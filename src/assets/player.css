@@ -92,6 +92,10 @@
 /* Clear "Stop Casting" action in the cast remote (client asked for an obvious
    way to end the session, sitting under the play button). */
 .stop-casting-btn {
+  /* Always on screen while casting: the player auto-hides the controls layer
+     via visibility, and an explicit `visible` on a descendant overrides the
+     parent's `hidden` — so the stop button survives the auto-hide. */
+  visibility: visible;
   background: transparent;
   color: #fff;
   border: 1.5px solid rgba(255, 119, 0, 0.8);
