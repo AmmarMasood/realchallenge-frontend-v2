@@ -165,6 +165,7 @@
     "get_fit": "Get Fit",
     "lose_weight": "Lose Weight",
     "current_fitness": "Current Fitness Level",
+    "preferred_intensity": "Preferred Challenge Intensity (optional)",
     "inactive": "Inactive",
     "light_active": "Light Active",
     "average_active": "Average Active",
@@ -211,6 +212,9 @@
     "active": "Active",
     "created": "Created",
     "expires_on": "Expires on",
+    "cancel_subscription": "Cancel subscription",
+    "cancel_confirm": "Billing stops and your plan will no longer include new challenges. Everything you have already unlocked stays yours.",
+    "cancelled_note": "Cancelled — the challenges you unlocked stay yours.",
     "date": "Date",
     "methods": "Methods",
     "total": "Total",
@@ -224,9 +228,14 @@
     "no": "No",
     "error": "Error",
     "customer_id": "Customer ID",
+    "price": "Price",
     "auto_rebill": "Auto Rebill",
     "transactions": "Transactions",
-    "no_transactions": "No transactions yet"
+    "no_transactions": "No transactions yet",
+    "cancel_confirm_term": "Your plan won't renew. You're partway through your agreed term, so billing continues for {{count}} more monthly payment(s) and you keep access until then.",
+    "cancel_confirm_rolling": "Your plan will end after one more monthly payment. You keep access until then, and the challenges you've unlocked stay yours.",
+    "ends_after_payments": "Cancelled — {{count}} monthly payment(s) left, then it ends. What you've unlocked stays yours.",
+    "active_challenges": "Active challenges"
   },
   "user_profile": {
     "about_me": "About Me",
@@ -508,7 +517,8 @@
     "twelve_months_plan": "12 months plan",
     "billed_monthly": "Billed monthly",
     "three_months_plan": "3 months plan",
-    "multiple_intensities_available": "Multiple intensities available"
+    "multiple_intensities_available": "Multiple intensities available",
+    "slots_full": "You're using all {{used}} of {{allowed}} active challenges on your plan. Finish one to free a slot, or buy this challenge on its own to keep it permanently."
   },
   "player": {
     "well": "Well done!",
@@ -658,7 +668,6 @@
     "code": "Code",
     "limit": "Limit",
     "current_usage": "Current Usage",
-    "updated_at": "Updated At",
     "applicable_on": "Applicable On",
     "search_coupon_by_code": "Search Coupon By Code",
     "search_coupon_by_id": "Search Coupon By ID",
@@ -768,7 +777,7 @@
     "tab_music": "Music",
     "tab_additional": "Additional",
     "create_post_about_challenge": "Create a post about your challenge?",
-    "create_a_post": "Create a Post",
+    "create_a_post": "Create a post",
     "update_challenge": "Update Challenge",
     "please_add_video_and_trainer": "Please add a video link and trainer of a exercise",
     "translate_from_exercise": "Translate from Exercise",
@@ -801,7 +810,6 @@
     "enter_pieces": "Enter Pieces",
     "method": "Method",
     "enter_method": "Enter Method",
-    "other": "Other",
     "enter_other": "Enter Other",
     "enter_meal_type": "Enter Meal Type",
     "all_meal_types": "All Meal Types",
@@ -816,33 +824,21 @@
     "all_ingredients": "All Ingredients",
     "update_ingredient": "Update Ingredient",
     "update_recipe": "Update Recipe",
-    "new_recipe": "New Recipe",
     "select_alternative_language_version": "Select alternative language version",
     "recipe_name": "Recipe Name",
     "please_input_recipe_name": "Please input recipe name!",
     "recipe_description": "Recipe Description",
-    "featured_image": "Featured Image",
-    "upload_file": "Upload File",
-    "persons": "Persons",
     "kcal_per_person": "Kcal per person",
     "saturation_index": "Saturation Index",
     "meal_types": "Meal Types",
     "manage_meal_type": "Manage Meal Type",
     "food_types": "Food Types",
     "manage_food_type": "Manage Food Type",
-    "diet": "Diet",
     "manage_diet": "Manage Diet",
     "add_ingredients": "Add Ingredients",
     "add_ingredient": "Add Ingredient",
-    "manage_ingredients": "Manage Ingredients",
     "cooking_process": "Cooking Process",
     "add_step": "Add Step",
-    "notes": "Notes",
-    "tips": "Tips",
-    "create_a_post": "Create a post",
-    "make_public": "Make Public",
-    "allow_reviews": "Allow Reviews",
-    "allow_comments": "Allow Comments",
     "create_notification": "Create notification",
     "translation_manager": "Translation Manager",
     "translation_key": "Key",
@@ -872,8 +868,6 @@
     "no": "No",
     "save": "Save",
     "cancel": "Cancel",
-    "status": "Status",
-    "active": "Active",
     "inactive": "Inactive",
     "reset_password": "Reset Password",
     "activate_user": "Activate User",
@@ -913,7 +907,6 @@
       "enterneweq": "Manage Equipments"
     }
   },
-
   "challengeStudio": {
     "challenge_name_required": "Challenge Name is required",
     "select_pack": "Select a pack",
@@ -994,7 +987,6 @@
     "pending_approval": "Pending Approval",
     "save_challenge": "Save Challenge"
   },
-
   "workoutStudio": {
     "duration_required": "Duration Required",
     "enter_duration_intro": "Please enter a duration for the intro exercise before playing it.",
@@ -1019,7 +1011,6 @@
     "remove_visual": "Remove visual",
     "play_audio_session": "Play audio session"
   },
-
   "userDashboard": {
     "nutrient": {
       "this_week": "This Week",
@@ -1033,7 +1024,7 @@
       "confirm_no": "No",
       "past_day_readonly": "Passed days are read-only.",
       "swap_next_only": "Swapping is only available on Next Week.",
-      "swap_failed": "Unable to swap recipe",
+      "swap_failed": "Could not swap recipe.",
       "swap_pinned_blocked": "The recipe is pinned. Unpin it to swap.",
       "recipe_no_items": "This recipe has no ingredients with quantities to add.",
       "shopping_qty_updated": "Already in your list — quantities updated.",
@@ -1122,6 +1113,8 @@
       "my_diet_setup": "My diet setup",
       "no_recipes_found": "Sorry, can't find recipes that fill your diet plan. We are working on making new recipes possible!",
       "complete_diet_setup": "Please complete your diet setup so that we can show you your recommended recipes.",
+      "no_diet_banner": "You haven't set your diet yet. Set your diet to help us generate a better meal plan for you.",
+      "no_diet_banner_button": "Set my diet",
       "min_supplements": "Please add at least 2 supplements",
       "max_supplements": "Only 4 supplements can be chosen!",
       "no_recipes_in_cart": "No recipes added yet. Add recipes from your favourites or browse recipes to get started.",
@@ -1131,7 +1124,6 @@
       "cart_add_failed": "Could not add recipe to shopping list.",
       "added_to_cart": "Added to shopping list.",
       "recipe_swapped": "Recipe swapped successfully.",
-      "swap_failed": "Could not swap recipe.",
       "select_diet": "Please select a diet first.",
       "diet_saved": "Diet updated successfully.",
       "diet_save_failed": "Could not update diet.",
@@ -1160,6 +1152,7 @@
       "vac": "View all challenges",
       "sp": "See Pricing",
       "nochal": "No challenges found",
+      "nogoal": "Set your goal in your profile to see recommended challenges",
       "no_my_challenges": "No challenge found",
       "continue_playing": "Continue",
       "active": "Active",
@@ -1176,7 +1169,9 @@
       "shoulders_chart": "Shoulders chart",
       "waist_chart": "Waist chart",
       "breast_chart": "Breast chart",
-      "hip_chart": "Hip chart"
+      "hip_chart": "Hip chart",
+      "workout_left": "workout left",
+      "workouts_left": "workouts left"
     }
   },
   "wizard": {
@@ -1190,6 +1185,15 @@
     "getfit": "Get Fit",
     "loseweight": "Lose Weight",
     "currentfitness": "What's your current fitness level?",
+    "preferred_intensity_title": "How intense do you want your challenges?",
+    "preferred_intensity_help": "This helps us recommend challenges that match how hard you want to train. You can skip this and change it later.",
+    "intensity_easy": "Easy",
+    "intensity_easy_help": "Gentle sessions, great for starting out",
+    "intensity_medium": "Medium",
+    "intensity_medium_help": "A solid workout without going all out",
+    "intensity_hard": "Hard",
+    "intensity_hard_help": "Demanding sessions that push you",
+    "intensity_skip": "Skip for now",
     "smatch": "Select the option that most closely matches you.",
     "inactive": "Inactive",
     "sjn": "Seated job or no exercise",
@@ -1413,5 +1417,24 @@
     "paste_move": "Paste (Move)",
     "rename": "Rename",
     "retry_optimization": "Retry Optimization"
+  },
+  "billing": {
+    "retrying": "Your last payment didn't go through. We'll try again automatically over the next few days — please make sure your account or card has funds available.",
+    "access_until": "You keep full access until",
+    "locked": "Your subscription is unpaid, so your plan no longer includes new challenges. Set up your payment again to restore it.",
+    "fix_payment": "Fix payment",
+    "working": "Working…",
+    "retry_running": "A payment retry is already in progress — please make sure your account or card has funds. We'll try again automatically.",
+    "restored_title": "Your billing is restored",
+    "restored_body": "Your subscription is running again. Nothing was charged just now — your next payment continues on its normal schedule."
+  },
+  "nutritionLock": {
+    "title": "Your nutrition access has ended",
+    "expired": "The nutrition plan and weekly recipes are included with any subscription, or for 30 days with each challenge you buy.",
+    "trial_ended": "You've already used your free 30-day nutrition trial. To get the weekly plan and recipes back, subscribe to a plan or buy a challenge.",
+    "see_plans": "See plans",
+    "browse_challenges": "Browse challenges",
+    "rest_still_works": "Your workouts, progress and weight tracking are unaffected.",
+    "days_left": "{{days}} days of nutrition access left. Buying another challenge adds 30 more."
   }
 }

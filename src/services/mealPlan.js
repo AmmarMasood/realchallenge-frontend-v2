@@ -6,6 +6,33 @@ const notify = (type, message, description) =>
 
 const BASE = () => `${process.env.REACT_APP_SERVER}/api/meal-plan`;
 
+/**
+ * The backend answers 402 when the user has no nutrition access — an active
+ * plan, or purchased days remaining. That is a state to explain, not an error
+ * to report, so callers get this sentinel instead of an error toast.
+ */
+export const NUTRITION_LOCKED = { nutritionLocked: true };
+
+export const isNutritionLocked = (errOrValue) => {
+  if (errOrValue === NUTRITION_LOCKED) return true;
+  if (errOrValue && errOrValue.nutritionLocked) return true;
+  return Boolean(
+    errOrValue && errOrValue.response && errOrValue.response.status === 402
+  );
+};
+
+/**
+ * Current nutrition access. Deliberately not gated on the server, so a
+ * locked-out user can still be told why they are locked out and what to do.
+ * Returns { allowed, source, accessUntil, daysLeft, freeTrialUsed }.
+ */
+export function getNutritionAccess() {
+  return axios
+    .get(`${BASE()}/access`)
+    .then((res) => res.data)
+    .catch(() => null);
+}
+
 // GET active This Week plan (backend lazily builds+persists if absent).
 export function getCurrentWeek(customerId, language) {
   const q = language ? `?language=${encodeURIComponent(language)}` : "";
@@ -13,6 +40,7 @@ export function getCurrentWeek(customerId, language) {
     .get(`${BASE()}/current/${customerId}${q}`)
     .then((res) => res.data.plan)
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       notify("error", "Unable to load this week's plan", "");
       console.log(err);
     });
@@ -25,6 +53,7 @@ export function getNextWeek(customerId, language) {
     .get(`${BASE()}/next/${customerId}${q}`)
     .then((res) => res.data.plan)
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       notify("error", "Unable to load next week's plan", "");
       console.log(err);
     });
@@ -37,6 +66,7 @@ export function regenerateNextWeek(customerId, language) {
     .post(`${BASE()}/generate-next/${customerId}${q}`)
     .then((res) => res.data) // { plan, warning }
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       notify("error", "Unable to regenerate next week", "");
       console.log(err);
     });
@@ -50,6 +80,7 @@ export function swapMeal(customerId, weekday, mealSlot) {
     .post(`${BASE()}/swap/${customerId}`, { weekday, meal_slot: mealSlot })
     .then((res) => ({ ok: true, data: res.data }))
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       if (err.response && err.response.status === 409) {
         return {
           ok: false,
@@ -69,6 +100,7 @@ export function pinRecipe(customerId, payload) {
     .post(`${BASE()}/pin/recipe/${customerId}`, payload)
     .then((res) => res.data.pin)
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       notify("error", "Unable to pin recipe", "");
       console.log(err);
     });
@@ -79,6 +111,7 @@ export function removeRecipePin(customerId, pinId) {
     .post(`${BASE()}/pin/recipe/${customerId}`, { remove: true, pin_id: pinId })
     .then((res) => res.data)
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       notify("error", "Unable to remove pin", "");
       console.log(err);
     });
@@ -90,6 +123,7 @@ export function pinDay(customerId, payload) {
     .post(`${BASE()}/pin/day/${customerId}`, payload)
     .then((res) => res.data.pin)
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       notify("error", "Unable to pin day", "");
       console.log(err);
     });
@@ -100,6 +134,7 @@ export function removeDayPin(customerId, pinId) {
     .post(`${BASE()}/pin/day/${customerId}`, { remove: true, pin_id: pinId })
     .then((res) => res.data)
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       notify("error", "Unable to remove day pin", "");
       console.log(err);
     });
@@ -112,6 +147,7 @@ export function getShoppingList(customerId) {
     .get(`${BASE()}/shopping-list/${customerId}`)
     .then((res) => res.data.list)
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       console.log(err);
       return { items: [] };
     });
@@ -125,6 +161,7 @@ export function addRecipeToShopping(customerId, recipeId) {
     })
     .then((res) => res.data) // { list, prompt }
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       notify("error", "Unable to add to shopping list", "");
       console.log(err);
     });
@@ -139,6 +176,7 @@ export function removeRecipeFromShopping(customerId, recipeId) {
     })
     .then((res) => res.data.list)
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       notify("error", "Unable to remove recipe", "");
       console.log(err);
     });
@@ -150,6 +188,7 @@ export function syncWeekShopping(customerId) {
     .post(`${BASE()}/shopping-list/sync-week/${customerId}`)
     .then((res) => res.data) // { list, prompt }
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       notify("error", "Unable to update shopping list", "");
       console.log(err);
     });
@@ -160,6 +199,7 @@ export function updateShoppingItem(customerId, payload) {
     .put(`${BASE()}/shopping-list/item/${customerId}`, payload)
     .then((res) => res.data.list)
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       notify("error", "Unable to update item", "");
       console.log(err);
     });
@@ -172,6 +212,7 @@ export function getDeliveryStatus(customerId) {
     .get(`${BASE()}/delivery-status/${customerId}`)
     .then((res) => res.data)
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       console.log(err);
       return { orderingEnabled: false };
     });
@@ -191,6 +232,7 @@ export function invalidatePins(customerId, reason) {
     .post(`${BASE()}/pins/invalidate/${customerId}`, { reason })
     .then((res) => res.data)
     .catch((err) => {
+      if (isNutritionLocked(err)) return NUTRITION_LOCKED;
       console.log(err);
     });
 }

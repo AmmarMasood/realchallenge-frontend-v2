@@ -27,7 +27,12 @@ import { Tooltip, Collapse, Input, Avatar, Progress, message } from "antd";
 import ShareIcon from "../assets/icons/share-icon.svg";
 
 import { userInfoContext } from "../contexts/UserStore";
-import { checkUserPackage } from "../services/payment";
+import {
+  checkUserPackage,
+  planCoversAnotherChallenge,
+  getSlotUsage,
+} from "../services/payment";
+import { toCurrencySymbol } from "../helpers/currency";
 import { selectedChallengeContext } from "../contexts/PaymentProcessStore";
 import { getChallengeProgress, getUserProfileInfo } from "../services/users";
 import {
@@ -45,13 +50,14 @@ import StarFilled from "../assets/icons/star-orange.svg";
 import StartTransparent from "../assets/icons/star-transparent.svg";
 import ForwardWhite from "../assets/icons/forward-white.png";
 import IntensityIcon from "../components/Common/IntensityIcon";
+import { filledStars, emptyStars } from "../helpers/rating";
 import ChallengeCompleteModal from "../components/Challenge/ChallengeCompleteModal";
 import ReplaceFreeChallengePopup from "../components/Challenge/ReplaceFreeChallengePopup";
 import ChallengeReviewModal from "../components/Challenge/ChallengeReviewModal";
 import { set, get } from "lodash";
 import slug from "elegant-slug";
 import { Helmet } from "react-helmet";
-import { T } from "../components/Translate";
+import { T, translate } from "../components/Translate";
 import { LanguageContext } from "../contexts/LanguageContext";
 import PopupPlayer from "../components/PopupPlayer/PopupPlayer";
 import { usePackageConfig } from "../contexts/PackageConfigContext";
@@ -442,13 +448,13 @@ function ChallengeProfile(props) {
           </>
         );
       } else {
-        if (
-          usereDtails &&
-          usereDtails.customerDetails &&
-          usereDtails.customerDetails.membership &&
-          usereDtails.customerDetails.membership.length > 0
-        ) {
-          <div></div>;
+        // Hide the pricing options only when the user's plan already covers
+        // another challenge. Merely *having* a membership is not enough: a
+        // one-off buyer, or a subscriber who has used up their plan, still has
+        // to choose how to pay. (This branch also used to drop its `<div/>`
+        // without returning it, falling through to render nothing.)
+        if (planCoversAnotherChallenge(usereDtails, packages)) {
+          return <div></div>;
         } else {
           return (
             <>
@@ -465,6 +471,28 @@ function ChallengeProfile(props) {
               <div className="font-paragraph-white">
                 <T>challenge_profile.gataf</T>
               </div>
+              {(() => {
+                // Only when they have a plan and it is full — otherwise the
+                // pricing options are simply the normal way to buy.
+                const usage = getSlotUsage(usereDtails, packages);
+                if (!usage || usage.remaining > 0) return null;
+                return (
+                  <div
+                    className="font-paragraph-white"
+                    style={{
+                      marginTop: "10px",
+                      padding: "10px 14px",
+                      borderLeft: "3px solid #ff7700",
+                      background: "rgba(255,119,0,.10)",
+                      fontSize: "14px",
+                    }}
+                  >
+                    {translate("challenge_profile.slots_full")
+                      .replace("{{used}}", String(usage.used))
+                      .replace("{{allowed}}", String(usage.allowed))}
+                  </div>
+                );
+              })()}
               <div className="unlock-challenge-packages">
                 {/* CHALLENGE_1 - One Time */}
                 <div
@@ -495,7 +523,7 @@ function ChallengeProfile(props) {
                   </span>
                   <span
                     style={{ fontSize: "26px", fontWeight: "600" }}
-                  >{`${challenge.currency}${challenge.price}`}</span>
+                  >{`${toCurrencySymbol(challenge.currency)}${challenge.price}`}</span>
                   <span style={{ margin: "15px 0" }}>{get(strings, "payment.no_subscription", "No subscription")}</span>
                   <span style={{ fontSize: "14px", color: "#7e7c79" }}>
                     {get(strings, "payment.billed_once", "Billed Once")}
@@ -1166,17 +1194,21 @@ function ChallengeProfile(props) {
             <div className="challenge-profile-box-2">
               <div className="challenge-profile-box-2-rating">
                 <div style={{ padding: "5px" }}>
-                  {new Array(challenge.rating).fill(0).map(() => (
-                    <img
-                      src={StarFilled}
-                      alt=""
-                      style={{ height: "20px", margin: "2px" }}
-                    />
-                  ))}
-                  {new Array(challenge.rating ? 5 - challenge.rating : 5)
+                  {new Array(filledStars(challenge.rating))
                     .fill(0)
-                    .map(() => (
+                    .map((_, i) => (
                       <img
+                        key={`sf-${i}`}
+                        src={StarFilled}
+                        alt=""
+                        style={{ height: "20px", margin: "2px" }}
+                      />
+                    ))}
+                  {new Array(emptyStars(challenge.rating))
+                    .fill(0)
+                    .map((_, i) => (
+                      <img
+                        key={`st-${i}`}
                         src={StartTransparent}
                         alt=""
                         style={{ height: "20px", margin: "2px" }}

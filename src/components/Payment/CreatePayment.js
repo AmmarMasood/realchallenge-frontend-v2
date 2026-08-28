@@ -411,12 +411,17 @@ import { createPayment } from "../../services/payment";
 import { getCouponByCode, getCouponDiscount } from "../../services/coupons";
 import { redeemPoints } from "../../services/users";
 import { usePackageConfig } from "../../contexts/PackageConfigContext";
+import { toCurrencyCode, toCurrencySymbol } from "../../helpers/currency";
 
 function CreatePayment(props) {
   const { strings } = useContext(LanguageContext);
   const { getPackage } = usePackageConfig();
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
+  // The validated-but-not-yet-redeemed coupon. It is sent with the checkout
+  // request so the server applies the discount itself; the price shown here is
+  // only a preview.
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [pointsRedeemed, setPointsRedeemed] = useState(false);
   const [showCouponModal, setShowCouponModal] = useState([]);
   const [userInfo, setUserInfo] = useContext(userInfoContext);
@@ -522,25 +527,35 @@ function CreatePayment(props) {
         return;
       }
 
-      // Mark coupon as used on the server
-      const res = await getCouponDiscount(coupon._id);
+      // Validates only — the coupon is redeemed server-side once the payment is
+      // confirmed. Spending it here burned the code on abandoned checkouts.
+      const res = await getCouponDiscount(coupon._id, {
+        packageType: packType,
+        challengeId: selectedChallenge && selectedChallenge._id,
+      });
       if (res && res.success) {
+        // Display the price the SERVER computed. Recomputing the discount here
+        // rounded the half-cent the other way, so a €24.95 challenge at 30% off
+        // showed €17.46 and charged €17.47.
+        const serverPrice =
+          res.data && res.data.pricing ? res.data.pricing.price : null;
         const discountFraction = coupon.discountPercent / 100;
+        const fallback = (base) =>
+          Math.round(parseFloat(base) * (1 - discountFraction) * 100) / 100;
+
         if (packType === "CHALLENGE_1") {
           const newPrice =
-            selectedChallenge.price -
-            selectedChallenge.price * discountFraction;
+            serverPrice != null ? serverPrice : fallback(selectedChallenge.price);
           setSelectedChallenge({ ...selectedChallenge, price: newPrice });
           setPackInfo((prev) => ({ ...prev, price: newPrice }));
         } else {
           setPackInfo((prev) => ({
             ...prev,
-            price:
-              parseFloat(prev.price) -
-              parseFloat(prev.price) * discountFraction,
+            price: serverPrice != null ? serverPrice : fallback(prev.price),
           }));
         }
         setCouponApplied(true);
+        setAppliedCoupon(coupon);
       }
     }
     setCouponButtonLoading(false);
@@ -582,18 +597,31 @@ function CreatePayment(props) {
       email: userInfo.email,
       currency: "EUR",
       value: packInfo.price ? parseFloat(packInfo.price).toFixed(2) : "",
-      description: pack,
+      // `description` is shown to the customer on Mollie's checkout page and on
+      // their bank statement, so it carries a readable name. `packageType` is
+      // the machine value all the purchase logic branches on — the two were the
+      // same field before, which is why checkout read "CHALLENGE_1".
+      description: packInfo.name || pack,
+      packageType: pack,
+      // Recorded server-side against the payment, so fulfilment grants what was
+      // actually bought rather than whatever the browser reports on return.
+      challengeIds: selectedChallenge && selectedChallenge._id
+        ? [selectedChallenge._id]
+        : [],
+      // The server re-validates this and computes the discount itself. `value`
+      // above is advisory only: the amount charged is resolved from the
+      // challenge/package record, never from what the browser posts.
+      couponId: appliedCoupon ? appliedCoupon._id : undefined,
+      couponCode: appliedCoupon ? appliedCoupon.code : undefined,
       redirectUrl: `${process.env.REACT_APP_FRONTEND_SERVER}/mollie/create-subscribtion/redirect`,
     };
     if (pack === "CHALLENGE_1") {
-      if (selectedChallenge) {
+      if (selectedChallenge && selectedChallenge._id) {
         data = {
           ...data,
-          currency:
-            selectedChallenge.currency && selectedChallenge.currency === "€"
-              ? "EUR"
-              : "USD",
-          value: selectedChallenge.price.toFixed(2),
+          currency: toCurrencyCode(selectedChallenge.currency),
+          value: parseFloat(selectedChallenge.price).toFixed(2),
+          description: selectedChallenge.challengeName || packInfo.name || pack,
         };
       } else {
         alert("Please select the challenge that you want to pay for.");
@@ -601,13 +629,13 @@ function CreatePayment(props) {
         return;
       }
     }
-    console.log(data);
     var storeForLaterUse = {
       currency: data.currency,
       value: data.value,
       // times: packInfo.billed,
       interval: "1 month",
-      description: pack,
+      description: data.description,
+      packageType: pack,
     };
     const res = await createPayment(data);
     setLoading(false);
@@ -617,6 +645,9 @@ function CreatePayment(props) {
         ...storeForLaterUse,
         custId: res.customerId,
         id: userInfo.id,
+        // The payment to verify on return. Everything else here is display
+        // only — the server fulfils from its own record of this payment.
+        paymentId: res.id,
       };
       localStorage.setItem("subObject", JSON.stringify(storeForLaterUse));
       localStorage.setItem(
@@ -625,7 +656,6 @@ function CreatePayment(props) {
       );
       window.location = link;
     }
-    console.log("to be", res);
   };
 
   return (
@@ -672,7 +702,7 @@ function CreatePayment(props) {
           </div>
           <div className="font-paragraph-white" style={{ fontWeight: "600" }}>
             {packInfo.noOfChallenges === "1"
-              ? `${selectedChallenge.currency} ${parseFloat(selectedChallenge.price || 0).toFixed(2)}`
+              ? `${toCurrencySymbol(selectedChallenge.currency)} ${parseFloat(selectedChallenge.price || 0).toFixed(2)}`
               : `€ ${parseFloat(packInfo.price || 0).toFixed(2)}`}
           </div>
         </div>
@@ -700,7 +730,14 @@ function CreatePayment(props) {
           >
             {packInfo.noOfChallenges === "1"
               ? selectedChallenge.challengeName
-              : get(strings, "payment.unlock_features_months", "Unlock all features for {{months}} months").replace("{{months}}", packInfo.noOfChallenges === "3" ? "3" : "12")}
+              : get(
+                  strings,
+                  "payment.unlock_features_months",
+                  "Unlock all features for {{months}} months"
+                  // Duration comes from the plan's billing interval. It used to
+                  // be derived from `noOfChallenges` (the challenge cap), so the
+                  // 3-month plan — which includes 2 challenges — advertised 12.
+                ).replace("{{months}}", packInfo.billed || "12")}
           </div>
           <div
             className="font-paragraph-white"
@@ -855,9 +892,8 @@ function CreatePayment(props) {
           <div className="font-paragraph-white">{get(strings, "payment.order_total", "Order Total")}</div>
           <div className="font-paragraph-white">
             {packInfo.noOfChallenges === "1"
-              ? `${selectedChallenge.currency} ${parseFloat(selectedChallenge.price || 0).toFixed(2)}`
+              ? `${toCurrencySymbol(selectedChallenge.currency)} ${parseFloat(selectedChallenge.price || 0).toFixed(2)}`
               : `€ ${parseFloat(packInfo.price || 0).toFixed(2)}`}
-            {/* {`€ ${packInfo.price}`} */}
           </div>
         </div>
         {/* ----- */}

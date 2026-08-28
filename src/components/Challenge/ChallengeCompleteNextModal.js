@@ -125,7 +125,7 @@ const ChallengeCompleteNextModal = ({ loading, challenges, onClose }) => {
             />
           </div>
         ) : Array.isArray(challenges) && challenges.length > 0 ? (
-          <Carousel responsive={responsive}>
+          <Carousel responsive={responsive} itemClass="carousel-item-spaced">
             {challenges.map((challenge) => {
               const hasIntensityGroup =
                 !!challenge.intensityGroupId || !!challenge.intensityVariants;

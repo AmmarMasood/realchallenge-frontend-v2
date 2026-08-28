@@ -20,7 +20,7 @@ import {
   deleteTrainerGoals,
   getAllTrainerGoals,
 } from "../../../services/trainers";
-import { getAllChallengeGoals } from "../../../services/createChallenge/goals";
+import { getDefaultGoals } from "../../../constants/goals";
 import EditTypeName from "./EditTypeName";
 import { LanguageContext } from "../../../contexts/LanguageContext";
 import { T } from "../../Translate";
@@ -87,15 +87,15 @@ function NewUser({ setCurrentSelection, home }) {
 
   const fetchData = async () => {
     const res = await getAllTrainerGoals(language);
-    const aCh = await getAllChallengeGoals(language);
 
-    // console.log("aCh", aCh);
     if (res.goals) {
       setAllTrainerGoals(res.goals);
     }
-    if (aCh.challengeGoals) {
-      setAllChallengeGoals(aCh.challengeGoals);
-    }
+    // A customer's goal must come from the canonical list — the signup wizard
+    // and profile page store these slugs, and the recommender joins on them.
+    // Sourcing this picker from the ChallengeGoals collection wrote ObjectIds
+    // into customerDetails.goals, which never matched.
+    setAllChallengeGoals(getDefaultGoals());
 
     console.log("res", res);
   };

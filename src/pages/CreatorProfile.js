@@ -25,6 +25,7 @@ import { Helmet } from "react-helmet";
 import { T } from "../components/Translate";
 import { LanguageContext } from "../contexts/LanguageContext";
 import { hasRole } from "../helpers/roleHelpers";
+import { filledStars, emptyStars } from "../helpers/rating";
 
 const getThumbnailLink = (thumbnail) => {
   if (!thumbnail) return "";
@@ -239,7 +240,7 @@ function CreatorProfile(props) {
                   </div>
                   {isTrainer && (
                     <>
-                      {new Array(calculatedRating ? calculatedRating : 0)
+                      {new Array(filledStars(calculatedRating))
                         .fill(0)
                         .map((_, i) => (
                           <img
@@ -249,7 +250,7 @@ function CreatorProfile(props) {
                             style={{ height: "20px", margin: "2px" }}
                           />
                         ))}
-                      {new Array(calculatedRating ? 5 - calculatedRating : 5)
+                      {new Array(emptyStars(calculatedRating))
                         .fill(0)
                         .map((_, i) => (
                           <img

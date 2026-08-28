@@ -75,9 +75,17 @@ export function getCouponByCode(code) {
     });
 }
 
-export function getCouponDiscount(id) {
+/**
+ * Spends the coupon. The package and challenge are sent so the server can
+ * enforce scope itself — it used to be checked only here in the browser, so
+ * calling the endpoint directly applied any coupon to any package.
+ */
+export function getCouponDiscount(id, context = {}) {
   return axios
-    .get(`${process.env.REACT_APP_SERVER}/api/coupons/use/${id}`)
+    .get(`${process.env.REACT_APP_SERVER}/api/coupons/use/${id}`, {
+      data: context,
+      params: context,
+    })
     .then((res) => {
       openNotificationWithIcon("success", "Code successfully applied", "");
       return {

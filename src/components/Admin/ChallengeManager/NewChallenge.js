@@ -7,8 +7,9 @@ import NewChallengeAdditionalTab from "./NewChallengeAdditionalTab";
 
 import { v4 } from "uuid";
 
+import { getDefaultGoals } from "../../../constants/goals";
+
 // services
-import { getAllChallengeGoals } from "../../../services/createChallenge/goals";
 import { getAllChallengeTags } from "../../../services/createChallenge/tags";
 import { getAllChallengeEquipments } from "../../../services/createChallenge/equipments";
 import { getAllBodyFocus } from "../../../services/createChallenge/bodyFocus";
@@ -147,7 +148,6 @@ function NewChallenge() {
 
   async function fethData() {
     const bodyFocus = await getAllBodyFocus(language);
-    const goals = await getAllChallengeGoals(language);
     const tags = await getAllChallengeTags(language);
     const equipments = await getAllChallengeEquipments(language);
     const trainers = await getAllTrainers(language);
@@ -158,7 +158,9 @@ function NewChallenge() {
 
     setAllBodyfocus(bodyFocus.body);
     setAllEquipments(equipments.equipments);
-    setAllGoals(goals.challengeGoals);
+    // Canonical list only — see src/constants/goals.js. The ChallengeGoals
+    // collection stored ObjectIds, which silently broke the recommender join.
+    setAllGoals(getDefaultGoals());
     setAllTags(tags.tags);
     // console.log("trainers", trainers);
     setAllTrainers(trainers.trainers);

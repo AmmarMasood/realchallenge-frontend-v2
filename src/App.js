@@ -47,7 +47,6 @@ import ResetNewPassword from "./pages/ResetNewPassword";
 import CreatePayment from "./components/Payment/CreatePayment";
 import EmailVerificationRedirect from "./pages/EmailVerificationRedirect";
 import MollieRedirectPage from "./components/Payment/MollieRedirectPage";
-import ChoosePlan from "./components/Payment/ChoosePlan";
 import { getUserPoints } from "./services/users";
 import ChallengeCreator from "./pages/v2/ChallengeCreator";
 import RecipeCreator from "./pages/v2/RecipeCreator";
@@ -211,7 +210,6 @@ function App() {
         <Route component={CookiePolicy} path="/cookie-policy" exact />
         <Route component={NewWelcome} path="/new/welcome" exact />
         <Route component={CreatePayment} path="/create-payment" exact />
-        <Route component={ChoosePlan} path="/choose-plan" exact />
         <Route
           component={MollieRedirectPage}
           path="/mollie/create-subscribtion/redirect"

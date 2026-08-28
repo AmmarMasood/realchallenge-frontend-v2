@@ -13,6 +13,7 @@ import FemaleSexLogo from "../../assets/icons/female.svg";
 
 import { getAllTrainerGoalsPublic } from "../../services/trainers";
 import { getDefaultGoals } from "../../constants/goals";
+import ChallengeDifficulty from "../Common/ChallengeDifficulty";
 import { T } from "../Translate";
 import { LanguageContext } from "../../contexts/LanguageContext";
 import {
@@ -33,6 +34,9 @@ function Wizard({ setWizardCompleted }) {
   const [gender, setGender] = useState(null);
   const [goal, setGoal] = useState(null);
   const [fitnessLevel, setFitnessLevel] = useState(null);
+  // Optional. Feeds the challenge recommender's intensity signal; left null the
+  // signal is skipped rather than guessed at.
+  const [preferredIntensity, setPreferredIntensity] = useState(null);
   const [details, setDetails] = useState({
     age: null,
     height: null,
@@ -92,6 +96,9 @@ function Wizard({ setWizardCompleted }) {
       gender,
       goals: [goal],
       currentFitnessLevel: [fitnessLevel],
+      // Optional — omit the key entirely when unanswered so the recommender
+      // sees an empty array and skips the signal.
+      preferredIntensity: preferredIntensity ? [preferredIntensity] : [],
       fitnessInterests: selectedFitnessInterests,
       age: parseInt(details.age),
       weight: getWeightDependingOnCurrentMonth(details.weight),
@@ -394,6 +401,73 @@ function Wizard({ setWizardCompleted }) {
       ),
     },
     {
+      // Preferred training intensity. Distinct from the activity level above:
+      // that one feeds calorie maths (calculateCalories(BMR, level)), this one
+      // feeds the challenge recommender's intensity signal. Optional — the
+      // scorer skips the signal entirely when it is unset rather than guessing.
+      content: (
+        <div style={{ textAlign: "center" }}>
+          <h2 className="font-heading-white" style={{ fontSize: "23px" }}>
+            <T>wizard.preferred_intensity_title</T>
+          </h2>
+          <p className="font-paragraph-white">
+            <T>wizard.preferred_intensity_help</T>
+          </p>
+          <div className="wizard-goal-selection-container">
+            {["Easy", "Medium", "Hard"].map((level) => (
+              <div
+                key={level}
+                style={{
+                  border:
+                    preferredIntensity === level
+                      ? "2px solid var(--color-orange)"
+                      : "2px solid var(--color-gray)",
+                }}
+                className="wizard-fitness-selection-container-level font-paragraph-white"
+                onClick={() =>
+                  setPreferredIntensity(
+                    preferredIntensity === level ? null : level
+                  )
+                }
+              >
+                <ChallengeDifficulty difficulty={level} height={22} />
+                <div style={{ paddingLeft: "10px" }}>
+                  <T>{`wizard.intensity_${level.toLowerCase()}`}</T>
+                  <br />
+                  <span style={{ fontSize: "1.3rem", display: "block" }}>
+                    <T>{`wizard.intensity_${level.toLowerCase()}_help`}</T>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div
+            className="create-payment-check-out poppins-medium-white-20px"
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              marginTop: "20px",
+            }}
+            onClick={() => next()}
+          >
+            <span className="font-paragraph-white">
+              {preferredIntensity ? (
+                "Next"
+              ) : (
+                <T>wizard.intensity_skip</T>
+              )}
+            </span>
+            <ArrowRightOutlined
+              style={{ color: "#fff", fontSize: "20px", marginLeft: "10px" }}
+            />
+          </div>
+        </div>
+      ),
+    },
+    {
       content: (
         <div style={{ textAlign: "center" }}>
           <h2 className="font-heading-white" style={{ fontSize: "23px" }}>
@@ -628,8 +702,11 @@ function Wizard({ setWizardCompleted }) {
           responsive={false}
           style={{ width: "280px", marginTop: "20px" }}
         >
-          {steps.map((item) => (
-            <Step key={item.title} title={item.title} />
+          {/* No step defines a `title`, so keying on it gave every Step the
+              same undefined key. Index is stable here — the steps array is a
+              fixed literal, never reordered or filtered. */}
+          {steps.map((item, i) => (
+            <Step key={i} title={item.title} />
           ))}
         </Steps>
         <div className="wizard-container">

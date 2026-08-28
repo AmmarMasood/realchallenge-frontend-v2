@@ -17,6 +17,7 @@ import forward from "../assets/icons/forward-white.png";
 import { getAllChallenges } from "../services/createChallenge/main";
 import slug from "elegant-slug";
 import { T } from "../components/Translate";
+import { filledStars } from "../helpers/rating";
 import { LanguageContext } from "../contexts/LanguageContext";
 import { get } from "lodash";
 
@@ -110,7 +111,7 @@ function Challenges() {
               challenges.map((challenge) => (
                 <Link
                   key={challenge._id}
-                  to={`challenge/${slug(challenge.challengeName)}/${
+                  to={`/challenge/${slug(challenge.challengeName || "")}/${
                     challenge._id
                   }`}
                 >
@@ -211,7 +212,9 @@ function Challenges() {
                       </div>
 
                       <div>
-                        {new Array(challenge.rating ? challenge.rating : 1)
+                        {new Array(
+                          challenge.rating ? filledStars(challenge.rating) : 1
+                        )
                           .fill(0)
                           .map((e, index) => (
                             <svg

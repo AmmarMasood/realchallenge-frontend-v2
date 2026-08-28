@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import ReactDOM from "react-dom";
 import "react-multi-carousel/lib/styles.css";
 import "../../assets/userDashboard.css";
@@ -49,9 +49,14 @@ import { createCustomerDetails } from "../../services/customer";
 import slug from "elegant-slug";
 import { T, translate } from "../Translate";
 import PinPopover from "./PinPopover";
+import NutritionLocked, {
+  NutritionExpiryNotice,
+} from "./NutritionLocked";
 import {
   getCurrentWeek,
   getNextWeek,
+  getNutritionAccess,
+  isNutritionLocked,
   regenerateNextWeek,
   swapMeal as swapMealApi,
   pinRecipe as pinRecipeApi,
@@ -319,6 +324,30 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
   // resetDay: only true on initial load / week switch — NOT after an
   // action (pin/swap/regenerate) so the user stays on the day they're
   // editing and sees the change apply in place.
+  // null until checked. `allowed: false` swaps the whole tab for an explanation.
+  const [nutritionAccess, setNutritionAccess] = useState(null);
+  const nutritionAccessRef = useRef(null);
+  useEffect(() => {
+    nutritionAccessRef.current = nutritionAccess;
+  }, [nutritionAccess]);
+
+  // Read through a ref-free helper so the loaders below see the current value
+  // rather than the one captured when they were defined.
+  const nutritionLocked = () =>
+    nutritionAccessRef.current && nutritionAccessRef.current.allowed === false;
+
+  // Checked up front so a locked user never triggers a burst of 402s.
+  useEffect(() => {
+    let cancelled = false;
+    if (!userInfo.id) return undefined;
+    getNutritionAccess().then((access) => {
+      if (!cancelled && access) setNutritionAccess(access);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userInfo.id]);
+
   const loadPlan = async (resetDay = false, silent = false) => {
     if (!userInfo.id) return;
     const locale = localStorage.getItem("locale") || "english";
@@ -328,6 +357,14 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
         weekMode === "next_week"
           ? await getNextWeek(userInfo.id, locale)
           : await getCurrentWeek(userInfo.id, locale);
+
+      // No nutrition access: show why, rather than an empty week.
+      if (isNutritionLocked(plan)) {
+        const access = await getNutritionAccess();
+        setNutritionAccess(access || { allowed: false });
+        return;
+      }
+
       if (plan) {
         setWeekPlan(plan);
         setMealsForTheWeek(plan);
@@ -843,13 +880,13 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
   // ---- Shopping list (backend ShoppingList, itemId+unit aggregated) ----
 
   const loadShopping = async () => {
-    if (!userInfo.id) return;
+    if (!userInfo.id || nutritionLocked()) return;
     const list = await getShoppingList(userInfo.id);
     setShoppingList(list || { items: [] });
   };
 
   const loadDelivery = async () => {
-    if (!userInfo.id) return;
+    if (!userInfo.id || nutritionLocked()) return;
     setDeliveryStatus(await getDeliveryStatus(userInfo.id));
   };
 
@@ -921,8 +958,15 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
     );
   };
 
+  // Everything below assumes a plan. Without access there is nothing to show,
+  // so the tab is replaced wholesale rather than rendered empty.
+  if (nutritionAccess && nutritionAccess.allowed === false) {
+    return <NutritionLocked access={nutritionAccess} />;
+  }
+
   return (
     <>
+      <NutritionExpiryNotice access={nutritionAccess} />
       {/* suplemet modal starts — custom portal so the modal is wide on
           desktop (up to 1100px) and full-width on phone */}
       {suplementModal &&
@@ -1506,6 +1550,40 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
       </div>
       {/* 2nd rpw */}
       <div className="dashboard-nutrient-row2">
+        {/* Sits directly above the generated plan, where the consequence of
+            having no diet is actually visible. The generator treats "no diet"
+            as "no restriction" and still builds a full week, so this prompts
+            rather than blocks. `myDiet` is an array — check length, since
+            `myDiet && …` is truthy for []. */}
+        {Array.isArray(userProfile.myDiet) &&
+          userProfile.myDiet.length === 0 && (
+            <div
+              className="font-paragraph-white"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                flexWrap: "wrap",
+                background: "rgba(243,119,32,0.12)",
+                border: "1px solid var(--color-orange)",
+                borderRadius: "6px",
+                padding: "12px 16px",
+                margin: "0 0 16px",
+              }}
+            >
+              <span style={{ flex: 1, minWidth: "220px" }}>
+                <T>userDashboard.nutrient.no_diet_banner</T>
+              </span>
+              <button
+                type="button"
+                className="common-orange-button font-paragraph-white"
+                style={{ margin: 0, width: "auto", padding: "8px 18px" }}
+                onClick={() => setDietSetupModal(true)}
+              >
+                <T>userDashboard.nutrient.no_diet_banner_button</T>
+              </button>
+            </div>
+          )}
         <div
           className="dashboard-challenges-mychallenge-heading"
           style={{
@@ -1907,7 +1985,12 @@ function Nutrient({ userProfile, gender, getUserDetails }) {
                 }}
               >
                 <h3 className="font-paragraph-white">
-                  {userProfile.myDiet && userProfile.supplementIntake ? (
+                  {/* myDiet is an array — `myDiet && …` was true for [], so a
+                      customer who never set a diet saw "no recipes found"
+                      instead of the prompt to finish setup. */}
+                  {userProfile.myDiet &&
+                  userProfile.myDiet.length > 0 &&
+                  userProfile.supplementIntake ? (
                     <T>userDashboard.nutrient.no_recipes_found</T>
                   ) : (
                     <T>userDashboard.nutrient.complete_diet_setup</T>

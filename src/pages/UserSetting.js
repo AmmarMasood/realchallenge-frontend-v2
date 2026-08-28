@@ -8,11 +8,16 @@ import {
   CloseOutlined,
   IdcardOutlined,
 } from "@ant-design/icons";
-import { Input, notification } from "antd";
+import { Input, notification, Modal } from "antd";
 import moment from "moment";
 import { getUserProfileInfo } from "../services/users";
 import { userInfoContext } from "../contexts/UserStore";
-import { getSubscribtionInformation } from "../services/payment";
+import {
+  getSubscribtionInformation,
+  cancelSubscription,
+  isActiveMembership,
+  getSlotUsage,
+} from "../services/payment";
 import { logoutUser, resetPassword } from "../services/authentication";
 import { useHistory } from "react-router";
 import { T, translate } from "../components/Translate";
@@ -107,7 +112,7 @@ function SettingsSkeleton() {
 }
 
 function UserSetting() {
-  const { getPackage } = usePackageConfig();
+  const { getPackage, packages } = usePackageConfig();
   const history = useHistory();
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
@@ -116,7 +121,49 @@ function UserSetting() {
   const [customerId, setCustomerId] = useState("");
   const [memberships, setMemberships] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [cancelling, setCancelling] = useState(false);
+  // null when the user has no plan — one-off buyers have no allowance to show.
+  const [slotUsage, setSlotUsage] = useState(null);
   const [userInfo, setUserInfo] = useContext(userInfoContext);
+
+  const onCancelSubscription = (membership) => {
+    const committed = membership.commitmentMonths || 0;
+    const paid = membership.paymentsMade || 1;
+    const inTerm = paid < committed;
+    const remaining = inTerm ? committed - paid : 1;
+
+    Modal.confirm({
+      title: (
+        <div className="font-paragraph-white">
+          {translate("user_setting.cancel_subscription")}
+        </div>
+      ),
+      content: (
+        <div className="font-paragraph-white">
+          {/* Two genuinely different outcomes: inside the agreed term billing
+              runs to the end of it, on a rolling plan one month's notice
+              applies. Saying "your plan will end" would be wrong for both. */}
+          {inTerm
+            ? translate("user_setting.cancel_confirm_term").replace(
+                "{{count}}",
+                String(remaining)
+              )
+            : translate("user_setting.cancel_confirm_rolling")}
+        </div>
+      ),
+      icon: null,
+      okText: translate("user_setting.cancel_subscription"),
+      okButtonProps: { style: { background: "#ff7700", border: "none" } },
+      onOk: async () => {
+        setCancelling(true);
+        const res = await cancelSubscription();
+        setCancelling(false);
+        // Re-read from the server rather than patching local state, so the card
+        // reflects whatever actually happened.
+        if (res.success) await fetchData();
+      },
+    });
+  };
 
   const fetchData = async () => {
     try {
@@ -126,6 +173,8 @@ function UserSetting() {
 
       setUserEmail(customer.email);
       setCustomerId(customer.mollieId || customer._id || userInfo.id || "");
+
+      setSlotUsage(getSlotUsage(customer, packages));
 
       const mems = customer.customerDetails?.membership || [];
 
@@ -155,6 +204,11 @@ function UserSetting() {
             price: m.price ?? sub?.amount?.value ?? null,
             interval: sub?.interval || null,
             status: sub?.status || null,
+            commitmentMonths: m.commitmentMonths || 0,
+            paymentsMade: m.paymentsMade || 0,
+            autoRenew: m.autoRenew !== false,
+            cancelAfterPayment: m.cancelAfterPayment || null,
+            paymentStatus: m.paymentStatus || "ok",
           };
         })
       );
@@ -314,8 +368,11 @@ function UserSetting() {
             ) : (
               memberships.map((m, idx) => {
                 const pkg = m.name ? getPackage(m.name) : null;
-                const isActive =
-                  m.isValid === "active" || (m.name && m.name !== "CHALLENGE_1");
+                // Active means "still inside the paid period", which is what
+                // actually governs access. The old test reported Yes for any
+                // non-CHALLENGE_1 membership — including cancelled and expired
+                // ones — so the card contradicted itself.
+                const isActive = isActiveMembership(m);
                 const autoRebill = m.price
                   ? `€${m.price}${m.interval ? " / " + m.interval : ""}`
                   : null;
@@ -346,9 +403,23 @@ function UserSetting() {
                           isActive ? "user_setting.yes" : "user_setting.no"
                         )}
                       />
+                      {/* These were one row: the price was printed under the
+                          "auto rebill" label, so the card never showed whether
+                          renewal was actually on — and still implied it was
+                          after the user had cancelled. */}
+                      {autoRebill ? (
+                        <Field
+                          label={translate("user_setting.price")}
+                          value={autoRebill}
+                        />
+                      ) : null}
                       <Field
                         label={translate("user_setting.auto_rebill")}
-                        value={autoRebill}
+                        value={translate(
+                          m.autoRenew === false
+                            ? "user_setting.no"
+                            : "user_setting.yes"
+                        )}
                       />
                       <Field
                         label={translate("user_setting.created")}
@@ -358,6 +429,60 @@ function UserSetting() {
                         label={translate("user_setting.expires_on")}
                         value={formatDate(m.endTime)}
                       />
+                      {/* Without this, hitting the cap looks like a bug: the
+                          pricing options reappear with no explanation.
+
+                          Only on the plan the usage actually belongs to.
+                          `slotUsage` describes the one active subscription, but
+                          this renders inside a map over every membership, so a
+                          user with an old plan saw the current plan's numbers on
+                          the old card — "1 / 2" against a 12-month plan that
+                          allows 3. */}
+                      {slotUsage && slotUsage.planName === m.name ? (
+                        <Field
+                          label={translate("user_setting.active_challenges")}
+                          value={`${slotUsage.used} / ${slotUsage.allowed}`}
+                        />
+                      ) : null}
+                      {/* Only a live plan can be cancelled: one-off purchases
+                          never renew, and a cancelled plan simply runs out. */}
+                      {m.name !== "CHALLENGE_1" &&
+                      m.isValid !== "canceled" &&
+                      m.autoRenew ? (
+                        <button
+                          className="font-paragraph-white"
+                          disabled={cancelling}
+                          onClick={() => onCancelSubscription(m)}
+                          style={{
+                            marginTop: "12px",
+                            color: "#676868",
+                            fontSize: "14px",
+                            border: "1px solid #676868",
+                            backgroundColor: "transparent",
+                            padding: "6px 14px",
+                            cursor: cancelling ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          {translate("user_setting.cancel_subscription")}
+                        </button>
+                      ) : null}
+                      {/* Cancelled, or set to stop at the end of the term.
+                          `autoRenew: false` while still active is the
+                          "won't renew" state and must not read as "ended". */}
+                      {m.isValid === "canceled" || !m.autoRenew ? (
+                        <div
+                          className="font-paragraph-white"
+                          style={{ marginTop: "12px", color: "#969696", fontSize: "13px" }}
+                        >
+                          {m.cancelAfterPayment &&
+                          m.cancelAfterPayment > (m.paymentsMade || 0)
+                            ? translate("user_setting.ends_after_payments").replace(
+                                "{{count}}",
+                                String(m.cancelAfterPayment - (m.paymentsMade || 0))
+                              )
+                            : translate("user_setting.cancelled_note")}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 );

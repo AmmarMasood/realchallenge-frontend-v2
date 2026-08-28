@@ -4,7 +4,7 @@ import { KeyOutlined, CheckCircleOutlined, CopyOutlined } from "@ant-design/icon
 import moment from "moment";
 import { deleteUser, getAllUsers, adminResetPassword, adminActivateUser } from "../../../services/users";
 import UpdateUser from "./UpdateUser";
-import { getAllChallengeGoals } from "../../../services/createChallenge/goals";
+import { getDefaultGoals } from "../../../constants/goals";
 import { hasRole } from "../../../helpers/roleHelpers";
 import { LanguageContext } from "../../../contexts/LanguageContext";
 import { T } from "../../Translate";
@@ -22,10 +22,8 @@ function AllUsers() {
 
   async function fetchUsers() {
     const users = await getAllUsers();
-    const aCh = await getAllChallengeGoals();
-    if (aCh.challengeGoals) {
-      setAllChallengeGoals(aCh.challengeGoals);
-    }
+    // Canonical goal list — see src/constants/goals.js.
+    setAllChallengeGoals(getDefaultGoals());
     setAllUsers(users.users);
     setFilterAllUsers(users.users);
   }

@@ -10,7 +10,7 @@ import { Input, Collapse } from "antd";
 
 import { getAllChallenges } from "../services/createChallenge/main";
 import ChallengeCard from "../components/Cards/ChallengeCard";
-import { getAllChallengeGoals } from "../services/createChallenge/goals";
+import { getDefaultGoals } from "../constants/goals";
 import { getAllBodyFocus } from "../services/createChallenge/bodyFocus";
 import { getAllChallengeEquipments } from "../services/createChallenge/equipments";
 import slug from "elegant-slug";
@@ -75,7 +75,6 @@ function AllChallenges() {
   const fetchData = async () => {
     setLoading(true);
     const data = await getAllChallenges(language);
-    const goals = await getAllChallengeGoals(language);
     const bodyFocus = await getAllBodyFocus(language);
     const equipments = await getAllChallengeEquipments(language);
     setLoading(false);
@@ -83,14 +82,15 @@ function AllChallenges() {
       ...c,
       difficulty: c.difficulty ? [c.difficulty] : "",
       body: c.body ? c.body.map((b) => b.name) : [],
-      challengeGoals: c.challengeGoals
-        ? c.challengeGoals.map((g) => g.name)
-        : [],
+      // challengeGoals is an array of canonical goal slugs (see
+      // src/constants/goals.js), not populated documents — mapping `.name`
+      // over it produced [undefined] and the goal filter never matched.
+      challengeGoals: c.challengeGoals || [],
       equipment: getAllEquipmentsFromWeeks(c.weeks),
     }));
 
     bodyFocus && setAllBodyFocus(bodyFocus.body);
-    goals && setAllGoals(goals.challengeGoals);
+    setAllGoals(getDefaultGoals());
     equipments && setAllEquipments(equipments.equipments);
     setChallenges(chal ? chal.reverse() : []);
     setFilterChallenges(chal ? chal.reverse() : []);
@@ -198,19 +198,20 @@ function AllChallenges() {
                 >
                   {allGoals.map((g) => (
                     <p
+                      key={g._id}
                       className="font-paragraph-white"
                       onClick={() =>
-                        filterByGoal === g.name
+                        filterByGoal === g._id
                           ? setFilterByGoal("")
-                          : setFilterByGoal(g.name)
+                          : setFilterByGoal(g._id)
                       }
                       style={{
                         ...filterTextStyle,
                         backgroundColor:
-                          filterByGoal === g.name ? "#ff7700" : "#454b52",
+                          filterByGoal === g._id ? "#ff7700" : "#454b52",
                       }}
                     >
-                      {g.name.replace("-", " ")}
+                      {g.name}
                     </p>
                   ))}
                 </div>
@@ -229,6 +230,7 @@ function AllChallenges() {
                 >
                   {["easy", "medium", "hard"].map((g) => (
                     <p
+                      key={g}
                       className="font-paragraph-white"
                       onClick={() =>
                         filterByIntensity === g
@@ -260,6 +262,7 @@ function AllChallenges() {
                 >
                   {allBodyFocus.map((g) => (
                     <p
+                      key={g._id || g.name}
                       className="font-paragraph-white"
                       onClick={() =>
                         filterByBodyFocus === g.name
@@ -291,6 +294,7 @@ function AllChallenges() {
                 >
                   {allEquipments.map((g) => (
                     <p
+                      key={g._id || g.name}
                       className="font-paragraph-white"
                       onClick={() =>
                         filterByEquipments === g.name
@@ -320,7 +324,9 @@ function AllChallenges() {
           ) : (
             filterChallenges.map((challenge) => (
               <Link
-                to={`challenge/${challenge.challengeName}/${challenge._id}`}
+                to={`/challenge/${slug(challenge.challengeName || "")}/${
+                  challenge._id
+                }`}
                 key={challenge._id}
               >
                 <ChallengeCard

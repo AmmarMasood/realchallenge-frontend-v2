@@ -13,6 +13,7 @@ import {
 } from "../services/customer";
 import { getAllTrainerGoalsPublic } from "../services/trainers";
 import { getDefaultGoals } from "../constants/goals";
+import ChallengeDifficulty from "../components/Common/ChallengeDifficulty";
 import {
   kgToLb,
   lbToKg,
@@ -155,6 +156,8 @@ function UserUpdate() {
 
   const [goal, setGoal] = useState("");
   const [currentLevel, setCurrentLevel] = useState("");
+  // "" | "Easy" | "Medium" | "Hard" — optional, feeds the challenge recommender
+  const [preferredIntensity, setPreferredIntensity] = useState("");
   const [metric, setMetric] = useState(true);
   const [weight, setWeight] = useState("");
   const [weightArray, setWeightArray] = useState([]);
@@ -212,10 +215,14 @@ function UserUpdate() {
       beforeImageLink,
       hideMyShape: srvHide,
       fitnessInterests,
+      preferredIntensity: srvPreferredIntensity,
     } = res.customer.customerDetails;
     setGender(res.customer.gender);
     setGoal(goals && goals[0]);
     setCurrentLevel(currentFitnessLevel && currentFitnessLevel[0]);
+    setPreferredIntensity(
+      (Array.isArray(srvPreferredIntensity) && srvPreferredIntensity[0]) || ""
+    );
     setMetric(measureSystem === "metrics");
     setHeight(height);
     setAge(age);
@@ -371,6 +378,9 @@ function UserUpdate() {
       const values = {
         goals: [goal],
         currentFitnessLevel: [currentLevel],
+        // Empty array when unset — the recommender skips the signal rather
+        // than treating "no preference" as a preference.
+        preferredIntensity: preferredIntensity ? [preferredIntensity] : [],
         measureSystem: metric ? "metrics" : "imperial",
         height,
         age,
@@ -553,6 +563,36 @@ function UserUpdate() {
           </div>
           <div className="uu-fitness-grid">
             {fitnessLevels.map(renderFitnessCard)}
+          </div>
+
+          {/* Preferred training intensity — distinct from the activity level
+              above, which drives calorie maths. This one feeds the challenge
+              recommender. Optional: clicking the selected card clears it, and
+              the recommender skips the signal when unset. */}
+          <div className="uu-section-title uu-section-title-light">
+            <T>user_update.preferred_intensity</T>
+          </div>
+          <div className="uu-fitness-grid">
+            {["Easy", "Medium", "Hard"].map((level) => {
+              const selected = preferredIntensity === level;
+              return (
+                <div
+                  key={level}
+                  onClick={() =>
+                    setPreferredIntensity(selected ? "" : level)
+                  }
+                  className="uu-card uu-fitness-card"
+                  style={{ background: selected ? "#2F3E50" : "#171E27" }}
+                >
+                  <div className="uu-fitness-icon">
+                    <ChallengeDifficulty difficulty={level} height={24} />
+                  </div>
+                  <span className="font-paragraph-white">
+                    <T>{`wizard.intensity_${level.toLowerCase()}`}</T>
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           <div className="uu-section-title-row">

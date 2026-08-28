@@ -16,9 +16,15 @@ import { fetchTranslations } from "./helpers/translationHelpers";
 import { MediaManagerProvider } from "./contexts/MediaManagerContext";
 import { RemoteMediaManagerProvider } from "./contexts/RemoteMediaManagerContext";
 import { PackageConfigProvider } from "./contexts/PackageConfigContext";
+import setAuthToken from "./helpers/setAuthToken";
 
 // Somewhere in your `index.ts`:
 setChonkyDefaults({ iconComponent: ChonkyIconFA, disableDragAndDrop: true });
+
+// Restore the auth header on boot. It was only ever set during login, so after
+// any full page load (a refresh, or the return from the payment provider) every
+// request to a protected route went out unauthenticated.
+setAuthToken(localStorage.getItem("jwtToken"));
 
 ReactDOM.render(
   <React.StrictMode>

@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
 import LoggedinNavbar from "../components/LoggedinNavbar";
+import BillingAlert from "../components/Payment/BillingAlert";
 import "../assets/userDashboard.css";
 import Nutrient from "../components/UserDashboard/Nutrient";
 import Challenges from "../components/UserDashboard/Challenges";
@@ -21,7 +22,6 @@ import { userInfoContext } from "../contexts/UserStore";
 import {
   getUserProfileInfo,
   getRecommandedChallenges,
-  getRecommandedWeeklyDiet,
   getNotifications,
 } from "../services/users";
 import { T } from "../components/Translate";
@@ -41,7 +41,6 @@ function UserDashboard() {
   const [userInfo, setUserInfo] = useContext(userInfoContext);
   const [userProfile, setUserProfile] = useState({});
   const [recommandedChallenges, setRecommandedChallenges] = useState([]);
-  const [recommandedWeeklyDiet, setRecommandedWeeklyDiet] = useState([]);
   const [gender, setGender] = useState("");
   const { height, width } = useWindowDimensions();
 
@@ -70,11 +69,9 @@ function UserDashboard() {
         setUserProfile(res.customer.customerDetails);
       }
       const rc = await getRecommandedChallenges(userInfo.id, language);
-      const rd = await getRecommandedWeeklyDiet(userInfo.id, language);
       const gender = res.customer.gender;
       setGender(gender);
       setRecommandedChallenges(rc);
-      setRecommandedWeeklyDiet(rd);
     } catch (err) {
       console.log(err);
     }
@@ -116,6 +113,8 @@ function UserDashboard() {
       <VerifyUser />
       <div style={{ backgroundColor: "var(--color-gray-dark)" }}>
         <div className="dashboard-container">
+          {/* Renders nothing unless a subscription payment has failed. */}
+          <BillingAlert />
           <TimezoneBanner />
           <div className="user-dashboard-bar">
             <div
@@ -200,7 +199,6 @@ function UserDashboard() {
                 userProfile={userProfile}
                 gender={gender}
                 recommandedChal={recommandedChallenges}
-                recommandedWeeklyDiet={recommandedWeeklyDiet}
               />
             )}
             {current === "nutrient" && (
@@ -208,7 +206,6 @@ function UserDashboard() {
                 getUserDetails={getUserDetails}
                 userProfile={userProfile}
                 gender={gender}
-                recommandedWeekDiet={recommandedWeeklyDiet}
               />
             )}
             {current === "community" && <Community userInfo={userInfo} />}

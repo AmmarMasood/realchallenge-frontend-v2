@@ -104,6 +104,8 @@ function Challenges({ userProfile, gender, recommandedChal }) {
   const [favChallenges, setFavChallenges] = useState([]);
   // eslint-disable-next-line
   const [recommandedChallenges, setRecommandedChallenges] = useState([]);
+  // null | "no_goal" | "no_matches" | "error" — drives which empty state shows
+  const [recommandedReason, setRecommandedReason] = useState(null);
   const [challengeProgress, setChallengeProgress] = useState([]);
   // My Challenges card layout: "horizontal" (full-width rows) | "vertical"
   // (portrait grid). Toggled from the section header and remembered across
@@ -192,7 +194,8 @@ function Challenges({ userProfile, gender, recommandedChal }) {
     setMyChallenges(userProfile.challenges);
 
     if (recommandedChal) {
-      setRecommandedChallenges(recommandedChal.recommendedchallenge);
+      setRecommandedChallenges(recommandedChal.recommendedChallenges || []);
+      setRecommandedReason(recommandedChal.reason || null);
     }
     // Measurements are stored as 12-month arrays (UserUpdate stamps the
     // current month's slot) — My Body shows the latest recorded value.
@@ -256,8 +259,9 @@ function Challenges({ userProfile, gender, recommandedChal }) {
         : flat.find((id) => !completed.has(id))) ||
       flat[0] ||
       null;
-    const daysLeft = Math.max(0, flat.length - completed.size);
-    return { nextId, daysLeft, totalDays: flat.length };
+    // Workouts still to do, not calendar days — the app tracks no deadline.
+    const workoutsLeft = Math.max(0, flat.length - completed.size);
+    return { nextId, workoutsLeft, totalWorkouts: flat.length };
   };
 
   useEffect(() => {
@@ -347,7 +351,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
             myChallenges.length > 0 &&
             (() => {
               const cards = myChallenges.map((d, i) => {
-                const { nextId, daysLeft } = getActiveCardData(
+                const { nextId, workoutsLeft } = getActiveCardData(
                   d,
                   challengeProgress[i],
                 );
@@ -373,7 +377,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
                     description={d.description}
                     intensity={d.intensity}
                     to={detailLink}
-                    daysLeft={daysLeft}
+                    workoutsLeft={workoutsLeft}
                     continueTo={isLastPlayed ? playerLink : undefined}
                   />
                 );
@@ -858,7 +862,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
         </div>
         <div className="dashboard-challenges-row3-inbox">
           {recommandedChallenges && recommandedChallenges.length > 0 ? (
-            <Carousel responsive={responsive}>
+            <Carousel responsive={responsive} itemClass="carousel-item-spaced">
               {recommandedChallenges.map((challenge) => (
                 <Link
                   key={challenge._id}
@@ -883,7 +887,15 @@ function Challenges({ userProfile, gender, recommandedChal }) {
               className="font-paragraph-white"
               style={{ marginLeft: "10px" }}
             >
-              <T>userDashboard.challenges.nochal</T>
+              {recommandedReason === "no_goal" ? (
+                // The backend can only recommend once a goal is set, so point
+                // the user at the profile instead of showing a dead end.
+                <Link to="/user/update" className="font-paragraph-white">
+                  <T>userDashboard.challenges.nogoal</T>
+                </Link>
+              ) : (
+                <T>userDashboard.challenges.nochal</T>
+              )}
             </div>
           )}
         </div>
@@ -928,7 +940,7 @@ function Challenges({ userProfile, gender, recommandedChal }) {
           </div>
         ) : (
           <div className="dashboard-challenges-row3-inbox">
-            <Carousel responsive={responsive}>
+            <Carousel responsive={responsive} itemClass="carousel-item-spaced">
               {favChallenges.map((challenge) => (
                 <Link
                   key={challenge._id}

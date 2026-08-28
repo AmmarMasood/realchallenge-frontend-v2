@@ -849,6 +849,20 @@
   grid-template-columns: repeat(auto-fit, minmax(35rem, 1fr));
   grid-gap: 10px;
 }
+
+/* Shared utility — used by the dashboard carousels and the challenge-complete
+   modal. Pass it as react-multi-carousel's `itemClass`.
+
+   The library lays its slides out in its own flex track, so a grid-gap or
+   flex gap on the container applies to the carousel as a single child and
+   never between the slides. Without this the cards sit edge-to-edge and their
+   cover images read as one continuous strip. Padding (not margin) so the card
+   shrinks inside the slot the carousel measured, rather than overflowing it
+   and breaking the library's paging arithmetic. */
+.carousel-item-spaced {
+  padding-right: 10px;
+  box-sizing: border-box;
+}
 .dashboard-challenges-row3-inbox-challenge {
   /* border: 10px solid var(--color-gray-light); */
   /* background-color: var(--color-gray-light); */

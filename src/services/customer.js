@@ -128,8 +128,5 @@ export function getAllFavouriteChallenges(id) {
       `${process.env.REACT_APP_SERVER}/api/customerDetails/favouriteChallenge/${id}`,
     )
     .then((res) => res.data)
-    .catch((err) => {
-      // 400 "Have not favourited any challenges yet" is expected for new users
-      console.log(err);
-    });
+    .catch(() => ({ favChallenges: [] }));
 }

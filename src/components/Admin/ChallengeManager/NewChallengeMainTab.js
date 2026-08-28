@@ -16,7 +16,6 @@ import RemoteMediaManager from "../MediaManager/RemoteMediaManager";
 import {
   createChallengeGoal,
   deleteChallengeTGoal,
-  getAllChallengeGoals,
 } from "../../../services/createChallenge/goals";
 import {
   createChallengeTag,
@@ -141,13 +140,14 @@ function NewChallengeMainTab({
 
   async function fethData() {
     const bodyFocus = await getAllBodyFocus(language);
-    const goals = await getAllChallengeGoals(language);
     const tags = await getAllChallengeTags(language);
     const trainers = await getAllTrainers(language);
     const res = await getAllTrainerGoals(language);
 
     setAllBodyfocus(bodyFocus.body);
-    setAllGoals(goals.challengeGoals);
+    // Canonical list only — see src/constants/goals.js. The ChallengeGoals
+    // collection stored ObjectIds, which silently broke the recommender join.
+    setAllGoals(getDefaultGoals());
     setAllTags(tags.tags);
     setAllTrainers(trainers.trainers);
     setFilteredTrainers(trainers.trainers);

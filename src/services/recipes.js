@@ -574,18 +574,15 @@ export function getAllFavouriteRecipes(id) {
       return res.data;
     })
     .catch((err) => {
-      if (err.response.data.header && err.response.data.header.message) {
-        openNotificationWithIcon("error", err.response.data.header.message, "");
-        return;
+      // err.response is undefined on network failures, so reach for it safely —
+      // the old `err.response.data.header` threw a TypeError in exactly the
+      // case it was meant to report.
+      const header =
+        err && err.response && err.response.data && err.response.data.header;
+      if (header && header.message) {
+        openNotificationWithIcon("error", header.message, "");
       }
-      console.log(err);
-      // err.response.data.msg
-      //   ? openNotificationWithIcon("error", err.response.data.msg, "")
-      //   : openNotificationWithIcon(
-      //       "error",
-      //       "Unable to get favourite recipes",
-      //       ""
-      //     );
+      return { favRecipes: [] };
     });
 }
 

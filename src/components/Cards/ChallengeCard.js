@@ -11,6 +11,7 @@ import { LanguageContext } from "../../contexts/LanguageContext";
 import { get } from "lodash";
 
 import ChallengeDifficulty from "../Common/ChallengeDifficulty";
+import { filledStars } from "../../helpers/rating";
 import "../../assets/challengecard.css";
 
 const INTENSITY_KEYS = {
@@ -60,12 +61,14 @@ function ChallengeCard({
   //   to          — wraps the title/description in a Link (use when the card
   //                 isn't already inside a parent <Link>)
   //   active      — green "Active" badge (bottom-right)
-  //   daysLeft    — clock "X days left" (bottom-right, under Active)
+  //   workoutsLeft — clock "X workouts left" (bottom-right, under Active).
+  //   Counts workouts still to do, NOT calendar days — it used to be labelled
+  //   "days left", which read as a deadline the app does not track.
   //   continueTo  — orange Continue button linking to the player
   //   borderColor — accent border around the card
   to,
   active = false,
-  daysLeft,
+  workoutsLeft,
   continueTo,
   borderColor,
 }) {
@@ -77,12 +80,12 @@ function ChallengeCard({
     ? get(strings, INTENSITY_KEYS[intensity.toLowerCase()], intensity)
     : null;
 
-  const daysLeftLabel = get(
+  const workoutsLeftLabel = get(
     strings,
-    daysLeft === 1
-      ? "userDashboard.challenges.day_left"
-      : "userDashboard.challenges.days_left",
-    daysLeft === 1 ? "day left" : "days left",
+    workoutsLeft === 1
+      ? "userDashboard.challenges.workout_left"
+      : "userDashboard.challenges.workouts_left",
+    workoutsLeft === 1 ? "workout left" : "workouts left",
   );
   const titleBlock = (
     <>
@@ -226,7 +229,7 @@ function ChallengeCard({
         )}
         <div style={{ paddingRight: "5px", width: "fit-content" }}>
           {rating > 0 &&
-            new Array(rating)
+            new Array(filledStars(rating))
               .fill(0)
               .map((_, i) => <img key={i} src={star} alt="" />)}
         </div>
@@ -268,7 +271,7 @@ function ChallengeCard({
       </div>
 
       {/* Dashboard active-challenge extras */}
-      {(active || daysLeft != null) && (
+      {(active || workoutsLeft != null) && (
         <div
           className={`cc-status${
             continueTo ? " cc-status--with-continue" : ""
@@ -280,10 +283,10 @@ function ChallengeCard({
               {get(strings, "userDashboard.challenges.active", "Active")}
             </span>
           )}
-          {daysLeft != null && (
+          {workoutsLeft != null && (
             <span className="cc-days">
               <ClockCircleOutlined />
-              {daysLeft} {daysLeftLabel}
+              {workoutsLeft} {workoutsLeftLabel}
             </span>
           )}
         </div>

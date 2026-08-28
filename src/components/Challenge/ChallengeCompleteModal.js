@@ -13,6 +13,7 @@ import {
   addChallengeReview,
   getAllChallenges,
 } from "../../services/createChallenge/main";
+import { getRecommandedChallenges } from "../../services/users";
 import { userInfoContext } from "../../contexts/UserStore";
 import ChallengeCompleteNextModal from "./ChallengeCompleteNextModal";
 import { createPost } from "../../services/communityPosts";
@@ -52,13 +53,43 @@ const ChallengeCompleteModal = ({
     return () => window.removeEventListener("keydown", onKey);
   }, [visible, setVisible]);
 
+  // "What's next" after finishing a challenge is the highest-intent moment in
+  // the app, so use the personalised recommender rather than the raw catalogue.
+  // It also excludes challenges the customer already owns — which includes the
+  // one they just completed, so we no longer suggest it back to them.
+  //
+  // The recommender can legitimately return nothing (no goal set, or no
+  // matches), and a blank "what's next" screen is worse than an unranked one —
+  // so fall back to the full list in that case, minus the completed challenge.
   const getNextChallenges = async () => {
     setLoading(true);
-    const rc = await getAllChallenges(language);
-    if (rc && Array.isArray(rc.challenges)) {
-      setNextChallenges(rc.challenges);
+    // Never suggest the challenge that was just finished. The recommender
+    // already drops owned challenges, which normally covers this — but only
+    // once the completion has been written back, so don't depend on that race:
+    // the modal knows the id, so filter it explicitly on both paths.
+    const withoutCompleted = (list) =>
+      (list || []).filter((c) => String(c._id) !== String(challengeId));
+
+    try {
+      const rc = await getRecommandedChallenges(userInfo.id, language);
+      const recommended = withoutCompleted(
+        rc && Array.isArray(rc.recommendedChallenges)
+          ? rc.recommendedChallenges
+          : []
+      );
+
+      if (recommended.length > 0) {
+        setNextChallenges(recommended);
+        return;
+      }
+
+      const all = await getAllChallenges(language);
+      setNextChallenges(
+        withoutCompleted(all && Array.isArray(all.challenges) ? all.challenges : [])
+      );
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const submitReview = async () => {

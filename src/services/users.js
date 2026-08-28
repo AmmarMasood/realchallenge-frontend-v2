@@ -146,15 +146,18 @@ export function getUserProfileInfo(id) {
     });
 }
 
+// Returns { recommendedChallenges: [], reason: null | "no_goal" | "no_matches" }.
+// Always resolves to that shape — returning the raw error object here meant the
+// caller read `.recommendedChallenges` off an Error and silently rendered
+// nothing, so the backend's "set your goals" message never reached the user.
 export function getRecommandedChallenges(id, language) {
+  const query = language ? `?language=${encodeURIComponent(language)}` : "";
   return axios
     .get(
-      `${process.env.REACT_APP_SERVER}/api/customerDetails/recommendedChallenges/${id}`,
+      `${process.env.REACT_APP_SERVER}/api/customerDetails/recommendedChallenges/${id}${query}`,
     )
     .then((res) => res.data)
-    .catch((err) => {
-      return err;
-    });
+    .catch(() => ({ recommendedChallenges: [], reason: "error" }));
 }
 
 export function getNotifications(page = 1, limit = 10) {
@@ -186,17 +189,16 @@ export function markAllNotificationsAsRead() {
     });
 }
 
-export function getRecommandedWeeklyDiet(id, language) {
-  const query = language ? `?language=${encodeURIComponent(language)}` : "";
-  return axios
-    .get(
-      `${process.env.REACT_APP_SERVER}/api/customerDetails/recommendedWeeklyDiet/${id}${query}`,
-    )
-    .then((res) => res.data)
-    .catch((err) => {
-      return err;
-    });
-}
+// REMOVED: getRecommandedWeeklyDiet.
+//
+// Meal plans come from the WeekPlan API (services/mealPlan.js -> /api/meal-plan),
+// which is backed by services/mealPlanService on the server. The old
+// /api/customerDetails/recommendedWeeklyDiet endpoint was still being called on
+// every dashboard load, running a full recipe query and 7-day generation whose
+// result was then discarded — nothing consumed the prop it was passed to.
+//
+// Do not reintroduce a client for that endpoint: it runs a separate, older copy
+// of the generator that does not filter allergens.
 export function swapRecipeInRecommandedNutrients(customerId, meal) {
   return axios
     .post(

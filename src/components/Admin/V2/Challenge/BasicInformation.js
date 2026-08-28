@@ -54,7 +54,6 @@ import {
   deleteChallengeBodyfocus,
   getAllBodyFocus,
 } from "../../../../services/createChallenge/bodyFocus";
-import { getAllChallengeGoals } from "../../../../services/createChallenge/goals";
 import {
   createTrainerGoal,
   deleteTrainerGoals,
@@ -301,13 +300,11 @@ function BasicInformation(props) {
     const trainers = await getAllTrainers(langToUse);
     const res = await getAllTrainerGoals(langToUse);
     const allExercises = await getAllExercises(langToUse);
-    const challengeGoals = await getAllChallengeGoals(langToUse);
     setAllBodyFocus(bodyFocus.body);
-    setAllGoals(
-      challengeGoals?.challengeGoals?.length > 0
-        ? challengeGoals.challengeGoals
-        : getDefaultGoals(),
-    );
+    // Goals always come from the canonical list. Reading them from the
+    // ChallengeGoals collection stored Mongo ObjectIds here while customers
+    // store slugs, which silently broke the recommender's goal join.
+    setAllGoals(getDefaultGoals());
 
     // If user is admin, ensure they appear in the trainers list
     let trainersList = trainers.trainers || [];
