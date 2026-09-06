@@ -8,6 +8,7 @@ import {
 } from "../../../services/createChallenge/main";
 import { Select } from "antd";
 import UpdateChallenge from "./UpdateChallenge";
+import DeactivateChallengeButton from "./DeactivateChallengeButton";
 import { getAllTrainers } from "../../../services/trainers";
 import { userInfoContext } from "../../../contexts/UserStore";
 import slug from "elegant-slug";
@@ -208,6 +209,12 @@ function AllChallenges({ setCurrentSelection, setSelectedChallengeForUpdate }) {
           <Button type="danger" onClick={() => deleteChallenge(text)}>
             <T>adminDashboard.delete</T>
           </Button>
+          {/* Deactivate is the softer sibling of Delete: the challenge and its
+              history survive, owners just lose access, and it is reversible. */}
+          <DeactivateChallengeButton
+            challenge={record}
+            onChanged={() => fetchChallenges()}
+          />
         </Space>
       ),
     },

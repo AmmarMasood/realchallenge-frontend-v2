@@ -309,3 +309,21 @@ export function getUsersProfile() {
       console.log(err);
     });
 }
+
+/**
+ * Saves the billing address. Required before checkout: a VAT invoice is not
+ * valid without a postal address, and the country decides the VAT rate — EU
+ * digital services are taxed where the customer is, not where the seller is.
+ *
+ * Returns { success } rather than notifying, so the caller can keep the user on
+ * the checkout page and show the failure in context.
+ */
+export function saveBillingDetails(userId, details) {
+  return axios
+    .put(`${process.env.REACT_APP_SERVER}/api/users/${userId}`, details)
+    .then((res) => ({ success: true, data: res.data }))
+    .catch((err) => {
+      console.log(err);
+      return { success: false, error: err };
+    });
+}

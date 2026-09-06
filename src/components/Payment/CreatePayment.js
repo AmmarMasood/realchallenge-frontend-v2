@@ -398,7 +398,7 @@ import {
   LoadingOutlined,
   UpOutlined,
 } from "@ant-design/icons";
-import { Collapse, Input } from "antd";
+import { Collapse, Input, Select } from "antd";
 
 import { userInfoContext, userPointsContext } from "../../contexts/UserStore";
 import { selectedChallengeContext } from "../../contexts/PaymentProcessStore";
@@ -409,12 +409,50 @@ import "../../assets/createPayment.css";
 import VerifyUser from "../UserDashboard/VerifyUser";
 import { createPayment } from "../../services/payment";
 import { getCouponByCode, getCouponDiscount } from "../../services/coupons";
-import { redeemPoints } from "../../services/users";
+import { redeemPoints, saveBillingDetails, getUserProfileInfo } from "../../services/users";
+
 import { usePackageConfig } from "../../contexts/PackageConfigContext";
 import { toCurrencyCode, toCurrencySymbol } from "../../helpers/currency";
 
+// EU member states first — VAT on digital services is charged at the customer's
+// own country's rate, so this list is what decides what they pay. A handful of
+// common non-EU destinations follow; sales there are outside EU VAT.
+const BILLING_COUNTRIES = [
+  { code: "NL", name: "Nederland / Netherlands" },
+  { code: "BE", name: "België / Belgium" },
+  { code: "DE", name: "Deutschland / Germany" },
+  { code: "AT", name: "Austria" },
+  { code: "BG", name: "Bulgaria" },
+  { code: "HR", name: "Croatia" },
+  { code: "CY", name: "Cyprus" },
+  { code: "CZ", name: "Czechia" },
+  { code: "DK", name: "Denmark" },
+  { code: "EE", name: "Estonia" },
+  { code: "FI", name: "Finland" },
+  { code: "FR", name: "France" },
+  { code: "GR", name: "Greece" },
+  { code: "HU", name: "Hungary" },
+  { code: "IE", name: "Ireland" },
+  { code: "IT", name: "Italy" },
+  { code: "LV", name: "Latvia" },
+  { code: "LT", name: "Lithuania" },
+  { code: "LU", name: "Luxembourg" },
+  { code: "MT", name: "Malta" },
+  { code: "PL", name: "Poland" },
+  { code: "PT", name: "Portugal" },
+  { code: "RO", name: "Romania" },
+  { code: "SK", name: "Slovakia" },
+  { code: "SI", name: "Slovenia" },
+  { code: "ES", name: "Spain" },
+  { code: "SE", name: "Sweden" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "CH", name: "Switzerland" },
+  { code: "NO", name: "Norway" },
+  { code: "US", name: "United States" },
+];
+
 function CreatePayment(props) {
-  const { strings } = useContext(LanguageContext);
+  const { strings, language } = useContext(LanguageContext);
   const { getPackage } = usePackageConfig();
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
@@ -439,6 +477,22 @@ function CreatePayment(props) {
     billed: "",
   });
   const [couponButtonLoading, setCouponButtonLoading] = useState(false);
+  // Billing address. A VAT invoice is not valid without a postal address, and
+  // the country decides the VAT rate — EU digital services are taxed where the
+  // customer lives, so without this everyone is assumed Dutch at 21%.
+  const [billing, setBilling] = useState({
+    streetAndNumber: "",
+    postalCode: "",
+    city: "",
+    country: "NL",
+    vatNumber: "",
+  });
+  const [billingError, setBillingError] = useState(null);
+  // EU distance selling: digital content delivered immediately only escapes the
+  // 14-day withdrawal right if the buyer expressly consents and acknowledges
+  // losing it. Recorded per order with the exact wording shown.
+  const [consented, setConsented] = useState(false);
+  const [consentError, setConsentError] = useState(null);
   const history = useHistory();
 
   // Redirect if no package selected or if CHALLENGE_1 has no challenge
@@ -588,8 +642,72 @@ function CreatePayment(props) {
     setPack(packType ? packType.replace("_", " ") : "");
   }, [getPackage, selectedChallenge.price]);
 
+  // Prefill from whatever the customer saved last time, so a returning buyer is
+  // not retyping their address on every purchase.
+  useEffect(() => {
+    if (!userInfo?.id) return;
+    let cancelled = false;
+    (async () => {
+      const res = await getUserProfileInfo(userInfo.id);
+      const u = res?.customer || res?.user || res;
+      if (cancelled || !u) return;
+      setBilling((prev) => ({
+        streetAndNumber: u.streetAndNumber || prev.streetAndNumber,
+        postalCode: u.postalCode || prev.postalCode,
+        city: u.city || prev.city,
+        country: u.country || prev.country,
+        vatNumber: u.vatNumber || prev.vatNumber,
+      }));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userInfo]);
+
+  const billingIsComplete = () =>
+    Boolean(
+      billing.streetAndNumber.trim() &&
+        billing.postalCode.trim() &&
+        billing.city.trim() &&
+        billing.country
+    );
+
   const sendRequestToMollie = async () => {
+    // Collected before payment rather than after: the invoice has to be issued
+    // the moment the payment confirms, and the country sets the VAT rate that
+    // the customer is about to be charged.
+    if (!billingIsComplete()) {
+      setBillingError(
+        get(strings, "payment.billing_required", "Please enter your billing address to continue.")
+      );
+      return;
+    }
+    setBillingError(null);
+
+    if (!consented) {
+      setConsentError(
+        get(strings, "payment.consent_required", "Please tick this to continue.")
+      );
+      return;
+    }
+    setConsentError(null);
+
     setLoading(true);
+    const saved = await saveBillingDetails(userInfo.id, {
+      streetAndNumber: billing.streetAndNumber.trim(),
+      postalCode: billing.postalCode.trim(),
+      city: billing.city.trim(),
+      country: billing.country,
+      ...(billing.vatNumber.trim() ? { vatNumber: billing.vatNumber.trim() } : {}),
+    });
+    if (!saved.success) {
+      setLoading(false);
+      setBillingError(
+        get(strings, "payment.billing_save_failed", "We couldn't save your billing details. Please try again.")
+      );
+      return;
+    }
+
     const pack = localStorage.getItem("package-type");
     var data = {
       id: userInfo.id,
@@ -613,6 +731,16 @@ function CreatePayment(props) {
       // challenge/package record, never from what the browser posts.
       couponId: appliedCoupon ? appliedCoupon._id : undefined,
       couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+      // The literal sentence they ticked, so a dispute can be answered with what
+      // was actually agreed rather than whatever the copy says later.
+      consent: {
+        text: get(
+          strings,
+          "payment.consent_label",
+          "I want immediate access and I understand that I give up my 14-day right of withdrawal."
+        ),
+        locale: language,
+      },
       redirectUrl: `${process.env.REACT_APP_FRONTEND_SERVER}/mollie/create-subscribtion/redirect`,
     };
     if (pack === "CHALLENGE_1") {
@@ -868,6 +996,71 @@ function CreatePayment(props) {
           </Collapse.Panel>
         </Collapse>
         {/* ----- */}
+        {/* Billing address. Required before payment: an EU VAT invoice is not
+            valid without a postal address, and the country decides the rate the
+            customer is about to be charged. */}
+        <div
+          className="font-paragraph-white"
+          style={{
+            color: "rgba(196, 196, 196, 1)",
+            fontSize: "14px",
+            marginTop: "30px",
+          }}
+        >
+          {get(strings, "payment.billing_details", "Billing details")}
+        </div>
+        <div
+          className="font-paragraph-white"
+          style={{ fontSize: "12px", color: "#9F9F9F", marginTop: "4px" }}
+        >
+          {get(strings, "payment.billing_why", "Needed for your invoice and to charge the right VAT.")}
+        </div>
+        <div style={{ display: "grid", gap: "10px", marginTop: "12px" }}>
+          <Input
+            value={billing.streetAndNumber}
+            onChange={(e) =>
+              setBilling({ ...billing, streetAndNumber: e.target.value })
+            }
+            placeholder={get(strings, "payment.street_and_number", "Street and house number")}
+          />
+          <div style={{ display: "flex", gap: "10px" }}>
+            <Input
+              value={billing.postalCode}
+              onChange={(e) => setBilling({ ...billing, postalCode: e.target.value })}
+              placeholder={get(strings, "payment.postal_code", "Postcode")}
+              style={{ width: "40%" }}
+            />
+            <Input
+              value={billing.city}
+              onChange={(e) => setBilling({ ...billing, city: e.target.value })}
+              placeholder={get(strings, "payment.city", "City")}
+              style={{ width: "60%" }}
+            />
+          </div>
+          <Select
+            value={billing.country}
+            onChange={(value) => setBilling({ ...billing, country: value })}
+            style={{ width: "100%" }}
+            showSearch
+            optionFilterProp="children"
+            placeholder={get(strings, "payment.country", "Country")}
+          >
+            {BILLING_COUNTRIES.map((c) => (
+              <Select.Option key={c.code} value={c.code}>
+                {c.name}
+              </Select.Option>
+            ))}
+          </Select>
+          <Input
+            value={billing.vatNumber}
+            onChange={(e) => setBilling({ ...billing, vatNumber: e.target.value })}
+            placeholder={get(strings, "payment.vat_number", "VAT number (optional, businesses only)")}
+          />
+          {billingError ? (
+            <div style={{ color: "#c0392b", fontSize: "13px" }}>{billingError}</div>
+          ) : null}
+        </div>
+        {/* ----- */}
         <div
           className="font-paragraph-white"
           style={{
@@ -897,6 +1090,42 @@ function CreatePayment(props) {
           </div>
         </div>
         {/* ----- */}
+        {/* Required before payment. Digital content delivered immediately only
+            escapes the EU 14-day withdrawal right with explicit consent. */}
+        <label
+          className="font-paragraph-white"
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "10px",
+            marginTop: "24px",
+            fontSize: "13px",
+            lineHeight: "1.4",
+            cursor: "pointer",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={consented}
+            onChange={(e) => {
+              setConsented(e.target.checked);
+              if (e.target.checked) setConsentError(null);
+            }}
+            style={{ marginTop: "2px", flexShrink: 0 }}
+          />
+          <span>
+            {get(
+              strings,
+              "payment.consent_label",
+              "I want immediate access and I understand that I give up my 14-day right of withdrawal."
+            )}
+          </span>
+        </label>
+        {consentError ? (
+          <div style={{ color: "#c0392b", fontSize: "13px", marginTop: "6px" }}>
+            {consentError}
+          </div>
+        ) : null}
         <div
           style={{
             width: "100%",

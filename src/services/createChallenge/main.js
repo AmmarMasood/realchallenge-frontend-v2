@@ -475,3 +475,57 @@ export function getExerciseByTranslationKey(translationKey, language) {
       return null;
     });
 }
+
+/**
+ * Un-publishing vs force-deactivating — two different actions, often confused:
+ *
+ *   isPublic: false     hides it from the store. Existing owners keep access.
+ *   forceDeactivated    removes it from everyone, including people who paid.
+ *
+ * The second is why `getChallengeOwners` exists: those customers are owed a
+ * discount code, and support needs the list to issue them.
+ */
+
+/** Who currently owns this challenge. Admin only. */
+export function getChallengeOwners(challengeId) {
+  return axios
+    .get(`${process.env.REACT_APP_SERVER}/api/challenges/${challengeId}/owners`)
+    .then((res) => ({ success: true, ...res.data }))
+    .catch((err) => {
+      console.log(err);
+      return { success: false, owners: [], count: 0 };
+    });
+}
+
+/** Removes a challenge from everyone, owners included. Admin only. */
+export function forceDeactivateChallenge(challengeId, reason) {
+  return axios
+    .put(
+      `${process.env.REACT_APP_SERVER}/api/challenges/${challengeId}/force-deactivate`,
+      { reason }
+    )
+    .then((res) => ({ success: true, ...res.data }))
+    .catch((err) => {
+      console.log(err);
+      return {
+        success: false,
+        message: err?.response?.data?.message || null,
+      };
+    });
+}
+
+/** Gives owners their access back. Does NOT put it back on sale. */
+export function reactivateChallenge(challengeId) {
+  return axios
+    .put(
+      `${process.env.REACT_APP_SERVER}/api/challenges/${challengeId}/reactivate`
+    )
+    .then((res) => ({ success: true, ...res.data }))
+    .catch((err) => {
+      console.log(err);
+      return {
+        success: false,
+        message: err?.response?.data?.message || null,
+      };
+    });
+}

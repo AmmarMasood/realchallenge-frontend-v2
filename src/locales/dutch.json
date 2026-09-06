@@ -1374,7 +1374,19 @@
     "order_total": "Totaalbedrag",
     "check_out": "Afrekenen",
     "back": "Terug",
-    "tooltip_no_plan": "Als je geen abonnement kiest en op start drukt, kun je de wizard doorlopen, je gratis intake doen, een gratis account aanmaken en genieten van onze gratis challenges en een week maaltijdplan."
+    "tooltip_no_plan": "Als je geen abonnement kiest en op start drukt, kun je de wizard doorlopen, je gratis intake doen, een gratis account aanmaken en genieten van onze gratis challenges en een week maaltijdplan.",
+    "billing_details": "Factuurgegevens",
+    "billing_why": "Nodig voor je factuur en om de juiste btw te berekenen.",
+    "street_and_number": "Straat en huisnummer",
+    "postal_code": "Postcode",
+    "city": "Plaats",
+    "country": "Land",
+    "vat_number": "Btw-nummer (optioneel, alleen voor bedrijven)",
+    "billing_required": "Vul je factuuradres in om verder te gaan.",
+    "billing_saved": "Factuurgegevens opgeslagen",
+    "billing_save_failed": "We konden je factuurgegevens niet opslaan. Probeer het opnieuw.",
+    "consent_label": "Ik wil direct toegang en ik begrijp dat ik daarmee mijn recht op 14 dagen bedenktijd opgeef.",
+    "consent_required": "Vink dit aan om verder te gaan."
   },
   "goals": {
     "get_fit": "Word Fit",
@@ -1436,5 +1448,22 @@
     "browse_challenges": "Bekijk uitdagingen",
     "rest_still_works": "Je workouts, voortgang en gewichtsregistratie blijven gewoon werken.",
     "days_left": "Nog {{days}} dagen toegang tot voeding. Een nieuwe uitdaging voegt er 30 toe."
+  },
+  "swap_window": {
+    "body": "Je bent {{name}} net begonnen. Toch niet wat je zocht? Je kunt hem nog {{hours}} uur ruilen of laten vallen.",
+    "this_challenge": "deze uitdaging",
+    "swap_action": "Ruilen",
+    "drop_action": "Laten vallen",
+    "swap_title": "Ruil je uitdaging",
+    "swap_help": "Kies waar je {{name}} voor wilt ruilen. Je plek blijft hetzelfde.",
+    "pick_placeholder": "Kies een uitdaging",
+    "swapped_title": "Geruild",
+    "swapped_body": "Je nieuwe uitdaging staat klaar.",
+    "drop_title": "Uitdaging laten vallen",
+    "drop_confirm": "Weet je zeker dat je {{name}} wilt laten vallen? Je plek komt weer vrij en je kunt een andere kiezen.",
+    "dropped_title": "Laten vallen",
+    "dropped_body": "Je plek is weer vrij.",
+    "failed_title": "Dat is niet gelukt",
+    "failed_body": "Probeer het opnieuw of neem contact op."
   }
 }

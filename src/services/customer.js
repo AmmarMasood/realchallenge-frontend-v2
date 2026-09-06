@@ -130,3 +130,23 @@ export function getAllFavouriteChallenges(id) {
     .then((res) => res.data)
     .catch(() => ({ favChallenges: [] }));
 }
+
+/**
+ * Admin: removes one challenge from one customer.
+ *
+ * The other half of a refund. Refunds are issued by hand in Mollie and the
+ * credit note is raised automatically, but nothing took the product back — so
+ * without this a refunded customer kept what they were refunded for.
+ */
+export function adminRevokeChallenge(userId, challengeId) {
+  return axios
+    .post(
+      `${process.env.REACT_APP_SERVER}/api/auth/mollie/admin/revoke-challenge`,
+      { userId, challengeId }
+    )
+    .then((res) => ({ success: true, ...res.data }))
+    .catch((err) => ({
+      success: false,
+      message: err?.response?.data?.message || null,
+    }));
+}

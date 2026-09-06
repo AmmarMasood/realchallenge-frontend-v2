@@ -396,3 +396,82 @@ export function getSubscribtionInformation(customerId) {
     })
     .catch((err) => console.log(err));
 }
+
+/**
+ * The 24-hour window in which a plan-granted challenge can be swapped or
+ * dropped. Endpoints existed and were tested from the start; this is the client
+ * side of them.
+ *
+ * Only plan-granted challenges qualify — a one-off purchase is kept, which the
+ * server enforces and reports as "did not come from your plan".
+ */
+
+/**
+ * Plan slots taken within the last `windowHours`, newest first.
+ *
+ * Computed locally from data the dashboard already has, so the page does not
+ * fire an eligibility request per owned challenge. The server still decides:
+ * it also counts completed workouts, which is not in this data.
+ */
+export function challengesInSwapWindow(customer, windowHours = 24) {
+  const subscription = getSubscriptionMembership(customer);
+  if (!subscription) return [];
+
+  const cutoff = Date.now() - windowHours * 3600000;
+  return (subscription.challenges || [])
+    .filter((entry) => {
+      if (!entry || !entry.grantedAt) return false;
+      return new Date(entry.grantedAt).getTime() > cutoff;
+    })
+    .map((entry) => ({
+      challengeId: String(entry.challenge?._id || entry.challenge),
+      grantedAt: entry.grantedAt,
+      hoursRemaining: Math.max(
+        0,
+        windowHours - (Date.now() - new Date(entry.grantedAt).getTime()) / 3600000
+      ),
+    }))
+    .sort((a, b) => new Date(b.grantedAt) - new Date(a.grantedAt));
+}
+
+/** Asks the server whether this challenge can still be swapped or dropped. */
+export function getSwapEligibility(challengeId) {
+  return axios
+    .get(
+      `${process.env.REACT_APP_SERVER}/api/auth/mollie/challenge/swap-eligibility`,
+      { params: { challengeId } }
+    )
+    .then((res) => ({ success: true, ...res.data }))
+    .catch((err) => ({
+      success: false,
+      eligible: false,
+      reason: err?.response?.data?.message || null,
+    }));
+}
+
+/** Releases a plan challenge, freeing its slot. */
+export function releaseChallenge(challengeId) {
+  return axios
+    .post(`${process.env.REACT_APP_SERVER}/api/auth/mollie/challenge/cancel`, {
+      challengeId,
+    })
+    .then((res) => ({ success: true, ...res.data }))
+    .catch((err) => ({
+      success: false,
+      message: err?.response?.data?.message || null,
+    }));
+}
+
+/** Exchanges one plan challenge for another, keeping the slot count the same. */
+export function swapChallenge(fromChallengeId, toChallengeId) {
+  return axios
+    .post(`${process.env.REACT_APP_SERVER}/api/auth/mollie/challenge/swap`, {
+      fromChallengeId,
+      toChallengeId,
+    })
+    .then((res) => ({ success: true, ...res.data }))
+    .catch((err) => ({
+      success: false,
+      message: err?.response?.data?.message || null,
+    }));
+}

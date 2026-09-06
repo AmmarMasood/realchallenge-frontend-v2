@@ -4,6 +4,7 @@ import { KeyOutlined, CheckCircleOutlined, CopyOutlined } from "@ant-design/icon
 import moment from "moment";
 import { deleteUser, getAllUsers, adminResetPassword, adminActivateUser } from "../../../services/users";
 import UpdateUser from "./UpdateUser";
+import RevokeAccessButton from "./RevokeAccessButton";
 import { getDefaultGoals } from "../../../constants/goals";
 import { hasRole } from "../../../helpers/roleHelpers";
 import { LanguageContext } from "../../../contexts/LanguageContext";
@@ -199,6 +200,9 @@ function AllUsers() {
               </Tooltip>
             </Popconfirm>
           )}
+          {/* After refunding someone in Mollie: refunding does not remove their
+              access on its own. */}
+          <RevokeAccessButton user={record} />
           <Button type="danger" onClick={() => removeUser(record)}>
             <T>admin.delete</T>
           </Button>

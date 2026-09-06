@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { HeartFilled, AppstoreOutlined, BarsOutlined } from "@ant-design/icons";
 import NoFavsChallenge from "../../assets/challenge-man.svg";
 import { userInfoContext } from "../../contexts/UserStore";
+import SwapWindowNotice from "./SwapWindowNotice";
 import {
   getAllFavouriteChallenges,
   unFavouriteChallengeById,
@@ -335,6 +336,9 @@ function Challenges({ userProfile, gender, recommandedChal }) {
             </div>
           </div>
           <div className="divider"></div>
+          {/* Renders nothing unless a plan challenge is still inside its
+              24-hour swap window. */}
+          <SwapWindowNotice onChanged={() => window.location.reload()} />
           {(!Array.isArray(myChallenges) || myChallenges.length === 0) && (
             <div
               className="font-paragraph-white"

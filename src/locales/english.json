@@ -1374,7 +1374,19 @@
     "order_total": "Order Total",
     "check_out": "Check out",
     "back": "Back",
-    "tooltip_no_plan": "If you don't choose any plan and hit start now, you can go through the wizard, get your free intake, make a free account and enjoy our free challenges collection and one week meal plan."
+    "tooltip_no_plan": "If you don't choose any plan and hit start now, you can go through the wizard, get your free intake, make a free account and enjoy our free challenges collection and one week meal plan.",
+    "billing_details": "Billing details",
+    "billing_why": "Needed for your invoice and to charge the right VAT.",
+    "street_and_number": "Street and house number",
+    "postal_code": "Postcode",
+    "city": "City",
+    "country": "Country",
+    "vat_number": "VAT number (optional, businesses only)",
+    "billing_required": "Please enter your billing address to continue.",
+    "billing_saved": "Billing details saved",
+    "billing_save_failed": "We couldn't save your billing details. Please try again.",
+    "consent_label": "I want immediate access and I understand that I give up my 14-day right of withdrawal.",
+    "consent_required": "Please tick this to continue."
   },
   "goals": {
     "get_fit": "Get Fit",
@@ -1436,5 +1448,22 @@
     "browse_challenges": "Browse challenges",
     "rest_still_works": "Your workouts, progress and weight tracking are unaffected.",
     "days_left": "{{days}} days of nutrition access left. Buying another challenge adds 30 more."
+  },
+  "swap_window": {
+    "body": "You started {{name}} recently. Not what you were after? You can swap or drop it for another {{hours}} hours.",
+    "this_challenge": "this challenge",
+    "swap_action": "Swap",
+    "drop_action": "Drop it",
+    "swap_title": "Swap your challenge",
+    "swap_help": "Choose what to swap {{name}} for. Your slot stays the same.",
+    "pick_placeholder": "Choose a challenge",
+    "swapped_title": "Swapped",
+    "swapped_body": "Your new challenge is ready.",
+    "drop_title": "Drop challenge",
+    "drop_confirm": "Are you sure you want to drop {{name}}? Your slot frees up and you can pick another.",
+    "dropped_title": "Dropped",
+    "dropped_body": "Your slot is free again.",
+    "failed_title": "That didn't work",
+    "failed_body": "Please try again, or get in touch."
   }
 }
