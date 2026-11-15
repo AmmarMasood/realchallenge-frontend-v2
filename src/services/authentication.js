@@ -188,7 +188,9 @@ export function logoutUser(histoy, setUserInfo) {
   localStorage.removeItem("package-type");
   localStorage.removeItem("isActive");
   localStorage.removeItem("mediaManager_lastPath");
-  histoy && histoy.push("/");
+  // "/" is the content site's home page now, so there is nothing here to
+  // land on — the login screen is the app's own after-logout page.
+  histoy && histoy.push("/login");
 }
 
 export function checkUser(userInfo, setUserInfo, token, history) {

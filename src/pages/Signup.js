@@ -378,7 +378,7 @@ function Signup(props) {
                     cursor: "pointer",
                     marginTop: "2px",
                   }}
-                  to="/challenges"
+                  to="/all-challenges"
                   htmlType="submit"
                 >
                   <span

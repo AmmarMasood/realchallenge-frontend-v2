@@ -19,6 +19,7 @@ import LanguageSelector from "./LanguageSelector/LanguageSelector";
 import { T } from "./Translate";
 import { hasRole } from "../helpers/roleHelpers";
 import { useNotifications } from "../contexts/NotificationContext";
+import { contentUrl } from "../helpers/crossDomain";
 
 function Navbar({ color, history }) {
   const [click, setClick] = useState(false);
@@ -229,9 +230,15 @@ function Navbar({ color, history }) {
         }
       >
         <div className="navbar-container">
-          <Link to="/" className="navbar-logo" onClick={closeMobileMenu}>
+          {/* The marketing site owns the home page now — a cross-origin <a>,
+              not a <Link>, or the router renders a blank screen. */}
+          <a
+            href={contentUrl("/")}
+            className="navbar-logo"
+            onClick={closeMobileMenu}
+          >
             <img src={Logo} alt="logo" className="logo" />
-          </Link>
+          </a>
 
           <div className="menu-icon" onClick={handleClick}>
             {click ? (
@@ -257,24 +264,24 @@ function Navbar({ color, history }) {
           </div>
           <ul className={click ? "nav-menu active" : "nav-menu"}>
             <li className="nav-item font-paragraph-white">
-              <Link
-                to="/challenges"
+              <a
+                href={contentUrl("/challenges")}
                 style={{ fontWeight: "600" }}
                 className="nav-links"
                 onClick={closeMobileMenu}
               >
                 <T>navbar.challenges</T>
-              </Link>
+              </a>
               {/* </li> */}
               {/* <li className="nav-item font-paragraph-white"> */}
-              <Link
+              <a
                 style={{ fontWeight: "600" }}
-                to="/trainers"
+                href={contentUrl("/trainers")}
                 className="nav-links"
                 onClick={closeMobileMenu}
               >
                 <T>navbar.trainers</T>
-              </Link>
+              </a>
               {/* </li> */}
               {/* <li className="nav-item font-paragraph-white"> */}
               <Link
@@ -290,34 +297,34 @@ function Navbar({ color, history }) {
               className="nav-item font-paragraph-white"
               style={{ justifyContent: !click && "flex-end" }}
             >
-              <Link
-                to="/how-it-works"
+              <a
+                href={contentUrl("/how-it-works")}
                 style={{ fontWeight: "400", fontSize: "13px" }}
                 className="nav-links"
                 onClick={closeMobileMenu}
               >
                 <T>navbar.how_it_works</T>
-              </Link>
+              </a>
               {/* </li>
             <li className="nav-item font-paragraph-white"> */}
-              <Link
-                to="/pricing"
+              <a
+                href={contentUrl("/pricing")}
                 className="nav-links"
                 style={{ fontWeight: "400", fontSize: "13px" }}
                 onClick={closeMobileMenu}
               >
                 <T>navbar.pricing</T>
-              </Link>
+              </a>
               {/* </li>
             <li className="nav-item font-paragraph-white"> */}
-              <Link
-                to="/magazine"
+              <a
+                href={contentUrl("/magazine")}
                 className="nav-links"
                 style={{ fontWeight: "400", fontSize: "13px" }}
                 onClick={closeMobileMenu}
               >
                 <T>navbar.magazine</T>
-              </Link>
+              </a>
               <div className="loggedin-nav-userinfo">
                 <LanguageSelector />
               </div>

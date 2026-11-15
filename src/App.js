@@ -7,13 +7,13 @@ import {
   useHistory,
 } from "react-router-dom";
 import ScrollToTop from "./helpers/ScrollToTop";
-import Home from "./pages/Home";
-import Trainers from "./pages/Trainers";
-import Challenges from "./pages/Challenges";
+// import Home from "./pages/Home";  // moved to WordPress, see routes below
+// import Trainers from "./pages/Trainers";  // moved to WordPress, see routes below
+// import Challenges from "./pages/Challenges";  // moved to WordPress, see routes below
 import Nutrition from "./pages/Nutrition";
-import Pricing from "./pages/Pricing";
-import HowItWorks from "./pages/HowItWork";
-import Magazine from "./pages/Magazine";
+// import Pricing from "./pages/Pricing";  // moved to WordPress, see routes below
+// import HowItWorks from "./pages/HowItWork";  // moved to WordPress, see routes below
+// import Magazine from "./pages/Magazine";  // moved to WordPress, see routes below
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -22,7 +22,7 @@ import CreatorProfile from "./pages/CreatorProfile";
 import ChallengeProfile from "./pages/ChallengeProfile";
 import RecipeProfile from "./pages/RecipeProfile";
 import UserDashboard from "./pages/UserDashboard";
-import MagazineArticle from "./pages/MagazineArticle";
+// import MagazineArticle from "./pages/MagazineArticle";  // moved to WordPress, see routes below
 import UserUpdate from "./pages/UserUpdate";
 import UserSetting from "./pages/UserSetting";
 import UserProfile from "./pages/UserProfile";
@@ -30,14 +30,15 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminDashboardV2 from "./pages/v2/AdminDashboard";
 import ChallengePlayer from "./pages/ChallengePlayer";
 import NewWelcome from "./pages/NewWelcome";
+import ContentSiteRedirect from "./components/ContentSiteRedirect";
 import "./assets/override.css";
 
 // player state
 import PlayerState from "./contexts/PlayerState";
 import HelpCenter from "./pages/HelpCenter";
-import TermsAndCondition from "./pages/TermsAndCondition";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import CookiePolicy from "./pages/CookiePolicy";
+// import TermsAndCondition from "./pages/TermsAndCondition";  // moved to WordPress, see routes below
+// import PrivacyPolicy from "./pages/PrivacyPolicy";  // moved to WordPress, see routes below
+// import CookiePolicy from "./pages/CookiePolicy";  // moved to WordPress, see routes below
 
 import { userInfoContext, userPointsContext } from "./contexts/UserStore";
 import { checkUser } from "./services/authentication";
@@ -51,6 +52,27 @@ import { getUserPoints } from "./services/users";
 import ChallengeCreator from "./pages/v2/ChallengeCreator";
 import RecipeCreator from "./pages/v2/RecipeCreator";
 import Workout from "./components/Admin/V2/Workout/Workout";
+
+/**
+ * Paths that now live on the WordPress content site (realchallenge.nl).
+ *
+ * The slugs are identical on both sides, so ContentSiteRedirect can copy the
+ * path across verbatim. Keep this list and the commented-out routes below in
+ * step — and keep /nutrition OUT of it: that page stays here, because its live
+ * recipe search is the page.
+ */
+const MOVED_TO_CONTENT_SITE = [
+  "/",
+  "/trainers",
+  "/challenges",
+  "/pricing",
+  "/how-it-works",
+  "/magazine",
+  "/magazine/:magazineName/:id",
+  "/terms-condition",
+  "/privacy-policy",
+  "/cookie-policy",
+];
 
 function App() {
   const [userInfo, setUserInfo] = useContext(userInfoContext);
@@ -71,13 +93,33 @@ function App() {
   return (
     <Router>
       <ScrollToTop>
-        <Route component={Home} path="/" exact />
-        <Route component={Trainers} path="/trainers" exact />
-        <Route component={Challenges} path="/challenges" exact />
+        {
+        /*
+         * MOVED TO WORDPRESS (realchallenge.nl) — 2026-11-15.
+         *
+         * These pages now exist on the content site and are commented out here so
+         * the two do not serve the same content on two domains. The app keeps every
+         * route that carries app functionality — and keeps /nutrition, which stays
+         * the app's because its live recipe search is the page.
+         *
+         * Stale links to them are caught by the ContentSiteRedirect route below,
+         * which forwards to the same path on realchallenge.nl. That is a
+         * client-side redirect: still add real 301s at the edge for every path in
+         * MOVED_TO_CONTENT_SITE (plan §3, SEO hygiene) when the host allows it.
+         */
+        }
+        <Route
+          exact
+          path={MOVED_TO_CONTENT_SITE}
+          component={ContentSiteRedirect}
+        />
+        {/* <Route component={Home} path="/" exact /> */}
+        {/* <Route component={Trainers} path="/trainers" exact /> */}
+        {/* <Route component={Challenges} path="/challenges" exact /> */}
         <Route component={Nutrition} path="/nutrition" exact />
-        <Route component={Pricing} path="/pricing" exact />
-        <Route component={HowItWorks} path="/how-it-works" exact />
-        <Route component={Magazine} path="/magazine" exact />
+        {/* <Route component={Pricing} path="/pricing" exact /> */}
+        {/* <Route component={HowItWorks} path="/how-it-works" exact /> */}
+        {/* <Route component={Magazine} path="/magazine" exact /> */}
         <Route component={Login} path="/login" exact />
         <Route component={Signup} path="/new" exact />
         <Route component={ForgotPassword} path="/forgot-password" exact />
@@ -97,11 +139,11 @@ function App() {
           <ChallengeProfile />
         </Route>
         <Route component={RecipeProfile} path="/recipe/:recipeName/:id" exact />
-        <Route
+        {/* <Route
           component={MagazineArticle}
           path="/magazine/:magazineName/:id"
           exact
-        />
+        /> */}
         <Switch>
           {" "}
           {/*We use switch so when our PrivateRoute does redirect it wont to propblems* This will also solve the problem so that if our user loggst our of the component where they are authenticated such as dashboard they will quiclky get taken from there to login*/}
@@ -205,9 +247,11 @@ function App() {
         </Switch>
         {/* <Route component={AdminDashboard} path="/admin/dashboard" exact /> */}
         <Route component={HelpCenter} path="/help-center" exact />
-        <Route component={TermsAndCondition} path="/terms-condition" exact />
-        <Route component={PrivacyPolicy} path="/privacy-policy" exact />
-        <Route component={CookiePolicy} path="/cookie-policy" exact />
+        {/* Legal pages are WordPress's now — these three only ever rendered a
+            .docx download link, which is exactly what the migration was for. */}
+        {/* <Route component={TermsAndCondition} path="/terms-condition" exact /> */}
+        {/* <Route component={PrivacyPolicy} path="/privacy-policy" exact /> */}
+        {/* <Route component={CookiePolicy} path="/cookie-policy" exact /> */}
         <Route component={NewWelcome} path="/new/welcome" exact />
         <Route component={CreatePayment} path="/create-payment" exact />
         <Route

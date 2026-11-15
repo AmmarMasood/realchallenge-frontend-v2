@@ -1029,7 +1029,7 @@ function ChallengeProfile(props) {
           </span>
           <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
             <button
-              onClick={() => props.history.push("/challenges")}
+              onClick={() => props.history.push("/all-challenges")}
               style={{
                 background: "transparent",
                 border: "1px solid #72777B",

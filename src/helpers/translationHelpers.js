@@ -2,12 +2,69 @@
 
 /* eslint-disable camelcase */
 import { getUITranslations } from "../services/uiTranslations";
+import {
+  readSharedCookie,
+  writeSharedCookie,
+  readLanguageFromUrl,
+  stripLanguageFromUrl,
+  isSupportedLanguage,
+} from "./crossDomain";
 
+const LOCALE_KEY = "locale";
+
+/**
+ * Persist the chosen language.
+ *
+ * Written to a cookie on the PARENT domain so the WordPress site on
+ * realchallenge.nl sees the same choice — localStorage cannot cross origins, and
+ * without this a visitor who picks Dutch on the marketing site lands in an English
+ * app at signup (MIGRATION-PLAN-content-site.md §3.3.1).
+ *
+ * localStorage is kept in step as a mirror: it is what every existing install
+ * already has, and it still works if cookies are blocked.
+ */
 export const setLocale = (value = "english") => {
-  localStorage.setItem("locale", value);
+  try {
+    localStorage.setItem(LOCALE_KEY, value);
+  } catch (e) {
+    /* private mode / storage disabled — the cookie below still carries it */
+  }
+  writeSharedCookie(LOCALE_KEY, value);
 };
 
-export const getLocale = () => localStorage.getItem("locale");
+/**
+ * The stored language preference, cookie first.
+ *
+ * Cookie before localStorage so a choice made on realchallenge.nl wins over a
+ * stale per-browser value here. Falling back to localStorage migrates everyone who
+ * already had one.
+ */
+export const getLocale = () => {
+  const fromCookie = readSharedCookie(LOCALE_KEY);
+  if (isSupportedLanguage(fromCookie)) return fromCookie;
+  try {
+    return localStorage.getItem(LOCALE_KEY);
+  } catch (e) {
+    return null;
+  }
+};
+
+/**
+ * The language to boot with.
+ *
+ * Order matters: an explicit `?lang=` on the inbound link beats everything, because
+ * it is the WordPress site stating which language the visitor was just reading.
+ * Consuming it here also persists it, so it survives the rest of the session.
+ */
+export const resolveInitialLocale = () => {
+  const fromUrl = readLanguageFromUrl();
+  if (fromUrl) {
+    setLocale(fromUrl);
+    stripLanguageFromUrl();
+    return fromUrl;
+  }
+  return getLocale();
+};
 
 const CACHE_KEY = "ui_translations_cache";
 const CACHE_TIMESTAMP_KEY = "ui_translations_timestamp";

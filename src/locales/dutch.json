@@ -278,7 +278,7 @@
     "become": "Laat je inspireren en motiveren door onze coaches. Hun energie laat je stralen tijdens alle oefeningen",
     "inspire": "Inspire mij",
     "filter_trainer": "Trainers filteren",
-    "fiter_gender": "Geslacht filteren",
+    "filter_gender": "Geslacht filteren",
     "male": "Man",
     "female": "Vrouw",
     "other": "Ander"
@@ -633,6 +633,8 @@
     "protein": "Eiwit",
     "carbohydrates": "Koolhydraten",
     "fat": "Vet",
+    "fiber": "Vezels",
+    "fitness_goals": "Fitnessdoelen",
     "manage_meal_types": "Maaltijdtypes Beheren",
     "manage_diets": "Diëten Beheren",
     "manage_ingredients": "Beheer Ingrediënten",
@@ -1014,6 +1016,8 @@
   "userDashboard": {
     "nutrient": {
       "this_week": "Deze week",
+      "ingredient_fallback": "Ingrediënt",
+      "recipe_fallback": "Recept",
       "current_week": "Huidige week",
       "next_week": "Volgende week",
       "first_plan_starts_monday": "Je eerste plan begint maandag.",

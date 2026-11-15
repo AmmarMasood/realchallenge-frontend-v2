@@ -18,6 +18,7 @@ import { userInfoContext, userPointsContext } from "../contexts/UserStore";
 import setAuthToken from "../helpers/setAuthToken";
 import { getUserPoints } from "../services/users";
 import { T } from "../components/Translate";
+import { contentUrl } from "../helpers/crossDomain";
 
 function Login(props) {
   const [userInfo, setUserInfo] = useContext(userInfoContext);
@@ -189,9 +190,10 @@ function Login(props) {
     <div>
       <div className="login-container">
         <div className="login-container-column1">
-          <Link to={"/"}>
+          {/* Out to the content site, which owns the home page. */}
+          <a href={contentUrl("/")}>
             <img className="login-logo" src={Logo} alt="logo" />
-          </Link>
+          </a>
           <h1 className="font-heading-white">
             <T>login.login</T>
           </h1>

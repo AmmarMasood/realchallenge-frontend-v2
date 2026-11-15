@@ -250,7 +250,7 @@ function AllChallenges() {
               </div>
               <div>
                 <p className="font-paragraph-white">
-                  <T>challenges.body_focus</T>
+                  <T>challenges.bodyFocus</T>
                 </p>
                 <div
                   style={{
@@ -363,7 +363,7 @@ function AllChallenges() {
             >
               <T>challenges.a_personal</T>
             </p>
-            <Link className="home-button" to="/challenges">
+            <Link className="home-button" to="/all-challenges">
               <span className="home-button-text font-paragraph-white">
                 <T>challenges.start_now</T> <ArrowRightOutlined />
               </span>

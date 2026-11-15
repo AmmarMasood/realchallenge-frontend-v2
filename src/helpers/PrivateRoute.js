@@ -8,8 +8,9 @@ const PrivateRoute = ({ component: Component, userInfo, role, roles, ...rest }) 
       // Check if the JWT token exists in localStorage
       const token = localStorage.getItem("jwtToken");
       if (!token) {
-        // Redirect to "/" if the token is not present
-        return <Redirect to="/" />;
+        // No token: the login page, not "/" — that route moved to the
+        // content site, so redirecting there would leave a blank screen.
+        return <Redirect to="/login" />;
       }
 
       // Show loading spinner or placeholder while waiting for userInfo
@@ -51,7 +52,10 @@ const PrivateRoute = ({ component: Component, userInfo, role, roles, ...rest }) 
       return userInfo.authenticated === true && hasRequiredRole ? (
         <Component {...props} />
       ) : (
-        <Redirect to="/" />
+        // Logged in but without the role this route needs: back to the
+        // dashboard. (Not "/", which is the content site's page now, and not
+        // /login, which they have already passed.)
+        <Redirect to="/user/dashboard" />
       );
     }}
   />

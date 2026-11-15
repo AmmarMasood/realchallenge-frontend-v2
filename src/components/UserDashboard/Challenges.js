@@ -847,14 +847,19 @@ function Challenges({ userProfile, gender, recommandedChal }) {
 
           {width > 700 && (
             <div style={{ marginBottom: "10px" }}>
+              {/* /challenges and /pricing moved to the content site. These
+                  two are logged-in CTAs, so they go to the app's own
+                  equivalents instead of bouncing the user off the domain:
+                  the full catalogue, and the plan chooser that leads into
+                  checkout. */}
               <Link
-                to="/challenges"
+                to="/all-challenges"
                 className="common-orange-button font-paragraph-white"
               >
                 <T>userDashboard.challenges.vac</T>
               </Link>
               <Link
-                to="/pricing"
+                to="/new/welcome"
                 style={{ marginLeft: "10px" }}
                 className="common-transparent-button font-paragraph-white"
               >

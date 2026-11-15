@@ -180,7 +180,9 @@ function stripHtml(html) {
     <>
       <nav className="loggedin-nav-container">
         <div>
-          <Link to="/" className="navbar-logo">
+          {/* "/" is the content site's home page now; a logged-in user's
+              home inside the app is the dashboard. */}
+          <Link to="/user/dashboard" className="navbar-logo">
             <img src={Logo} alt="logo" className="logo small-screenlogo" />
           </Link>
         </div>

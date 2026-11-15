@@ -5,9 +5,12 @@ import React, {
   useEffect,
   useRef,
 } from "react";
-import { getLocale, setLocale } from "../helpers/translationHelpers";
+import { setLocale, resolveInitialLocale } from "../helpers/translationHelpers";
 
-const initialLocale = getLocale();
+// Resolved at module load, before the first render, so the very first paint is in
+// the right language. resolveInitialLocale() prefers an inbound `?lang=` from the
+// WordPress site over the stored preference — see helpers/crossDomain.js.
+const initialLocale = resolveInitialLocale();
 
 export const LanguageContext = createContext({
   language: initialLocale ? initialLocale : "english",

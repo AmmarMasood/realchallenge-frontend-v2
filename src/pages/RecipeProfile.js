@@ -640,7 +640,7 @@ function RecipeProfile(props) {
           )}
           {/* Get Full Nutrition Advice CTA */}
           <div className="recipe-nutrition-cta">
-            <Link to="/challenges" className="recipe-nutrition-cta-button">
+            <Link to="/all-challenges" className="recipe-nutrition-cta-button">
               <T>recipe_profile.get_full_nutrition_advice</T>
             </Link>
           </div>
@@ -743,7 +743,7 @@ function RecipeProfile(props) {
             <div style={{ textAlign: "center", paddingTop: "10px" }}>
               <Link
                 className="home-button font-paragraph-white"
-                to="/challenges"
+                to="/all-challenges"
                 style={{ width: "80%" }}
               >
                 <span className="home-button-text">

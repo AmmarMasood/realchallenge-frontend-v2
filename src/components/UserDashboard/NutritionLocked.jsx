@@ -58,7 +58,9 @@ function NutritionLocked({ access }) {
         }}
       >
         <button
-          onClick={() => history.push("/pricing")}
+          // /pricing is the content site's; this is a logged-in upsell, so
+          // it goes to the app's plan chooser and on into checkout.
+          onClick={() => history.push("/new/welcome")}
           className="font-paragraph-white"
           style={{
             background: "#ff7700",
@@ -74,7 +76,7 @@ function NutritionLocked({ access }) {
         </button>
 
         <button
-          onClick={() => history.push("/challenges")}
+          onClick={() => history.push("/all-challenges")}
           className="font-paragraph-white"
           style={{
             background: "transparent",

@@ -278,7 +278,7 @@
     "become": "  Become inspired and motivated by our coaches. Their energy will make you glow during all exercises.",
     "inspire": "INSPIRE ME!",
     "filter_trainer": "Filter Trainers",
-    "fiter_gender": "Filter By Gender",
+    "filter_gender": "Filter By Gender",
     "male": "Male",
     "female": "Female",
     "other": "Other"
@@ -633,6 +633,8 @@
     "protein": "Protein",
     "carbohydrates": "Carbohydrates",
     "fat": "Fat",
+    "fiber": "Fiber",
+    "fitness_goals": "Fitness Goals",
     "manage_meal_types": "Manage Meal Types",
     "manage_diets": "Manage Diets",
     "manage_ingredients": "Manage Ingredients",
@@ -1014,6 +1016,8 @@
   "userDashboard": {
     "nutrient": {
       "this_week": "This Week",
+      "ingredient_fallback": "Ingredient",
+      "recipe_fallback": "Recipe",
       "current_week": "Current Week",
       "next_week": "Next Week",
       "first_plan_starts_monday": "Your first plan starts Monday.",
