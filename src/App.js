@@ -10,7 +10,7 @@ import ScrollToTop from "./helpers/ScrollToTop";
 // import Home from "./pages/Home";  // moved to WordPress, see routes below
 // import Trainers from "./pages/Trainers";  // moved to WordPress, see routes below
 // import Challenges from "./pages/Challenges";  // moved to WordPress, see routes below
-import Nutrition from "./pages/Nutrition";
+// import Nutrition from "./pages/Nutrition";  // moved to WordPress, see routes below
 // import Pricing from "./pages/Pricing";  // moved to WordPress, see routes below
 // import HowItWorks from "./pages/HowItWork";  // moved to WordPress, see routes below
 // import Magazine from "./pages/Magazine";  // moved to WordPress, see routes below
@@ -58,13 +58,18 @@ import Workout from "./components/Admin/V2/Workout/Workout";
  *
  * The slugs are identical on both sides, so ContentSiteRedirect can copy the
  * path across verbatim. Keep this list and the commented-out routes below in
- * step — and keep /nutrition OUT of it: that page stays here, because its live
- * recipe search is the page.
+ * step.
+ *
+ * /nutrition joined them on 2026-11-15: the catalogue is a WordPress page built
+ * from the same bridge endpoint (`rc_recipes()`), which is what makes it
+ * indexable — the reason for the migration. Only the recipe DETAIL pages are
+ * still the app's, and that is what each card links to.
  */
 const MOVED_TO_CONTENT_SITE = [
   "/",
   "/trainers",
   "/challenges",
+  "/nutrition",
   "/pricing",
   "/how-it-works",
   "/magazine",
@@ -99,8 +104,8 @@ function App() {
          *
          * These pages now exist on the content site and are commented out here so
          * the two do not serve the same content on two domains. The app keeps every
-         * route that carries app functionality — and keeps /nutrition, which stays
-         * the app's because its live recipe search is the page.
+         * route that carries app functionality — detail pages, auth, payment,
+         * dashboard, player — and the public marketing pages are WordPress's.
          *
          * Stale links to them are caught by the ContentSiteRedirect route below,
          * which forwards to the same path on realchallenge.nl. That is a
@@ -116,7 +121,7 @@ function App() {
         {/* <Route component={Home} path="/" exact /> */}
         {/* <Route component={Trainers} path="/trainers" exact /> */}
         {/* <Route component={Challenges} path="/challenges" exact /> */}
-        <Route component={Nutrition} path="/nutrition" exact />
+        {/* <Route component={Nutrition} path="/nutrition" exact /> */}
         {/* <Route component={Pricing} path="/pricing" exact /> */}
         {/* <Route component={HowItWorks} path="/how-it-works" exact /> */}
         {/* <Route component={Magazine} path="/magazine" exact /> */}

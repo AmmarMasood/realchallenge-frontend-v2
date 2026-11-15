@@ -6,10 +6,11 @@ import { contentUrl } from "../helpers/crossDomain";
  * Hand a visitor over to the WordPress content site.
  *
  * The marketing pages moved to realchallenge.nl on 2026-11-15 and their routes
- * here were removed. Links already in the wild — bookmarks, old newsletters,
- * search results that have not been recrawled — still arrive at
- * app.realchallenge.nl/pricing and friends, and with no route they rendered a
- * blank page. This sends them on to the same path on the content site, which
+ * here were removed (/nutrition among them since 2026-11-15, where the
+ * WordPress catalogue is built from the same bridge endpoint). Links already in
+ * the wild — bookmarks, old newsletters, search results that have not been
+ * recrawled — still arrive at app.realchallenge.nl/pricing and friends, and with
+ * no route they rendered a blank page. This sends them on to the same path on the content site, which
  * uses identical slugs (including /magazine/<slug>/<id>/, deliberately mirrored
  * in the theme's rc_magazine_rewrite()), so the path copies across untouched.
  *

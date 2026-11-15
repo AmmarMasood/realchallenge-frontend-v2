@@ -146,9 +146,9 @@ export function stripLanguageFromUrl() {
  * Links back out to the content site.
  *
  * The marketing pages — home, pricing, how it works, challenges, trainers,
- * magazine and the legal pages — moved to WordPress on realchallenge.nl
- * (2026-11-15), so the nav, the footer and a handful of in-app CTAs now point at
- * another origin. That means a plain <a href>, never a react-router <Link>:
+ * nutrition, magazine and the legal pages — moved to WordPress on
+ * realchallenge.nl (2026-11-15), so the nav, the footer and a handful of in-app
+ * CTAs now point at another origin. That means a plain <a href>, never a react-router <Link>:
  * <Link> would push a path this router no longer has a route for and render a
  * blank screen, which is exactly the bug this replaces.
  *

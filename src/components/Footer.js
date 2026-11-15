@@ -71,20 +71,20 @@ function Footer() {
             <T>footer.product</T>
           </h3>
           {/* These four were `<Link to="">` - placeholders that navigated to the
-              current URL. Challenges and Trainers are the content site's pages
-              now; Nutrition and Join now are this app's. */}
+              current URL. Challenges, Nutrition and Trainers are the content
+              site's pages now; Join now is this app's. */}
           <a
             href={contentUrl("/challenges")}
             className="footer-row-2-column-link font-paragraph-white"
           >
             <T>footer.challenge</T>
           </a>
-          <Link
-            to="/nutrition"
+          <a
+            href={contentUrl("/nutrition")}
             className="footer-row-2-column-link font-paragraph-white"
           >
             <T>footer.nutrient</T>
-          </Link>
+          </a>
           <a
             href={contentUrl("/trainers")}
             className="footer-row-2-column-link font-paragraph-white"

@@ -284,14 +284,14 @@ function Navbar({ color, history }) {
               </a>
               {/* </li> */}
               {/* <li className="nav-item font-paragraph-white"> */}
-              <Link
+              <a
                 style={{ fontWeight: "600" }}
-                to="/nutrition"
+                href={contentUrl("/nutrition")}
                 className="nav-links"
                 onClick={closeMobileMenu}
               >
                 <T>navbar.nutrient</T>
-              </Link>
+              </a>
             </li>
             <li
               className="nav-item font-paragraph-white"
