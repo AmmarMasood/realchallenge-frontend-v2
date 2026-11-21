@@ -47,6 +47,28 @@ const SOCIALS = [
   },
 ];
 
+/**
+ * The shop, which does not exist yet.
+ *
+ * These four were `<Link to="">` - placeholders that navigated to the current
+ * URL, under a heading that promised a store. The store is WooCommerce on the
+ * content site and is not built (MIGRATION-PLAN-content-site.md 6), so the
+ * column is not rendered at all: a heading with four links that go nowhere is
+ * worse than no column, and guessing at category URLs that 404 is worse still.
+ *
+ * Set REACT_APP_SHOP_ENABLED=true the day the store goes live, and CHECK THE
+ * SLUGS against WooCommerce's actual category permalinks before you do - the
+ * paths below are what the plan proposes, not what has been verified to exist.
+ */
+const SHOP_ENABLED = process.env.REACT_APP_SHOP_ENABLED === "true";
+
+const SHOP_LINKS = [
+  { key: "men", path: "/shop/men", label: "footer.men" },
+  { key: "women", path: "/shop/women", label: "footer.women" },
+  { key: "gear", path: "/shop/gear", label: "footer.gear" },
+  { key: "sale", path: "/shop/sale", label: "footer.sale" },
+];
+
 function Footer() {
   return (
     <div className="footer">
@@ -121,28 +143,22 @@ function Footer() {
             <T>footer.magazine</T>
           </a>
         </div>
-        <div className="footer-row-2-column">
-          <h3 className="footer-row-2-column-heading font-subheading-white">
-            <T>footer.shop</T>
-          </h3>
-          {/* STILL DEAD, deliberately: the shop is WooCommerce on the content
-              site and does not exist yet (MIGRATION-PLAN-content-site.md 6).
-              Pointing these at a URL that 404s would be worse than leaving
-              them, and inventing categories worse still. Wire them to
-              contentUrl("/shop/...") the day the store goes live. */}
-          <Link to="" className="footer-row-2-column-link font-paragraph-white">
-            <T>footer.men</T>
-          </Link>
-          <Link to="" className="footer-row-2-column-link font-paragraph-white">
-            <T>footer.women</T>
-          </Link>
-          <Link to="" className="footer-row-2-column-link font-paragraph-white">
-            <T>footer.gear</T>
-          </Link>
-          <Link to="" className="footer-row-2-column-link font-paragraph-white">
-            <T>footer.sale</T>
-          </Link>
-        </div>
+        {SHOP_ENABLED && (
+          <div className="footer-row-2-column">
+            <h3 className="footer-row-2-column-heading font-subheading-white">
+              <T>footer.shop</T>
+            </h3>
+            {SHOP_LINKS.map(({ key, path, label }) => (
+              <a
+                key={key}
+                href={contentUrl(path)}
+                className="footer-row-2-column-link font-paragraph-white"
+              >
+                <T>{label}</T>
+              </a>
+            ))}
+          </div>
+        )}
         <div className="footer-row-2-column">
           <h3 className="footer-row-2-column-heading font-subheading-white">
             <T>footer.about</T>
