@@ -31,6 +31,7 @@ import AdminDashboardV2 from "./pages/v2/AdminDashboard";
 import ChallengePlayer from "./pages/ChallengePlayer";
 import NewWelcome from "./pages/NewWelcome";
 import ContentSiteRedirect from "./components/ContentSiteRedirect";
+import AppEntry from "./components/AppEntry";
 import "./assets/override.css";
 
 // player state
@@ -65,8 +66,15 @@ import Workout from "./components/Admin/V2/Workout/Workout";
  * indexable — the reason for the migration. Only the recipe DETAIL pages are
  * still the app's, and that is what each card links to.
  */
+/*
+ * "/" is deliberately NOT in this list.
+ *
+ * It was until 2026-11-21, which meant the bare app domain threw a signed-in
+ * visitor out to the marketing site. This host is the application: "/" is
+ * handled by AppEntry below, which sends them to their dashboard or to login.
+ * The marketing home is still reachable from the header logo when signed out.
+ */
 const MOVED_TO_CONTENT_SITE = [
-  "/",
   "/trainers",
   "/challenges",
   "/nutrition",
@@ -118,6 +126,8 @@ function App() {
           path={MOVED_TO_CONTENT_SITE}
           component={ContentSiteRedirect}
         />
+        {/* The bare domain: dashboard when signed in, login when not. */}
+        <Route exact path="/" component={AppEntry} />
         {/* <Route component={Home} path="/" exact /> */}
         {/* <Route component={Trainers} path="/trainers" exact /> */}
         {/* <Route component={Challenges} path="/challenges" exact /> */}

@@ -20,6 +20,7 @@ import { T } from "./Translate";
 import { hasRole } from "../helpers/roleHelpers";
 import { useNotifications } from "../contexts/NotificationContext";
 import { contentUrl } from "../helpers/crossDomain";
+import { hasSession, LOGGED_IN_HOME } from "../helpers/auth";
 
 function Navbar({ color, history }) {
   const [click, setClick] = useState(false);
@@ -230,15 +231,36 @@ function Navbar({ color, history }) {
         }
       >
         <div className="navbar-container">
-          {/* The marketing site owns the home page now — a cross-origin <a>,
-              not a <Link>, or the router renders a blank screen. */}
-          <a
-            href={contentUrl("/")}
-            className="navbar-logo"
-            onClick={closeMobileMenu}
-          >
-            <img src={Logo} alt="logo" className="logo" />
-          </a>
+          {/*
+            The logo goes where "home" means for this visitor.
+
+            Signed in, that is their dashboard — an in-app <Link>. Signed out,
+            it is the marketing site, which owns the public home page now, and
+            that must be a cross-origin <a>: a <Link> would push a path this
+            router has no route for and render a blank screen.
+
+            hasSession() rather than userInfo.authenticated, which is false for
+            the first few hundred milliseconds while the profile call is in
+            flight. Using it here would hand a signed-in visitor a logo that
+            quietly points off-site until that call lands.
+          */}
+          {hasSession() ? (
+            <Link
+              to={LOGGED_IN_HOME}
+              className="navbar-logo"
+              onClick={closeMobileMenu}
+            >
+              <img src={Logo} alt="logo" className="logo" />
+            </Link>
+          ) : (
+            <a
+              href={contentUrl("/")}
+              className="navbar-logo"
+              onClick={closeMobileMenu}
+            >
+              <img src={Logo} alt="logo" className="logo" />
+            </a>
+          )}
 
           <div className="menu-icon" onClick={handleClick}>
             {click ? (

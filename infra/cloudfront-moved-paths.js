@@ -33,8 +33,21 @@ var CONTENT_SITE = 'https://realchallenge.nl';
  * the final URL out here means one hop, not two: a redirect chain is exactly
  * what this is meant to remove.
  */
+/*
+ * "/" IS DELIBERATELY ABSENT, and must stay absent.
+ *
+ * It was here until 2026-11-21. A 301 at the edge runs before any JavaScript,
+ * so listing "/" would send every visitor who types the bare app domain to the
+ * marketing site — including someone already signed in, who would be thrown
+ * out of the application and left with no way back except the login link in
+ * the WordPress header. The app's root is handled by AppEntry in
+ * src/components/AppEntry.js: dashboard when signed in, login when not.
+ *
+ * This is the one entry where this file and MOVED_TO_CONTENT_SITE in
+ * src/App.js agree by both OMITTING a path. Re-adding it here would silently
+ * defeat the route, because the edge answers first.
+ */
 var MOVED = {
-  '/': '/',
   '/trainers': '/trainers/',
   '/challenges': '/challenges/',
   '/nutrition': '/nutrition/',

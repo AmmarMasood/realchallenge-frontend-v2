@@ -18,6 +18,7 @@ import { logoutUser } from "../services/authentication";
 import { withRouter } from "react-router-dom";
 import { T } from "./Translate";
 import { useNotifications } from "../contexts/NotificationContext";
+import { LOGGED_IN_HOME } from "../helpers/auth";
 
 function LoggedinNavbar(props) {
   const {
@@ -181,8 +182,11 @@ function stripHtml(html) {
       <nav className="loggedin-nav-container">
         <div>
           {/* "/" is the content site's home page now; a logged-in user's
-              home inside the app is the dashboard. */}
-          <Link to="/user/dashboard" className="navbar-logo">
+              home inside the app is the dashboard. This navbar only ever
+              renders for someone signed in, so the destination is not
+              conditional here as it is in Navbar.js - but it comes from the
+              same constant, so the two cannot drift. */}
+          <Link to={LOGGED_IN_HOME} className="navbar-logo">
             <img src={Logo} alt="logo" className="logo small-screenlogo" />
           </Link>
         </div>

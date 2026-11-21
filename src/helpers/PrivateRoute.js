@@ -1,13 +1,17 @@
 import React from "react";
 import { Route, Redirect } from "react-router-dom";
+import { hasSession } from "./auth";
 
 const PrivateRoute = ({ component: Component, userInfo, role, roles, ...rest }) => (
   <Route
     {...rest}
     render={(props) => {
-      // Check if the JWT token exists in localStorage
-      const token = localStorage.getItem("jwtToken");
-      if (!token) {
+      // Check if the JWT token exists in localStorage. Via hasSession() so the
+      // root route, the header logo and this guard cannot disagree about what
+      // "signed in" means — and so a browser that throws on localStorage (a
+      // private window, blocked site data) is treated as signed out rather
+      // than crashing the route.
+      if (!hasSession()) {
         // No token: the login page, not "/" — that route moved to the
         // content site, so redirecting there would leave a blank screen.
         return <Redirect to="/login" />;

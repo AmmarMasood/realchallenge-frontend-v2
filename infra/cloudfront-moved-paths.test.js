@@ -36,7 +36,6 @@ function run(uri, querystring = {}) {
 }
 
 console.log("== moved pages 301 to the content site ==");
-check("root", run("/"), "301 https://realchallenge.nl/");
 check("pricing", run("/pricing"), "301 https://realchallenge.nl/pricing/");
 check("trailing slash is the same page", run("/pricing/"), "301 https://realchallenge.nl/pricing/");
 check("nutrition", run("/nutrition"), "301 https://realchallenge.nl/nutrition/");
@@ -84,6 +83,19 @@ check(
   }),
   "301 https://realchallenge.nl/pricing/?tag=a&tag=b"
 );
+
+console.log("\n== the app's own root is NOT redirected ==");
+/*
+ * The one path that must reach the origin even though it looks like a moved
+ * page. A 301 here runs before any JavaScript, so it would throw a signed-in
+ * visitor out of the app to the marketing site with no way back. "/" is
+ * AppEntry's: dashboard when signed in, login when not.
+ *
+ * Asserted in both spellings because the handler strips a trailing slash
+ * before looking the path up, and "" must not accidentally match the map.
+ */
+check("root reaches the app", run("/"), "PASS");
+check("root with a query reaches the app", run("/", { ref: { value: "x" } }), "PASS");
 
 console.log("\n== everything else reaches the origin untouched ==");
 [
