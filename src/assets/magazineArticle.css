@@ -28,3 +28,23 @@
   font-size: 5.5rem;
   line-height: 1 !important;
 }
+
+/* The 0.3fr / 1fr split has no mobile breakpoint, so on a phone the article body
+   was squeezed into ~204px and overflowed the viewport. Stack the byline above the
+   article instead, and drop the 50px side padding that a 375px screen cannot
+   afford. The heading also has to come down from 5.5rem or a single long word
+   pushes the page sideways on its own. */
+@media screen and (max-width: 768px) {
+  .article-container {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .article-container-column1 {
+    padding: 20px;
+  }
+
+  .article-container-column2-heading {
+    font-size: 3.4rem;
+  }
+}

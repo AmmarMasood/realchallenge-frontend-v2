@@ -466,7 +466,7 @@ function Challenges() {
             </p>
             <Link className="home-button" to="/new">
               <span className="home-button-text font-paragraph-white">
-                <T>common.start_now</T> <ArrowRightOutlined />
+                <T>challenges.start_now</T> <ArrowRightOutlined />
               </span>
             </Link>
           </div>

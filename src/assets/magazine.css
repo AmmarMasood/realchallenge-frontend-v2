@@ -59,7 +59,9 @@
 .magazine-row-3 > p {
   font-size: 1.8rem;
   color: #fff;
-  width: 500px;
+  /* max-width, not width: a hard 500px is wider than a phone viewport and made
+     the whole magazine page scroll sideways (135px of overflow at 375px). */
+  max-width: 500px;
   line-height: 25px;
   /* font-weight: 300; */
 }

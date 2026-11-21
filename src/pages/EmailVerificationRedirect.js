@@ -61,7 +61,7 @@ function EmailVerificationRedirect(props) {
           {success ? (
             <T>emailVerification.esv</T>
           ) : (
-            <T>emailVerification.challenge_profile.yourPersonalJourney</T>
+            <T>challenge_profile.yourPersonalJourney</T>
           )}
         </h1>
       </>

@@ -504,7 +504,7 @@ function ChallengePlayer(props) {
                     textTransform: "uppercase",
                   }}
                 >
-                  <T>player.today_woTkout_attachment</T>
+                  <T>player.today_workout_attachment</T>
                 </p>
 
                 <a href={`${workout.infoFile}`} target="_blank" download>
@@ -532,7 +532,7 @@ function ChallengePlayer(props) {
                       textTransform: "uppercase",
                     }}
                   >
-                    <T>playerTtoday_equipment</T>
+                    <T>player.today_equipment</T>
                   </p>
                   <div>
                     {workout.relatedEquipments.map((e) => (

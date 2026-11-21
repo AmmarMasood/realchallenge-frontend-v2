@@ -100,7 +100,7 @@ function Home(props) {
                 }}
               />
               <span className="home-text font-paragraph-white">
-                <T>home.home-row-2.freedigital_intake</T>
+                <T>home.home-row-2.free_digital_intake</T>
               </span>
             </div>
             <div className="home-row-2-col-2-box">
@@ -211,7 +211,7 @@ function Home(props) {
             <div className="home-row-3-col-1-box goal-4">
               <div className="home-row-3-col-1-box-textbox">
                 <h3 className="home-row-3-col-1-box-textbox-heading font-subheading-white">
-                  <T>home.home-row-3Tmaster_mindset</T>
+                  <T>home.home-row-3.master_mindset</T>
                 </h3>
                 <div className="home-row-3-col-1-box-textbox-text font-paragraph-white">
                   <T>home.home-row-3.think_fit</T>
@@ -225,7 +225,7 @@ function Home(props) {
               <T>home.home-row-3.pick_your</T>
             </h3>
             <h2 className="home-row-2-col-1-subheading font-heading-white">
-              <T>home.home-row-3.dTily_challenges</T>
+              <T>home.home-row-3.daily_challenges</T>
               <br /> <T>home.home-row-3.monthly_goals</T>
             </h2>
             <p className="home-text font-paragraph-white">
@@ -463,7 +463,7 @@ function Home(props) {
               style={{ fontSize: "1.8rem", paddingBottom: "10px" }}
               className="font-paragraph-black"
             >
-              <T>home.homeTrow-7.together</T>
+              <T>home.home-row-7.together</T>
             </p>
             <Link className="home-button" to="/challenges">
               <span className="home-button-text font-paragraph-white">

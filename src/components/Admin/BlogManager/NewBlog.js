@@ -47,7 +47,7 @@ function NewBlog({ setCurrentSelection }) {
     useState(false);
 
   const [selectedCategoryForUpdate, setSelectedCategoryForUpdate] = useState(
-    {}
+    {},
   );
   const [isPublic, setIsPublic] = useState(false);
   const [allowComments, setAllowComments] = useState(false);
@@ -86,7 +86,7 @@ function NewBlog({ setCurrentSelection }) {
 
   async function getAllBlogsFromBackend() {
     const data = await getAllUserBlogs(
-      language === "english" ? "dutch" : "english"
+      language === "english" ? "dutch" : "english",
     );
     // console.log(data);
     if (data && data.blogs) {
@@ -97,11 +97,17 @@ function NewBlog({ setCurrentSelection }) {
   // updateSelectedBlog removed - using translationKey for multi-language support
   const createNewBlog = async () => {
     let flag = false;
-    if (title && paragraph && featuredImage && videoLink && category) {
+    if (title && paragraph && featuredImage && category) {
       flag = true;
     }
     if (!flag) {
-      alert(get(strings, "admin.please_fill_all_information", "Please fill all the information"));
+      alert(
+        get(
+          strings,
+          "admin.please_fill_all_information",
+          "Please fill all the information",
+        ),
+      );
     } else {
       setLoading(true);
       const vals = {
@@ -174,7 +180,9 @@ function NewBlog({ setCurrentSelection }) {
         footer={false}
         visible={categoryModalVisible}
       >
-        <p className="font-paragraph-white"><T>admin.manage_blog_category</T></p>
+        <p className="font-paragraph-white">
+          <T>admin.manage_blog_category</T>
+        </p>
         <div style={{ display: "flex", alignItems: "center" }}>
           <Input
             value={newCategoryName}
@@ -203,7 +211,9 @@ function NewBlog({ setCurrentSelection }) {
           </Button>
         </div>
         <div style={{ height: "300px", overflow: "auto", marginTop: "10px" }}>
-          <span className="font-subheading-white"><T>admin.all_categories</T></span>
+          <span className="font-subheading-white">
+            <T>admin.all_categories</T>
+          </span>
           <List
             size="small"
             bordered
@@ -245,18 +255,22 @@ function NewBlog({ setCurrentSelection }) {
           />
         </div>
       </Modal>
-      <h2 className="font-heading-black"><T>admin.new_blog</T></h2>
+      <h2 className="font-heading-black">
+        <T>admin.new_blog</T>
+      </h2>
       <div
         className="admin-newuser-container"
         style={{ padding: "50px 50px 50px 20px" }}
       >
         <div style={{ marginTop: "-40px", marginBottom: "20px" }}>
-          <span style={{ marginRight: "5px" }}><T>admin.select_language</T>:</span>
+          <span style={{ marginRight: "5px" }}>
+            <T>admin.select_language</T>:
+          </span>
           <LanguageSelector notFromNav={true} />
           <div>
-            <span
-              style={{ marginRight: "5px" }}
-            ><T>admin.select_alt_language</T></span>
+            <span style={{ marginRight: "5px" }}>
+              <T>admin.select_alt_language</T>
+            </span>
             <Select
               style={{ width: "500px" }}
               value={selectedBlog}

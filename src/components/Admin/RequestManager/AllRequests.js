@@ -138,7 +138,7 @@ function AllRequests() {
       ),
     },
     {
-      title: <T>admin.modified_by</T>,
+      title: <T>adminv2.last_modified_by</T>,
       key: "updatedBy",
       render: (text, record) => {
         const updater = record.updatedBy;
