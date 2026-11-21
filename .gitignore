@@ -24,3 +24,6 @@ yarn-error.log*
 
 
 .env
+
+# Build cache - machine-specific absolute paths, changes on every lint run.
+.eslintcache
